@@ -224,6 +224,9 @@ export const ja: Record<TranslationKey, string> = {
   'settings.family.photoFromHa': 'Home Assistant の写真を使う',
   'settings.family.photoError':
     'このファイルは使用できません。PNG・JPEG・WebP の画像をお試しください。',
+  'settings.family.haMembersLabel': 'Home Assistant から',
+  'settings.family.haMembersEmpty':
+    'Home Assistant の人物が見つかりません。Beacon が Home Assistant に接続できるか確認して再読み込みしてください。',
   'settings.family.avatarCategory.people': '人々',
   'settings.family.avatarCategory.skinTones': '肌の色',
   'settings.family.avatarCategory.faces': '顔',

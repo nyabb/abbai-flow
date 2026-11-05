@@ -19,6 +19,11 @@ import { usesServerProxy, getIngressBasePath } from '../utils/ha-env';
 function resolveBaseUrl(): string {
   if (usesServerProxy()) return getIngressBasePath();
 
+  // The dev server proxies /api to HA (see vite.config.ts), so REST calls stay
+  // same-origin there too and CORS is never a factor. Requires VITE_HA_URL,
+  // matching the proxy condition in vite.config.ts.
+  if (import.meta.env.DEV && import.meta.env.VITE_HA_URL) return '';
+
   const config = getConfig();
   if (config.ha_url && !config.ha_url.includes('supervisor')) {
     return config.ha_url.replace(/\/$/, '');
