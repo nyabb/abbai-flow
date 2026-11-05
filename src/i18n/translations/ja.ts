@@ -217,6 +217,13 @@ export const ja: Record<TranslationKey, string> = {
   'settings.family.parent': '保護者',
   'settings.family.child': '子供',
   'settings.family.avatarLabel': 'アバター',
+  'settings.family.photoLabel': '写真',
+  'settings.family.photoHint': 'ダッシュボード・家事・ランキングで絵文字の代わりに表示されます。',
+  'settings.family.photoUpload': '写真をアップロード',
+  'settings.family.photoRemove': '写真を削除',
+  'settings.family.photoFromHa': 'Home Assistant の写真を使う',
+  'settings.family.photoError':
+    'このファイルは使用できません。PNG・JPEG・WebP の画像をお試しください。',
   'settings.family.avatarCategory.people': '人々',
   'settings.family.avatarCategory.skinTones': '肌の色',
   'settings.family.avatarCategory.faces': '顔',
@@ -356,7 +363,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': '家事',
-  'settings.chores.desc': '家事の管理と報酬の設定を行います。',
+  'settings.chores.desc': '家事とポイントは Home Assistant の ChoreOps 統合で管理されます。',
   'settings.chores.enableLabel': '家事機能を有効にする',
   'settings.chores.enableSublabel': '家事の記録と報酬を表示します',
   'settings.chores.dailyResetTimeLabel': '毎日のリセット時刻',
@@ -459,6 +466,18 @@ export const ja: Record<TranslationKey, string> = {
   'chores.editChore': '家事を編集',
   'chores.newChore': '新しい家事',
   'chores.claim': '引き受ける',
+  'chores.approve': '承認',
+  'chores.decline': '却下',
+  'chores.refresh': '更新',
+  'chores.everyone': 'みんな',
+  'chores.noChoresToday': '今はやることがありません。',
+  'chores.wellDone': 'よくできました！',
+  'chores.missing':
+    'Home Assistant に ChoreOps が見つかりません。ChoreOps 統合をインストールして設定すると、ここに家事が表示されます。',
+  'chores.stat.due': '今日の期限',
+  'chores.stat.claimed': '引き受け済み',
+  'chores.stat.approved': '承認済み',
+  'chores.stat.done': '今日の完了',
   'chores.complete': '完了する',
   'chores.whoClaims': '誰が引き受けますか？',
   'chores.whoCompleted': '誰が完了しましたか？',
@@ -487,7 +506,8 @@ export const ja: Record<TranslationKey, string> = {
   'leaderboard.title': 'リーダーボード',
   'leaderboard.thisWeek': '今週',
   'leaderboard.thisMonth': '今月',
-  'leaderboard.empty': '家族と家事を追加して、リーダーボードを表示してください。',
+  'leaderboard.empty':
+    '設定で家族メンバーをChoreOpsユーザーにリンクするとランキングが表示されます。',
   'leaderboard.choresCompleted': '{count}件の家事',
   'leaderboard.choreCompletedSingular': '{count}件の家事',
 

@@ -221,6 +221,14 @@ export const it: Record<TranslationKey, string> = {
   'settings.family.parent': 'Genitore',
   'settings.family.child': 'Bambino/a',
   'settings.family.avatarLabel': 'Avatar',
+  'settings.family.photoLabel': 'Foto',
+  'settings.family.photoHint':
+    'Mostrata al posto dell’emoji nella dashboard, nelle faccende e in classifica.',
+  'settings.family.photoUpload': 'Carica foto',
+  'settings.family.photoRemove': 'Rimuovi foto',
+  'settings.family.photoFromHa': 'Usa la foto di Home Assistant',
+  'settings.family.photoError':
+    'Impossibile usare questo file. Prova un’immagine PNG, JPEG o WebP.',
   'settings.family.avatarCategory.people': 'Persone',
   'settings.family.avatarCategory.skinTones': 'Carnagioni',
   'settings.family.avatarCategory.faces': 'Volti',
@@ -362,7 +370,8 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': 'Faccende',
-  'settings.chores.desc': 'Gestisci il monitoraggio delle faccende e le impostazioni dei premi.',
+  'settings.chores.desc':
+    'Le faccende e i punti sono gestiti in Home Assistant dall’integrazione ChoreOps.',
   'settings.chores.enableLabel': 'Attiva faccende',
   'settings.chores.enableSublabel': 'Mostra il monitoraggio delle faccende e i premi',
   'settings.chores.dailyResetTimeLabel': 'Orario di reset giornaliero',
@@ -465,6 +474,18 @@ export const it: Record<TranslationKey, string> = {
   'chores.editChore': 'Modifica faccenda',
   'chores.newChore': 'Nuova faccenda',
   'chores.claim': 'Rivendica',
+  'chores.approve': 'Approva',
+  'chores.decline': 'Rifiuta',
+  'chores.refresh': 'Aggiorna',
+  'chores.everyone': 'Tutti',
+  'chores.noChoresToday': 'Niente da fare per ora.',
+  'chores.wellDone': 'Ben fatto!',
+  'chores.missing':
+    'ChoreOps non è stato trovato in Home Assistant. Installa e configura l’integrazione ChoreOps per vedere le faccende qui.',
+  'chores.stat.due': 'In scadenza oggi',
+  'chores.stat.claimed': 'Rivendicate',
+  'chores.stat.approved': 'Approvate',
+  'chores.stat.done': 'Fatte oggi',
   'chores.complete': 'Completa',
   'chores.whoClaims': 'Chi rivendica questo?',
   'chores.whoCompleted': 'Chi ha completato questo?',
@@ -493,7 +514,8 @@ export const it: Record<TranslationKey, string> = {
   'leaderboard.title': 'Classifica',
   'leaderboard.thisWeek': 'Questa settimana',
   'leaderboard.thisMonth': 'Questo mese',
-  'leaderboard.empty': 'Aggiungi membri della famiglia e faccende per vedere la classifica.',
+  'leaderboard.empty':
+    'Collega i membri della famiglia agli utenti ChoreOps nelle impostazioni per vedere la classifica.',
   'leaderboard.choresCompleted': '{count} faccende',
   'leaderboard.choreCompletedSingular': '{count} faccenda',
 

@@ -222,6 +222,14 @@ export const fr: Record<TranslationKey, string> = {
   'settings.family.parent': 'Parent',
   'settings.family.child': 'Enfant',
   'settings.family.avatarLabel': 'Avatar',
+  'settings.family.photoLabel': 'Photo',
+  'settings.family.photoHint':
+    'Affichée à la place de l’emoji sur le tableau de bord, les tâches et le classement.',
+  'settings.family.photoUpload': 'Importer une photo',
+  'settings.family.photoRemove': 'Supprimer la photo',
+  'settings.family.photoFromHa': 'Utiliser la photo Home Assistant',
+  'settings.family.photoError':
+    'Ce fichier n’a pas pu être utilisé. Essayez une image PNG, JPEG ou WebP.',
   'settings.family.avatarCategory.people': 'Personnes',
   'settings.family.avatarCategory.skinTones': 'Teints',
   'settings.family.avatarCategory.faces': 'Visages',
@@ -364,7 +372,8 @@ export const fr: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': 'Corvées',
-  'settings.chores.desc': 'Gérez le suivi des corvées et les paramètres de récompense.',
+  'settings.chores.desc':
+    'Les tâches et les points sont gérés dans Home Assistant par l’intégration ChoreOps.',
   'settings.chores.enableLabel': 'Activer les corvées',
   'settings.chores.enableSublabel': 'Affiche le suivi des corvées et des récompenses',
   'settings.chores.dailyResetTimeLabel': 'Heure de réinitialisation quotidienne',
@@ -467,6 +476,18 @@ export const fr: Record<TranslationKey, string> = {
   'chores.editChore': 'Modifier la tâche',
   'chores.newChore': 'Nouvelle tâche',
   'chores.claim': 'Revendiquer',
+  'chores.approve': 'Approuver',
+  'chores.decline': 'Refuser',
+  'chores.refresh': 'Actualiser',
+  'chores.everyone': 'Tout le monde',
+  'chores.noChoresToday': 'Rien à faire pour le moment.',
+  'chores.wellDone': 'Bravo !',
+  'chores.missing':
+    'ChoreOps est introuvable dans Home Assistant. Installez et configurez l’intégration ChoreOps pour voir les tâches ici.',
+  'chores.stat.due': 'À faire aujourd’hui',
+  'chores.stat.claimed': 'Réclamées',
+  'chores.stat.approved': 'Approuvées',
+  'chores.stat.done': 'Faites aujourd’hui',
   'chores.complete': 'Terminer',
   'chores.whoClaims': 'Qui revendique cela ?',
   'chores.whoCompleted': 'Qui a terminé cela ?',
@@ -495,7 +516,8 @@ export const fr: Record<TranslationKey, string> = {
   'leaderboard.title': 'Classement',
   'leaderboard.thisWeek': 'Cette semaine',
   'leaderboard.thisMonth': 'Ce mois-ci',
-  'leaderboard.empty': 'Ajoutez des membres de la famille et des tâches pour voir le classement.',
+  'leaderboard.empty':
+    'Associez les membres de la famille aux utilisateurs ChoreOps dans les réglages pour voir le classement.',
   'leaderboard.choresCompleted': '{count} tâches',
   'leaderboard.choreCompletedSingular': '{count} tâche',
 

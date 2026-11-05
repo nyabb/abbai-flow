@@ -217,6 +217,14 @@ export const nl: Record<TranslationKey, string> = {
   'settings.family.parent': 'Ouder',
   'settings.family.child': 'Kind',
   'settings.family.avatarLabel': 'Avatar',
+  'settings.family.photoLabel': 'Foto',
+  'settings.family.photoHint':
+    'Wordt getoond in plaats van de emoji op het dashboard, bij taken en in het klassement.',
+  'settings.family.photoUpload': 'Foto uploaden',
+  'settings.family.photoRemove': 'Foto verwijderen',
+  'settings.family.photoFromHa': 'Foto uit Home Assistant gebruiken',
+  'settings.family.photoError':
+    'Dat bestand kon niet worden gebruikt. Probeer een PNG-, JPEG- of WebP-afbeelding.',
   'settings.family.avatarCategory.people': 'Personen',
   'settings.family.avatarCategory.skinTones': 'Huidtinten',
   'settings.family.avatarCategory.faces': 'Gezichten',
@@ -357,7 +365,8 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': 'Klusjes',
-  'settings.chores.desc': 'Beheer het bijhouden van klusjes en beloningsinstellingen.',
+  'settings.chores.desc':
+    'Karweitjes en punten worden in Home Assistant beheerd door de ChoreOps-integratie.',
   'settings.chores.enableLabel': 'Klusjes inschakelen',
   'settings.chores.enableSublabel': 'Toont het bijhouden van klusjes en beloningen',
   'settings.chores.dailyResetTimeLabel': 'Dagelijkse reset-tijd',
@@ -460,6 +469,18 @@ export const nl: Record<TranslationKey, string> = {
   'chores.editChore': 'Karweitje bewerken',
   'chores.newChore': 'Nieuw karweitje',
   'chores.claim': 'Claimen',
+  'chores.approve': 'Goedkeuren',
+  'chores.decline': 'Afkeuren',
+  'chores.refresh': 'Vernieuwen',
+  'chores.everyone': 'Iedereen',
+  'chores.noChoresToday': 'Nu even niets te doen.',
+  'chores.wellDone': 'Goed gedaan!',
+  'chores.missing':
+    'ChoreOps is niet gevonden in Home Assistant. Installeer en configureer de ChoreOps-integratie om hier taken te zien.',
+  'chores.stat.due': 'Vandaag te doen',
+  'chores.stat.claimed': 'Geclaimd',
+  'chores.stat.approved': 'Goedgekeurd',
+  'chores.stat.done': 'Vandaag gedaan',
   'chores.complete': 'Voltooien',
   'chores.whoClaims': 'Wie claimt dit?',
   'chores.whoCompleted': 'Wie heeft dit voltooid?',
@@ -488,7 +509,8 @@ export const nl: Record<TranslationKey, string> = {
   'leaderboard.title': 'Klassement',
   'leaderboard.thisWeek': 'Deze week',
   'leaderboard.thisMonth': 'Deze maand',
-  'leaderboard.empty': 'Voeg gezinsleden en karweitjes toe om het klassement te zien.',
+  'leaderboard.empty':
+    'Koppel gezinsleden in de instellingen aan ChoreOps-gebruikers om het klassement te zien.',
   'leaderboard.choresCompleted': '{count} karweitjes',
   'leaderboard.choreCompletedSingular': '{count} karweitje',
 

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import type { ChangeEvent } from 'react';
 import { useTheme } from '../hooks/useTheme';
 import {
   Settings as SettingsIcon,
@@ -17,6 +18,7 @@ import {
 import { AnyListClient } from '../api/anylist';
 import { GroceryList } from '../types/grocery';
 import { themes } from '../styles/themes';
+import { useChoreOps } from '../hooks/useChoreOps';
 import { FamilyMember, MEMBER_COLORS, AVATAR_CATEGORIES, Routine } from '../types/family';
 import type { BeaconSettings } from '../hooks/useSettings';
 import { getConfig } from '../config';
@@ -25,6 +27,8 @@ import { buildFocusUrl } from '../focus';
 import { useRoutines } from '../hooks/useRoutines';
 import { resolveCalendarColor, CALENDAR_COLOR_PRESETS } from '../types';
 import { useTranslation, type TranslationKey } from '../i18n';
+import { MemberAvatar } from './MemberAvatar';
+import { imageFileToDataUrl, resolveMemberPhoto } from '../utils/member-photo';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -169,21 +173,25 @@ function Slider({
 interface MemberForm {
   name: string;
   avatar: string;
+  photo: string;
   color: string;
   role: 'parent' | 'child';
   pin: string;
   calendar_entity: string;
   additional_calendar_entities: string[];
+  choreops_user: string;
 }
 
 const EMPTY_FORM: MemberForm = {
   name: '',
   avatar: '🧑',
+  photo: '',
   color: MEMBER_COLORS[0],
   role: 'child',
   pin: '',
   calendar_entity: '',
   additional_calendar_entities: [],
+  choreops_user: '',
 };
 
 // ---------------------------------------------------------------------------
@@ -210,8 +218,42 @@ export function SettingsView({
   const { setTheme: applyTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [editingMember, setEditingMember] = useState<string | null>(null);
+
+  const { data: choreOpsData } = useChoreOps();
+  const choreOpsUsers = choreOpsData?.users ?? [];
+  const choreOpsNames = new Set(choreOpsUsers.map((u) => u.name.trim().toLowerCase()));
+
+  /** `entity_picture` published on an HA person entity, if they have one. */
+  const personPicture = (personName: string): string | null =>
+    (choreOpsData?.people ?? []).find(
+      (person) => person.name.trim().toLowerCase() === personName.trim().toLowerCase(),
+    )?.picture ?? null;
+
+  /** HA people (incl. non-ChoreOps members such as parents) + ChoreOps users. */
+  const peopleOptions: Array<{ name: string; hasChoreOps: boolean; picture: string | null }> = [
+    ...choreOpsUsers.map((u) => ({
+      name: u.name,
+      hasChoreOps: true,
+      picture: personPicture(u.name),
+    })),
+    ...(choreOpsData?.people ?? [])
+      .filter((p) => !choreOpsNames.has(p.name.trim().toLowerCase()))
+      .map((p) => ({ name: p.name, hasChoreOps: false, picture: p.picture })),
+  ];
+
+  /** True when a person is already attached to a different member. */
+  const isLinkedElsewhere = (personName: string): boolean => {
+    const target = personName.trim().toLowerCase();
+    return members.some(
+      (m) =>
+        m.id !== editingMember &&
+        ((m.choreops_user ?? '').trim().toLowerCase() === target ||
+          m.name.trim().toLowerCase() === target),
+    );
+  };
   const [memberForm, setMemberForm] = useState<MemberForm>(EMPTY_FORM);
   const [memberFormMode, setMemberFormMode] = useState<'list' | 'add' | 'edit'>('list');
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [kidDisplayMemberId, setKidDisplayMemberId] = useState('');
   const [copiedFocusUrl, setCopiedFocusUrl] = useState(false);
@@ -269,6 +311,7 @@ export function SettingsView({
   // ---- Family member handlers ----
   const handleStartAdd = useCallback(() => {
     setMemberForm(EMPTY_FORM);
+    setPhotoError(null);
     setEditingMember(null);
     setMemberFormMode('add');
   }, []);
@@ -277,21 +320,44 @@ export function SettingsView({
     setMemberForm({
       name: member.name,
       avatar: member.avatar,
+      photo: member.photo ?? '',
       color: member.color,
       role: member.role,
       pin: member.pin ?? '',
       calendar_entity: member.calendar_entity ?? '',
       additional_calendar_entities: member.additional_calendar_entities ?? [],
+      choreops_user: member.choreops_user ?? '',
     });
+    setPhotoError(null);
     setEditingMember(member.id);
     setMemberFormMode('edit');
   }, []);
+
+  /** Downscale an uploaded file to a small data URL so it survives offline. */
+  const handlePhotoUpload = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      // Reset so picking the same file twice still fires onChange.
+      event.target.value = '';
+      if (!file) return;
+
+      setPhotoError(null);
+      try {
+        const dataUrl = await imageFileToDataUrl(file);
+        setMemberForm((form) => ({ ...form, photo: dataUrl }));
+      } catch {
+        setPhotoError(t('settings.family.photoError'));
+      }
+    },
+    [t],
+  );
 
   const handleSaveMember = useCallback(() => {
     if (!memberForm.name.trim()) return;
     const data = {
       name: memberForm.name.trim(),
       avatar: memberForm.avatar,
+      photo: memberForm.photo || undefined,
       color: memberForm.color,
       role: memberForm.role,
       pin: memberForm.pin || undefined,
@@ -300,6 +366,7 @@ export function SettingsView({
         memberForm.additional_calendar_entities.length > 0
           ? memberForm.additional_calendar_entities
           : undefined,
+      choreops_user: memberForm.choreops_user || undefined,
     };
     if (memberFormMode === 'edit' && editingMember) {
       onUpdateMember(editingMember, data);
@@ -693,12 +760,16 @@ export function SettingsView({
 
   // ==== FAMILY ====
   const renderFamily = () => {
+    // A photo already published on the linked HA person, if any.
+    const linkedPhoto = personPicture(memberForm.choreops_user);
+
     if (routinesFor) {
       const memberRoutines = routinesApi.routines.filter((r) => r.member_id === routinesFor.id);
       return (
         <>
           <h2 className="settings-section-title">
-            {routinesFor.avatar} {routinesFor.name} {t('settings.family.routinesTitleSuffix')}
+            <MemberAvatar member={routinesFor} size={24} /> {routinesFor.name}{' '}
+            {t('settings.family.routinesTitleSuffix')}
           </h2>
           <p className="settings-section-desc">{t('settings.family.routinesDesc')}</p>
           <div className="settings-group">
@@ -954,7 +1025,7 @@ export function SettingsView({
                       border: `2px solid ${member.color}`,
                     }}
                   >
-                    {member.avatar}
+                    <MemberAvatar member={member} />
                   </div>
                   <div className="settings-fm-info">
                     <div className="settings-fm-name">{member.name}</div>
@@ -1099,6 +1170,95 @@ export function SettingsView({
                 ))}
               </div>
             </div>
+            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <div className="settings-row-label">{t('settings.family.photoLabel')}</div>
+                <div className="settings-row-sublabel">{t('settings.family.photoHint')}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {memberForm.photo && (
+                  <img
+                    className="member-photo"
+                    src={resolveMemberPhoto(memberForm.photo)}
+                    alt=""
+                    style={{
+                      width: 48,
+                      height: 48,
+                      border: `2px solid ${memberForm.color}`,
+                      background: memberForm.color + '22',
+                    }}
+                  />
+                )}
+                <label className="settings-btn" style={{ cursor: 'pointer', margin: 0 }}>
+                  {t('settings.family.photoUpload')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                {linkedPhoto && memberForm.photo !== linkedPhoto && (
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() => setMemberForm((form) => ({ ...form, photo: linkedPhoto }))}
+                  >
+                    {t('settings.family.photoFromHa')}
+                  </button>
+                )}
+                {memberForm.photo && (
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() => setMemberForm((form) => ({ ...form, photo: '' }))}
+                  >
+                    {t('settings.family.photoRemove')}
+                  </button>
+                )}
+              </div>
+            </div>
+            {photoError && (
+              <div className="settings-row">
+                <span style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>
+                  {photoError}
+                </span>
+              </div>
+            )}
+            {peopleOptions.length > 0 && (
+              <div className="settings-row">
+                <div className="settings-row-label">From Home Assistant</div>
+                <select
+                  value={memberForm.choreops_user}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setMemberForm((f) => {
+                      // Keep a hand-written name; adopt the HA name when the
+                      // field is blank or was auto-filled from a previous pick.
+                      const autoNamed = !f.name.trim() || f.name === f.choreops_user;
+                      return {
+                        ...f,
+                        choreops_user: value,
+                        name: value && autoNamed ? value : f.name,
+                      };
+                    });
+                  }}
+                  className="settings-select"
+                >
+                  <option value="">Not linked</option>
+                  {peopleOptions.map((person) => {
+                    const added = isLinkedElsewhere(person.name);
+                    return (
+                      <option key={person.name} value={person.name} disabled={added}>
+                        {person.name}
+                        {person.hasChoreOps ? ' · ChoreOps' : ''}
+                        {added ? ' (already added)' : ''}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
             <div className="settings-row" style={{ alignItems: 'flex-start' }}>
               <div className="settings-row-label" style={{ paddingTop: 4 }}>
                 {t('settings.family.colorLabel')}
@@ -1856,6 +2016,8 @@ export function SettingsView({
   );
 
   // ==== CHORES ====
+  // Chore data lives in the ChoreOps integration: Beacon has no local chore
+  // store, so streaks, values and payouts are configured in Home Assistant.
   const renderChores = () => (
     <>
       <h2 className="settings-section-title">{t('settings.chores.title')}</h2>
@@ -1873,70 +2035,6 @@ export function SettingsView({
           />
         </div>
       </div>
-
-      {settings.choresEnabled && (
-        <>
-          <div className="settings-group">
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.chores.dailyResetTimeLabel')}</div>
-                <div className="settings-row-sublabel">
-                  {t('settings.chores.dailyResetTimeSublabel')}
-                </div>
-              </div>
-              <input
-                type="time"
-                className="settings-time-input"
-                value={settings.choresResetTime}
-                onChange={(e) => onUpdateSettings({ choresResetTime: e.target.value })}
-              />
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.chores.streakDurationLabel')}</div>
-                <div className="settings-row-sublabel">
-                  {t('settings.chores.streakDurationSublabel')}
-                </div>
-              </div>
-              <Slider
-                value={settings.streakDays}
-                min={3}
-                max={30}
-                unit=" days"
-                onChange={(v) => onUpdateSettings({ streakDays: v })}
-              />
-            </div>
-          </div>
-
-          <div className="settings-group">
-            <div className="settings-group-title">{t('settings.chores.rewardsTitle')}</div>
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.chores.currencySymbolLabel')}</div>
-              <Segment
-                value={settings.currencySymbol}
-                options={[
-                  { value: '$', label: '$' },
-                  { value: '\u20ac', label: '\u20ac' },
-                  { value: '\u00a3', label: '\u00a3' },
-                  { value: '\u2b50', label: '\u2b50' },
-                ]}
-                onChange={(v) => onUpdateSettings({ currencySymbol: v })}
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.chores.payoutScheduleLabel')}</div>
-              <Segment
-                value={settings.payoutSchedule}
-                options={[
-                  { value: 'weekly', label: t('settings.chores.weekly') },
-                  { value: 'monthly', label: t('settings.chores.monthly') },
-                ]}
-                onChange={(v) => onUpdateSettings({ payoutSchedule: v })}
-              />
-            </div>
-          </div>
-        </>
-      )}
     </>
   );
 
