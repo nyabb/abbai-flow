@@ -1,3 +1,10 @@
+## [1.43.1](https://github.com/nyabb/beacon/compare/v1.43.0...v1.43.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **choreops:** read ChoreOps over REST when no WebSocket is live ([ee4e408](https://github.com/nyabb/beacon/commit/ee4e408f9fec88a22af5906bcf15e7db0c22e86f))
+
 # [1.43.0](https://github.com/nyabb/beacon/compare/v1.42.1...v1.43.0) (2026-11-05)
 
 
