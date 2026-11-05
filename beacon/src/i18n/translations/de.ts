@@ -478,6 +478,12 @@ export const de: Record<TranslationKey, string> = {
   'chores.claim': 'Übernehmen',
   'chores.approve': 'Genehmigen',
   'chores.decline': 'Ablehnen',
+  'chores.pinTitle': 'Eltern-Freigabe',
+  'chores.pinHint': 'Gib die PIN eines Elternteils ein, um zu genehmigen oder abzulehnen.',
+  'chores.pinWrong': 'Diese PIN ist nicht korrekt.',
+  'chores.pinConfirm': 'Entsperren',
+  'chores.pinRequired':
+    'Lege eine PIN für ein Elternteil unter Einstellungen → Familie fest, um hier Aufgaben zu genehmigen.',
   'chores.refresh': 'Aktualisieren',
   'chores.everyone': 'Alle',
   'chores.noChoresToday': 'Gerade steht nichts an.',

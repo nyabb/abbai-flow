@@ -474,6 +474,12 @@ export const nl: Record<TranslationKey, string> = {
   'chores.claim': 'Claimen',
   'chores.approve': 'Goedkeuren',
   'chores.decline': 'Afkeuren',
+  'chores.pinTitle': 'Goedkeuring door ouder',
+  'chores.pinHint': 'Voer de pincode van een ouder in om goed te keuren of af te keuren.',
+  'chores.pinWrong': 'Die pincode klopt niet.',
+  'chores.pinConfirm': 'Ontgrendelen',
+  'chores.pinRequired':
+    'Stel een pincode in bij een ouder via Instellingen → Gezin om hier taken goed te keuren.',
   'chores.refresh': 'Vernieuwen',
   'chores.everyone': 'Iedereen',
   'chores.noChoresToday': 'Nu even niets te doen.',

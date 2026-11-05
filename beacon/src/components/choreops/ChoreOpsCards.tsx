@@ -15,6 +15,9 @@ import type { ChoreOpsChore, ChoreOpsReward, ChoreOpsUser } from '../../types/ch
 
 const DONE_STATUS = /^(approved|completed|done)/i;
 
+/** ChoreOps states that mean "the child is done, a parent must sign off". */
+const AWAITING_REVIEW_STATUS = /(claim|pending|review|progress|submit)/i;
+
 /** ChoreOps `icon` may be an emoji or an icon key; only emoji are portable. */
 function choreEmoji(icon: string | null): string {
   return icon && !icon.includes(':') ? icon : '\u{2705}';
@@ -31,20 +34,28 @@ interface PrimaryAction {
 }
 
 /**
- * Pick the single most useful action for a chore. Approval wins when ChoreOps
- * flags the chore as reviewable (approved chores cannot be claimed again).
+ * Pick the single most useful action for a chore.
+ *
+ * ChoreOps publishes claim *and* approve buttons for every chore/user pair
+ * regardless of state, so the buttons alone say nothing about what is
+ * actionable. The status does: a chore waiting for review gets Approve, an
+ * untouched one gets Claim. Picking approve just because the button exists
+ * would have shown "Approve" to the child who still has to do the chore.
  */
-function primaryAction(chore: ChoreOpsChore): PrimaryAction | null {
+export function chorePrimaryAction(chore: ChoreOpsChore): PrimaryAction | null {
   if (DONE_STATUS.test(chore.status)) return null;
 
   const claim = chore.actions.claim;
   const approve = chore.actions.approve;
+  const awaitingReview = AWAITING_REVIEW_STATUS.test(chore.status);
 
-  if (approve && chore.canApprove) return { kind: 'approve', entityId: approve };
+  if (awaitingReview && approve) return { kind: 'approve', entityId: approve };
   if (claim) return { kind: 'claim', entityId: claim };
   if (approve) return { kind: 'approve', entityId: approve };
   return null;
 }
+
+export type ChoreActionKind = 'claim' | 'approve' | 'disapprove';
 
 export interface ChoreTaskCardProps {
   chore: ChoreOpsChore;
@@ -53,15 +64,27 @@ export interface ChoreTaskCardProps {
   pending: boolean;
   /** Another action is in flight, so this card must not fire. */
   blocked: boolean;
-  onAction: (key: string, entityId: string) => void;
+  /** False when no parent PIN is configured — approvals stay locked. */
+  approvalAllowed: boolean;
+  onAction: (key: string, entityId: string, kind: ChoreActionKind) => void;
 }
 
-export function ChoreTaskCard({ chore, member, pending, blocked, onAction }: ChoreTaskCardProps) {
+export function ChoreTaskCard({
+  chore,
+  member,
+  pending,
+  blocked,
+  approvalAllowed,
+  onAction,
+}: ChoreTaskCardProps) {
   const { t } = useTranslation();
   const done = DONE_STATUS.test(chore.status);
-  const primary = primaryAction(chore);
+  const primary = chorePrimaryAction(chore);
   const declineEid = chore.actions.disapprove;
-  const showDecline = Boolean(declineEid) && chore.canApprove && !done;
+  // Decline only makes sense next to an Approve — not beside a Claim.
+  const showDecline = Boolean(declineEid) && primary?.kind === 'approve';
+  // A child must not be able to sign off their own chore on a shared screen.
+  const approveLocked = !approvalAllowed || blocked || pending;
 
   return (
     <article
@@ -82,8 +105,8 @@ export function ChoreTaskCard({ chore, member, pending, blocked, onAction }: Cho
         <button
           type="button"
           className="choreops-action"
-          disabled={blocked || pending}
-          onClick={() => onAction(`${chore.id}:${primary.kind}`, primary.entityId)}
+          disabled={primary.kind === 'approve' ? approveLocked : blocked || pending}
+          onClick={() => onAction(`${chore.id}:${primary.kind}`, primary.entityId, primary.kind)}
         >
           <span className="choreops-action-main">
             {pending
@@ -110,8 +133,8 @@ export function ChoreTaskCard({ chore, member, pending, blocked, onAction }: Cho
         <button
           type="button"
           className="choreops-secondary"
-          disabled={blocked || pending}
-          onClick={() => onAction(`${chore.id}:decline`, declineEid)}
+          disabled={approveLocked}
+          onClick={() => onAction(`${chore.id}:decline`, declineEid, 'disapprove')}
         >
           {t('chores.decline')}
         </button>
@@ -127,7 +150,9 @@ export interface RewardGoalCardProps {
   member: FamilyMember | null;
   pending: boolean;
   blocked: boolean;
-  onAction: (key: string, entityId: string) => void;
+  /** False when no parent PIN is configured — approvals stay locked. */
+  approvalAllowed: boolean;
+  onAction: (key: string, entityId: string, kind: ChoreActionKind) => void;
 }
 
 export function RewardGoalCard({
@@ -136,6 +161,7 @@ export function RewardGoalCard({
   member,
   pending,
   blocked,
+  approvalAllowed,
   onAction,
 }: RewardGoalCardProps) {
   const { t } = useTranslation();
@@ -187,7 +213,7 @@ export function RewardGoalCard({
               type="button"
               className="choreops-action"
               disabled={blocked || pending}
-              onClick={() => onAction(`${reward.id}:claim`, claimEid)}
+              onClick={() => onAction(`${reward.id}:claim`, claimEid, 'claim')}
             >
               <span className="choreops-action-main">{t('chores.claim')}</span>
               <span className="choreops-action-reward" aria-hidden="true">
@@ -199,8 +225,8 @@ export function RewardGoalCard({
             <button
               type="button"
               className="choreops-action"
-              disabled={blocked || pending}
-              onClick={() => onAction(`${reward.id}:approve`, approveEid)}
+              disabled={!approvalAllowed || blocked || pending}
+              onClick={() => onAction(`${reward.id}:approve`, approveEid, 'approve')}
             >
               <span className="choreops-action-main">{t('chores.approve')}</span>
               <span className="choreops-action-reward" aria-hidden="true">
@@ -212,8 +238,8 @@ export function RewardGoalCard({
             <button
               type="button"
               className="choreops-secondary"
-              disabled={blocked || pending}
-              onClick={() => onAction(`${reward.id}:decline`, declineEid)}
+              disabled={!approvalAllowed || blocked || pending}
+              onClick={() => onAction(`${reward.id}:decline`, declineEid, 'disapprove')}
             >
               {t('chores.decline')}
             </button>

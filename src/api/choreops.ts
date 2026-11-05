@@ -26,6 +26,25 @@ export const CHOREOPS_PURPOSE = {
   rewardStatus: 'purpose_reward_status',
 } as const;
 
+/**
+ * Per-chore action buttons (verified on ChoreOps 1.6.0). Each chore/user pair
+ * gets its own `button` entity carrying `user_name` and `chore_name`, so these
+ * are the only *complete* inventory of chores — the dashboard helper's `chores`
+ * attribute is emptied whenever nothing is due, which left the screen blank.
+ */
+const CHORE_BUTTON_PURPOSES: Record<string, ChoreOpsActionKind> = {
+  purpose_button_chore_claim: 'claim',
+  purpose_button_chore_approve: 'approve',
+  purpose_button_chore_disapprove: 'disapprove',
+};
+
+/** Same idea for rewards: `purpose_button_reward_redeem` is the claim button. */
+const REWARD_BUTTON_PURPOSES: Record<string, ChoreOpsActionKind> = {
+  purpose_button_reward_redeem: 'claim',
+  purpose_button_reward_approve: 'approve',
+  purpose_button_reward_disapprove: 'disapprove',
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -121,6 +140,11 @@ function pointsOf(source: Record<string, unknown>): number | null {
   return null;
 }
 
+/** Join key for per-chore buttons: the same chore can exist for several users. */
+function choreKey(assignee: string | null, name: string): string {
+  return `${(assignee ?? '').trim().toLowerCase()}::${name.trim().toLowerCase()}`;
+}
+
 function normalizeReward(entity: ChoreOpsEntityState): ChoreOpsReward | null {
   const name = str(entity.attributes, 'reward_name');
   if (!name) return null;
@@ -138,13 +162,17 @@ function normalizeReward(entity: ChoreOpsEntityState): ChoreOpsReward | null {
 
 /**
  * Build the normalized ChoreOps view from a full HA state snapshot.
- * Chore items come from the per-user dashboard helper's `chores` attribute,
- * which ChoreOps leaves empty when nothing is due.
+ *
+ * Chore and reward lists are built from the per-action `button` entities, which
+ * ChoreOps always publishes per user. The dashboard helper's `chores` attribute
+ * is used as enrichment (icon, status, points) when it happens to be populated.
  */
 export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState {
   const usersBySlug = new Map<string, ChoreOpsUser>();
   const rewards: ChoreOpsReward[] = [];
-  const chores: ChoreOpsChore[] = [];
+  const helperChores: ChoreOpsChore[] = [];
+  const choreButtons = new Map<string, ChoreOpsChore>();
+  const rewardButtons = new Map<string, ChoreOpsReward>();
   const people: HaPerson[] = [];
   let available = false;
 
@@ -208,8 +236,56 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       if (Array.isArray(rawChores)) {
         for (const item of rawChores) {
           const chore = normalizeChore(item, assignee);
-          if (chore) chores.push(chore);
+          if (chore) helperChores.push(chore);
         }
+      }
+      continue;
+    }
+
+    // Per-chore action buttons: the authoritative chore inventory.
+    const choreKind = CHORE_BUTTON_PURPOSES[purpose];
+    if (choreKind) {
+      available = true;
+      const choreName = str(entity.attributes, 'chore_name');
+      if (userName && choreName) {
+        if (slug) ensureUser(slug, userName);
+        const key = choreKey(userName, choreName);
+        const entry = choreButtons.get(key) ?? {
+          id: entity.entity_id,
+          name: choreName,
+          icon: null,
+          status: 'available',
+          assignee: userName,
+          points: null,
+          canClaim: false,
+          canApprove: false,
+          actions: {},
+        };
+        entry.actions[choreKind] = entity.entity_id;
+        entry.canClaim = Boolean(entry.actions.claim);
+        entry.canApprove = Boolean(entry.actions.approve);
+        choreButtons.set(key, entry);
+      }
+      continue;
+    }
+
+    const rewardKind = REWARD_BUTTON_PURPOSES[purpose];
+    if (rewardKind) {
+      available = true;
+      const rewardName = str(entity.attributes, 'reward_name');
+      if (userName && rewardName) {
+        const key = rewardName.trim().toLowerCase();
+        const entry = rewardButtons.get(key) ?? {
+          id: entity.entity_id,
+          name: rewardName,
+          status: 'available',
+          cost: 0,
+          pendingClaims: 0,
+          assignee: userName,
+          actions: {},
+        };
+        entry.actions[rewardKind] = entity.entity_id;
+        rewardButtons.set(key, entry);
       }
       continue;
     }
@@ -225,7 +301,46 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
   const pointsByUser: Record<string, number> = {};
   for (const user of users) pointsByUser[user.name.trim().toLowerCase()] = user.points;
 
-  return { users, chores, rewards, people, pointsByUser, available };
+  // Merge: the dashboard helper knows the extra details (icon/status/points) but
+  // only lists chores that are due; the buttons know every chore but carry no
+  // metadata. Buttons win on actions, helper items win on presentation.
+  const choreMap = new Map<string, ChoreOpsChore>();
+  for (const chore of helperChores) {
+    choreMap.set(choreKey(chore.assignee, chore.name), chore);
+  }
+  for (const [key, chore] of choreButtons) {
+    const existing = choreMap.get(key);
+    if (existing) {
+      existing.actions = { ...existing.actions, ...chore.actions };
+      existing.canClaim = Boolean(existing.actions.claim);
+      existing.canApprove = Boolean(existing.actions.approve);
+      continue;
+    }
+    choreMap.set(key, chore);
+  }
+
+  const rewardMap = new Map<string, ChoreOpsReward>();
+  for (const reward of rewards) {
+    rewardMap.set(reward.name.trim().toLowerCase(), reward);
+  }
+  for (const [key, reward] of rewardButtons) {
+    const existing = rewardMap.get(key);
+    if (existing) {
+      existing.actions = { ...existing.actions, ...reward.actions };
+      existing.assignee = existing.assignee ?? reward.assignee;
+      continue;
+    }
+    rewardMap.set(key, reward);
+  }
+
+  return {
+    users,
+    chores: Array.from(choreMap.values()),
+    rewards: Array.from(rewardMap.values()),
+    people,
+    pointsByUser,
+    available,
+  };
 }
 
 /** Match a ChoreOps user to a Beacon family member by name (case-insensitive). */

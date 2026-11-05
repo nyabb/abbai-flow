@@ -17,6 +17,7 @@ import { useTranslation } from '../i18n';
 import type { ChoreOpsChore } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 import { ChoreTaskCard, RewardGoalCard, memberColorVars } from './choreops/ChoreOpsCards';
+import type { ChoreActionKind } from './choreops/ChoreOpsCards';
 import { MemberAvatar } from './MemberAvatar';
 
 const CELEBRATION_MS = 2600;
@@ -33,6 +34,15 @@ interface Celebration {
   subtitle: string;
 }
 
+interface PinPrompt {
+  key: string;
+  entityId: string;
+  subtitle: string;
+}
+
+/** A parent PIN is the only identity a shared wall display can check. */
+const MIN_PIN_LENGTH = 4;
+
 export function ChoreOpsPanel() {
   const { t } = useTranslation();
   const { members } = useFamily();
@@ -41,6 +51,20 @@ export function ChoreOpsPanel() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
+  const [pinPrompt, setPinPrompt] = useState<PinPrompt | null>(null);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState(false);
+
+  /** PINs of every parent who has one set — any of them unlocks approval. */
+  const parentPins = useMemo(
+    () =>
+      members
+        .filter((member) => member.role === 'parent')
+        .map((member) => (member.pin ?? '').trim())
+        .filter((pin) => pin.length >= MIN_PIN_LENGTH),
+    [members],
+  );
+  const approvalAllowed = parentPins.length > 0;
 
   // Qudoo-style congratulation screen: shows briefly, then gets out of the way.
   useEffect(() => {
@@ -54,7 +78,7 @@ export function ChoreOpsPanel() {
    * is blocked while a press is in flight; on failure we clear the pending key
    * and surface an inline error.
    */
-  const handleAction = useCallback(
+  const runAction = useCallback(
     async (key: string, entityId: string, subtitle: string) => {
       if (pendingAction) return;
       setActionError(null);
@@ -70,6 +94,42 @@ export function ChoreOpsPanel() {
     },
     [pendingAction, pressButton, t],
   );
+
+  /**
+   * Claiming is the child's own action and runs straight away. Approving or
+   * declining changes the household's records, so it is held back behind a
+   * parent PIN — otherwise any child could sign off their own chore on the
+   * shared screen.
+   */
+  const handleAction = useCallback(
+    (key: string, entityId: string, subtitle: string, kind: ChoreActionKind) => {
+      if (kind === 'claim') {
+        void runAction(key, entityId, subtitle);
+        return;
+      }
+      setPinInput('');
+      setPinError(false);
+      setPinPrompt({ key, entityId, subtitle });
+    },
+    [runAction],
+  );
+
+  const closePinPrompt = useCallback(() => {
+    setPinPrompt(null);
+    setPinInput('');
+    setPinError(false);
+  }, []);
+
+  const submitPin = useCallback(() => {
+    if (!pinPrompt) return;
+    if (!parentPins.includes(pinInput)) {
+      setPinError(true);
+      return;
+    }
+    const prompt = pinPrompt;
+    closePinPrompt();
+    void runAction(prompt.key, prompt.entityId, prompt.subtitle);
+  }, [pinPrompt, parentPins, closePinPrompt, runAction]);
 
   const users = useMemo(() => data?.users ?? [], [data]);
   const chores = useMemo(() => data?.chores ?? [], [data]);
@@ -188,6 +248,12 @@ export function ChoreOpsPanel() {
 
           <h2 className="choreops-section-title">{t('nav.chores')}</h2>
 
+          {!approvalAllowed && chores.some((chore) => chore.actions.approve) && (
+            <div className="choreops-empty" style={{ marginBottom: 16 }}>
+              {t('chores.pinRequired')}
+            </div>
+          )}
+
           {groups.length === 0 ? (
             <div className="choreops-empty">{t('chores.noChoresToday')}</div>
           ) : (
@@ -209,8 +275,9 @@ export function ChoreOpsPanel() {
                       member={group.member}
                       pending={pendingAction !== null && pendingAction.startsWith(`${chore.id}:`)}
                       blocked={pendingAction !== null}
-                      onAction={(key, entityId) => {
-                        void handleAction(key, entityId, chore.name);
+                      approvalAllowed={approvalAllowed}
+                      onAction={(key, entityId, kind) => {
+                        handleAction(key, entityId, chore.name, kind);
                       }}
                     />
                   ))}
@@ -237,8 +304,9 @@ export function ChoreOpsPanel() {
                       member={resolveMemberForUser(reward.assignee, members)}
                       pending={pendingAction !== null && pendingAction.startsWith(`${reward.id}:`)}
                       blocked={pendingAction !== null}
-                      onAction={(key, entityId) => {
-                        void handleAction(key, entityId, reward.name);
+                      approvalAllowed={approvalAllowed}
+                      onAction={(key, entityId, kind) => {
+                        handleAction(key, entityId, reward.name, kind);
                       }}
                     />
                   );
@@ -256,6 +324,58 @@ export function ChoreOpsPanel() {
           </span>
           <p className="choreops-celebration-title">{celebration.title}</p>
           <p className="choreops-celebration-sub">{celebration.subtitle}</p>
+        </div>
+      )}
+
+      {pinPrompt && (
+        <div
+          className="choreops-pin"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('chores.pinTitle')}
+        >
+          <div className="choreops-pin-card">
+            <span className="choreops-pin-icon" aria-hidden="true">
+              {'\u{1F512}'}
+            </span>
+            <p className="choreops-pin-title">{t('chores.pinTitle')}</p>
+            <p className="choreops-pin-sub">{pinPrompt.subtitle}</p>
+            <p className="choreops-pin-hint">{t('chores.pinHint')}</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              autoComplete="off"
+              className="choreops-pin-input"
+              value={pinInput}
+              maxLength={6}
+              autoFocus
+              aria-label={t('chores.pinTitle')}
+              onChange={(event) => {
+                setPinInput(event.target.value.replace(/\D/g, '').slice(0, 6));
+                setPinError(false);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') submitPin();
+                if (event.key === 'Escape') closePinPrompt();
+              }}
+            />
+            {pinError && (
+              <p className="choreops-pin-error" role="alert">
+                {t('chores.pinWrong')}
+              </p>
+            )}
+            <div className="choreops-pin-actions">
+              <button type="button" className="choreops-secondary" onClick={closePinPrompt}>
+                {t('common.cancel')}
+              </button>
+              <button type="button" className="choreops-action" onClick={submitPin}>
+                <span className="choreops-action-main">{t('chores.pinConfirm')}</span>
+                <span className="choreops-action-reward" aria-hidden="true">
+                  {'\u{1F513}'}
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

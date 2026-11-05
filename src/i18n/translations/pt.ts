@@ -475,6 +475,12 @@ export const pt: Record<TranslationKey, string> = {
   'chores.claim': 'Reivindicar',
   'chores.approve': 'Aprovar',
   'chores.decline': 'Recusar',
+  'chores.pinTitle': 'Aprovação de adulto',
+  'chores.pinHint': 'Introduza o PIN de um adulto para aprovar ou recusar.',
+  'chores.pinWrong': 'Esse PIN não está correto.',
+  'chores.pinConfirm': 'Desbloquear',
+  'chores.pinRequired':
+    'Defina um PIN num adulto em Configurações → Família para aprovar tarefas aqui.',
   'chores.refresh': 'Atualizar',
   'chores.everyone': 'Todos',
   'chores.noChoresToday': 'Nada para fazer agora.',

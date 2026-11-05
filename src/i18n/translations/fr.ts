@@ -481,6 +481,12 @@ export const fr: Record<TranslationKey, string> = {
   'chores.claim': 'Revendiquer',
   'chores.approve': 'Approuver',
   'chores.decline': 'Refuser',
+  'chores.pinTitle': 'Validation parentale',
+  'chores.pinHint': 'Saisissez le code d’un parent pour approuver ou refuser.',
+  'chores.pinWrong': 'Ce code est incorrect.',
+  'chores.pinConfirm': 'Déverrouiller',
+  'chores.pinRequired':
+    'Définissez un code sur un parent dans Réglages → Famille pour valider les tâches ici.',
   'chores.refresh': 'Actualiser',
   'chores.everyone': 'Tout le monde',
   'chores.noChoresToday': 'Rien à faire pour le moment.',

@@ -479,6 +479,12 @@ export const it: Record<TranslationKey, string> = {
   'chores.claim': 'Rivendica',
   'chores.approve': 'Approva',
   'chores.decline': 'Rifiuta',
+  'chores.pinTitle': 'Approvazione genitore',
+  'chores.pinHint': 'Inserisci il PIN di un genitore per approvare o rifiutare.',
+  'chores.pinWrong': 'Questo PIN non è corretto.',
+  'chores.pinConfirm': 'Sblocca',
+  'chores.pinRequired':
+    'Imposta un PIN su un genitore in Impostazioni → Famiglia per approvare le faccende qui.',
   'chores.refresh': 'Aggiorna',
   'chores.everyone': 'Tutti',
   'chores.noChoresToday': 'Niente da fare per ora.',
