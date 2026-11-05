@@ -1,3 +1,22 @@
+# [1.43.0](https://github.com/nyabb/beacon/compare/v1.42.1...v1.43.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **test:** stop the dashboard layout guard from depending on LF line endings ([b2977fc](https://github.com/nyabb/beacon/commit/b2977fce6654977b2705f9514219ccb7607a0f37))
+
+
+### Features
+
+* add support for member photos in family settings ([894f56a](https://github.com/nyabb/beacon/commit/894f56ad9d40fafb53d69440020b083553b8778e))
+* **choreops:** add read-only ChoreOps chore backend behind runtime flag ([2b0ef98](https://github.com/nyabb/beacon/commit/2b0ef9868055f6f50fd59c3215c20b18c241bc59))
+* **choreops:** claim/approve actions via button.press with optimistic UI ([72e556e](https://github.com/nyabb/beacon/commit/72e556e30f8e1d9c01e5fe11a6144d6742e70d21))
+* **choreops:** drive dashboard and calendar chore widgets from the selected backend ([db059c2](https://github.com/nyabb/beacon/commit/db059c232e055a05cb6e18e00b717c976cc73886))
+* **choreops:** link family members to ChoreOps users ([56b6cc2](https://github.com/nyabb/beacon/commit/56b6cc299a45fed36e45a36064af95db22c55fa6))
+* **choreops:** list HA persons in the member picker so non-ChoreOps parents can be added ([a278a30](https://github.com/nyabb/beacon/commit/a278a3052a79d24ac10244acc16ce64981b35685))
+* **choreops:** source member identity from ChoreOps users in the add/edit form ([2091882](https://github.com/nyabb/beacon/commit/2091882e96e4f08fa055248dba97a8b53e9459b3))
+* **chores:** make ChoreOps the only chore source and restyle the chores screen ([4497a32](https://github.com/nyabb/beacon/commit/4497a32907edba7f1dd957ab19b3eabdcc5788b6))
+
 # [1.42.0](https://github.com/nyabb/beacon/compare/v1.41.0...v1.42.0) (2026-11-05)
 
 
