@@ -55,15 +55,16 @@ export function ChoreOpsPanel() {
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
-  /** PINs of every parent who has one set — any of them unlocks approval. */
-  const parentPins = useMemo(
-    () =>
-      members
-        .filter((member) => member.role === 'parent')
-        .map((member) => (member.pin ?? '').trim())
-        .filter((pin) => pin.length >= MIN_PIN_LENGTH),
-    [members],
-  );
+  /** PINs of every adult who has one set — any of them unlocks approval. */
+  const parentPins = useMemo(() => {
+    const pins = members
+      // Anything that is not explicitly a child counts as an adult here, so
+      // members saved before the role field existed still unlock approval.
+      .filter((member) => member.role !== 'child')
+      .map((member) => String(member.pin ?? '').trim())
+      .filter((pin) => pin.length >= MIN_PIN_LENGTH);
+    return Array.from(new Set(pins));
+  }, [members]);
   const approvalAllowed = parentPins.length > 0;
 
   // Qudoo-style congratulation screen: shows briefly, then gets out of the way.
@@ -122,7 +123,7 @@ export function ChoreOpsPanel() {
 
   const submitPin = useCallback(() => {
     if (!pinPrompt) return;
-    if (!parentPins.includes(pinInput)) {
+    if (!parentPins.includes(pinInput.trim())) {
       setPinError(true);
       return;
     }
@@ -183,10 +184,20 @@ export function ChoreOpsPanel() {
     { label: t('chores.stat.done'), value: totals.done },
   ];
 
+  // Household-wide counters ChoreOps publishes for work awaiting a signature.
+  const pendingApprovals =
+    (data?.pendingApprovals.chores ?? 0) + (data?.pendingApprovals.rewards ?? 0);
+
   return (
     <div className="choreops-screen">
       <header className="choreops-header">
         <h1 className="choreops-title">{t('nav.chores')}</h1>
+        {pendingApprovals > 0 && (
+          <span className="choreops-pending-badge">
+            <span aria-hidden="true">{'\u{1F514}'}</span>
+            {t('chores.pendingApprovals', { count: pendingApprovals })}
+          </span>
+        )}
         <button type="button" className="choreops-refresh" onClick={refresh}>
           {t('chores.refresh')}
         </button>

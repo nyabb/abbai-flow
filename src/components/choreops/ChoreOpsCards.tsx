@@ -120,14 +120,17 @@ export function ChoreTaskCard({
             {chore.points !== null && chore.points > 0 ? chore.points : null}
           </span>
         </button>
-      ) : (
+      ) : done ? (
         <button type="button" className="choreops-action choreops-action--done" disabled>
           <span className="choreops-action-main">{t('common.done')}</span>
           <span className="choreops-action-reward" aria-hidden="true">
             {'\u2713'}
           </span>
         </button>
-      )}
+      ) : null}
+      {/* An unassigned chore has no claim button to press, so it renders as a
+          read-only card rather than a button that cannot do anything. */}
+      {!primary && !done && <p className="choreops-card-hint">{t('chores.assignToClaim')}</p>}
 
       {showDecline && declineEid && (
         <button

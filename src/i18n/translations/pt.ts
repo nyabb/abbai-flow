@@ -481,6 +481,8 @@ export const pt: Record<TranslationKey, string> = {
   'chores.pinConfirm': 'Desbloquear',
   'chores.pinRequired':
     'Defina um PIN num adulto em Configurações → Família para aprovar tarefas aqui.',
+  'chores.pendingApprovals': '{count} à espera de aprovação',
+  'chores.assignToClaim': 'Atribua esta tarefa no ChoreOps para que alguém a possa reivindicar.',
   'chores.refresh': 'Atualizar',
   'chores.everyone': 'Todos',
   'chores.noChoresToday': 'Nada para fazer agora.',

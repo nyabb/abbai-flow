@@ -476,6 +476,8 @@ export const ja: Record<TranslationKey, string> = {
   'chores.pinWrong': 'PIN が正しくありません。',
   'chores.pinConfirm': 'ロック解除',
   'chores.pinRequired': '設定 → 家族 で保護者に PIN を設定すると、ここで家事を承認できます。',
+  'chores.pendingApprovals': '{count} 件が承認待ちです',
+  'chores.assignToClaim': 'ChoreOps でこの家事を割り当てると、引き受けられるようになります。',
   'chores.refresh': '更新',
   'chores.everyone': 'みんな',
   'chores.noChoresToday': '今はやることがありません。',

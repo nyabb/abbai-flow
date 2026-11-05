@@ -480,6 +480,8 @@ export const nl: Record<TranslationKey, string> = {
   'chores.pinConfirm': 'Ontgrendelen',
   'chores.pinRequired':
     'Stel een pincode in bij een ouder via Instellingen → Gezin om hier taken goed te keuren.',
+  'chores.pendingApprovals': '{count} wacht op goedkeuring',
+  'chores.assignToClaim': 'Wijs deze taak toe in ChoreOps zodat iemand hem kan claimen.',
   'chores.refresh': 'Vernieuwen',
   'chores.everyone': 'Iedereen',
   'chores.noChoresToday': 'Nu even niets te doen.',

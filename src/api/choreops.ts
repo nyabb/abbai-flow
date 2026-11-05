@@ -24,6 +24,16 @@ export const CHOREOPS_PURPOSE = {
   dashboardHelper: 'purpose_dashboard_helper',
   systemHelper: 'purpose_system_dashboard_helper',
   rewardStatus: 'purpose_reward_status',
+  /**
+   * One `sensor.system_choreops_<chore>_global_status` per chore, assigned or
+   * not. This is the only complete, household-wide chore inventory: it carries
+   * `chore_name`, `assigned_user_names`, `default_points` and the live status.
+   */
+  sharedChore: 'purpose_shared_chore',
+  /** `options` lists every chore name, including ones nobody is assigned to. */
+  allChores: 'purpose_select_chores',
+  pendingChoreApprovals: 'purpose_sensor_chores_pending_approval_extra',
+  pendingRewardApprovals: 'purpose_sensor_rewards_pending_approval_extra',
 } as const;
 
 /**
@@ -71,6 +81,18 @@ function num(source: Record<string, unknown>, key: string): number | null {
 
 function flag(source: Record<string, unknown>, key: string): boolean {
   return source[key] === true;
+}
+
+/** Read an attribute that may be a list of strings or a single string. */
+function stringList(source: Record<string, unknown>, key: string): string[] {
+  const value = source[key];
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is string => typeof item === 'string' && item.trim().length > 0,
+    );
+  }
+  if (typeof value === 'string' && value.trim().length > 0) return [value];
+  return [];
 }
 
 /** Classify an attribute key such as `claim_button_eid` into an action kind. */
@@ -171,8 +193,11 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
   const usersBySlug = new Map<string, ChoreOpsUser>();
   const rewards: ChoreOpsReward[] = [];
   const helperChores: ChoreOpsChore[] = [];
+  const sharedChores: ChoreOpsChore[] = [];
+  const allChoreNames: string[] = [];
   const choreButtons = new Map<string, ChoreOpsChore>();
   const rewardButtons = new Map<string, ChoreOpsReward>();
+  const pendingApprovals = { chores: 0, rewards: 0 };
   const people: HaPerson[] = [];
   let available = false;
 
@@ -242,6 +267,49 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       continue;
     }
 
+    if (purpose === CHOREOPS_PURPOSE.sharedChore) {
+      available = true;
+      const choreName = str(entity.attributes, 'chore_name');
+      if (choreName) {
+        // One record per assignee so each child gets their own card; a chore
+        // with nobody assigned becomes a single "everyone" entry.
+        const assignees = stringList(entity.attributes, 'assigned_user_names');
+        const targets: Array<string | null> = assignees.length > 0 ? assignees : [null];
+        for (const assignee of targets) {
+          sharedChores.push({
+            id: entity.entity_id,
+            name: choreName,
+            icon: str(entity.attributes, 'icon'),
+            status: entity.state,
+            assignee,
+            points: num(entity.attributes, 'default_points'),
+            canClaim: false,
+            canApprove: false,
+            actions: {},
+          });
+        }
+      }
+      continue;
+    }
+
+    if (purpose === CHOREOPS_PURPOSE.allChores) {
+      available = true;
+      for (const name of stringList(entity.attributes, 'options')) {
+        if (name.trim().toLowerCase() !== 'none') allChoreNames.push(name.trim());
+      }
+      continue;
+    }
+
+    if (purpose === CHOREOPS_PURPOSE.pendingChoreApprovals) {
+      pendingApprovals.chores = Number(entity.state) || 0;
+      continue;
+    }
+
+    if (purpose === CHOREOPS_PURPOSE.pendingRewardApprovals) {
+      pendingApprovals.rewards = Number(entity.state) || 0;
+      continue;
+    }
+
     // Per-chore action buttons: the authoritative chore inventory.
     const choreKind = CHORE_BUTTON_PURPOSES[purpose];
     if (choreKind) {
@@ -305,8 +373,19 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
   // only lists chores that are due; the buttons know every chore but carry no
   // metadata. Buttons win on actions, helper items win on presentation.
   const choreMap = new Map<string, ChoreOpsChore>();
-  for (const chore of helperChores) {
+  for (const chore of sharedChores) {
     choreMap.set(choreKey(chore.assignee, chore.name), chore);
+  }
+  for (const chore of helperChores) {
+    const key = choreKey(chore.assignee, chore.name);
+    const existing = choreMap.get(key);
+    if (existing) {
+      existing.icon = existing.icon ?? chore.icon;
+      existing.status = chore.status;
+      existing.points = existing.points ?? chore.points;
+      continue;
+    }
+    choreMap.set(key, chore);
   }
   for (const [key, chore] of choreButtons) {
     const existing = choreMap.get(key);
@@ -317,6 +396,30 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       continue;
     }
     choreMap.set(key, chore);
+  }
+
+  // Chores nobody is assigned to appear only in the select's option list, and
+  // ChoreOps publishes no claim button for them — they are listed so they can be
+  // seen (and fixed in ChoreOps), not so they can be claimed. Runs last so a
+  // chore that is reachable through a button is never duplicated here.
+  const knownChoreNames = new Set(
+    Array.from(choreMap.values()).map((chore) => chore.name.trim().toLowerCase()),
+  );
+  for (const name of allChoreNames) {
+    const normalized = name.trim().toLowerCase();
+    if (knownChoreNames.has(normalized)) continue;
+    knownChoreNames.add(normalized);
+    choreMap.set(choreKey(null, name), {
+      id: `chore:${normalized}`,
+      name,
+      icon: null,
+      status: 'unassigned',
+      assignee: null,
+      points: null,
+      canClaim: false,
+      canApprove: false,
+      actions: {},
+    });
   }
 
   const rewardMap = new Map<string, ChoreOpsReward>();
@@ -339,6 +442,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     rewards: Array.from(rewardMap.values()),
     people,
     pointsByUser,
+    pendingApprovals,
     available,
   };
 }

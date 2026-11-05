@@ -657,3 +657,32 @@
   flex: 1 1 auto;
   min-height: 52px;
 }
+
+/* ---- Pending-approval badge (household counter from ChoreOps) ---- */
+
+.choreops-pending-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--bg-surface));
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ---- Read-only card hint (e.g. a chore nobody is assigned to) ---- */
+
+.choreops-card-hint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  text-align: center;
+}
