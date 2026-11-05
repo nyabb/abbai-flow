@@ -1225,9 +1225,11 @@ export function SettingsView({
                 </span>
               </div>
             )}
-            {peopleOptions.length > 0 && (
-              <div className="settings-row">
-                <div className="settings-row-label">From Home Assistant</div>
+            {/* Always rendered: when the picker vanished entirely it looked
+                like the feature was missing rather than "HA returned nobody". */}
+            <div className="settings-row">
+              <div className="settings-row-label">{t('settings.family.haMembersLabel')}</div>
+              {peopleOptions.length > 0 ? (
                 <select
                   value={memberForm.choreops_user}
                   onChange={(e) => {
@@ -1257,8 +1259,12 @@ export function SettingsView({
                     );
                   })}
                 </select>
-              </div>
-            )}
+              ) : (
+                <span className="settings-row-sublabel" style={{ maxWidth: 320 }}>
+                  {t('settings.family.haMembersEmpty')}
+                </span>
+              )}
+            </div>
             <div className="settings-row" style={{ alignItems: 'flex-start' }}>
               <div className="settings-row-label" style={{ paddingTop: 4 }}>
                 {t('settings.family.colorLabel')}

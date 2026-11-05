@@ -228,6 +228,9 @@ export const en = {
   'settings.family.photoRemove': 'Remove photo',
   'settings.family.photoFromHa': 'Use Home Assistant photo',
   'settings.family.photoError': 'That file could not be used. Try a PNG, JPEG or WebP image.',
+  'settings.family.haMembersLabel': 'From Home Assistant',
+  'settings.family.haMembersEmpty':
+    'No Home Assistant people found. Check that Beacon can reach Home Assistant, then reload.',
   'settings.family.avatarCategory.people': 'People',
   'settings.family.avatarCategory.skinTones': 'Skin Tones',
   'settings.family.avatarCategory.faces': 'Faces',

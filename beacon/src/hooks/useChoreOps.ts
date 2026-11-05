@@ -1,24 +1,50 @@
 /**
  * ChoreOps data hook.
  *
- * Reuses the single HomeAssistantClient from useHomeAssistant (no second
- * WebSocket connection). Reads an initial state snapshot, then refetches on
- * `state_changed` events for ChoreOps entities only, debounced to avoid a
- * refetch per entity during a burst of ChoreOps updates.
+ * Beacon runs in two shapes and they need different transports:
  *
- * The snapshot and the state_changed subscription are shared by every caller
- * and ref-counted by mount/unmount: the dashboard, leaderboard, chores screen,
- * settings and focus mode all read the same data. Without that sharing each
- * caller would hold its own subscription and run its own full `get_states`
- * whenever ChoreOps updates anything.
+ *  - Direct-token / dev: `useHomeAssistant` creates a HomeAssistantClient, so
+ *    we read `get_states` over its WebSocket and subscribe to `state_changed`
+ *    for a live, debounced refetch.
+ *  - Add-on / standalone Docker: the browser has no token and `useHomeAssistant`
+ *    deliberately creates NO client (the server injects the token), so
+ *    `client()` returns null. Reading only through the client left this hook
+ *    stuck on `loading` forever there — which is why the chores screen and the
+ *    ChoreOps member picker came up empty in the container. That path now falls
+ *    back to the REST API (proxied server-side) and polls.
+ *
+ * The snapshot and the subscription are shared by every caller and ref-counted
+ * by mount/unmount, so a ChoreOps update causes one refetch per app rather than
+ * one per consumer.
  */
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { HomeAssistantClient } from '../api/homeassistant';
+import { callHaService, getAllEntityStates, hasToken } from '../api/ha-rest';
 import { useHomeAssistant } from './useHomeAssistant';
 import { normalizeChoreOps, purposeOf } from '../api/choreops';
 import type { ChoreOpsEntityState, ChoreOpsState } from '../types/choreops';
 
 const REFETCH_DEBOUNCE_MS = 400;
+
+/** REST fallback poll interval — ChoreOps changes are human-paced. */
+const REST_POLL_MS = 30_000;
+
+export interface UseChoreOpsResult {
+  data: ChoreOpsState | null;
+  loading: boolean;
+  error: string | null;
+  /** True when HA is connected and at least one ChoreOps entity was found. */
+  available: boolean;
+  refresh: () => void;
+  /** Press a ChoreOps action button (claim/approve/disapprove). */
+  pressButton: (entityId: string) => Promise<void>;
+}
+
+interface ChoreOpsSnapshot {
+  data: ChoreOpsState | null;
+  loading: boolean;
+  error: string | null;
+}
 
 interface StateChangedPayload {
   entity_id?: unknown;
@@ -52,23 +78,6 @@ function isChoreOpsEntity(event: unknown): boolean {
   );
 }
 
-export interface UseChoreOpsResult {
-  data: ChoreOpsState | null;
-  loading: boolean;
-  error: string | null;
-  /** True when HA is connected and at least one ChoreOps entity was found. */
-  available: boolean;
-  refresh: () => void;
-  /** Press a ChoreOps action button (claim/approve/disapprove). */
-  pressButton: (entityId: string) => Promise<void>;
-}
-
-interface ChoreOpsSnapshot {
-  data: ChoreOpsState | null;
-  loading: boolean;
-  error: string | null;
-}
-
 let snapshot: ChoreOpsSnapshot = { data: null, loading: true, error: null };
 const listeners = new Set<() => void>();
 let refCount = 0;
@@ -90,58 +99,84 @@ function getSnapshot(): ChoreOpsSnapshot {
   return snapshot;
 }
 
-async function loadSnapshot(activeClient: HomeAssistantClient): Promise<void> {
+function applyStates(states: ChoreOpsEntityState[]): void {
+  emit({ data: normalizeChoreOps(states), error: null, loading: false });
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : 'Failed to read ChoreOps entities';
+}
+
+async function loadViaClient(activeClient: HomeAssistantClient): Promise<void> {
   try {
-    const states = (await activeClient.getStates()) as ChoreOpsEntityState[];
-    emit({ data: normalizeChoreOps(states), error: null, loading: false });
+    applyStates((await activeClient.getStates()) as ChoreOpsEntityState[]);
   } catch (err) {
-    emit({
-      error: err instanceof Error ? err.message : 'Failed to read ChoreOps entities',
-      loading: false,
-    });
+    emit({ error: errorMessage(err), loading: false });
   }
 }
 
 /**
- * Register a consumer of the shared snapshot. The first consumer owns the
- * subscription; the last one to unmount tears it down.
+ * REST read. `getAllEntityStates` swallows transport errors and yields `[]`,
+ * which normalises to "no ChoreOps entities" — the panel's empty state.
  */
-function acquire(activeClient: HomeAssistantClient): () => void {
+async function loadViaRest(): Promise<void> {
+  applyStates(await getAllEntityStates());
+}
+
+/** Live transport: initial snapshot plus a debounced `state_changed` refetch. */
+function startClient(activeClient: HomeAssistantClient): () => void {
+  void loadViaClient(activeClient);
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let subscriptionId: number | null = null;
+  let cancelled = false;
+
+  activeClient
+    .subscribeStateChanges((event) => {
+      if (!isChoreOpsEntity(event)) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (!cancelled) void loadViaClient(activeClient);
+      }, REFETCH_DEBOUNCE_MS);
+    })
+    .then((id) => {
+      if (cancelled) {
+        activeClient.unsubscribe(id);
+        return;
+      }
+      subscriptionId = id;
+    })
+    .catch(() => {
+      /* subscription is an optimisation; the snapshot still loads */
+    });
+
+  return () => {
+    cancelled = true;
+    if (timer) clearTimeout(timer);
+    if (subscriptionId !== null) activeClient.unsubscribe(subscriptionId);
+  };
+}
+
+/** Proxy-mode transport: no WebSocket, so poll the REST API instead. */
+function startRestPolling(): () => void {
+  void loadViaRest();
+  const interval = setInterval(() => {
+    void loadViaRest();
+  }, REST_POLL_MS);
+  return () => clearInterval(interval);
+}
+
+/**
+ * Register a consumer of the shared snapshot. The first consumer starts the
+ * transport; the last one to unmount tears it down.
+ */
+function acquire(start: () => () => void): () => void {
   refCount += 1;
 
   if (refCount === 1) {
     // Only show the loading state when there is nothing cached to render.
     emit({ loading: snapshot.data === null });
-    void loadSnapshot(activeClient);
-
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let subscriptionId: number | null = null;
-    let cancelled = false;
-
-    activeClient
-      .subscribeStateChanges((event) => {
-        if (!isChoreOpsEntity(event)) return;
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(() => {
-          if (!cancelled) void loadSnapshot(activeClient);
-        }, REFETCH_DEBOUNCE_MS);
-      })
-      .then((id) => {
-        if (cancelled) {
-          activeClient.unsubscribe(id);
-          return;
-        }
-        subscriptionId = id;
-      })
-      .catch(() => {
-        /* subscription is an optimisation; the snapshot still loads */
-      });
-
-    teardown = () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-      if (subscriptionId !== null) activeClient.unsubscribe(subscriptionId);
-    };
+    teardown = start();
   }
 
   return () => {
@@ -158,16 +193,30 @@ export function useChoreOps(): UseChoreOpsResult {
 
   useEffect(() => {
     const activeClient = client();
-    if (!activeClient || !connected) return;
-    return acquire(activeClient);
+    if (activeClient && connected) {
+      return acquire(() => startClient(activeClient));
+    }
+
+    // No *live* client: either a proxy deployment never creates one, or the
+    // WebSocket has not connected (CORS, HA unreachable). The REST API is then
+    // the only thing that can answer — and it keeps the screen from sitting on
+    // "loading" forever.
+    if (hasToken()) {
+      return acquire(startRestPolling);
+    }
+
+    return undefined;
   }, [client, connected]);
 
   const refresh = useCallback(() => {
+    emit({ loading: snapshot.data === null });
     const activeClient = client();
-    if (!activeClient) return;
-    emit({ loading: true });
-    void loadSnapshot(activeClient);
-  }, [client]);
+    if (activeClient && connected) {
+      void loadViaClient(activeClient);
+      return;
+    }
+    void loadViaRest();
+  }, [client, connected]);
 
   /**
    * Invoke a ChoreOps action by pressing its button entity.
@@ -176,14 +225,21 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const pressButton = useCallback(
     async (entityId: string): Promise<void> => {
-      const activeClient = client();
-      if (!activeClient) throw new Error('Not connected to Home Assistant');
       if (!entityId.startsWith('button.')) {
         throw new Error(`Not a button entity: ${entityId}`);
       }
-      await activeClient.callService('button', 'press', entityId);
+
+      const activeClient = client();
+      if (activeClient && connected) {
+        await activeClient.callService('button', 'press', entityId);
+        return;
+      }
+
+      await callHaService('button', 'press', { entity_id: entityId });
+      // REST mode has no state_changed stream, so pull the new state ourselves.
+      void loadViaRest();
     },
-    [client],
+    [client, connected],
   );
 
   return useMemo(

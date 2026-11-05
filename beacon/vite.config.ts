@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
@@ -19,18 +19,35 @@ function getAppVersion(): string {
   return '0.0.0';
 }
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 3000,
-    host: true,
-  },
-  base: './',
-  define: {
-    __APP_VERSION__: JSON.stringify(getAppVersion()),
-  },
-  build: {
-    outDir: 'dist',
-    sourcemap: false,
-  },
+export default defineConfig(({ mode }) => {
+  // Dev-only stand-in for the add-on's server proxy: forward /api to HA so REST
+  // calls stay same-origin and CORS never comes into play. Mirrors the
+  // condition in src/api/ha-rest.ts's resolveBaseUrl().
+  const haUrl = loadEnv(mode, process.cwd(), '').VITE_HA_URL?.trim();
+
+  return {
+    plugins: [react()],
+    server: {
+      port: 3000,
+      host: true,
+      proxy: haUrl
+        ? {
+            '/api': {
+              target: haUrl.replace(/\/$/, ''),
+              changeOrigin: true,
+              secure: false,
+              ws: true,
+            },
+          }
+        : undefined,
+    },
+    base: './',
+    define: {
+      __APP_VERSION__: JSON.stringify(getAppVersion()),
+    },
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+    },
+  };
 });

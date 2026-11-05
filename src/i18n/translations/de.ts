@@ -227,6 +227,9 @@ export const de: Record<TranslationKey, string> = {
   'settings.family.photoFromHa': 'Home-Assistant-Foto verwenden',
   'settings.family.photoError':
     'Diese Datei konnte nicht verwendet werden. Versuche ein PNG-, JPEG- oder WebP-Bild.',
+  'settings.family.haMembersLabel': 'Aus Home Assistant',
+  'settings.family.haMembersEmpty':
+    'Keine Home-Assistant-Personen gefunden. Prüfe, ob Beacon Home Assistant erreicht, und lade neu.',
   'settings.family.avatarCategory.people': 'Personen',
   'settings.family.avatarCategory.skinTones': 'Hauttöne',
   'settings.family.avatarCategory.faces': 'Gesichter',
