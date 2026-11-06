@@ -1414,7 +1414,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             className="planner-hero-avatar"
             style={{ background: selectedTodayMember.color + '24' }}
           >
-            {selectedTodayMember.avatar}
+            <MemberAvatar member={selectedTodayMember} />
           </span>
           <p className="planner-eyebrow">04 / 04</p>
           <h2>
@@ -1538,7 +1538,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                           }))
                         }
                       >
-                        <span>{member.avatar}</span>
+                        <span>
+                          <MemberAvatar member={member} />
+                        </span>
                         {member.name}
                       </button>
                     ))}

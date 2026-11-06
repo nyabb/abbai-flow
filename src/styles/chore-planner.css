@@ -32,6 +32,9 @@
   --planner-amber-soft: #fff1d7;
   --planner-blue: #527b9f;
   --planner-blue-soft: #e9f1f8;
+  /* Reusable soft fill and warm-amber ink for the light palette. */
+  --planner-soft: #edf1ed;
+  --planner-amber-ink: #8b5a16;
   position: relative;
   height: 100%;
   min-height: 100vh;
@@ -43,6 +46,62 @@
   font-family: var(--font-body, 'Trebuchet MS', sans-serif);
 }
 
+/* Dark theme: the planner keeps its own palette, so mirror it here instead of
+   inheriting the app tokens (the warm paper look was designed light-first). */
+[data-theme='dark'] .chore-planner {
+  --planner-bg: #0f172a;
+  --planner-surface: #1e293b;
+  --planner-ink: #f8fafc;
+  --planner-muted: #9aa8b8;
+  --planner-line: #334155;
+  --planner-accent: #e0806c;
+  --planner-accent-soft: #3a2723;
+  --planner-green: #5aa88b;
+  --planner-green-soft: #1b3a30;
+  --planner-amber: #d9a44f;
+  --planner-amber-soft: #3a2f1b;
+  --planner-blue: #7aa5c9;
+  --planner-blue-soft: #1d2b38;
+  --planner-soft: #26344a;
+  --planner-amber-ink: #f0c684;
+}
+
+[data-theme='dark'] .chore-planner {
+  background:
+    radial-gradient(ellipse at 92% -12%, rgba(56, 84, 70, 0.5), transparent 38%), var(--planner-bg);
+}
+
+/* Surfaces that used to be literal white get an explicit dark declaration so no
+   stale light rule can outrank the palette above. */
+[data-theme='dark'] .chore-planner .planner-task,
+[data-theme='dark'] .chore-planner .planner-sheet,
+[data-theme='dark'] .chore-planner .planner-add,
+[data-theme='dark'] .chore-planner .planner-icon-button,
+[data-theme='dark'] .chore-planner .planner-member-picker button,
+[data-theme='dark'] .chore-planner .planner-stepper button {
+  background: var(--planner-surface);
+  color: var(--planner-ink);
+}
+
+[data-theme='dark'] .chore-planner .planner-task {
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Hide scrollbars inside the planner — the board and the sheets still scroll by
+   touch, wheel and keyboard, they just don't show a track. */
+.chore-planner,
+.chore-planner * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chore-planner *::-webkit-scrollbar,
+.chore-planner::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 .planner-header {
   position: relative;
   z-index: 3;
@@ -52,8 +111,8 @@
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
-  min-height: 94px;
-  padding: 16px clamp(18px, 3vw, 56px);
+  min-height: 64px;
+  padding: 6px clamp(18px, 3vw, 56px);
   background: color-mix(in srgb, var(--planner-bg) 92%, transparent);
 }
 
@@ -62,7 +121,7 @@
   min-width: 0;
   margin: 0;
   font-family: var(--font-display, 'Trebuchet MS', sans-serif);
-  font-size: clamp(26px, 2.4vw, 40px);
+  font-size: clamp(21px, 1.8vw, 29px);
   font-weight: 700;
   line-height: 1.12;
   color: var(--planner-ink);
@@ -108,8 +167,8 @@
 .planner-header-action svg,
 .planner-icon-button svg,
 .planner-add svg {
-  width: 23px;
-  height: 23px;
+  width: 20px;
+  height: 20px;
 }
 
 .planner-header-action.is-active {
@@ -118,9 +177,10 @@
 }
 
 .planner-add {
-  flex: 0 0 68px;
-  width: 68px;
-  height: 68px;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
   border-radius: 50%;
   color: white;
   background: var(--planner-accent);
@@ -128,10 +188,10 @@
 }
 
 .planner-icon-button {
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
-  min-height: 48px;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  min-height: 42px;
   border-radius: 50%;
   color: var(--planner-muted);
   background: transparent;
@@ -139,7 +199,7 @@
 
 .planner-language {
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.65);
+  background: color-mix(in srgb, var(--planner-surface) 65%, transparent);
   font-size: 13px;
 }
 
@@ -148,7 +208,7 @@
 .planner-filter-group button:hover,
 .planner-ghost:hover,
 .planner-date-chips button:hover {
-  background: #e9eeea;
+  background: var(--planner-soft);
 }
 
 .planner-pause-banner {
@@ -161,7 +221,7 @@
   margin: 0 auto 16px;
   padding: 18px 22px;
   border-radius: 14px;
-  color: #72501b;
+  color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
   font-size: 19px;
 }
@@ -171,7 +231,7 @@
   padding: 0 14px;
   border: 0;
   border-radius: 10px;
-  color: #72501b;
+  color: var(--planner-amber-ink);
   background: transparent;
   font: inherit;
   font-weight: 700;
@@ -184,8 +244,8 @@
   margin: 0 auto 14px;
   padding: 15px 20px;
   border-radius: 12px;
-  color: #7d3a2c;
-  background: #fbe7e2;
+  color: var(--planner-accent);
+  background: var(--planner-accent-soft);
   font-size: 16px;
   font-weight: 700;
   text-align: center;
@@ -200,6 +260,8 @@
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
+  /* Keep the filter bar clear of the header instead of butting against it. */
+  margin-top: 8px;
   padding: 0 clamp(18px, 3vw, 56px) 15px;
 }
 
@@ -219,14 +281,20 @@
   min-height: 48px;
   padding: 0 16px;
   border-radius: 24px;
-  color: #52605b;
-  background: rgba(255, 255, 255, 0.7);
+  color: var(--planner-muted);
+  background: color-mix(in srgb, var(--planner-surface) 70%, transparent);
   font-size: 16px;
   white-space: nowrap;
 }
 
 .planner-filter-group button span {
-  font-size: 20px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  font-size: 16px;
 }
 .planner-filter-group button.is-selected {
   color: #fff;
@@ -238,7 +306,8 @@
 }
 
 .planner-content {
-  height: calc(100% - 216px);
+  /* Header 64 + filter bar 63 + the 8px gap between them + section padding. */
+  height: calc(100% - 224px);
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
@@ -256,7 +325,7 @@
   align-items: baseline;
   gap: 11px;
   margin: 0 0 11px;
-  color: #59645f;
+  color: var(--planner-muted);
   font-size: 19px;
   font-weight: 800;
 }
@@ -268,7 +337,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--planner-muted);
-  background: #e8ede8;
+  background: var(--planner-soft);
   font-size: 14px;
 }
 
@@ -307,7 +376,7 @@
   width: 46px;
   height: 46px;
   place-items: center;
-  border: 3px solid #d5ddd7;
+  border: 3px solid var(--planner-line);
   border-radius: 50%;
   color: #fff;
   background: transparent;
@@ -320,7 +389,7 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #e7ece8;
+  background: var(--planner-soft);
 }
 .planner-check svg {
   width: 30px;
@@ -346,7 +415,7 @@
   height: 34px;
   place-items: center;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--member-color) 12%, white);
+  background: color-mix(in srgb, var(--member-color) 12%, var(--planner-surface));
   font-size: 20px;
 }
 .planner-task-copy {
@@ -368,7 +437,7 @@
   text-overflow: ellipsis;
 }
 .planner-task-title-row h3.is-struck {
-  color: #89928e;
+  color: var(--planner-muted);
   text-decoration: line-through;
 }
 .planner-task-copy p {
@@ -389,10 +458,10 @@
 }
 .planner-task--late .planner-status-dot,
 .planner-task--retry .planner-status-dot {
-  background: #c18a2f;
+  background: var(--planner-amber);
 }
 .planner-task--expired .planner-status-dot {
-  background: #a2aaa5;
+  background: var(--planner-muted);
 }
 .planner-task--completed .planner-status-dot {
   background: var(--planner-green);
@@ -401,16 +470,16 @@
   opacity: 0.73;
 }
 .planner-task--late {
-  background: #fffaf0;
+  background: var(--planner-amber-soft);
 }
 .planner-task--retry {
-  background: #fff7e8;
+  background: var(--planner-amber-soft);
 }
 .planner-task--expired {
-  background: #edf0ed;
+  background: var(--planner-soft);
 }
 .planner-task--completed {
-  background: #f0f7f2;
+  background: var(--planner-soft);
 }
 
 .planner-task-meta {
@@ -422,8 +491,8 @@
 .planner-points {
   padding: 10px 13px;
   border-radius: 20px;
-  color: #8b5a16;
-  background: #fff1d9;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
   font-size: 17px;
   font-weight: 800;
   white-space: nowrap;
@@ -432,7 +501,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #4a5751;
+  color: var(--planner-muted);
   font-size: 16px;
   font-weight: 700;
   white-space: nowrap;
@@ -446,7 +515,7 @@
   place-items: center;
   border: 2px solid var(--member-color);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--member-color) 18%, white);
+  background: color-mix(in srgb, var(--member-color) 18%, var(--planner-surface));
   font-size: 22px;
   overflow: hidden;
 }
@@ -456,8 +525,8 @@
   gap: 6px;
   padding: 10px 12px;
   border-radius: 20px;
-  color: #57635e;
-  background: #f1f4f1;
+  color: var(--planner-muted);
+  background: var(--planner-soft);
   font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
@@ -473,7 +542,7 @@
   background: var(--planner-accent);
 }
 .planner-claim:hover {
-  background: #ad5140;
+  background: var(--planner-accent);
 }
 .planner-task-more {
   display: grid;
@@ -483,14 +552,14 @@
   border: 0;
   border-radius: 50%;
   color: var(--planner-muted);
-  background: #f1f4f1;
+  background: var(--planner-soft);
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
 }
 .planner-task-more:hover {
   color: var(--planner-ink);
-  background: #e7ece8;
+  background: var(--planner-soft);
 }
 
 .planner-section--completed .planner-collapse {
@@ -501,7 +570,7 @@
   min-height: 54px;
   padding: 0 5px;
   border: 0;
-  color: #78827d;
+  color: var(--planner-muted);
   background: transparent;
   font: inherit;
   font-size: 19px;
@@ -532,7 +601,7 @@
   min-height: 68px;
   padding: 12px 16px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--planner-surface) 72%, transparent);
 }
 .planner-routine-row > span:first-child {
   font-size: 27px;
@@ -558,7 +627,7 @@
 .planner-empty > svg {
   width: 76px;
   height: 76px;
-  color: #b7c8bc;
+  color: var(--planner-muted);
 }
 .planner-empty strong {
   font-size: 24px;
@@ -589,7 +658,7 @@
   min-height: 56px;
   padding: 0 20px;
   color: var(--planner-ink);
-  background: #edf1ed;
+  background: var(--planner-soft);
 }
 
 .planner-bottom-nav {
@@ -603,7 +672,7 @@
   gap: 16px;
   min-height: 82px;
   padding: 9px 16px max(9px, env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--planner-surface);
   box-shadow: 0 -3px 18px rgba(38, 51, 47, 0.07);
 }
 .planner-bottom-nav button {
@@ -626,7 +695,7 @@
   place-items: center;
   border-radius: 50%;
   color: var(--planner-ink);
-  background: #f0f3f0;
+  background: var(--planner-soft);
   font-size: 22px;
 }
 .planner-bottom-nav button strong {
@@ -687,7 +756,7 @@
   min-height: 44px;
   border-radius: 50%;
   color: var(--planner-muted);
-  background: #f0f3f0;
+  background: var(--planner-soft);
 }
 .planner-segment {
   display: grid;
@@ -695,7 +764,7 @@
   gap: 5px;
   padding: 5px;
   border-radius: 14px;
-  background: #edf1ed;
+  background: var(--planner-soft);
 }
 .planner-segment button {
   min-height: 48px;
@@ -704,7 +773,7 @@
 }
 .planner-segment button.is-selected {
   color: var(--planner-ink);
-  background: white;
+  background: var(--planner-surface);
   box-shadow: 0 2px 7px rgba(38, 51, 47, 0.08);
 }
 .planner-segment button:disabled {
@@ -738,7 +807,7 @@
   border: 1px solid var(--planner-line);
   border-radius: 12px;
   color: var(--planner-ink);
-  background: white;
+  background: var(--planner-surface);
   font: inherit;
   font-size: 17px;
 }
@@ -749,7 +818,7 @@
   border: 1px solid var(--planner-line);
   border-radius: 12px;
   color: var(--planner-ink);
-  background: white;
+  background: var(--planner-surface);
   font: inherit;
   font-size: 26px;
   letter-spacing: 0.4em;
@@ -768,7 +837,7 @@
   height: 42px;
   border: 0;
   border-radius: 10px;
-  background: #f5f7f4;
+  background: var(--planner-soft);
   font-size: 22px;
   cursor: pointer;
 }
@@ -787,7 +856,7 @@
   border: 0;
   border-radius: 13px;
   color: var(--planner-ink);
-  background: #edf1ed;
+  background: var(--planner-soft);
   font-size: 27px;
   cursor: pointer;
 }
@@ -805,11 +874,27 @@
   min-height: 54px;
   padding: 0 13px;
   color: var(--planner-ink);
-  background: #f2f5f2;
+  background: var(--planner-soft);
   font-size: 15px;
 }
 .planner-member-picker button span {
-  font-size: 22px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  font-size: 16px;
+}
+
+/* Photos must never stretch: the wrapper is square, the image covers it. */
+.chore-planner .member-photo {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
 }
 .planner-member-picker button.is-selected {
   outline: 2px solid var(--planner-accent);
@@ -836,7 +921,7 @@
   min-height: 42px;
   padding: 0 14px;
   color: var(--planner-ink);
-  background: #edf1ed;
+  background: var(--planner-soft);
 }
 .planner-time-pair {
   display: grid;
@@ -853,7 +938,7 @@
   min-height: 46px;
   border-radius: 50%;
   color: var(--planner-muted);
-  background: #edf1ed;
+  background: var(--planner-soft);
 }
 .planner-weekdays button.is-selected {
   color: white;
@@ -883,7 +968,7 @@
   padding: 9px 14px;
   border: 1px solid var(--planner-line);
   color: var(--planner-ink);
-  background: white;
+  background: var(--planner-surface);
   text-align: left;
 }
 .planner-destination > span {
@@ -892,7 +977,7 @@
   height: 40px;
   place-items: center;
   border-radius: 11px;
-  background: #f4f6f3;
+  background: var(--planner-soft);
   font-size: 23px;
 }
 .planner-destination > small {
@@ -903,7 +988,7 @@
   height: 6px;
   overflow: hidden;
   border-radius: 4px;
-  background: #edf1ed;
+  background: var(--planner-soft);
 }
 .planner-destination > i b {
   display: block;
@@ -911,12 +996,15 @@
   background: var(--planner-green);
 }
 .planner-danger {
-  color: #a4483a;
+  color: var(--planner-accent);
 }
 
 .planner-today-lobby {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* auto-fit + justify-content centres the group even when the household has
+     fewer children than there are tracks (3 kids in a 4-column grid sat left). */
+  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
+  justify-content: center;
   gap: 18px;
   height: calc(100% - 176px);
   padding: 24px clamp(18px, 4vw, 72px) 120px;
@@ -932,7 +1020,7 @@
   border: 0;
   border-radius: 18px;
   color: var(--planner-ink);
-  background: white;
+  background: var(--planner-surface);
   box-shadow: 0 5px 20px rgba(38, 51, 47, 0.07);
   cursor: pointer;
 }
@@ -941,7 +1029,9 @@
   display: grid;
   width: 112px;
   height: 112px;
+  margin-inline: auto;
   place-items: center;
+  overflow: hidden;
   border: 3px solid var(--member-color, transparent);
   border-radius: 50%;
   font-size: 64px;
@@ -1010,7 +1100,7 @@
   padding: 15px 18px;
   border-radius: 14px;
   color: var(--planner-muted);
-  background: rgba(255, 255, 255, 0.82);
+  background: color-mix(in srgb, var(--planner-surface) 82%, transparent);
   font-size: 16px;
 }
 .planner-today-info strong {
@@ -1024,7 +1114,7 @@
   min-width: 160px;
   padding: 20px;
   border-radius: 15px;
-  background: white;
+  background: var(--planner-surface);
   color: var(--planner-muted);
 }
 .planner-overview-stats strong {
@@ -1062,7 +1152,7 @@
   height: 8px;
   overflow: hidden;
   border-radius: 5px;
-  background: #dfe6e0;
+  background: var(--planner-line);
 }
 .planner-mission-progress i {
   display: block;
@@ -1090,8 +1180,8 @@
 .planner-mission-hero b {
   padding: 12px 18px;
   border-radius: 30px;
-  color: #8b5a16;
-  background: #fff1d9;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
   font-size: 21px;
 }
 .planner-mission-hero p {
@@ -1459,7 +1549,7 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: 14px;
-  background: #f7f9f7;
+  background: var(--planner-soft);
   text-align: left;
 }
 
@@ -1489,7 +1579,7 @@
 .planner-reward-copy i {
   height: 6px;
   border-radius: 999px;
-  background: #e4e9e4;
+  background: var(--planner-line);
   overflow: hidden;
 }
 
