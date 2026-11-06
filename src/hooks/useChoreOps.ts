@@ -39,6 +39,15 @@ import type { ChoreOpsEntityState, ChoreOpsState } from '../types/choreops';
 
 const REFETCH_DEBOUNCE_MS = 400;
 
+/**
+ * How long a write keeps re-reading until ChoreOps publishes its new state.
+ * ChoreOps updates its sensors a beat after the service call returns, and in
+ * proxy/add-on mode there is no WebSocket to push that change — so the write
+ * itself has to wait for it instead of leaving stale chores on the board.
+ */
+const WRITE_REFRESH_INTERVAL_MS = 350;
+const WRITE_REFRESH_ATTEMPTS = 8;
+
 /** REST fallback poll interval — ChoreOps changes are human-paced. */
 const REST_POLL_MS = 30_000;
 
@@ -135,6 +144,28 @@ function applyStates(states: ChoreOpsEntityState[]): void {
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : 'Failed to read ChoreOps entities';
+}
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Cheap identity for a ChoreOps snapshot.
+ *
+ * Every read normalises into a brand-new object even when nothing changed, so
+ * reference equality cannot tell a real update from a no-op. This signature
+ * can, and it is what lets a write stop re-reading as soon as the new state
+ * lands.
+ */
+function signature(data: ChoreOpsState | null): string {
+  if (!data) return '';
+  const users = data.users.map((user) => `${user.name}:${user.points}`);
+  const chores = data.chores.map(
+    (chore) => `${chore.name}:${chore.status}:${chore.points}:${chore.assignee ?? ''}`,
+  );
+  const rewards = data.rewards.map(
+    (reward) => `${reward.name}:${reward.cost}:${reward.status}:${reward.assignee ?? ''}`,
+  );
+  return [users.join(','), chores.join('|'), rewards.join('|')].join('#');
 }
 
 async function loadViaClient(activeClient: HomeAssistantClient): Promise<void> {
@@ -249,6 +280,27 @@ export function useChoreOps(): UseChoreOpsResult {
   }, [client, connected]);
 
   /**
+   * Pull the new ChoreOps state right after a write.
+   *
+   * Re-reads immediately, then keeps re-reading (briefly) until the snapshot
+   * actually changes. Waiting for a single read is not enough: ChoreOps
+   * publishes the new chore status/points a moment after the service call
+   * returns, and with no `state_changed` stream the board would otherwise keep
+   * showing the old values until the next poll or a page reload.
+   */
+  const reloadAfterWrite = useCallback(async (): Promise<void> => {
+    const before = signature(snapshot.data);
+    const activeClient = client();
+    const read = activeClient && connected ? () => loadViaClient(activeClient) : loadViaRest;
+
+    for (let attempt = 0; attempt < WRITE_REFRESH_ATTEMPTS; attempt += 1) {
+      await read();
+      if (signature(snapshot.data) !== before) return;
+      await delay(WRITE_REFRESH_INTERVAL_MS);
+    }
+  }, [client, connected]);
+
+  /**
    * Invoke a ChoreOps action by pressing its button entity.
    * ChoreOps exposes actions only as `button.*` entities, discovered from the
    * parent sensor's attributes — never hardcoded.
@@ -262,14 +314,14 @@ export function useChoreOps(): UseChoreOpsResult {
       const activeClient = client();
       if (activeClient && connected) {
         await activeClient.callService('button', 'press', entityId);
-        return;
+      } else {
+        await callHaService('button', 'press', { entity_id: entityId });
       }
 
-      await callHaService('button', 'press', { entity_id: entityId });
-      // REST mode has no state_changed stream, so pull the new state ourselves.
-      void loadViaRest();
+      // Show the result of the press straight away in both transports.
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [client, connected, reloadAfterWrite],
   );
 
   /**
@@ -301,11 +353,9 @@ export function useChoreOps(): UseChoreOpsResult {
         await callHaService('choreops', 'claim_chore', target);
       }
 
-      const activeClient = client();
-      if (activeClient && connected) void loadViaClient(activeClient);
-      else void loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   /**
@@ -320,11 +370,9 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await callHaService('choreops', 'create_chore', payload);
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   /** Create a reward for the given ChoreOps users. */
@@ -336,11 +384,9 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await callHaService('choreops', 'create_reward', payload);
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   /** Delete a chore in ChoreOps by name (the id ChoreOps publishes). */
@@ -352,11 +398,9 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await callHaService('choreops', 'update_reward', payload);
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   /** Remove a reward from ChoreOps by name. */
@@ -368,11 +412,9 @@ export function useChoreOps(): UseChoreOpsResult {
         name: rewardName,
       });
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
   const deleteChore = useCallback(
     async (choreName: string): Promise<void> => {
@@ -382,11 +424,9 @@ export function useChoreOps(): UseChoreOpsResult {
         name: choreName,
       });
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   /**
@@ -404,11 +444,9 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await callHaService('choreops', 'update_chore', payload);
 
-      const activeClient = client();
-      if (activeClient && connected) await loadViaClient(activeClient);
-      else await loadViaRest();
+      await reloadAfterWrite();
     },
-    [client, connected],
+    [reloadAfterWrite],
   );
 
   return useMemo(
