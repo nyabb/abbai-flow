@@ -37,7 +37,10 @@
   --planner-amber-ink: #8b5a16;
   position: relative;
   height: 100%;
+  /* dvh keeps the board + its bottom tabs inside the visible area on phones,
+     where the browser bars make 100vh taller than what you can see. */
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   color: var(--planner-ink);
   background:
@@ -125,6 +128,20 @@
   font-weight: 700;
   line-height: 1.12;
   color: var(--planner-ink);
+}
+
+/* The header is a single row on every screen; long names truncate instead of
+   wrapping under the action buttons. */
+.planner-header h1 span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.planner-title-full {
+  display: block;
+}
+.planner-title-short {
+  display: none;
 }
 
 .planner-header-action,
@@ -511,6 +528,14 @@
 .planner-task--active .planner-status-dot {
   background: var(--planner-green);
 }
+
+/* Still up for grabs ("anyone" chore): a dashed accent ring says nobody owns
+   it yet. As soon as a child claims it the card loses the ring and shows that
+   child's chip like any other assigned chore. */
+.planner-task--anyone {
+  outline: 2px dashed color-mix(in srgb, var(--planner-accent) 45%, transparent);
+  outline-offset: -2px;
+}
 .planner-task--late .planner-status-dot,
 .planner-task--retry .planner-status-dot {
   background: var(--planner-amber);
@@ -573,6 +598,25 @@
   background: color-mix(in srgb, var(--member-color) 18%, var(--planner-surface));
   font-size: 22px;
   overflow: hidden;
+}
+/* "Anyone" / "Everyone" chips: same shape as a member chip, but the colour
+   says the chore is not this child's own task. */
+.planner-member-chip--anyone,
+.planner-member-chip--everyone {
+  color: var(--planner-accent);
+}
+.planner-member-chip--anyone > span,
+.planner-member-chip--everyone > span {
+  border-color: color-mix(in srgb, var(--planner-accent) 40%, transparent);
+  background: var(--planner-accent-soft);
+  font-size: 19px;
+}
+.planner-member-chip--everyone {
+  color: var(--planner-muted);
+}
+.planner-member-chip--everyone > span {
+  border-color: var(--planner-line);
+  background: var(--planner-soft);
 }
 .planner-time {
   display: flex;
@@ -780,6 +824,7 @@
 }
 .planner-bottom-nav button strong {
   font-size: 16px;
+  white-space: nowrap;
 }
 .planner-bottom-nav button.is-active {
   color: var(--planner-accent);
@@ -792,7 +837,9 @@
 
 .planner-backdrop {
   position: fixed;
-  z-index: 20;
+  /* Above the app's mobile tab bar (90) and overflow menu (100): a modal owns
+     the screen while it is open. */
+  z-index: 300;
   inset: 0;
   display: flex;
   align-items: center;
@@ -808,6 +855,7 @@
   gap: 15px;
   width: min(100%, 560px);
   max-height: min(84vh, 880px);
+  max-height: min(84dvh, 880px);
   overflow: auto;
   padding: 32px;
   border-radius: 20px;
@@ -1390,7 +1438,13 @@
     padding: 10px 12px;
   }
   .planner-header h1 {
-    font-size: 21px;
+    font-size: 19px;
+  }
+  .planner-title-full {
+    display: none;
+  }
+  .planner-title-short {
+    display: block;
   }
   .planner-header-action {
     width: 43px;
@@ -1516,15 +1570,18 @@
     font-size: 13px;
   }
   .planner-backdrop {
-    align-items: flex-end;
-    padding: 0;
+    /* Stay centred instead of hugging the bottom edge: with the mobile tab bar
+       and dynamic browser chrome, a bottom sheet ended up half off-screen. */
+    align-items: center;
+    padding: 12px;
   }
   .planner-sheet,
   .planner-sheet--form {
     width: 100%;
-    max-height: 92vh;
-    padding: 25px 17px calc(17px + env(safe-area-inset-bottom));
-    border-radius: 20px 20px 0 0;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 22px 17px;
+    border-radius: 18px;
   }
   .planner-sheet h2 {
     font-size: 22px;

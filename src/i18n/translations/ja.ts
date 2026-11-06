@@ -481,6 +481,10 @@ export const ja: Record<TranslationKey, string> = {
   'chores.awaitingApproval': '保護者の承認待ち',
   'chores.refresh': '更新',
   'chores.everyone': 'みんな',
+  'chores.assign': '割り当てる',
+  'chores.assigned': '割り当て済み · 確認待ち',
+  'chores.confirm': '確認',
+  'chores.undo': '元に戻す',
   'chores.noChoresToday': '今はやることがありません。',
   'chores.wellDone': 'よくできました！',
   'chores.missing':

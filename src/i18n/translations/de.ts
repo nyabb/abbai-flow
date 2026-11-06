@@ -489,6 +489,10 @@ export const de: Record<TranslationKey, string> = {
   'chores.awaitingApproval': 'Wartet auf ein Elternteil',
   'chores.refresh': 'Aktualisieren',
   'chores.everyone': 'Alle',
+  'chores.assign': 'Zuweisen',
+  'chores.assigned': 'Zugewiesen · wartet auf Bestätigung',
+  'chores.confirm': 'Bestätigen',
+  'chores.undo': 'Rückgängig',
   'chores.noChoresToday': 'Gerade steht nichts an.',
   'chores.wellDone': 'Super gemacht!',
   'chores.missing':

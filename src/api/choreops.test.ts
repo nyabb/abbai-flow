@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildCreateChorePayload, groupChoreOpsChores, normalizeChoreOps } from './choreops';
+import {
+  buildCreateChorePayload,
+  groupChoreOpsChores,
+  normalizeChoreOps,
+  CHOREOPS_ALL_USERS,
+} from './choreops';
 import type { ChoreOpsChore, ChoreOpsUser } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 
@@ -14,6 +19,27 @@ describe('buildCreateChorePayload', () => {
     expect(
       buildCreateChorePayload({ entryId: 'e1', name: 'Afwassen', assignedUserNames: ['  '] }),
     ).toBeNull();
+  });
+
+  /*
+   * "Free for anyone to claim" is ChoreOps' `*` sentinel. An empty assignee
+   * list would create a dormant chore with no entities at all, which is why
+   * those chores never showed up after being saved.
+   */
+  it('creates open-to-anyone chores with the all-users sentinel', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tafel dekken',
+      assignedUserNames: [CHOREOPS_ALL_USERS],
+      completionCriteria: 'shared_first',
+    });
+
+    expect(payload).toEqual({
+      config_entry_id: 'entry-1',
+      name: 'Tafel dekken',
+      assigned_user_names: ['*'],
+      completion_criteria: 'shared_first',
+    });
   });
 
   it('sends only the fields the user set, with sane points rounding', () => {

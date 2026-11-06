@@ -22,10 +22,20 @@ import { buildChorePlannerView } from '../api/chore-planner-view';
 import {
   resolveMemberForUser,
   formatChoreOpsOffset,
+  CHOREOPS_ALL_USERS,
   CHOREOPS_FREQUENCIES,
   CHOREOPS_INTERVAL_UNITS,
 } from '../api/choreops';
 import type { ChoreOpsFrequency, ChoreOpsIntervalUnit } from '../api/choreops';
+import {
+  readRewardReservations,
+  releasePoints,
+  reservationFor,
+  reservePoints,
+  spendablePoints,
+  writeRewardReservations,
+} from '../api/reward-reservations';
+import type { RewardReservation } from '../api/reward-reservations';
 import type { ChoreOpsChore, ChoreOpsReward } from '../types/choreops';
 import { useChoreOps } from '../hooks/useChoreOps';
 import { normalizePin, type FamilyMember } from '../types/family';
@@ -127,6 +137,7 @@ interface ChorePlannerProps {
 const COPY = {
   nl: {
     title: 'Taakjes & Routines',
+    shortTitle: 'Taakjes',
     pause: 'Routines pauzeren',
     resume: 'Routines hervatten',
     paused: 'Alle routines gepauzeerd',
@@ -141,6 +152,7 @@ const COPY = {
     free: 'Vrij te pakken',
     nothing: 'Geen taakjes vandaag 🎉',
     add: 'Taakje toevoegen',
+    anyone: 'Wie het eerst is',
     edit: 'Bewerken',
     undo: 'Ongedaan maken',
     remove: 'Verwijderen',
@@ -223,6 +235,10 @@ const COPY = {
     newReward: 'Beloning toevoegen',
     cost: 'Kosten (punten)',
     redeem: 'Inwisselen',
+    assign: 'Toewijzen',
+    assigned: 'Toegewezen · wacht op bevestiging',
+    confirm: 'Bevestigen',
+    undoShort: 'Terug',
     pointsUnit: 'punten',
     saved: 'gespaard',
     locked: 'nog niet genoeg',
@@ -231,6 +247,7 @@ const COPY = {
   },
   en: {
     title: 'Chores & Routines',
+    shortTitle: 'Chores',
     pause: 'Pause routines',
     resume: 'Resume routines',
     paused: 'All routines paused',
@@ -245,6 +262,7 @@ const COPY = {
     free: 'Free to claim',
     nothing: 'No chores today 🎉',
     add: 'Add a chore',
+    anyone: 'Anyone (first)',
     edit: 'Edit',
     undo: 'Undo',
     remove: 'Delete',
@@ -326,6 +344,10 @@ const COPY = {
     newReward: 'Add reward',
     cost: 'Cost (points)',
     redeem: 'Redeem',
+    assign: 'Assign',
+    assigned: 'Assigned · waiting for confirmation',
+    confirm: 'Confirm',
+    undoShort: 'Undo',
     pointsUnit: 'points',
     saved: 'saved',
     locked: 'not enough yet',
@@ -476,8 +498,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     title: string;
     /** What the PIN unlocks — normally the chore name. */
     description: string;
-    /** Runs only once a parent PIN checks out. */
-    run: () => void;
+    /** Runs only once a parent PIN checks out; receives that parent's name. */
+    run: (approverName?: string) => void;
   } | null>(null);
   const [livePin, setLivePin] = useState('');
   const [livePinError, setLivePinError] = useState(false);
@@ -491,12 +513,23 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   const [editingReward, setEditingReward] = useState<string | null>(null);
   const [selectedReward, setSelectedReward] = useState<ChoreOpsReward | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  /**
+   * Points a child has set aside for rewards. Kept in Beacon because ChoreOps
+   * only deducts on approval, while the family wants the balance to drop as
+   * soon as a reward is picked — and to be able to undo that choice.
+   */
+  const [reservations, setReservations] = useState<RewardReservation[]>(() =>
+    readRewardReservations(),
+  );
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = COPY[language];
 
   useEffect(() => {
     localStorage.setItem('beacon_chore_language', language);
   }, [language]);
+  useEffect(() => {
+    writeRewardReservations(reservations);
+  }, [reservations]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
@@ -572,6 +605,18 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
   const selectedTodayMember = memberFor(todayMemberId);
+
+  /**
+   * What a child can still spend: ChoreOps' balance minus the points they have
+   * set aside for rewards. `rewards` is passed in so claims made in Home
+   * Assistant also count as spent (approving one still deducts them later).
+   */
+  const spendableFor = (member: PlannerMember | null | undefined): number => {
+    if (!member) return 0;
+    const userName = userNameByMemberId.get(member.id);
+    if (!userName) return member.savings;
+    return spendablePoints(member.savings, reservations, rewards, userName);
+  };
 
   const filteredTasks = useMemo(
     () =>
@@ -707,20 +752,20 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   const submitPin = () => {
     if (!pinGate) return;
     const entered = normalizePin(livePin);
-    const allowed = members.some(
+    const approver = members.find(
       (member) =>
         member.role !== 'child' &&
         normalizePin(member.pin).length >= MIN_PIN_LENGTH &&
         normalizePin(member.pin) === entered,
     );
-    if (!allowed) {
+    if (!approver) {
       setLivePinError(true);
       return;
     }
     const gate = pinGate;
     setPinGate(null);
     setLivePin('');
-    gate.run();
+    gate.run(approver.name);
   };
 
   /**
@@ -729,7 +774,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
    * With no parent PIN configured the action simply runs — otherwise a household
    * that never set one could not change anything at all.
    */
-  const requestPin = (title: string, description: string, run: () => void) => {
+  const requestPin = (title: string, description: string, run: (approverName?: string) => void) => {
     if (!hasParentPin) {
       run();
       return;
@@ -762,11 +807,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   const saveForm = async () => {
     if (!form.name.trim() || (!form.memberIds.length && !form.free) || saving) return;
 
-    const userNames = form.memberIds
-      .map((id) => userNameByMemberId.get(id))
-      .filter((name): name is string => Boolean(name));
+    /*
+     * "Free for anyone to claim" is ChoreOps' `*` sentinel, not an empty
+     * assignee list: ChoreOps treats an empty list as a dormant chore and
+     * publishes no entities for it, so the chore would silently vanish.
+     */
+    const userNames = form.free
+      ? [CHOREOPS_ALL_USERS]
+      : form.memberIds
+          .map((id) => userNameByMemberId.get(id))
+          .filter((name): name is string => Boolean(name));
     if (userNames.length === 0) {
-      setModal(null);
       showToast(c.assignToClaim);
       return;
     }
@@ -802,6 +853,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           ...schedule,
           name: form.name,
           assignedUserNames: userNames,
+          // One open chore that whoever gets to it first completes — otherwise
+          // every child would get their own private copy to check off.
+          completionCriteria: form.free ? 'shared_first' : undefined,
           points: form.points,
           windowOffset: form.liveWindow,
           reminderOffset: form.liveReminder,
@@ -894,6 +948,77 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     requestPin(c.remove, reward.name, () => void remove());
   };
 
+  /**
+   * Set points aside for a reward.
+   *
+   * This is deliberately Beacon-only: the balance drops the moment the child
+   * picks the reward, and nothing is written to ChoreOps until a parent
+   * confirms it, so the child can still change their mind.
+   */
+  const assignReward = (reward: ChoreOpsReward) => {
+    const userName =
+      reward.assignee ??
+      (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
+    if (!userName) {
+      showToast(c.assignToClaim);
+      return;
+    }
+    setReservations((list) =>
+      reservePoints(list, { user: userName, reward: reward.name, points: reward.cost }),
+    );
+    showToast(`${c.assign} \u00b7 ${reward.name}`);
+  };
+
+  /** Give the points back — the child changed their mind about this reward. */
+  const undoRewardChoice = (reward: ChoreOpsReward) => {
+    setReservations((list) => releasePoints(list, reward.assignee, reward.name));
+    showToast(`${c.undoShort} \u00b7 ${reward.name}`);
+  };
+
+  /**
+   * Parent confirmation in real life: ChoreOps deducts the cost once and the
+   * child's allocation is released, so their visible balance does not move.
+   */
+  const confirmReward = (reward: ChoreOpsReward) => {
+    if (!reward.assignee) {
+      showToast(c.assignToClaim);
+      return;
+    }
+    requestPin(c.rewards, reward.name, (approverName) => {
+      void (async () => {
+        try {
+          setSaving(true);
+          await choreOps.approveReward(reward.assignee as string, reward.name, approverName);
+          setReservations((list) => releasePoints(list, reward.assignee, reward.name));
+          playCompletionSound();
+          showToast(liveToast(c, reward.name));
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : c.noFail);
+        } finally {
+          setSaving(false);
+        }
+      })();
+    });
+  };
+
+  /**
+   * Reward card state shared by the child screen and the rewards sheet:
+   * what is set aside, whether ChoreOps has a claim pending, and what is left.
+   */
+  const rewardState = (reward: ChoreOpsReward) => {
+    const owner = memberByName(reward.assignee);
+    const reserved = reservationFor(reservations, reward.assignee, reward.name);
+    const saved = owner ? spendableFor(owner) : 0;
+    return {
+      owner,
+      reserved,
+      saved,
+      available: reward.status === 'available',
+      pending: reward.pendingClaims > 0,
+      affordable: saved >= reward.cost,
+    };
+  };
+
   const beginMissions = () => {
     if (!todayMemberId) return;
     const queue = data.tasks
@@ -957,7 +1082,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     return (
       <article
         key={task.id}
-        className={`planner-task planner-task--${status}`}
+        className={`planner-task planner-task--${status}${
+          task.audience === 'anyone' ? ' planner-task--anyone' : ''
+        }`}
         style={{ '--member-color': assigned?.color ?? '#cf6d55' } as React.CSSProperties}
         onPointerDown={(event) => {
           if (readOnly || (event.target as HTMLElement).closest('button')) return;
@@ -1012,7 +1139,20 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
         </div>
         <div className="planner-task-meta">
           {task.points > 0 && <span className="planner-points">⭐ {task.points}</span>}
-          {assigned ? (
+          {/* "Anyone" and "Everyone" chores are still grouped per child, so the
+              chip has to say who the chore is really for instead of naming the
+              child the group happens to be for. */}
+          {task.audience === 'anyone' ? (
+            <span className="planner-member-chip planner-member-chip--anyone">
+              <span aria-hidden="true">{'\u{1F3C1}'}</span>
+              {c.anyone}
+            </span>
+          ) : task.audience === 'everyone' ? (
+            <span className="planner-member-chip planner-member-chip--everyone">
+              <span aria-hidden="true">{'\u{1F465}'}</span>
+              {c.everyone}
+            </span>
+          ) : assigned ? (
             <span className="planner-member-chip">
               <span>
                 <MemberAvatar member={assigned} />
@@ -1052,6 +1192,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       .reduce((sum, task) => sum + task.points, 0);
   const activeMissionStatus = missionTask ? taskStatus(missionTask) : 'completed';
 
+  const heading =
+    screen === 'tasks'
+      ? c.title
+      : screen === 'lobby'
+        ? 'Vandaag'
+        : screen === 'missions' || screen === 'mission'
+          ? c.missions
+          : screen === 'closing'
+            ? c.todayEarned
+            : (selectedTodayMember?.name ?? c.title);
+
   return (
     <div className={`chore-planner ${privacy ? 'chore-planner--private' : ''}`}>
       <header className="planner-header">
@@ -1089,17 +1240,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           </div>
         )}
         <h1>
-          {screen === 'tasks'
-            ? c.title
-            : screen === 'lobby'
-              ? 'Vandaag'
-              : screen === 'missions'
-                ? c.missions
-                : screen === 'mission'
-                  ? c.missions
-                  : screen === 'closing'
-                    ? c.todayEarned
-                    : (selectedTodayMember?.name ?? c.title)}
+          {/* Phones get the short name so the header can stay on one row. */}
+          <span className="planner-title-full">{heading}</span>
+          <span className="planner-title-short">{screen === 'tasks' ? c.shortTitle : heading}</span>
         </h1>
         {screen === 'tasks' && (
           <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
@@ -1356,7 +1499,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               {c.score}
             </span>
             <span>
-              <strong>⭐ {selectedTodayMember.savings}</strong>
+              <strong>⭐ {spendableFor(selectedTodayMember)}</strong>
               {c.pot}
             </span>
           </div>
@@ -1364,29 +1507,49 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <section className="planner-child-rewards">
               <h3>{c.rewards}</h3>
               {rewardsForMember(selectedTodayMember.id).map((reward) => {
-                const available = reward.status === 'available';
-                const pending = reward.pendingClaims > 0;
+                const { reserved, saved, available, pending, affordable } = rewardState(reward);
                 const approveId = reward.actions.approve;
-                const claimId = reward.actions.claim;
-                const saved = selectedTodayMember.savings;
                 return (
                   <div className="planner-reward" key={reward.id}>
                     <span aria-hidden="true">{'\u{1F381}'}</span>
                     <div className="planner-reward-copy">
                       <strong>{reward.name}</strong>
                       <small>
-                        {saved} / {reward.cost} {c.pointsUnit}
-                        {pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`}
+                        {reserved
+                          ? c.assigned
+                          : `${saved} / ${reward.cost} ${c.pointsUnit}${
+                              pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
+                            }`}
                       </small>
                       <i>
                         <b
                           style={{
-                            width: `${Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
+                            width: `${
+                              reserved
+                                ? 100
+                                : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
+                            }%`,
                           }}
                         />
                       </i>
                     </div>
-                    {pending && approveId ? (
+                    {reserved ? (
+                      <>
+                        <button
+                          className="planner-ghost planner-reward-action"
+                          onClick={() => undoRewardChoice(reward)}
+                        >
+                          {c.undoShort}
+                        </button>
+                        <button
+                          className="planner-primary planner-reward-action"
+                          disabled={saving}
+                          onClick={() => confirmReward(reward)}
+                        >
+                          {c.confirm}
+                        </button>
+                      </>
+                    ) : pending && approveId ? (
                       <button
                         className="planner-primary planner-reward-action"
                         onClick={() =>
@@ -1397,17 +1560,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                           )
                         }
                       >
-                        {c.pinConfirm}
+                        {c.confirm}
                       </button>
-                    ) : claimId ? (
+                    ) : (
                       <button
                         className="planner-ghost planner-reward-action"
-                        disabled={!available}
-                        onClick={() => void runLiveAction(reward.id, claimId, reward.name)}
+                        disabled={!available || !affordable}
+                        onClick={() => assignReward(reward)}
                       >
-                        {c.redeem}
+                        {c.assign}
                       </button>
-                    ) : null}
+                    )}
                   </div>
                 );
               })}
@@ -1490,7 +1653,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             {c.todayEarned}: ⭐ {completedTodayPoints(selectedTodayMember.id)}
           </h2>
           <p>
-            {c.pot}: {selectedTodayMember.savings}
+            {c.pot}: {spendableFor(selectedTodayMember)}
           </p>
           <button
             className="planner-primary"
@@ -1510,7 +1673,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           onClick={() => setScreen('tasks')}
         >
           <span>✓</span>
-          <strong>{c.title}</strong>
+          <strong>{c.shortTitle}</strong>
         </button>
         <button
           className={screen !== 'tasks' ? 'is-active' : ''}
@@ -1815,13 +1978,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                       (b.pendingClaims > 0 ? 0 : b.status === 'available' ? 1 : 2),
                   )
                   .map((reward) => {
-                    const owner = memberByName(reward.assignee);
-                    const saved = owner?.savings ?? 0;
-                    // ChoreOps decides affordability and publishes it as `available`/`locked`.
-                    const available = reward.status === 'available';
-                    const pending = reward.pendingClaims > 0;
+                    const { reserved, saved, available, pending, affordable } = rewardState(reward);
                     const approveId = reward.actions.approve;
-                    const claimId = reward.actions.claim;
                     return (
                       <div className="planner-reward" key={reward.id}>
                         <span aria-hidden="true">{'\u{1F381}'}</span>
@@ -1829,18 +1987,41 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                           <strong>{reward.name}</strong>
                           <small>
                             {reward.assignee ? `${reward.assignee} · ` : ''}
-                            {saved} / {reward.cost} {c.pointsUnit}
-                            {pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`}
+                            {reserved
+                              ? c.assigned
+                              : `${saved} / ${reward.cost} ${c.pointsUnit}${
+                                  pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
+                                }`}
                           </small>
                           <i>
                             <b
                               style={{
-                                width: `${Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
+                                width: `${
+                                  reserved
+                                    ? 100
+                                    : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
+                                }%`,
                               }}
                             />
                           </i>
                         </div>
-                        {pending && approveId ? (
+                        {reserved ? (
+                          <>
+                            <button
+                              className="planner-ghost planner-reward-action"
+                              onClick={() => undoRewardChoice(reward)}
+                            >
+                              {c.undoShort}
+                            </button>
+                            <button
+                              className="planner-primary planner-reward-action"
+                              disabled={saving}
+                              onClick={() => confirmReward(reward)}
+                            >
+                              {c.confirm}
+                            </button>
+                          </>
+                        ) : pending && approveId ? (
                           <button
                             className="planner-primary planner-reward-action"
                             onClick={() =>
@@ -1851,30 +2032,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                               )
                             }
                           >
-                            {c.pinConfirm}
+                            {c.confirm}
                           </button>
-                        ) : claimId ? (
+                        ) : (
                           <button
                             className="planner-ghost planner-reward-action"
-                            disabled={!available}
-                            onClick={() => void runLiveAction(reward.id, claimId, reward.name)}
+                            disabled={!available || !affordable}
+                            onClick={() => assignReward(reward)}
                           >
-                            {c.redeem}
+                            {c.assign}
                           </button>
-                        ) : approveId ? (
-                          <button
-                            className="planner-primary planner-reward-action"
-                            onClick={() =>
-                              requestPin(
-                                c.rewards,
-                                reward.name,
-                                () => void runLiveAction(reward.id, approveId, reward.name),
-                              )
-                            }
-                          >
-                            {c.pinConfirm}
-                          </button>
-                        ) : null}
+                        )}
                         <button
                           type="button"
                           className="planner-task-more"

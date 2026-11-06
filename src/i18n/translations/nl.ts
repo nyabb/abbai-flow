@@ -485,6 +485,10 @@ export const nl: Record<TranslationKey, string> = {
   'chores.awaitingApproval': 'Wacht op een ouder',
   'chores.refresh': 'Vernieuwen',
   'chores.everyone': 'Iedereen',
+  'chores.assign': 'Toewijzen',
+  'chores.assigned': 'Toegewezen · wacht op bevestiging',
+  'chores.confirm': 'Bevestigen',
+  'chores.undo': 'Terug',
   'chores.noChoresToday': 'Nu even niets te doen.',
   'chores.wellDone': 'Goed gedaan!',
   'chores.missing':
