@@ -1,3 +1,17 @@
+# [1.47.0](https://github.com/nyabb/beacon/compare/v1.46.1...v1.47.0) (2026-11-06)
+
+
+### Features
+
+* add routine labels and confirmation dialogs for chore completion and claiming ([a9c6839](https://github.com/nyabb/beacon/commit/a9c6839bb8bd33349fe085d9a5a4adaabbfa8797))
+* add tests for anyone chores in ChorePlanner component ([2aece5a](https://github.com/nyabb/beacon/commit/2aece5af3547618325e28ff35c1fff4eab3bd4db))
+* add translation for 'today' in multiple languages and update ChorePlanner to use dynamic text ([57994c5](https://github.com/nyabb/beacon/commit/57994c590659911e1599fe4c4544d6b648f67edf))
+* enhance reward reservation system and UI interactions ([2eaff44](https://github.com/nyabb/beacon/commit/2eaff447358bf63b7f053e07b40610765b5b659e))
+* enhance reward reservation system and UI updates ([71a1f74](https://github.com/nyabb/beacon/commit/71a1f74a205e7bd68dd6fd1af1734e4f7a6ea53d))
+* enhance task representation for "anyone" audience with hand glyph and styling ([67b6927](https://github.com/nyabb/beacon/commit/67b692790c5acc7f50c5230759407523a5e5bd67))
+* implement open todo count and update chore representation in ChorePlanner ([91a7ce5](https://github.com/nyabb/beacon/commit/91a7ce58be78c8a73c80c614d3eb1140d26ebb90))
+* update task representation for "anyone" audience with hand glyph and styling ([641747f](https://github.com/nyabb/beacon/commit/641747f4aa4bc4190914efc36527ba26129c8a49))
+
 ## [1.46.1](https://github.com/nyabb/beacon/compare/v1.46.0...v1.46.1) (2026-11-06)
 
 
