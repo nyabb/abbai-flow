@@ -1,3 +1,11 @@
+# [1.45.0](https://github.com/nyabb/beacon/compare/v1.44.0...v1.45.0) (2026-11-06)
+
+
+### Features
+
+* **chores:** manage rewards from Beacon and show them on the child screen ([b085e77](https://github.com/nyabb/beacon/commit/b085e77946430a001b91dd0124c2938365c8b609))
+* **chores:** run the chores screen entirely on ChoreOps ([350be28](https://github.com/nyabb/beacon/commit/350be2869fb158ff74368a2f49c5efaba72b1344))
+
 # [1.44.0](https://github.com/nyabb/beacon/compare/v1.43.1...v1.44.0) (2026-11-06)
 
 
