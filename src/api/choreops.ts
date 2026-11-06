@@ -149,6 +149,8 @@ function normalizeChore(item: unknown, fallbackAssignee: string | null): ChoreOp
     canApprove: flag(item, 'can_approve'),
     completionCriteria: str(item, 'completion_criteria'),
     assignedUserNames: stringList(item, 'assigned_user_names'),
+    labels: stringList(item, 'labels'),
+    lastCompleted: str(item, 'last_completed'),
     actions: discoverActions(item),
   };
 }
@@ -217,6 +219,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       autoApprove: boolean;
       assignedUserNames: string[];
       completionCriteria: string | null;
+      labels: string[];
+      lastCompleted: string | null;
       canClaim: boolean;
       canApprove: boolean;
     }
@@ -350,6 +354,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
           description: str(entity.attributes, 'description'),
           frequency: str(entity.attributes, 'recurring_frequency'),
           applicableDays: stringList(entity.attributes, 'applicable_days'),
+          labels: stringList(entity.attributes, 'labels'),
+          lastCompleted: str(entity.attributes, 'last_completed'),
           windowOffset: str(entity.attributes, 'chore_due_window_offset'),
           autoApprove: flag(entity.attributes, 'auto_approve'),
           assignedUserNames: stringList(entity.attributes, 'assigned_user_names'),
@@ -483,6 +489,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
         existing.assignedUserNames = record.assignedUserNames;
       }
       existing.completionCriteria = record.completionCriteria ?? existing.completionCriteria;
+      if (record.labels.length > 0) existing.labels = record.labels;
+      existing.lastCompleted = record.lastCompleted ?? existing.lastCompleted;
       if (record.canClaim) existing.canClaim = true;
       if (record.canApprove) existing.canApprove = true;
       continue;
@@ -502,6 +510,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       autoApprove: record.autoApprove,
       assignedUserNames: record.assignedUserNames,
       completionCriteria: record.completionCriteria,
+      labels: record.labels,
+      lastCompleted: record.lastCompleted,
       canClaim: record.canClaim,
       canApprove: record.canApprove,
       actions: {},
@@ -676,6 +686,11 @@ export interface CreateChoreInput {
   completionCriteria?: ChoreOpsCompletionCriteria | null;
   points?: number | null;
   description?: string | null;
+  /**
+   * ChoreOps labels. Beacon groups daily chores into routines by their first
+   * label, so this is how a household names one ("Ochtendroutine").
+   */
+  labels?: string[] | null;
   frequency?: ChoreOpsFrequency | null;
   /** Only sent for `custom` frequency. */
   customInterval?: number | null;
@@ -719,6 +734,10 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description?.trim()) payload.description = input.description.trim();
+  const createLabels = Array.from(
+    new Set((input.labels ?? []).map((label) => label.trim()).filter(Boolean)),
+  );
+  if (createLabels.length > 0) payload.labels = createLabels;
   if (input.frequency) payload.frequency = input.frequency;
 
   if (input.frequency === 'custom' && input.customInterval) {
@@ -751,6 +770,8 @@ export interface UpdateChoreInput {
   assignedUserNames?: string[];
   points?: number;
   description?: string;
+  /** Replaces the label list when given; drives the routines grouping. */
+  labels?: string[];
   frequency?: string;
   customInterval?: number;
   customIntervalUnit?: ChoreOpsIntervalUnit;
@@ -793,6 +814,10 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description !== undefined) payload.description = input.description.trim();
+  if (input.labels) {
+    const labels = Array.from(new Set(input.labels.map((label) => label.trim()).filter(Boolean)));
+    if (labels.length > 0) payload.labels = labels;
+  }
   if (input.frequency) payload.frequency = input.frequency;
 
   if (

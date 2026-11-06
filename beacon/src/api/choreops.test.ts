@@ -58,6 +58,30 @@ describe('buildCreateChorePayload', () => {
     });
   });
 
+  it('sends the routine label so Beacon can group daily chores', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tanden poetsen',
+      assignedUserNames: ['Maya'],
+      frequency: 'daily',
+      labels: ['  Ochtendroutine  ', '', 'Ochtendroutine'],
+    });
+
+    expect(payload).toMatchObject({
+      frequency: 'daily',
+      labels: ['Ochtendroutine'],
+    });
+
+    // No label typed → nothing sent, so ChoreOps keeps its own labels.
+    const unlabeled = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tanden poetsen',
+      assignedUserNames: ['Maya'],
+      labels: ['   '],
+    });
+    expect(unlabeled).not.toHaveProperty('labels');
+  });
+
   it('sends weekly weekdays and custom interval only when relevant', () => {
     const weekly = buildCreateChorePayload({
       entryId: 'entry-1',

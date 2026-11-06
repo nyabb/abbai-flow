@@ -489,6 +489,15 @@ export const nl: Record<TranslationKey, string> = {
   'chores.assigned': 'Toegewezen · wacht op bevestiging',
   'chores.confirm': 'Bevestigen',
   'chores.undo': 'Terug',
+  'chores.confirmClaimTitle': 'Taakje claimen?',
+  'chores.confirmClaimBody': 'Weet je zeker dat je dit taakje wilt claimen?',
+  'chores.confirmDoneTitle': 'Taakje afronden?',
+  'chores.confirmDoneBody': 'Weet je zeker dat je klaar bent met dit taakje?',
+  'chores.dailyRoutines': 'Dagelijkse routines',
+  'chores.routineLabel': 'Routine',
+  'chores.routinePlaceholder': 'Bijv. Ochtendroutine',
+  'chores.routineHint':
+    'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
   'chores.noChoresToday': 'Nu even niets te doen.',
   'chores.wellDone': 'Goed gedaan!',
   'chores.missing':

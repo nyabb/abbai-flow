@@ -125,6 +125,8 @@ type FormValue = {
   liveReminder: string;
   liveAutoApprove: boolean;
   liveDescription: string;
+  /** First ChoreOps label: names the daily routine this chore belongs to. */
+  liveLabel: string;
 };
 
 interface ChorePlannerProps {
@@ -181,6 +183,10 @@ const COPY = {
     custom: 'Aangepast',
     due: 'Tot',
     claim: 'Pakken',
+    confirmClaimTitle: 'Taakje claimen?',
+    confirmClaimBody: 'Weet je zeker dat je dit taakje wilt claimen?',
+    confirmDoneTitle: 'Taakje afronden?',
+    confirmDoneBody: 'Weet je zeker dat je klaar bent met dit taakje?',
     expired: 'Vervallen',
     recreate: 'Opnieuw',
     upcoming: 'Start om',
@@ -210,6 +216,10 @@ const COPY = {
     privacy: 'Privacy',
     sound: 'Geluid',
     routines: 'Routines',
+    dailyRoutines: 'Dagelijkse routines',
+    routineLabel: 'Routine',
+    routinePlaceholder: 'Bijv. Ochtendroutine',
+    routineHint: 'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
     invalid: 'Deze dag bestaat niet in elke maand; de routine wordt dan overgeslagen.',
     potWarning: 'De punten zijn teruggezet naar nul.',
     offline: 'Geen internetverbinding — wijzigingen worden niet opgeslagen',
@@ -291,6 +301,10 @@ const COPY = {
     custom: 'Custom',
     due: 'Until',
     claim: 'Claim',
+    confirmClaimTitle: 'Claim this chore?',
+    confirmClaimBody: 'Are you sure you want to claim this chore?',
+    confirmDoneTitle: 'Finish this chore?',
+    confirmDoneBody: 'Are you sure you are done with this chore?',
     expired: 'Expired',
     recreate: 'Recreate',
     upcoming: 'Starts at',
@@ -319,6 +333,10 @@ const COPY = {
     privacy: 'Privacy',
     sound: 'Sound',
     routines: 'Routines',
+    dailyRoutines: 'Daily routines',
+    routineLabel: 'Routine',
+    routinePlaceholder: 'e.g. Morning routine',
+    routineHint: 'Daily chores with the same routine name are grouped under Routines.',
     invalid: 'This date does not exist every month; the routine will be skipped.',
     potWarning: 'Points were reset to zero.',
     offline: 'No internet connection — changes will not be saved',
@@ -400,6 +418,7 @@ function formFromTask(task: PlannerTask): FormValue {
     liveReminder: '',
     liveAutoApprove: false,
     liveDescription: '',
+    liveLabel: '',
   };
 }
 
@@ -417,6 +436,7 @@ function formFromLiveTask(task: PlannerTask, chore: ChoreOpsChore | null): FormV
     liveWindow: formatChoreOpsOffset(chore?.windowOffset),
     liveAutoApprove: chore?.autoApprove ?? false,
     liveDescription: chore?.description ?? '',
+    liveLabel: chore?.labels?.[0] ?? '',
     deadlineAt: chore?.dueDate ? localDateTime(new Date(chore.dueDate)) : base.deadlineAt,
   };
 }
@@ -448,24 +468,28 @@ function emptyForm(now: Date): FormValue {
     liveReminder: '',
     liveAutoApprove: false,
     liveDescription: '',
+    liveLabel: '',
   };
 }
 
 export function ChorePlanner({ weather, nextAppointment, members }: ChorePlannerProps) {
   const choreOps = useChoreOps();
+  const [now, setNow] = useState(new Date());
   /**
    * ChoreOps is the single source of truth. There is no local chore store any
    * more: the board renders exactly what the integration publishes.
    */
   const view = useMemo(
-    () => buildChorePlannerView(choreOps.data, members),
-    [choreOps.data, members],
+    // `now` is part of the input: a daily routine's "done" only counts for the
+    // day it was completed, so the board must re-evaluate at midnight.
+    () => buildChorePlannerView(choreOps.data, members, now),
+    [choreOps.data, members, now],
   );
   const data: ChorePlannerState = {
     members: view.members,
     tasks: view.tasks,
     goals: view.goals,
-    routines: [],
+    routines: view.routines,
     routinesPaused: false,
     soundEnabled: true,
   };
@@ -473,7 +497,6 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     localStorage.getItem('beacon_chore_language') === 'en' ? 'en' : 'nl',
   );
   const [screen, setScreen] = useState<Screen>('tasks');
-  const [now, setNow] = useState(new Date());
   const [memberFilter, setMemberFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'late' | 'completed'>('all');
   const [completedExpanded, setCompletedExpanded] = useState(false);
@@ -484,6 +507,20 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  /**
+   * Chore the child tapped, waiting for "are you sure?".
+   *
+   * Claiming and completing are one tap away on a shared display and a
+   * mis-tap hands out points, so nothing is sent to ChoreOps until the child
+   * confirms the card they meant.
+   */
+  const [confirmAction, setConfirmAction] = useState<{
+    taskId: string;
+    entityId: string;
+    label: string;
+    /** `done` for a parent sign-off, `claim` when the child takes the chore. */
+    kind: 'claim' | 'done';
+  } | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [confetti, setConfetti] = useState(false);
@@ -729,7 +766,16 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       showToast(c.assignToClaim);
       return;
     }
-    void runLiveAction(task.id, entityId, task.name);
+
+    // Ask first: a mis-tap would claim the chore and hand out points.
+    // Only a chore nobody owns yet is "claimed"; one that was already assigned
+    // to this child is just finished, so it gets the "are you done?" wording.
+    setConfirmAction({
+      taskId: task.id,
+      entityId,
+      label: task.name,
+      kind: task.audience === 'anyone' ? 'claim' : 'done',
+    });
   };
 
   /** Press a ChoreOps button and report the outcome, then re-read its entities. */
@@ -836,6 +882,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       dueDate: form.deadlineAt ? new Date(form.deadlineAt).toISOString() : undefined,
       description: form.liveDescription,
       autoApprove: form.liveAutoApprove,
+      // The first ChoreOps label groups daily chores into a named routine.
+      labels: form.liveLabel.trim() ? [form.liveLabel.trim()] : undefined,
     };
     try {
       setSaving(true);
@@ -1408,15 +1456,23 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                   {data.routines.map((routine) => (
                     <div key={routine.id} className="planner-routine-row">
                       <span>{routine.icon}</span>
-                      <strong>{routine.name}</strong>
+                      <strong>{routine.name || c.dailyRoutines}</strong>
                       <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
-                      <span>
+                      <span className="planner-routine-time">
                         {routine.timeBlock === 'morning'
                           ? c.morning
                           : routine.timeBlock === 'evening'
                             ? c.evening
                             : c.afternoon}
                       </span>
+                      {routine.memberIds.length > 0 && (
+                        <span className="planner-routine-members">
+                          {routine.memberIds.map((memberId) => {
+                            const member = memberFor(memberId);
+                            return member ? <MemberAvatar key={memberId} member={member} /> : null;
+                          })}
+                        </span>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1811,6 +1867,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                     />
                   </label>
                   <label className="planner-field">
+                    {c.routineLabel}
+                    <input
+                      value={form.liveLabel}
+                      placeholder={c.routinePlaceholder}
+                      onChange={(event) =>
+                        setForm((value) => ({ ...value, liveLabel: event.target.value }))
+                      }
+                    />
+                    <small className="planner-hint">{c.routineHint}</small>
+                  </label>
+                  <label className="planner-field">
                     {c.frequency}
                     <select
                       value={form.liveFrequency}
@@ -2175,6 +2242,37 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 </footer>
               </>
             )}
+          </section>
+        </div>
+      )}
+      {confirmAction && (
+        <div className="planner-backdrop" onClick={() => setConfirmAction(null)}>
+          <section
+            className="planner-sheet planner-sheet--confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-label={confirmAction.kind === 'claim' ? c.confirmClaimTitle : c.confirmDoneTitle}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2>{confirmAction.kind === 'claim' ? c.confirmClaimTitle : c.confirmDoneTitle}</h2>
+            <p>{confirmAction.kind === 'claim' ? c.confirmClaimBody : c.confirmDoneBody}</p>
+            <p className="planner-confirm-target">{confirmAction.label}</p>
+            <footer className="planner-sheet-footer">
+              <button className="planner-ghost" onClick={() => setConfirmAction(null)}>
+                {c.cancel}
+              </button>
+              <button
+                className="planner-primary"
+                disabled={pendingTaskId === confirmAction.taskId}
+                onClick={() => {
+                  const action = confirmAction;
+                  setConfirmAction(null);
+                  void runLiveAction(action.taskId, action.entityId, action.label);
+                }}
+              >
+                {c.confirm}
+              </button>
+            </footer>
           </section>
         </div>
       )}

@@ -753,9 +753,28 @@
   font-size: 16px;
 }
 .planner-routine-row small,
-.planner-routine-row > span:last-child {
+.planner-routine-time {
   color: var(--planner-muted);
   font-size: 13px;
+}
+/* Who does the routine: small avatar stack, so a shared routine reads at a glance. */
+.planner-routine-members {
+  display: flex;
+  align-items: center;
+}
+.planner-routine-members > * {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid var(--planner-surface);
+  border-radius: 50%;
+  font-size: 14px;
+}
+.planner-routine-members > *:first-child {
+  margin-left: 0;
 }
 
 .planner-empty {
@@ -882,6 +901,20 @@
 }
 .planner-sheet--form {
   width: min(100%, 720px);
+}
+/* "Are you sure?" sheets stay small: one sentence plus the chore name. */
+.planner-sheet--confirm {
+  width: min(100%, 460px);
+  gap: 10px;
+}
+.planner-confirm-target {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--planner-soft);
+  color: var(--planner-ink) !important;
+  font-size: 17px !important;
+  font-weight: 800;
 }
 .planner-sheet h2 {
   margin: 0 40px 5px 0;

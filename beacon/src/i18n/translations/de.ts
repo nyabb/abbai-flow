@@ -493,6 +493,15 @@ export const de: Record<TranslationKey, string> = {
   'chores.assigned': 'Zugewiesen · wartet auf Bestätigung',
   'chores.confirm': 'Bestätigen',
   'chores.undo': 'Rückgängig',
+  'chores.confirmClaimTitle': 'Aufgabe übernehmen?',
+  'chores.confirmClaimBody': 'Bist du sicher, dass du diese Aufgabe übernehmen möchtest?',
+  'chores.confirmDoneTitle': 'Aufgabe abschließen?',
+  'chores.confirmDoneBody': 'Bist du sicher, dass du mit dieser Aufgabe fertig bist?',
+  'chores.dailyRoutines': 'Tägliche Routinen',
+  'chores.routineLabel': 'Routine',
+  'chores.routinePlaceholder': 'z. B. Morgenroutine',
+  'chores.routineHint':
+    'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
   'chores.noChoresToday': 'Gerade steht nichts an.',
   'chores.wellDone': 'Super gemacht!',
   'chores.missing':

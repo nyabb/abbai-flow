@@ -1,7 +1,6 @@
-import { useState } from 'react';
 import { Chore } from '../../types/family';
 import { formatChoreValue } from '../../types/family';
-import { hapticMedium, hapticSuccess } from '../../hooks/useHaptics';
+import { hapticMedium } from '../../hooks/useHaptics';
 
 interface FocusChoresProps {
   chores: Chore[];
@@ -11,19 +10,17 @@ interface FocusChoresProps {
 }
 
 export function FocusChores({ chores, completedIds, currencySymbol, onToggle }: FocusChoresProps) {
-  const [animatingId, setAnimatingId] = useState<string | null>(null);
-
   if (chores.length === 0) return null;
 
   const remaining = chores.filter((c) => !completedIds.has(c.id)).length;
 
+  /**
+   * Tapping only *asks* to complete the chore — the parent screen shows an
+   * "are you sure?" dialog — so no celebration or success haptic happens here;
+   * the row turns done when ChoreOps confirms the claim.
+   */
   const handleToggle = (choreId: string) => {
-    if (!completedIds.has(choreId)) {
-      setAnimatingId(choreId);
-      setTimeout(() => setAnimatingId(null), 400);
-      hapticMedium();
-      if (remaining === 1) hapticSuccess();
-    }
+    if (!completedIds.has(choreId)) hapticMedium();
     onToggle(choreId);
   };
 
@@ -42,13 +39,22 @@ export function FocusChores({ chores, completedIds, currencySymbol, onToggle }: 
             <li key={chore.id}>
               <button
                 type="button"
-                className={`focus-check-row ${done ? 'focus-check-row--done' : ''} ${animatingId === chore.id ? 'focus-check-row--completing' : ''}`}
+                className={`focus-check-row ${done ? 'focus-check-row--done' : ''}`}
                 onClick={() => handleToggle(chore.id)}
                 aria-label={done ? `Undo ${chore.name}` : `Complete ${chore.name}`}
               >
                 <span className="focus-check-box">
                   {done && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}

@@ -13,9 +13,11 @@ import { resolveMemberForUser } from './choreops';
 import type {
   PlannerGoal,
   PlannerMember,
+  PlannerRoutine,
   PlannerTask,
   PlannerTaskAudience,
   PlannerTaskStatus,
+  PlannerTimeBlock,
 } from './chore-planner-model';
 import type { ChoreOpsChore, ChoreOpsState } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
@@ -23,6 +25,8 @@ import type { FamilyMember } from '../types/family';
 export interface ChorePlannerView {
   members: PlannerMember[];
   tasks: PlannerTask[];
+  /** Daily repeating chores, grouped by their ChoreOps label. */
+  routines: PlannerRoutine[];
   goals: PlannerGoal[];
   /** True when ChoreOps published at least one user or chore. */
   available: boolean;
@@ -82,6 +86,42 @@ function memberIdFor(userName: string, member: FamilyMember | null): string {
  */
 const TAKEN_BY_SOMEONE_ELSE = /completed_by_other/i;
 
+/** ChoreOps repeats that mean "every day" — the raw material for a routine. */
+const DAILY_FREQUENCY = /^daily/i;
+
+/**
+ * A routine is a group of daily chores that share a ChoreOps label, so a
+ * household names them in ChoreOps ("Ochtendroutine", "Bedtijd") and Beacon
+ * simply shows what ChoreOps published. Returns null when the chore has no
+ * label; those chores still count as daily work, just without a routine name.
+ */
+function routineLabel(chore: ChoreOpsChore): string | null {
+  const label = (chore.labels ?? []).map((item) => item.trim()).find(Boolean);
+  return label ?? null;
+}
+
+/** Morning/afternoon/evening from the earliest due time in a routine. */
+function timeBlockFor(dueDate: string | null | undefined): PlannerTimeBlock {
+  if (!dueDate) return 'morning';
+  const due = new Date(dueDate);
+  if (Number.isNaN(due.getTime())) return 'morning';
+  const hour = due.getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 17) return 'afternoon';
+  return 'evening';
+}
+
+/**
+ * Daily chores reset at midnight in ChoreOps, so a completion from an earlier
+ * day is yesterday's work and must not sit in today's "done" list.
+ */
+function completedToday(chore: ChoreOpsChore, now: Date): boolean {
+  if (!chore.lastCompleted) return true;
+  const done = new Date(chore.lastCompleted);
+  if (Number.isNaN(done.getTime())) return true;
+  return done.toDateString() === now.toDateString();
+}
+
 /**
  * Statuses where a `shared_first` chore is still waiting to be picked up.
  * Everything else (claimed, completed, ...) means one child has it now, and
@@ -118,6 +158,7 @@ export function choreAudience(
 export function buildChorePlannerView(
   state: ChoreOpsState | null,
   family: FamilyMember[],
+  now: Date = new Date(),
 ): ChorePlannerView {
   const users = state?.users ?? [];
 
@@ -138,7 +179,15 @@ export function buildChorePlannerView(
   const tasks: PlannerTask[] = (state?.chores ?? [])
     // Another child already took this shared_first chore; it is no longer on
     // this child's list, and ChoreOps only awards points to whoever did it.
-    .filter((chore) => !TAKEN_BY_SOMEONE_ELSE.test(chore.status))
+    .filter((chore) => {
+      if (TAKEN_BY_SOMEONE_ELSE.test(chore.status)) return false;
+      // A daily chore finished on an earlier day is not today's completion.
+      const finished = choreOpsTaskStatus(chore.status) === 'completed';
+      if (finished && DAILY_FREQUENCY.test(chore.frequency ?? '') && !completedToday(chore, now)) {
+        return false;
+      }
+      return true;
+    })
     .map((chore) => {
       const member = resolveMemberForUser(chore.assignee, family);
       const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
@@ -166,6 +215,56 @@ export function buildChorePlannerView(
       } satisfies PlannerTask;
     });
 
+  /*
+   * Routines are the daily chores, grouped by their ChoreOps label. One entry
+   * per label (not per child) so "Ochtendroutine" reads the same whoever the
+   * group happens to be listed under; `memberIds` records who does it.
+   */
+  const routineBuckets = new Map<
+    string,
+    {
+      name: string;
+      icon: string | null;
+      memberIds: Set<string>;
+      points: number;
+      dueDate: string | null;
+    }
+  >();
+
+  for (const chore of state?.chores ?? []) {
+    if (!DAILY_FREQUENCY.test(chore.frequency ?? '')) continue;
+    if (!chore.assignee) continue;
+
+    const label = routineLabel(chore);
+    const key = (label ?? '').trim().toLowerCase();
+    const member = resolveMemberForUser(chore.assignee, family);
+    const memberId = memberIdFor(chore.assignee, member);
+    const bucket = routineBuckets.get(key) ?? {
+      name: label ?? '',
+      icon: plannerIcon(chore.icon),
+      memberIds: new Set<string>(),
+      points: 0,
+      dueDate: null,
+    };
+
+    if (memberIds.has(memberId)) bucket.memberIds.add(memberId);
+    bucket.points += chore.points ?? 0;
+    if (chore.dueDate && (!bucket.dueDate || chore.dueDate < bucket.dueDate)) {
+      bucket.dueDate = chore.dueDate;
+    }
+    routineBuckets.set(key, bucket);
+  }
+
+  const routines: PlannerRoutine[] = Array.from(routineBuckets.entries()).map(([key, bucket]) => ({
+    id: `routine:${key || 'daily'}`,
+    name: bucket.name,
+    icon: bucket.icon ?? '\u23F0',
+    memberIds: Array.from(bucket.memberIds),
+    frequency: 'daily' as const,
+    timeBlock: timeBlockFor(bucket.dueDate),
+    points: bucket.points,
+  }));
+
   const goals: PlannerGoal[] = (state?.rewards ?? []).map((reward) => {
     const member = resolveMemberForUser(reward.assignee, family);
     const id = reward.assignee ? memberIdFor(reward.assignee, member) : null;
@@ -182,6 +281,7 @@ export function buildChorePlannerView(
   return {
     members,
     tasks,
+    routines,
     goals,
     available: Boolean(state?.available && (users.length > 0 || tasks.length > 0)),
   };

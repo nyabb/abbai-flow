@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createReward: vi.fn(async () => {}),
   deleteChore: vi.fn(async () => {}),
   approveReward: vi.fn(async () => {}),
+  pressButton: vi.fn(async () => {}),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -18,7 +19,7 @@ vi.mock('../hooks/useChoreOps', () => ({
     error: null,
     available: true,
     refresh: () => {},
-    pressButton: async () => {},
+    pressButton: mocks.pressButton,
     claimChore: async () => {},
     createChore: async () => {},
     updateChore: async () => {},
@@ -300,6 +301,89 @@ describe('ChorePlanner rewards from ChoreOps', () => {
         cost: 40,
         assignedUserNames: ['Zara'],
       }),
+    );
+  });
+});
+
+/**
+ * Tapping a card on a shared display must never complete a chore by itself:
+ * the child confirms first. Nothing reaches ChoreOps until they say yes, and
+ * only a chore nobody owns yet is worded as a claim.
+ */
+describe('ChorePlanner completion confirmation', () => {
+  beforeEach(() => {
+    mocks.state.current = choreOpsState();
+    mocks.pressButton.mockClear();
+    localStorage.clear();
+  });
+
+  it('asks before finishing the child’s own chore and does nothing on cancel', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector('.planner-check')!);
+
+    // The chore is already Zara's, so this is finishing it, not claiming it.
+    expect(container.textContent).toContain('Taakje afronden?');
+    expect(container.textContent).not.toContain('Taakje claimen?');
+    expect(mocks.pressButton).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuleren' }));
+    expect(container.textContent).not.toContain('Taakje afronden?');
+    expect(mocks.pressButton).not.toHaveBeenCalled();
+  });
+
+  it('finishes the chore once the child confirms', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
+    );
+  });
+
+  it('asks a different question when a parent signs the chore off', async () => {
+    mocks.state.current = choreOpsState({
+      chores: [
+        {
+          ...choreOpsState().chores[0],
+          status: 'claimed',
+          actions: { approve: 'button.zara_approve_afwassen' },
+        },
+      ],
+    });
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector('.planner-check')!);
+
+    expect(container.textContent).toContain('Taakje afronden?');
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_afwassen'),
+    );
+  });
+
+  it('only offers to claim a chore nobody owns yet', async () => {
+    mocks.state.current = choreOpsState({
+      chores: [
+        {
+          ...choreOpsState().chores[0],
+          completionCriteria: 'shared_first',
+          assignedUserNames: ['Zara', 'Maya'],
+        },
+      ],
+    });
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector('.planner-check')!);
+
+    expect(container.textContent).toContain('Taakje claimen?');
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
     );
   });
 });

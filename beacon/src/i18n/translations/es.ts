@@ -492,6 +492,15 @@ export const es: Record<TranslationKey, string> = {
   'chores.assigned': 'Asignado · esperando confirmación',
   'chores.confirm': 'Confirmar',
   'chores.undo': 'Deshacer',
+  'chores.confirmClaimTitle': '¿Reclamar esta tarea?',
+  'chores.confirmClaimBody': '¿Seguro que quieres reclamar esta tarea?',
+  'chores.confirmDoneTitle': '¿Terminar esta tarea?',
+  'chores.confirmDoneBody': '¿Seguro que has terminado esta tarea?',
+  'chores.dailyRoutines': 'Rutinas diarias',
+  'chores.routineLabel': 'Rutina',
+  'chores.routinePlaceholder': 'p. ej. Rutina de mañana',
+  'chores.routineHint':
+    'Las tareas diarias con el mismo nombre de rutina se agrupan en Rutinas.',
   'chores.noChoresToday': 'No hay nada pendiente ahora.',
   'chores.wellDone': '¡Bien hecho!',
   'chores.missing':

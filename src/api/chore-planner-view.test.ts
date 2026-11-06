@@ -220,3 +220,127 @@ describe('shared chores', () => {
     expect(view.tasks[0].audience).toBe('member');
   });
 });
+
+/**
+ * Routines are the daily chores ChoreOps already has, grouped by the label the
+ * household gave them ("Ochtendroutine"). Completions only count for the day
+ * they happened, because a daily chore restarts the next morning.
+ */
+describe('daily routines', () => {
+  const points = {
+    entity_id: 'sensor.maya_choreops_points',
+    state: '0',
+    attributes: { purpose: 'purpose_points', user_name: 'Maya' },
+  };
+
+  const dailyChore = (
+    name: string,
+    extra: Record<string, unknown> = {},
+    status = 'pending',
+    slug = 'tanden',
+  ) => ({
+    entity_id: `sensor.maya_choreops_chore_status_${slug}`,
+    state: status,
+    attributes: {
+      purpose: 'purpose_chore_status',
+      user_name: 'Maya',
+      chore_name: name,
+      default_points: 2,
+      recurring_frequency: 'daily',
+      completion_criteria: 'independent',
+      assigned_user_names: ['Maya'],
+      ...extra,
+    },
+  });
+
+  it('groups daily chores by their ChoreOps label', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        points,
+        dailyChore('Tanden poetsen', {
+          labels: ['Ochtendroutine'],
+          due_date: '2026-11-06T07:30:00',
+        }),
+        dailyChore(
+          'Aankleden',
+          { labels: ['Ochtendroutine'], due_date: '2026-11-06T07:45:00' },
+          'pending',
+          'aankleden',
+        ),
+        dailyChore(
+          'Taken uitzoeken',
+          { recurring_frequency: 'weekly', labels: ['Ochtendroutine'] },
+          'pending',
+          'huiswerk',
+        ),
+      ]),
+      [],
+      new Date('2026-11-06T09:00:00'),
+    );
+
+    expect(view.routines).toHaveLength(1);
+    expect(view.routines[0]).toMatchObject({
+      name: 'Ochtendroutine',
+      frequency: 'daily',
+      timeBlock: 'morning',
+      points: 4,
+    });
+    expect(view.routines[0].memberIds).toEqual(['choreops:maya']);
+  });
+
+  it('keeps a routine without a label, leaving the name to the UI', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([points, dailyChore('Tanden poetsen')]),
+      [],
+      new Date('2026-11-06T09:00:00'),
+    );
+
+    expect(view.routines).toHaveLength(1);
+    expect(view.routines[0].name).toBe('');
+  });
+
+  it('drops a daily chore finished on an earlier day from the board', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        points,
+        dailyChore('Tanden poetsen', { last_completed: '2026-11-05T07:30:00' }, 'approved'),
+      ]),
+      [],
+      new Date('2026-11-06T09:00:00'),
+    );
+
+    expect(view.tasks).toHaveLength(0);
+  });
+
+  it('keeps a daily chore finished today', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        points,
+        dailyChore('Tanden poetsen', { last_completed: '2026-11-06T07:30:00' }, 'approved'),
+      ]),
+      [],
+      new Date('2026-11-06T09:00:00'),
+    );
+
+    expect(view.tasks).toHaveLength(1);
+    expect(view.tasks[0].statusOverride).toBe('completed');
+  });
+
+  it('keeps old completions for chores that do not repeat daily', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        points,
+        dailyChore(
+          'Garage opruimen',
+          { recurring_frequency: 'none', last_completed: '2026-10-01T07:30:00' },
+          'approved',
+          'garage',
+        ),
+      ]),
+      [],
+      new Date('2026-11-06T09:00:00'),
+    );
+
+    expect(view.tasks).toHaveLength(1);
+  });
+});
