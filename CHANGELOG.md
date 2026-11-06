@@ -1,3 +1,15 @@
+# [1.46.0](https://github.com/nyabb/beacon/compare/v1.45.0...v1.46.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **chores:** dark mode, centred lobby, tighter header and reward management ([ba86a9e](https://github.com/nyabb/beacon/commit/ba86a9e41c231f36495ca2ba420407952e5c193f))
+
+
+### Features
+
+* **chores:** group the everyone board by child ([f6c7191](https://github.com/nyabb/beacon/commit/f6c7191e2e7d2bfe8699c1721d0aa027cd4b5172))
+
 # [1.45.0](https://github.com/nyabb/beacon/compare/v1.44.0...v1.45.0) (2026-11-06)
 
 
