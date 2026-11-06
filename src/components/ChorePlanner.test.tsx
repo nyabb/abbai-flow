@@ -341,6 +341,10 @@ describe('ChorePlanner completion confirmation', () => {
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
     );
+    // The toast names what happened — this was finishing, not claiming.
+    await waitFor(() =>
+      expect(container.querySelector('.planner-toast')?.textContent).toBe('Afgerond · Afwassen'),
+    );
   });
 
   it('asks a different question when a parent signs the chore off', async () => {
@@ -385,5 +389,29 @@ describe('ChorePlanner completion confirmation', () => {
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
     );
+    await waitFor(() =>
+      expect(container.querySelector('.planner-toast')?.textContent).toBe('Geclaimd · Afwassen'),
+    );
+  });
+
+  /*
+   * The bottom-tab badge counts what is still on the child's plate. A claimed
+   * chore is done as far as the child is concerned (a parent's approval is a
+   * real-life confirmation), so it must not keep the badge alive.
+   */
+  it('drops the badge once every chore is claimed or finished', () => {
+    mocks.state.current = choreOpsState();
+    const open = renderPlanner([PARENT, ZARA]);
+    expect(open.container.querySelector('.planner-nav-badge')?.textContent).toBe('1');
+    open.unmount();
+
+    for (const status of ['claimed', 'completed']) {
+      mocks.state.current = choreOpsState({
+        chores: [{ ...choreOpsState().chores[0], status }],
+      });
+      const done = renderPlanner([PARENT, ZARA]);
+      expect(done.container.querySelector('.planner-nav-badge')).toBeNull();
+      done.unmount();
+    }
   });
 });

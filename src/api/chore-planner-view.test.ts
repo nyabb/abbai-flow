@@ -288,15 +288,17 @@ describe('daily routines', () => {
     expect(view.routines[0].memberIds).toEqual(['choreops:maya']);
   });
 
-  it('keeps a routine without a label, leaving the name to the UI', () => {
+  it('does not invent a routine for daily chores without a label', () => {
     const view = buildChorePlannerView(
       normalizeChoreOps([points, dailyChore('Tanden poetsen')]),
       [],
       new Date('2026-11-06T09:00:00'),
     );
 
-    expect(view.routines).toHaveLength(1);
-    expect(view.routines[0].name).toBe('');
+    // No routine was named in ChoreOps, so no routines bar is shown at all.
+    expect(view.routines).toEqual([]);
+    // The chore itself still shows up as a normal task.
+    expect(view.tasks).toHaveLength(1);
   });
 
   it('drops a daily chore finished on an earlier day from the board', () => {

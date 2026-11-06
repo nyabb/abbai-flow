@@ -497,11 +497,17 @@ export const de: Record<TranslationKey, string> = {
   'chores.confirmClaimBody': 'Bist du sicher, dass du diese Aufgabe übernehmen möchtest?',
   'chores.confirmDoneTitle': 'Aufgabe abschließen?',
   'chores.confirmDoneBody': 'Bist du sicher, dass du mit dieser Aufgabe fertig bist?',
-  'chores.dailyRoutines': 'Tägliche Routinen',
   'chores.routineLabel': 'Routine',
   'chores.routinePlaceholder': 'z. B. Morgenroutine',
   'chores.routineHint':
     'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
+  'chores.openTodo': 'offen',
+  'chores.created': 'Erstellt',
+  'chores.claimedToast': 'Übernommen',
+  'chores.approved': 'Genehmigt',
+  'chores.removedToast': 'Gelöscht',
+  'chores.assignedToast': 'Zugewiesen',
+  'chores.undoneToast': 'Rückgängig gemacht',
   'chores.noChoresToday': 'Gerade steht nichts an.',
   'chores.wellDone': 'Super gemacht!',
   'chores.missing':

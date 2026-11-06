@@ -235,12 +235,16 @@ export function buildChorePlannerView(
     if (!DAILY_FREQUENCY.test(chore.frequency ?? '')) continue;
     if (!chore.assignee) continue;
 
+    // No label → not a named routine. It stays a normal daily chore instead of
+    // inventing a catch-all "daily routines" bar nobody asked for.
     const label = routineLabel(chore);
-    const key = (label ?? '').trim().toLowerCase();
+    if (!label) continue;
+
+    const key = label.trim().toLowerCase();
     const member = resolveMemberForUser(chore.assignee, family);
     const memberId = memberIdFor(chore.assignee, member);
     const bucket = routineBuckets.get(key) ?? {
-      name: label ?? '',
+      name: label,
       icon: plannerIcon(chore.icon),
       memberIds: new Set<string>(),
       points: 0,

@@ -837,6 +837,7 @@
   box-shadow: 0 -3px 18px rgba(38, 51, 47, 0.07);
 }
 .planner-bottom-nav button {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -848,6 +849,23 @@
   background: transparent;
   font: inherit;
   cursor: pointer;
+}
+/* Count of claimed-but-not-finished chores, sitting on the Chores tab. */
+.planner-nav-badge {
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  display: grid;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--planner-accent);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
 }
 .planner-bottom-nav button span {
   display: grid;

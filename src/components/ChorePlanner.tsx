@@ -93,8 +93,9 @@ const UNIT_LABEL: Record<Language, Record<ChoreOpsIntervalUnit, string>> = {
   en: { hours: 'hours', days: 'days', weeks: 'weeks', months: 'months' },
 };
 
-function liveToast(copy: { done: string }, label: string): string {
-  return `${copy.done} · ${label}`;
+/** "Aangemaakt · Afwassen": the action first, then the chore it happened to. */
+function toastWith(action: string, label: string): string {
+  return `${action} · ${label}`;
 }
 type FormValue = {
   name: string;
@@ -147,6 +148,12 @@ const COPY = {
     open: 'Open',
     late: 'Te laat',
     done: 'Afgerond',
+    created: 'Aangemaakt',
+    claimedToast: 'Geclaimd',
+    approved: 'Goedgekeurd',
+    removedToast: 'Verwijderd',
+    assignedToast: 'Toegewezen',
+    undoneToast: 'Teruggedraaid',
     today: 'Vandaag',
     weather: 'Weer',
     nextAppointment: 'Volgende afspraak',
@@ -216,7 +223,6 @@ const COPY = {
     privacy: 'Privacy',
     sound: 'Geluid',
     routines: 'Routines',
-    dailyRoutines: 'Dagelijkse routines',
     routineLabel: 'Routine',
     routinePlaceholder: 'Bijv. Ochtendroutine',
     routineHint: 'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
@@ -253,6 +259,7 @@ const COPY = {
     saved: 'gespaard',
     locked: 'nog niet genoeg',
     claimed: 'wacht op goedkeuring',
+    openTodo: 'nog te doen',
     savedToast: 'Opgeslagen',
   },
   en: {
@@ -265,6 +272,12 @@ const COPY = {
     open: 'Open',
     late: 'Late',
     done: 'Completed',
+    created: 'Created',
+    claimedToast: 'Claimed',
+    approved: 'Approved',
+    removedToast: 'Deleted',
+    assignedToast: 'Assigned',
+    undoneToast: 'Undone',
     today: 'Today',
     weather: 'Weather',
     nextAppointment: 'Next appointment',
@@ -333,7 +346,6 @@ const COPY = {
     privacy: 'Privacy',
     sound: 'Sound',
     routines: 'Routines',
-    dailyRoutines: 'Daily routines',
     routineLabel: 'Routine',
     routinePlaceholder: 'e.g. Morning routine',
     routineHint: 'Daily chores with the same routine name are grouped under Routines.',
@@ -370,6 +382,7 @@ const COPY = {
     saved: 'saved',
     locked: 'not enough yet',
     claimed: 'awaiting approval',
+    openTodo: 'to do',
     savedToast: 'Saved',
   },
 } as const;
@@ -520,6 +533,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     label: string;
     /** `done` for a parent sign-off, `claim` when the child takes the chore. */
     kind: 'claim' | 'done';
+    /** What the toast says afterwards, e.g. "Geclaimd" or "Goedgekeurd". */
+    action: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
@@ -673,6 +688,19 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     [data.tasks, memberFilter, now, statusFilter],
   );
 
+  /**
+   * What is still on the child's plate in the current view: chores nobody has
+   * claimed yet and that are not finished. A claimed chore already counts as
+   * done — the parent's approval is a real-life confirmation, not a task the
+   * child still owes — so once everything is claimed the badge disappears
+   * instead of nagging.
+   */
+  const openCount = filteredTasks.filter((task) => {
+    if (task.awaitingReview) return false;
+    const status = taskStatus(task);
+    return status !== 'completed' && status !== 'expired';
+  }).length;
+
   const freeTasks = filteredTasks.filter(
     (task) => !task.memberId && taskStatus(task) !== 'completed',
   );
@@ -770,23 +798,25 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     // Ask first: a mis-tap would claim the chore and hand out points.
     // Only a chore nobody owns yet is "claimed"; one that was already assigned
     // to this child is just finished, so it gets the "are you done?" wording.
+    const claiming = task.audience === 'anyone';
     setConfirmAction({
       taskId: task.id,
       entityId,
       label: task.name,
-      kind: task.audience === 'anyone' ? 'claim' : 'done',
+      kind: claiming ? 'claim' : 'done',
+      action: claiming ? c.claimedToast : task.awaitingReview ? c.approved : c.done,
     });
   };
 
   /** Press a ChoreOps button and report the outcome, then re-read its entities. */
-  const runLiveAction = async (taskId: string, entityId: string, label: string) => {
+  const runLiveAction = async (taskId: string, entityId: string, label: string, action: string) => {
     if (pendingTaskId) return;
     setPendingTaskId(taskId);
     try {
       await choreOps.pressButton(entityId);
       setConfetti(true);
       playCompletionSound();
-      showToast(liveToast(c, label));
+      showToast(toastWith(action, label));
       if (screen === 'mission') advanceMission();
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail);
@@ -910,7 +940,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
         });
       }
       setModal(null);
-      showToast(`${c.done} \u00b7 ${form.name.trim()}`);
+      showToast(toastWith(c.created, form.name.trim()));
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail);
     } finally {
@@ -922,7 +952,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     try {
       await choreOps.deleteChore(task.name);
       setModal(null);
-      showToast(`${c.remove} \u00b7 ${task.name}`);
+      showToast(toastWith(c.removedToast, task.name));
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail);
     }
@@ -986,7 +1016,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
         setSaving(true);
         await choreOps.deleteReward(reward.name);
         setModal('rewards');
-        showToast(`${c.remove} \u00b7 ${reward.name}`);
+        showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail);
       } finally {
@@ -1014,13 +1044,13 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     setReservations((list) =>
       reservePoints(list, { user: userName, reward: reward.name, points: reward.cost }),
     );
-    showToast(`${c.assign} \u00b7 ${reward.name}`);
+    showToast(toastWith(c.assignedToast, reward.name));
   };
 
   /** Give the points back — the child changed their mind about this reward. */
   const undoRewardChoice = (reward: ChoreOpsReward) => {
     setReservations((list) => releasePoints(list, reward.assignee, reward.name));
-    showToast(`${c.undoShort} \u00b7 ${reward.name}`);
+    showToast(toastWith(c.undoneToast, reward.name));
   };
 
   /**
@@ -1039,7 +1069,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           await choreOps.approveReward(reward.assignee as string, reward.name, approverName);
           setReservations((list) => releasePoints(list, reward.assignee, reward.name));
           playCompletionSound();
-          showToast(liveToast(c, reward.name));
+          showToast(toastWith(c.approved, reward.name));
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail);
         } finally {
@@ -1101,22 +1131,25 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     // ChoreOps reports completion as a status, so fall back to the due time for
     // the label instead of printing an invalid date.
     const completedAt = task.completedAt ?? deadline;
+    // A claimed chore is not "still X minutes left": it waits for a parent.
     const subtitle =
-      status === 'upcoming'
-        ? `${c.upcoming} ${new Date(task.startsAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
-        : status === 'active'
-          ? deadline
-            ? `${c.active} ${countdown(deadline, now, language)}`
-            : c.open
-          : status === 'retry'
-            ? `${c.retryCopy} · ${countdown(deadline ? new Date(new Date(deadline).getTime() + (task.retryMinutes ?? 0) * 60_000).toISOString() : null, now, language)}`
-            : status === 'late'
-              ? c.late
-              : status === 'expired'
-                ? c.expired
-                : completedAt
-                  ? `${c.completedAt} ${new Date(completedAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
-                  : c.done;
+      task.awaitingReview && status !== 'completed'
+        ? c.claimed
+        : status === 'upcoming'
+          ? `${c.upcoming} ${new Date(task.startsAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+          : status === 'active'
+            ? deadline
+              ? `${c.active} ${countdown(deadline, now, language)}`
+              : c.open
+            : status === 'retry'
+              ? `${c.retryCopy} · ${countdown(deadline ? new Date(new Date(deadline).getTime() + (task.retryMinutes ?? 0) * 60_000).toISOString() : null, now, language)}`
+              : status === 'late'
+                ? c.late
+                : status === 'expired'
+                  ? c.expired
+                  : completedAt
+                    ? `${c.completedAt} ${new Date(completedAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+                    : c.done;
     const timeLabel =
       task.timeBlock === 'morning'
         ? c.morning
@@ -1456,7 +1489,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                   {data.routines.map((routine) => (
                     <div key={routine.id} className="planner-routine-row">
                       <span>{routine.icon}</span>
-                      <strong>{routine.name || c.dailyRoutines}</strong>
+                      <strong>{routine.name}</strong>
                       <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
                       <span className="planner-routine-time">
                         {routine.timeBlock === 'morning'
@@ -1620,7 +1653,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                           requestPin(
                             c.rewards,
                             reward.name,
-                            () => void runLiveAction(reward.id, approveId, reward.name),
+                            () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
                           )
                         }
                       >
@@ -1734,10 +1767,17 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       <nav className="planner-bottom-nav" aria-label="Chore planner">
         <button
           className={screen === 'tasks' ? 'is-active' : ''}
+          aria-label={openCount > 0 ? `${openCount} ${c.openTodo}` : c.shortTitle}
           onClick={() => setScreen('tasks')}
         >
           <span>✓</span>
           <strong>{c.shortTitle}</strong>
+          {/* Chores still to do. Claimed or finished ones no longer count. */}
+          {openCount > 0 && (
+            <span className="planner-nav-badge" aria-hidden="true">
+              {openCount}
+            </span>
+          )}
         </button>
         <button
           className={screen !== 'tasks' ? 'is-active' : ''}
@@ -2103,7 +2143,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                               requestPin(
                                 c.rewards,
                                 reward.name,
-                                () => void runLiveAction(reward.id, approveId, reward.name),
+                                () =>
+                                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
                               )
                             }
                           >
@@ -2267,7 +2308,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 onClick={() => {
                   const action = confirmAction;
                   setConfirmAction(null);
-                  void runLiveAction(action.taskId, action.entityId, action.label);
+                  void runLiveAction(action.taskId, action.entityId, action.label, action.action);
                 }}
               >
                 {c.confirm}
