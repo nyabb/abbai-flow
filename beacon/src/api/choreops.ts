@@ -397,7 +397,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       available = true;
       const rewardName = str(entity.attributes, 'reward_name');
       if (userName && rewardName) {
-        const key = rewardName.trim().toLowerCase();
+        // Rewards are per user: the same reward name exists once per assignee.
+        const key = choreKey(userName, rewardName);
         const entry = rewardButtons.get(key) ?? {
           id: entity.entity_id,
           name: rewardName,
@@ -520,13 +521,26 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
 
   const rewardMap = new Map<string, ChoreOpsReward>();
   for (const reward of rewards) {
-    rewardMap.set(reward.name.trim().toLowerCase(), reward);
+    rewardMap.set(choreKey(reward.assignee, reward.name), reward);
   }
   for (const [key, reward] of rewardButtons) {
-    const existing = rewardMap.get(key);
+    let existing = rewardMap.get(key);
+    if (!existing) {
+      // A status sensor that did not publish `user_name` still belongs to the
+      // user we know from the button, so adopt that user instead of duplicating.
+      const anonymousKey = choreKey(null, reward.name);
+      const anonymous = rewardMap.get(anonymousKey);
+      if (anonymous && !anonymous.assignee) {
+        rewardMap.delete(anonymousKey);
+        anonymous.assignee = reward.assignee ?? null;
+        existing = anonymous;
+        rewardMap.set(choreKey(anonymous.assignee, anonymous.name), anonymous);
+      }
+    }
     if (existing) {
       existing.actions = { ...existing.actions, ...reward.actions };
       existing.assignee = existing.assignee ?? reward.assignee;
+      if (reward.cost > 0) existing.cost = reward.cost;
       continue;
     }
     rewardMap.set(key, reward);
@@ -799,6 +813,30 @@ export function buildCreateRewardPayload(input: CreateRewardInput): Record<strin
     assigned_user_names: users,
   };
   if (input.description?.trim()) payload.description = input.description.trim();
+
+  return payload;
+}
+
+export interface UpdateRewardInput {
+  /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
+  entryId: string | null;
+  /**
+   * The reward's current name — the handle ChoreOps resolves it by. Renaming
+   * needs the internal reward id, which no entity attribute exposes.
+   */
+  name: string;
+  cost?: number;
+}
+
+/** Build the `choreops.update_reward` payload (price changes from the UI). */
+export function buildUpdateRewardPayload(input: UpdateRewardInput): Record<string, unknown> | null {
+  const name = input.name.trim();
+  if (!input.entryId || !name) return null;
+
+  const payload: Record<string, unknown> = { config_entry_id: input.entryId, name };
+  if (typeof input.cost === 'number' && Number.isFinite(input.cost)) {
+    payload.cost = Math.max(1, Math.round(input.cost));
+  }
 
   return payload;
 }

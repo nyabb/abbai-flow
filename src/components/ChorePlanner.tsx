@@ -25,7 +25,7 @@ import {
   CHOREOPS_INTERVAL_UNITS,
 } from '../api/choreops';
 import type { ChoreOpsFrequency, ChoreOpsIntervalUnit } from '../api/choreops';
-import type { ChoreOpsChore } from '../types/choreops';
+import type { ChoreOpsChore, ChoreOpsReward } from '../types/choreops';
 import { useChoreOps } from '../hooks/useChoreOps';
 import { normalizePin, type FamilyMember } from '../types/family';
 import { MemberAvatar } from './MemberAvatar';
@@ -148,7 +148,7 @@ const COPY = {
     task: 'Taakje',
     routine: 'Routine',
     name: 'Naam',
-    points: "Qudoo's",
+    points: 'Punten',
     forWho: 'Voor wie',
     freeTask: 'Vrij te pakken door iedereen',
     deadline: 'Deadline',
@@ -175,7 +175,7 @@ const COPY = {
     retryCopy: 'Je bent te laat, maar je krijgt nog één kans',
     completedAt: 'Afgerond om',
     noFail: 'Niet gelukt, probeer opnieuw',
-    pointsReturned: "Qudoo's teruggezet",
+    pointsReturned: 'Punten teruggezet',
     pauseInfo:
       'Nieuwe routine-taakjes worden niet meer aangemaakt tot je hervat. Bestaande taakjes blijven staan.',
     pauseNow: 'Pauzeren',
@@ -224,7 +224,9 @@ const COPY = {
     redeem: 'Inwisselen',
     pointsUnit: 'punten',
     saved: 'gespaard',
+    locked: 'nog niet genoeg',
     claimed: 'wacht op goedkeuring',
+    savedToast: 'Opgeslagen',
   },
   en: {
     title: 'Chores & Routines',
@@ -250,7 +252,7 @@ const COPY = {
     task: 'Task',
     routine: 'Routine',
     name: 'Name',
-    points: "Qudoo's",
+    points: 'Points',
     forWho: 'For whom',
     freeTask: 'Free for anyone to claim',
     deadline: 'Deadline',
@@ -277,7 +279,7 @@ const COPY = {
     retryCopy: 'You are late, but you get one more chance',
     completedAt: 'Completed at',
     noFail: 'Could not save, try again',
-    pointsReturned: "Qudoo's returned",
+    pointsReturned: 'Points returned',
     pauseInfo: 'No new routine tasks will be created until you resume. Existing tasks stay.',
     pauseNow: 'Pause',
     resumeInfo: 'Routines resume from now. Missed tasks will not be backfilled.',
@@ -325,7 +327,9 @@ const COPY = {
     redeem: 'Redeem',
     pointsUnit: 'points',
     saved: 'saved',
+    locked: 'not enough yet',
     claimed: 'awaiting approval',
+    savedToast: 'Saved',
   },
 } as const;
 
@@ -347,7 +351,7 @@ function countdown(target: string | null, now: Date, language: Language): string
 function formFromTask(task: PlannerTask): FormValue {
   return {
     name: task.name,
-    icon: task.icon,
+    icon: task.icon ?? '',
     points: task.points,
     memberIds: task.memberId ? [task.memberId] : [],
     free: !task.memberId,
@@ -450,7 +454,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
   const [memberFilter, setMemberFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'late' | 'completed'>('all');
   const [completedExpanded, setCompletedExpanded] = useState(false);
-  const [modal, setModal] = useState<'form' | 'actions' | 'rewards' | 'reward-form' | null>(null);
+  const [modal, setModal] = useState<
+    'form' | 'actions' | 'rewards' | 'reward-form' | 'reward-actions' | null
+  >(null);
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -480,6 +486,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     cost: number;
     memberIds: string[];
   }>({ name: '', cost: 10, memberIds: [] });
+  /** Name of the reward being edited; `null` means the form creates a new one. */
+  const [editingReward, setEditingReward] = useState<string | null>(null);
+  const [selectedReward, setSelectedReward] = useState<ChoreOpsReward | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = COPY[language];
@@ -553,6 +562,13 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     data.members.find(
       (member) => member.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase(),
     ) ?? null;
+  /** The rewards ChoreOps assigns to one planner member (via its ChoreOps user). */
+  const rewardsForMember = (memberId: string | null): ChoreOpsReward[] => {
+    const userName = memberId ? userNameByMemberId.get(memberId) : null;
+    if (!userName) return [];
+    const key = userName.trim().toLowerCase();
+    return rewards.filter((reward) => (reward.assignee ?? '').trim().toLowerCase() === key);
+  };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
   const selectedTodayMember = memberFor(todayMemberId);
 
@@ -780,10 +796,29 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
    * different rewards with different costs.
    */
   const saveReward = async () => {
+    if (saving) return;
+
+    if (editingReward) {
+      const update = async () => {
+        try {
+          setSaving(true);
+          await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
+          setModal('rewards');
+          showToast(`${c.savedToast} \u00b7 ${editingReward}`);
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : c.noFail);
+        } finally {
+          setSaving(false);
+        }
+      };
+      requestPin(c.cost, editingReward, () => void update());
+      return;
+    }
+
     const userNames = rewardForm.memberIds
       .map((id) => userNameByMemberId.get(id))
       .filter((name): name is string => Boolean(name));
-    if (!rewardForm.name.trim() || userNames.length === 0 || saving) return;
+    if (!rewardForm.name.trim() || userNames.length === 0) return;
 
     const create = async () => {
       try {
@@ -794,7 +829,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           assignedUserNames: userNames,
         });
         setModal('rewards');
-        showToast(`${c.done} \u00b7 ${rewardForm.name.trim()}`);
+        showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail);
       } finally {
@@ -802,6 +837,23 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       }
     };
     requestPin(c.newReward, rewardForm.name.trim(), () => void create());
+  };
+
+  /** Delete a reward from ChoreOps (parent action, so PIN gated). */
+  const removeReward = async (reward: ChoreOpsReward) => {
+    const remove = async () => {
+      try {
+        setSaving(true);
+        await choreOps.deleteReward(reward.name);
+        setModal('rewards');
+        showToast(`${c.remove} \u00b7 ${reward.name}`);
+      } catch (err) {
+        showToast(err instanceof Error ? err.message : c.noFail);
+      } finally {
+        setSaving(false);
+      }
+    };
+    requestPin(c.remove, reward.name, () => void remove());
   };
 
   const beginMissions = () => {
@@ -903,12 +955,14 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <span />
           )}
         </button>
-        <span className="planner-task-icon" aria-hidden="true">
-          {task.icon}
-        </span>
         <div className="planner-task-copy">
           <div className="planner-task-title-row">
             <span className="planner-status-dot" />
+            {task.icon && (
+              <span className="planner-task-icon" aria-hidden="true">
+                {task.icon}
+              </span>
+            )}
             <h3 className={status === 'expired' ? 'is-struck' : ''}>{task.name}</h3>
           </div>
           <p>{subtitle}</p>
@@ -1237,6 +1291,59 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               {c.pot}
             </span>
           </div>
+          {rewardsForMember(selectedTodayMember.id).length > 0 && (
+            <section className="planner-child-rewards">
+              <h3>{c.rewards}</h3>
+              {rewardsForMember(selectedTodayMember.id).map((reward) => {
+                const available = reward.status === 'available';
+                const pending = reward.pendingClaims > 0;
+                const approveId = reward.actions.approve;
+                const claimId = reward.actions.claim;
+                const saved = selectedTodayMember.savings;
+                return (
+                  <div className="planner-reward" key={reward.id}>
+                    <span aria-hidden="true">{'\u{1F381}'}</span>
+                    <div className="planner-reward-copy">
+                      <strong>{reward.name}</strong>
+                      <small>
+                        {saved} / {reward.cost} {c.pointsUnit}
+                        {pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`}
+                      </small>
+                      <i>
+                        <b
+                          style={{
+                            width: `${Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
+                          }}
+                        />
+                      </i>
+                    </div>
+                    {pending && approveId ? (
+                      <button
+                        className="planner-primary planner-reward-action"
+                        onClick={() =>
+                          requestPin(
+                            c.rewards,
+                            reward.name,
+                            () => void runLiveAction(reward.id, approveId, reward.name),
+                          )
+                        }
+                      >
+                        {c.pinConfirm}
+                      </button>
+                    ) : claimId ? (
+                      <button
+                        className="planner-ghost planner-reward-action"
+                        disabled={!available}
+                        onClick={() => void runLiveAction(reward.id, claimId, reward.name)}
+                      >
+                        {c.redeem}
+                      </button>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </section>
+          )}
           <button className="planner-primary" onClick={() => setScreen('missions')}>
             {c.continue}
             <ChevronRight />
@@ -1280,7 +1387,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             </div>
           </div>
           <div className="planner-mission-hero">
-            <span>{missionTask.icon}</span>
+            {missionTask.icon && <span>{missionTask.icon}</span>}
             <h2>{missionTask.name}</h2>
             {missionTask.points > 0 && <b>⭐ {missionTask.points}</b>}
             <p>
@@ -1598,7 +1705,10 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               <>
                 <h2>{c.action}</h2>
                 {taskStatus(selectedTask) === 'completed' ? null : (
-                  <button className="planner-destination" onClick={() => openEditForm(selectedTask)}>
+                  <button
+                    className="planner-destination"
+                    onClick={() => openEditForm(selectedTask)}
+                  >
                     <Pencil />
                     <strong>{c.edit}</strong>
                   </button>
@@ -1626,71 +1736,92 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               <>
                 <h2>{c.rewards}</h2>
                 {rewards.length === 0 && <p>{c.noRewards}</p>}
-                {rewards.map((reward) => {
-                  const owner = memberByName(reward.assignee);
-                  const saved = owner?.savings ?? 0;
-                  const afford = saved >= reward.cost;
-                  const approveId = reward.actions.approve;
-                  const claimId = reward.actions.claim;
-                  return (
-                    <div className="planner-reward" key={reward.id}>
-                      <span aria-hidden="true">{'\u{1F381}'}</span>
-                      <div className="planner-reward-copy">
-                        <strong>{reward.name}</strong>
-                        <small>
-                          {reward.assignee ? `${reward.assignee} · ` : ''}
-                          {reward.cost} {c.pointsUnit} · {saved} {c.saved}
-                          {reward.pendingClaims > 0 ? ` · ${c.claimed}` : ''}
-                        </small>
-                        <i>
-                          <b
-                            style={{
-                              width: `${Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
-                            }}
-                          />
-                        </i>
+                {rewards
+                  .slice()
+                  .sort(
+                    (a, b) =>
+                      (a.pendingClaims > 0 ? 0 : a.status === 'available' ? 1 : 2) -
+                      (b.pendingClaims > 0 ? 0 : b.status === 'available' ? 1 : 2),
+                  )
+                  .map((reward) => {
+                    const owner = memberByName(reward.assignee);
+                    const saved = owner?.savings ?? 0;
+                    // ChoreOps decides affordability and publishes it as `available`/`locked`.
+                    const available = reward.status === 'available';
+                    const pending = reward.pendingClaims > 0;
+                    const approveId = reward.actions.approve;
+                    const claimId = reward.actions.claim;
+                    return (
+                      <div className="planner-reward" key={reward.id}>
+                        <span aria-hidden="true">{'\u{1F381}'}</span>
+                        <div className="planner-reward-copy">
+                          <strong>{reward.name}</strong>
+                          <small>
+                            {reward.assignee ? `${reward.assignee} · ` : ''}
+                            {saved} / {reward.cost} {c.pointsUnit}
+                            {pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`}
+                          </small>
+                          <i>
+                            <b
+                              style={{
+                                width: `${Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
+                              }}
+                            />
+                          </i>
+                        </div>
+                        {pending && approveId ? (
+                          <button
+                            className="planner-primary planner-reward-action"
+                            onClick={() =>
+                              requestPin(
+                                c.rewards,
+                                reward.name,
+                                () => void runLiveAction(reward.id, approveId, reward.name),
+                              )
+                            }
+                          >
+                            {c.pinConfirm}
+                          </button>
+                        ) : claimId ? (
+                          <button
+                            className="planner-ghost planner-reward-action"
+                            disabled={!available}
+                            onClick={() => void runLiveAction(reward.id, claimId, reward.name)}
+                          >
+                            {c.redeem}
+                          </button>
+                        ) : approveId ? (
+                          <button
+                            className="planner-primary planner-reward-action"
+                            onClick={() =>
+                              requestPin(
+                                c.rewards,
+                                reward.name,
+                                () => void runLiveAction(reward.id, approveId, reward.name),
+                              )
+                            }
+                          >
+                            {c.pinConfirm}
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="planner-task-more"
+                          aria-label={`${c.action}: ${reward.name}`}
+                          onClick={() => {
+                            setSelectedReward(reward);
+                            setModal('reward-actions');
+                          }}
+                        >
+                          {'\u22ef'}
+                        </button>
                       </div>
-                      {reward.pendingClaims > 0 && approveId ? (
-                        <button
-                          className="planner-primary planner-reward-action"
-                          onClick={() =>
-                            requestPin(
-                              c.rewards,
-                              reward.name,
-                              () => void runLiveAction(reward.id, approveId, reward.name),
-                            )
-                          }
-                        >
-                          {c.pinConfirm}
-                        </button>
-                      ) : claimId ? (
-                        <button
-                          className="planner-ghost planner-reward-action"
-                          disabled={!afford}
-                          onClick={() => void runLiveAction(reward.id, claimId, reward.name)}
-                        >
-                          {c.redeem}
-                        </button>
-                      ) : approveId ? (
-                        <button
-                          className="planner-primary planner-reward-action"
-                          onClick={() =>
-                            requestPin(
-                              c.rewards,
-                              reward.name,
-                              () => void runLiveAction(reward.id, approveId, reward.name),
-                            )
-                          }
-                        >
-                          {c.pinConfirm}
-                        </button>
-                      ) : null}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
                 <button
                   className="planner-ghost planner-reward-new"
                   onClick={() => {
+                    setEditingReward(null);
                     setRewardForm({ name: '', cost: 10, memberIds: [] });
                     setModal('reward-form');
                   }}
@@ -1700,18 +1831,47 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 </button>
               </>
             )}
+            {modal === 'reward-actions' && selectedReward && (
+              <>
+                <h2>{c.action}</h2>
+                <button
+                  className="planner-destination"
+                  onClick={() => {
+                    setEditingReward(selectedReward.name);
+                    setRewardForm({
+                      name: selectedReward.name,
+                      cost: Math.round(selectedReward.cost),
+                      memberIds: [],
+                    });
+                    setModal('reward-form');
+                  }}
+                >
+                  <Pencil />
+                  <strong>{c.cost}</strong>
+                </button>
+                <button
+                  className="planner-destination planner-danger"
+                  onClick={() => void removeReward(selectedReward)}
+                >
+                  <Trash2 />
+                  <strong>{c.remove}</strong>
+                </button>
+              </>
+            )}
             {modal === 'reward-form' && (
               <>
-                <h2>{c.newReward}</h2>
+                <h2>{editingReward ? c.cost : c.newReward}</h2>
                 <label className="planner-field">
                   {c.name}
                   <input
                     autoFocus
                     value={rewardForm.name}
+                    disabled={Boolean(editingReward)}
                     onChange={(event) =>
                       setRewardForm((value) => ({ ...value, name: event.target.value }))
                     }
                   />
+                  {editingReward && <small className="planner-hint">{c.renameLocked}</small>}
                 </label>
                 <label className="planner-field">
                   {c.cost}
@@ -1725,28 +1885,30 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                     }
                   />
                 </label>
-                <fieldset className="planner-field">
-                  <legend>{c.forWho}</legend>
-                  <div className="planner-member-picker">
-                    {data.members.map((member) => (
-                      <button
-                        key={member.id}
-                        className={rewardForm.memberIds.includes(member.id) ? 'is-selected' : ''}
-                        onClick={() =>
-                          setRewardForm((value) => ({
-                            ...value,
-                            memberIds: value.memberIds.includes(member.id)
-                              ? value.memberIds.filter((id) => id !== member.id)
-                              : [...value.memberIds, member.id],
-                          }))
-                        }
-                      >
-                        <MemberAvatar member={member} />
-                        {member.name}
-                      </button>
-                    ))}
-                  </div>
-                </fieldset>
+                {!editingReward && (
+                  <fieldset className="planner-field">
+                    <legend>{c.forWho}</legend>
+                    <div className="planner-member-picker">
+                      {data.members.map((member) => (
+                        <button
+                          key={member.id}
+                          className={rewardForm.memberIds.includes(member.id) ? 'is-selected' : ''}
+                          onClick={() =>
+                            setRewardForm((value) => ({
+                              ...value,
+                              memberIds: value.memberIds.includes(member.id)
+                                ? value.memberIds.filter((id) => id !== member.id)
+                                : [...value.memberIds, member.id],
+                            }))
+                          }
+                        >
+                          <MemberAvatar member={member} />
+                          {member.name}
+                        </button>
+                      ))}
+                    </div>
+                  </fieldset>
+                )}
                 <footer className="planner-sheet-footer">
                   <button className="planner-ghost" onClick={() => setModal('rewards')}>
                     {c.cancel}
@@ -1754,7 +1916,10 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                   <button
                     className="planner-primary"
                     disabled={
-                      !rewardForm.name.trim() || rewardForm.memberIds.length === 0 || saving
+                      saving ||
+                      rewardForm.cost < 1 ||
+                      (!editingReward &&
+                        (!rewardForm.name.trim() || rewardForm.memberIds.length === 0))
                     }
                     onClick={() => void saveReward()}
                   >

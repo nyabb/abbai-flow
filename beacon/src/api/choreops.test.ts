@@ -441,3 +441,47 @@ describe('normalizeChoreOps � unassigned chores', () => {
     expect(result.chores.filter((c) => c.name === 'Stofzuigen')).toHaveLength(1);
   });
 });
+
+describe('normalizeChoreOps — per-child rewards', () => {
+  it('keeps one reward row per child, even when the reward name repeats', () => {
+    const result = normalizeChoreOps([
+      {
+        entity_id: 'sensor.maya_choreops_reward_status_schermtijd',
+        state: 'available',
+        attributes: {
+          purpose: 'purpose_reward_status',
+          user_name: 'Maya',
+          reward_name: 'Schermtijd',
+          cost: 10,
+        },
+      },
+      {
+        entity_id: 'sensor.zara_choreops_reward_status_schermtijd',
+        state: 'locked',
+        attributes: {
+          purpose: 'purpose_reward_status',
+          user_name: 'Zara',
+          reward_name: 'Schermtijd',
+          cost: 10,
+        },
+      },
+      {
+        entity_id: 'button.maya_choreops_claim_reward_schermtijd',
+        state: 'unknown',
+        attributes: {
+          purpose: 'purpose_button_reward_redeem',
+          user_name: 'Maya',
+          reward_name: 'Schermtijd',
+        },
+      },
+    ]);
+
+    expect(result.rewards).toHaveLength(2);
+    const maya = result.rewards.find((reward) => reward.assignee === 'Maya');
+    const zara = result.rewards.find((reward) => reward.assignee === 'Zara');
+    expect(maya).toMatchObject({ cost: 10, status: 'available' });
+    expect(maya?.actions.claim).toBe('button.maya_choreops_claim_reward_schermtijd');
+    expect(zara).toMatchObject({ cost: 10, status: 'locked' });
+    expect(zara?.actions.claim).toBeUndefined();
+  });
+});

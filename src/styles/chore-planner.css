@@ -38,7 +38,8 @@
   overflow: hidden;
   color: var(--planner-ink);
   background:
-    radial-gradient(ellipse at 92% -12%, rgba(194, 215, 198, 0.6), transparent 38%), var(--planner-bg);
+    radial-gradient(ellipse at 92% -12%, rgba(194, 215, 198, 0.6), transparent 38%),
+    var(--planner-bg);
   font-family: var(--font-body, 'Trebuchet MS', sans-serif);
 }
 
@@ -285,11 +286,11 @@
 .planner-task {
   --member-color: var(--planner-accent);
   display: grid;
-  grid-template-columns: 62px 54px minmax(180px, 1fr) auto;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 18px;
-  min-height: 126px;
-  padding: 16px 22px;
+  gap: 16px;
+  min-height: 0;
+  padding: 9px 20px;
   border-radius: 16px;
   background: var(--planner-surface);
   box-shadow: 0 3px 14px rgba(38, 51, 47, 0.055);
@@ -303,8 +304,8 @@
 
 .planner-check {
   display: grid;
-  width: 58px;
-  height: 58px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   border: 3px solid #d5ddd7;
   border-radius: 50%;
@@ -340,12 +341,13 @@
 }
 .planner-task-icon {
   display: grid;
-  width: 50px;
-  height: 50px;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
   place-items: center;
-  border-radius: 16px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--member-color) 12%, white);
-  font-size: 31px;
+  font-size: 20px;
 }
 .planner-task-copy {
   min-width: 0;
@@ -357,6 +359,7 @@
 }
 .planner-task-title-row h3 {
   overflow: hidden;
+  min-width: 0;
   margin: 0;
   color: var(--planner-ink);
   font-size: clamp(20px, 1.55vw, 27px);
@@ -1265,7 +1268,7 @@
     font-size: 16px;
   }
   .planner-task {
-    grid-template-columns: 44px 38px minmax(0, 1fr);
+    grid-template-columns: 44px minmax(0, 1fr) auto;
     gap: 9px;
     min-height: 0;
     padding: 12px;
@@ -1278,10 +1281,10 @@
     font-size: 9px;
   }
   .planner-task-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 11px;
-    font-size: 23px;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 15px;
   }
   .planner-task-title-row {
     gap: 6px;
@@ -1432,6 +1435,23 @@
 }
 
 /* --- Rewards (ChoreOps reward entities) --- */
+.planner-child-rewards {
+  display: grid;
+  gap: 8px;
+  width: min(720px, 100%);
+  margin: 4px 0 20px;
+  text-align: left;
+}
+
+.planner-child-rewards h3 {
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .planner-reward {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr) auto;

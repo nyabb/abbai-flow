@@ -15,7 +15,8 @@ export interface PlannerMember {
 export interface PlannerTask {
   id: string;
   name: string;
-  icon: string;
+  /** Emoji shown in the card badge; `null` when ChoreOps has no icon. */
+  icon: string | null;
   points: number;
   memberId: string | null;
   kind: PlannerTaskKind;

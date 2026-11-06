@@ -27,8 +27,14 @@ import {
   buildCreateChorePayload,
   buildUpdateChorePayload,
   buildCreateRewardPayload,
+  buildUpdateRewardPayload,
 } from '../api/choreops';
-import type { CreateChoreInput, UpdateChoreInput, CreateRewardInput } from '../api/choreops';
+import type {
+  CreateChoreInput,
+  UpdateChoreInput,
+  CreateRewardInput,
+  UpdateRewardInput,
+} from '../api/choreops';
 import type { ChoreOpsEntityState, ChoreOpsState } from '../types/choreops';
 
 const REFETCH_DEBOUNCE_MS = 400;
@@ -56,6 +62,10 @@ export interface UseChoreOpsResult {
   updateChore: (input: Omit<UpdateChoreInput, 'entryId'>) => Promise<void>;
   /** Create a reward for one or more ChoreOps users. */
   createReward: (input: Omit<CreateRewardInput, 'entryId'>) => Promise<void>;
+  /** Change a reward's price. */
+  updateReward: (input: Omit<UpdateRewardInput, 'entryId'>) => Promise<void>;
+  /** Remove a reward from ChoreOps. */
+  deleteReward: (rewardName: string) => Promise<void>;
   /** Delete a ChoreOps chore by name. */
   deleteChore: (choreName: string) => Promise<void>;
 }
@@ -334,6 +344,36 @@ export function useChoreOps(): UseChoreOpsResult {
   );
 
   /** Delete a chore in ChoreOps by name (the id ChoreOps publishes). */
+  const updateReward = useCallback(
+    async (input: Omit<UpdateRewardInput, 'entryId'>): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      const payload = buildUpdateRewardPayload({ ...input, entryId });
+      if (!payload) throw new Error('ChoreOps needs a reward name to update it');
+
+      await callHaService('choreops', 'update_reward', payload);
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
+
+  /** Remove a reward from ChoreOps by name. */
+  const deleteReward = useCallback(
+    async (rewardName: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      await callHaService('choreops', 'delete_reward', {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        name: rewardName,
+      });
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
   const deleteChore = useCallback(
     async (choreName: string): Promise<void> => {
       const entryId = snapshot.data?.entryId ?? null;
@@ -383,8 +423,21 @@ export function useChoreOps(): UseChoreOpsResult {
       createChore,
       updateChore,
       createReward,
+      updateReward,
+      deleteReward,
       deleteChore,
     }),
-    [state, refresh, pressButton, claimChore, createChore, updateChore, createReward, deleteChore],
+    [
+      state,
+      refresh,
+      pressButton,
+      claimChore,
+      createChore,
+      updateChore,
+      createReward,
+      updateReward,
+      deleteReward,
+      deleteChore,
+    ],
   );
 }

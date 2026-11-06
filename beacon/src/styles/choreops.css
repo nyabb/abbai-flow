@@ -1,8 +1,7 @@
 /* ============================================================
    ChoreOps chores screen.
 
-   Visual language borrowed from the Qudoo family planner (the
-   24" kitchen touchscreen Beacon competes with): warm cream
+   Design language for the 24" kitchen touchscreen: warm cream
    surface, chunky rounded cards, a tinted icon medallion in the
    middle, and a split action pill where the left half is the
    verb and the right half is the reward. Everything is built on
@@ -489,7 +488,7 @@
   cursor: pointer;
 }
 
-/* ---- Celebration overlay (Qudoo's congratulation screen) ---- */
+/* ---- Celebration overlay (congratulation screen) ---- */
 
 .choreops-celebration {
   position: fixed;

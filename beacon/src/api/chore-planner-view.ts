@@ -10,7 +10,12 @@
  * (photo, avatar, colour, display name) joined by `choreops_user` or name.
  */
 import { resolveMemberForUser } from './choreops';
-import type { PlannerGoal, PlannerMember, PlannerTask, PlannerTaskStatus } from './chore-planner-model';
+import type {
+  PlannerGoal,
+  PlannerMember,
+  PlannerTask,
+  PlannerTaskStatus,
+} from './chore-planner-model';
 import type { ChoreOpsState } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 
@@ -51,12 +56,16 @@ const MDI_EMOJI: Array<[RegExp, string]> = [
   [/tshirt|washing|laundry|shoe/i, '\u{1F9FA}'],
 ];
 
-/** ChoreOps icons are usually `mdi:*` keys; the planner shows an emoji. */
-function plannerIcon(icon: string | null): string {
-  if (!icon) return '\u{2705}';
+/**
+ * ChoreOps icons are usually `mdi:*` keys; the planner shows an emoji.
+ * Returns `null` when ChoreOps has no icon (or one we cannot map) so the card
+ * can skip the badge instead of showing a generic placeholder.
+ */
+function plannerIcon(icon: string | null): string | null {
+  if (!icon) return null;
   if (!icon.includes(':')) return icon;
   const match = MDI_EMOJI.find(([pattern]) => pattern.test(icon));
-  return match ? match[1] : '\u{2705}';
+  return match ? match[1] : null;
 }
 
 /** Stable planner member id that cannot collide with a locally derived member. */
