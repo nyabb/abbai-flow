@@ -176,10 +176,6 @@
   color: var(--text-muted);
 }
 
-.focus-check-row--completing .focus-check-box {
-  transform: scale(1.2);
-}
-
 .focus-check-icon {
   margin-right: 8px;
 }
@@ -243,6 +239,13 @@
   gap: 12px;
   justify-content: center;
   margin-top: 16px;
+}
+
+/* Chore name inside the "are you sure?" dialog on the kid display. */
+.focus-confirm-target {
+  margin: 8px 0 0;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 /* Invalid-member banner (rendered by App in the normal shell) */

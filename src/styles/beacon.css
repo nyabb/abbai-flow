@@ -17,8 +17,8 @@
   --bg-sidebar: #f0eeeb;
 
   --text-primary: #1a1a1a;
-  --text-secondary: #4b5563;  /* was #6b7280 — darker for better contrast */
-  --text-muted: #6b7280;      /* was #9ca3af — much darker for legibility */
+  --text-secondary: #4b5563; /* was #6b7280 — darker for better contrast */
+  --text-muted: #6b7280; /* was #9ca3af — much darker for legibility */
   --text-light: #9ca3af;
 
   --grid-lines: #e5e5e5;
@@ -79,7 +79,9 @@
   box-sizing: border-box;
 }
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
   overflow: hidden;
 }
@@ -103,7 +105,9 @@ button {
   font-size: inherit;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
@@ -131,7 +135,10 @@ a:focus:not(:focus-visible) {
 
 /* --- Main Layout (sidebar + content grid) --- */
 .beacon {
+  /* 100vh is taller than the visible area on phones (browser chrome), which
+     pushed the bottom tab bars off-screen. dvh tracks what is really visible. */
   height: 100vh;
+  height: 100dvh;
   display: grid;
   overflow: hidden;
   background: var(--bg-primary);
@@ -216,19 +223,21 @@ a:focus:not(:focus-visible) {
   min-height: 0;
 }
 
-/* Smooth view transitions */
+/* Smooth view transitions.
+   Fade only, no transform: while a view carries a `transform` (even
+   `translateY(0)`) it becomes the containing block for `position: fixed`, so
+   dialogs inside it were anchored to the view instead of the viewport —
+   off-centre, and half below the screen on phones. */
 .beacon-main > * {
-  animation: view-enter 250ms ease both;
+  animation: view-enter 250ms ease;
 }
 
 @keyframes view-enter {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -241,6 +250,7 @@ a:focus:not(:focus-visible) {
   background: var(--bg-sidebar, #f0eeeb);
   padding: 12px 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 15;
 }
 
@@ -337,7 +347,6 @@ a:focus:not(:focus-visible) {
 .filter-bar::-webkit-scrollbar {
   display: none;
 }
-
 
 /* --- Header (simplified — nav moved to sidebar) --- */
 .beacon-header {
@@ -622,7 +631,9 @@ a:focus:not(:focus-visible) {
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
   font-family: inherit;
 }
 
@@ -665,13 +676,19 @@ a:focus:not(:focus-visible) {
     padding: 8px 10px;
     gap: 6px;
   }
-  .week-nav-label { font-size: 13px; }
-  .week-nav-jump { display: none; }
+  .week-nav-label {
+    font-size: 13px;
+  }
+  .week-nav-jump {
+    display: none;
+  }
 }
 
 /* --- Expanded event highlight --- */
 .event-block--expanded {
-  box-shadow: 0 0 0 2px var(--accent, #3b82f6), var(--shadow-md);
+  box-shadow:
+    0 0 0 2px var(--accent, #3b82f6),
+    var(--shadow-md);
   z-index: 6;
 }
 
@@ -689,8 +706,14 @@ a:focus:not(:focus-visible) {
 }
 
 @keyframes event-details-popover-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .event-details-popover-stripe {
@@ -801,7 +824,9 @@ a:focus:not(:focus-visible) {
   background: var(--bg-surface);
   color: var(--text-primary);
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .event-details-popover-btn:hover {
@@ -1029,7 +1054,9 @@ a:focus:not(:focus-visible) {
   border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition);
   z-index: 1;
   display: flex;
   min-height: 22px;
@@ -1448,7 +1475,9 @@ a:focus:not(:focus-visible) {
   padding: 10px 12px;
   color: var(--text-primary);
   font-size: 1rem;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition);
   min-height: 44px;
 }
 
@@ -1550,8 +1579,12 @@ a:focus:not(:focus-visible) {
 
 /* --- Animations --- */
 @keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slide-up {
@@ -1566,8 +1599,13 @@ a:focus:not(:focus-visible) {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* --- Responsive: Tablet landscape 1024x768 (primary target) --- */

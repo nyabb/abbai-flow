@@ -7,6 +7,7 @@ import { MemberAvatar } from '../MemberAvatar';
 import { useRoutines } from '../../hooks/useRoutines';
 import { BeaconSettings } from '../../hooks/useSettings';
 import { ScreenSaver } from '../ScreenSaver';
+import { useTranslation } from '../../i18n';
 import { RoutineCard } from './RoutineCard';
 import { FocusChores } from './FocusChores';
 import { pickRoutine, getTimeOfDay } from './period';
@@ -27,6 +28,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   const { members } = useFamily();
   const routinesApi = useRoutines(memberId);
   const choreOps = useChoreOps();
+  const { t } = useTranslation();
 
   const member = members.find((m) => m.id === memberId);
 
@@ -53,9 +55,14 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   // Exit gesture: 5 taps on the clock within 3 seconds
   const taps = useRef<number[]>([]);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  /**
+   * Chore tapped on the board, waiting for "are you sure?" — a mis-tap on a
+   * wall display would otherwise claim someone else's chore and pay out points.
+   */
+  const [confirmChoreId, setConfirmChoreId] = useState<string | null>(null);
   const handleClockTap = () => {
-    const t = Date.now();
-    taps.current = [...taps.current.filter((prev) => t - prev < 3000), t];
+    const timestamp = Date.now();
+    taps.current = [...taps.current.filter((prev) => timestamp - prev < 3000), timestamp];
     if (taps.current.length >= 5) {
       taps.current = [];
       setShowExitConfirm(true);
@@ -108,6 +115,12 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   const hadItems = currentRoutineTasks.length + memberChores.length > 0;
   const allDone = hadItems && routineDone && choresDone;
 
+  /** The chore waiting for confirmation, plus whether it is a sign-off. */
+  const confirmChore = memberChores.find((chore) => chore.id === confirmChoreId) ?? null;
+  const confirmIsDone = /(claim|review|progress|submit)/i.test(
+    choreOps.data?.chores.find((chore) => chore.id === confirmChoreId)?.status ?? '',
+  );
+
   return (
     <div className="focus-view" style={{ '--focus-accent': member.color } as CSSProperties}>
       <header className="focus-header">
@@ -155,10 +168,8 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
               completedIds={completedChoreIds}
               currencySymbol={settings.currencySymbol}
               onToggle={(choreId) => {
-                // ChoreOps has no un-complete action: ticking claims or approves.
-                const chore = choreOps.data?.chores.find((c) => c.id === choreId);
-                const buttonEid = chore?.actions.claim ?? chore?.actions.approve;
-                if (buttonEid) void choreOps.pressButton(buttonEid);
+                // Ask first; the press itself happens after confirmation.
+                if (!completedChoreIds.has(choreId)) setConfirmChoreId(choreId);
               }}
             />
             {!pick && memberChores.length === 0 && (
@@ -184,6 +195,45 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
               </button>
               <button type="button" className="settings-btn settings-btn--primary" onClick={onExit}>
                 Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmChore && (
+        <div className="focus-exit-backdrop" onClick={() => setConfirmChoreId(null)}>
+          <div
+            className="focus-exit-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={
+              confirmIsDone ? t('chores.confirmDoneTitle') : t('chores.confirmClaimTitle')
+            }
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p>{confirmIsDone ? t('chores.confirmDoneBody') : t('chores.confirmClaimBody')}</p>
+            <p className="focus-confirm-target">{confirmChore.name}</p>
+            <div className="focus-exit-actions">
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => setConfirmChoreId(null)}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => {
+                  const chore = choreOps.data?.chores.find((c) => c.id === confirmChore.id);
+                  // ChoreOps has no un-complete action: ticking claims or approves.
+                  const buttonEid = chore?.actions.claim ?? chore?.actions.approve;
+                  if (buttonEid) void choreOps.pressButton(buttonEid);
+                  setConfirmChoreId(null);
+                }}
+              >
+                {t('chores.confirm')}
               </button>
             </div>
           </div>

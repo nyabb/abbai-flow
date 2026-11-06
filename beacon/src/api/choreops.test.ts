@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { buildCreateChorePayload, groupChoreOpsChores, normalizeChoreOps } from './choreops';
+import {
+  buildCreateChorePayload,
+  groupChoreOpsChores,
+  normalizeChoreOps,
+  CHOREOPS_ALL_USERS,
+} from './choreops';
 import type { ChoreOpsChore, ChoreOpsUser } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 
@@ -16,6 +21,27 @@ describe('buildCreateChorePayload', () => {
     ).toBeNull();
   });
 
+  /*
+   * "Free for anyone to claim" is ChoreOps' `*` sentinel. An empty assignee
+   * list would create a dormant chore with no entities at all, which is why
+   * those chores never showed up after being saved.
+   */
+  it('creates open-to-anyone chores with the all-users sentinel', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tafel dekken',
+      assignedUserNames: [CHOREOPS_ALL_USERS],
+      completionCriteria: 'shared_first',
+    });
+
+    expect(payload).toEqual({
+      config_entry_id: 'entry-1',
+      name: 'Tafel dekken',
+      assigned_user_names: ['*'],
+      completion_criteria: 'shared_first',
+    });
+  });
+
   it('sends only the fields the user set, with sane points rounding', () => {
     const payload = buildCreateChorePayload({
       entryId: 'entry-1',
@@ -30,6 +56,30 @@ describe('buildCreateChorePayload', () => {
       assigned_user_names: ['Maya', 'Nova'],
       points: 5,
     });
+  });
+
+  it('sends the routine label so Beacon can group daily chores', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tanden poetsen',
+      assignedUserNames: ['Maya'],
+      frequency: 'daily',
+      labels: ['  Ochtendroutine  ', '', 'Ochtendroutine'],
+    });
+
+    expect(payload).toMatchObject({
+      frequency: 'daily',
+      labels: ['Ochtendroutine'],
+    });
+
+    // No label typed → nothing sent, so ChoreOps keeps its own labels.
+    const unlabeled = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tanden poetsen',
+      assignedUserNames: ['Maya'],
+      labels: ['   '],
+    });
+    expect(unlabeled).not.toHaveProperty('labels');
   });
 
   it('sends weekly weekdays and custom interval only when relevant', () => {

@@ -36,12 +36,25 @@ export interface ChoreOpsChore {
   frequency?: string | null;
   /** Weekday keys (`mon`..`sun`) when the repeat is day-bound. */
   applicableDays?: string[];
+  /** ChoreOps labels; Beacon groups daily chores into routines by label. */
+  labels?: string[];
+  /**
+   * ISO timestamp of the last completion. Daily chores reset at midnight, so
+   * this is what tells a "done today" card apart from yesterday's.
+   */
+  lastCompleted?: string | null;
   /** Due window offset as ChoreOps formats it, e.g. `0d 1h 0m`. */
   windowOffset?: string | null;
   /** Whether a completion counts without a parent approving it. */
   autoApprove?: boolean;
   /** Every user ChoreOps has this chore assigned to. */
   assignedUserNames?: string[];
+  /**
+   * ChoreOps completion rule: `independent`, `shared_all`, `shared_first`
+   * (first one wins) or one of the `rotation_*` modes. `shared_first` is how
+   * an "anyone can take this" chore is expressed.
+   */
+  completionCriteria?: string | null;
   canClaim: boolean;
   canApprove: boolean;
   actions: ChoreOpsActions;

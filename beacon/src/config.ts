@@ -29,7 +29,7 @@ declare global {
 let cached: BeaconConfig | null = null;
 
 export function getConfig(): BeaconConfig {
-  if (cached) return cached;
+  if (cached?.ha_token && cached?.ha_url) return cached;
 
   const runtime = window.__BEACON_CONFIG__ ?? {};
 

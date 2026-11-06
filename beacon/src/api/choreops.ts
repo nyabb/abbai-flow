@@ -147,6 +147,10 @@ function normalizeChore(item: unknown, fallbackAssignee: string | null): ChoreOp
     points: pointsOf(item),
     canClaim: flag(item, 'can_claim'),
     canApprove: flag(item, 'can_approve'),
+    completionCriteria: str(item, 'completion_criteria'),
+    assignedUserNames: stringList(item, 'assigned_user_names'),
+    labels: stringList(item, 'labels'),
+    lastCompleted: str(item, 'last_completed'),
     actions: discoverActions(item),
   };
 }
@@ -214,6 +218,9 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       windowOffset: string | null;
       autoApprove: boolean;
       assignedUserNames: string[];
+      completionCriteria: string | null;
+      labels: string[];
+      lastCompleted: string | null;
       canClaim: boolean;
       canApprove: boolean;
     }
@@ -298,6 +305,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
         // with nobody assigned becomes a single "everyone" entry.
         const assignees = stringList(entity.attributes, 'assigned_user_names');
         const targets: Array<string | null> = assignees.length > 0 ? assignees : [null];
+        const completionCriteria = str(entity.attributes, 'completion_criteria');
         for (const assignee of targets) {
           sharedChores.push({
             // One sensor covers every assignee, so the assignee keeps the ids unique.
@@ -307,6 +315,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
             status: entity.state,
             assignee,
             points: num(entity.attributes, 'default_points'),
+            assignedUserNames: assignees,
+            completionCriteria,
             canClaim: false,
             canApprove: false,
             actions: {},
@@ -344,9 +354,12 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
           description: str(entity.attributes, 'description'),
           frequency: str(entity.attributes, 'recurring_frequency'),
           applicableDays: stringList(entity.attributes, 'applicable_days'),
+          labels: stringList(entity.attributes, 'labels'),
+          lastCompleted: str(entity.attributes, 'last_completed'),
           windowOffset: str(entity.attributes, 'chore_due_window_offset'),
           autoApprove: flag(entity.attributes, 'auto_approve'),
           assignedUserNames: stringList(entity.attributes, 'assigned_user_names'),
+          completionCriteria: str(entity.attributes, 'completion_criteria'),
           canClaim: flag(entity.attributes, 'can_claim'),
           canApprove: flag(entity.attributes, 'can_approve'),
         });
@@ -439,6 +452,10 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.icon = existing.icon ?? chore.icon;
       existing.status = chore.status;
       existing.points = existing.points ?? chore.points;
+      existing.completionCriteria = existing.completionCriteria ?? chore.completionCriteria;
+      if (!existing.assignedUserNames?.length && chore.assignedUserNames?.length) {
+        existing.assignedUserNames = chore.assignedUserNames;
+      }
       continue;
     }
     choreMap.set(key, chore);
@@ -471,6 +488,9 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       if (record.assignedUserNames.length > 0) {
         existing.assignedUserNames = record.assignedUserNames;
       }
+      existing.completionCriteria = record.completionCriteria ?? existing.completionCriteria;
+      if (record.labels.length > 0) existing.labels = record.labels;
+      existing.lastCompleted = record.lastCompleted ?? existing.lastCompleted;
       if (record.canClaim) existing.canClaim = true;
       if (record.canApprove) existing.canApprove = true;
       continue;
@@ -489,6 +509,9 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       windowOffset: record.windowOffset,
       autoApprove: record.autoApprove,
       assignedUserNames: record.assignedUserNames,
+      completionCriteria: record.completionCriteria,
+      labels: record.labels,
+      lastCompleted: record.lastCompleted,
       canClaim: record.canClaim,
       canApprove: record.canApprove,
       actions: {},
@@ -633,14 +656,41 @@ export const CHOREOPS_WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun
 
 export type ChoreOpsWeekday = (typeof CHOREOPS_WEEKDAYS)[number];
 
+/**
+ * ChoreOps sentinel that resolves `assigned_user_names` to every assignable
+ * user. This is how a chore becomes "free for anyone to claim": an empty
+ * assignee list creates a *dormant* chore that publishes no entities at all,
+ * so Beacon would never see it.
+ */
+export const CHOREOPS_ALL_USERS = '*';
+
+/** Completion rules ChoreOps accepts when a chore is created. */
+export const CHOREOPS_COMPLETION_CRITERIA = ['independent', 'shared_first', 'shared_all'] as const;
+
+export type ChoreOpsCompletionCriteria = (typeof CHOREOPS_COMPLETION_CRITERIA)[number];
+
 export interface CreateChoreInput {
   /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
   entryId: string | null;
   name: string;
-  /** ChoreOps user names, not Beacon member names. At least one is required. */
+  /**
+   * ChoreOps user names, not Beacon member names. At least one is required
+   * unless the caller passes the `CHOREOPS_ALL_USERS` sentinel.
+   */
   assignedUserNames: string[];
+  /**
+   * Create-only completion rule. Open-to-anyone chores use `shared_first`, so
+   * the first person to complete it takes the points and the rest stop seeing
+   * an open task.
+   */
+  completionCriteria?: ChoreOpsCompletionCriteria | null;
   points?: number | null;
   description?: string | null;
+  /**
+   * ChoreOps labels. Beacon groups daily chores into routines by their first
+   * label, so this is how a household names one ("Ochtendroutine").
+   */
+  labels?: string[] | null;
   frequency?: ChoreOpsFrequency | null;
   /** Only sent for `custom` frequency. */
   customInterval?: number | null;
@@ -679,10 +729,15 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
     assigned_user_names: Array.from(new Set(assignedUserNames)),
   };
 
+  if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
   if (typeof input.points === 'number' && Number.isFinite(input.points)) {
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description?.trim()) payload.description = input.description.trim();
+  const createLabels = Array.from(
+    new Set((input.labels ?? []).map((label) => label.trim()).filter(Boolean)),
+  );
+  if (createLabels.length > 0) payload.labels = createLabels;
   if (input.frequency) payload.frequency = input.frequency;
 
   if (input.frequency === 'custom' && input.customInterval) {
@@ -715,6 +770,8 @@ export interface UpdateChoreInput {
   assignedUserNames?: string[];
   points?: number;
   description?: string;
+  /** Replaces the label list when given; drives the routines grouping. */
+  labels?: string[];
   frequency?: string;
   customInterval?: number;
   customIntervalUnit?: ChoreOpsIntervalUnit;
@@ -757,6 +814,10 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description !== undefined) payload.description = input.description.trim();
+  if (input.labels) {
+    const labels = Array.from(new Set(input.labels.map((label) => label.trim()).filter(Boolean)));
+    if (labels.length > 0) payload.labels = labels;
+  }
   if (input.frequency) payload.frequency = input.frequency;
 
   if (
