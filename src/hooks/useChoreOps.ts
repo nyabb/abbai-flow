@@ -38,6 +38,11 @@ export interface UseChoreOpsResult {
   refresh: () => void;
   /** Press a ChoreOps action button (claim/approve/disapprove). */
   pressButton: (entityId: string) => Promise<void>;
+  /**
+   * Claim a chore for a ChoreOps user via the integration's services.
+   * Works for chores nobody is assigned to, which have no button to press.
+   */
+  claimChore: (choreName: string, userName: string) => Promise<void>;
 }
 
 interface ChoreOpsSnapshot {
@@ -242,6 +247,42 @@ export function useChoreOps(): UseChoreOpsResult {
     [client, connected],
   );
 
+  /**
+   * Claim a chore for a specific ChoreOps user.
+   *
+   * ChoreOps rejects a claim on a chore nobody is assigned to (`claim_chore`
+   * returns HTTP 500), and an unassigned chore has no claim button either. So
+   * the tapper is attached to the chore first — which is also what makes
+   * ChoreOps create their per-user buttons — and the claim is retried.
+   */
+  const claimChore = useCallback(
+    async (choreName: string, userName: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      const target = {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        user_name: userName,
+        chore_name: choreName,
+      };
+
+      try {
+        await callHaService('choreops', 'claim_chore', target);
+      } catch {
+        await callHaService('choreops', 'update_chore', {
+          ...(entryId ? { config_entry_id: entryId } : {}),
+          name: choreName,
+          assignment_action: 'add',
+          assigned_user_names: [userName],
+        });
+        await callHaService('choreops', 'claim_chore', target);
+      }
+
+      const activeClient = client();
+      if (activeClient && connected) void loadViaClient(activeClient);
+      else void loadViaRest();
+    },
+    [client, connected],
+  );
+
   return useMemo(
     () => ({
       data: state.data,
@@ -250,7 +291,8 @@ export function useChoreOps(): UseChoreOpsResult {
       available: Boolean(state.data?.available),
       refresh,
       pressButton,
+      claimChore,
     }),
-    [state, refresh, pressButton],
+    [state, refresh, pressButton, claimChore],
   );
 }

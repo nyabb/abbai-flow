@@ -87,12 +87,18 @@ export async function saveData<T>(key: string, data: T, options: { browserStorag
   }
   if (isAddOn()) {
     const base = getIngressBasePath();
-    fetch(`${base}/beacon-data/${key}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: json,
-    }).catch(() => {
+    // Awaited on purpose: `loadData` is server-first, so any refresh that runs
+    // before this PUT lands reads the OLD document and writes it back over
+    // localStorage. That silently reverted fresh edits — a parent's PIN never
+    // survived saving, because useFamily's refresh raced the write.
+    try {
+      await fetch(`${base}/beacon-data/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: json,
+      });
+    } catch {
       /* server persistence is best-effort */
-    });
+    }
   }
 }

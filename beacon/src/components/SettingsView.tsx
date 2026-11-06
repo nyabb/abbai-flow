@@ -19,7 +19,13 @@ import { AnyListClient } from '../api/anylist';
 import { GroceryList } from '../types/grocery';
 import { themes } from '../styles/themes';
 import { useChoreOps } from '../hooks/useChoreOps';
-import { FamilyMember, MEMBER_COLORS, AVATAR_CATEGORIES, Routine } from '../types/family';
+import {
+  FamilyMember,
+  MEMBER_COLORS,
+  AVATAR_CATEGORIES,
+  Routine,
+  normalizePin,
+} from '../types/family';
 import type { BeaconSettings } from '../hooks/useSettings';
 import { getConfig } from '../config';
 import { isAddOn } from '../utils/ha-env';
@@ -354,13 +360,14 @@ export function SettingsView({
 
   const handleSaveMember = useCallback(() => {
     if (!memberForm.name.trim()) return;
+    const normalizedPin = normalizePin(memberForm.pin);
     const data = {
       name: memberForm.name.trim(),
       avatar: memberForm.avatar,
       photo: memberForm.photo || undefined,
       color: memberForm.color,
       role: memberForm.role,
-      pin: memberForm.pin || undefined,
+      pin: normalizedPin || undefined,
       calendar_entity: memberForm.calendar_entity || undefined,
       additional_calendar_entities:
         memberForm.additional_calendar_entities.length > 0
@@ -1293,7 +1300,7 @@ export function SettingsView({
                 style={{ width: 120 }}
                 value={memberForm.pin}
                 onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                  const val = normalizePin(e.target.value);
                   setMemberForm((f) => ({ ...f, pin: val }));
                 }}
                 placeholder="****"

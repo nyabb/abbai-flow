@@ -64,6 +64,10 @@ export interface ChoreOpsState {
   people: HaPerson[];
   /** Lower-cased user name → points balance, for quick lookups. */
   pointsByUser: Record<string, number>;
+  /** Household-wide counters of work waiting for a parent to sign off. */
+  pendingApprovals: { chores: number; rewards: number };
+  /** ChoreOps config entry id, needed by the service calls that assign/claim. */
+  entryId: string | null;
   /** True when ChoreOps entities were found at all. */
   available: boolean;
 }

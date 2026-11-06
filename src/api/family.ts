@@ -6,6 +6,7 @@ import {
   Routine,
   RoutineTaskCompletion,
 } from '../types/family';
+import type { ChoreOpsUser } from '../types/choreops';
 import { loadData, loadDataSync, saveData } from './beacon-store';
 import { localDayKey } from './date-keys';
 
@@ -52,7 +53,10 @@ export class FamilyStore {
     return newMember;
   }
 
-  async updateMember(id: string, data: Partial<Omit<FamilyMember, 'id'>>): Promise<FamilyMember | null> {
+  async updateMember(
+    id: string,
+    data: Partial<Omit<FamilyMember, 'id'>>,
+  ): Promise<FamilyMember | null> {
     const members = await this.getMembers();
     const index = members.findIndex((m) => m.id === id);
     if (index === -1) return null;
@@ -67,6 +71,67 @@ export class FamilyStore {
     if (filtered.length === members.length) return false;
     await saveData(STORAGE_KEYS.members, filtered);
     return true;
+  }
+
+  async syncChoreOpsMembers(users: readonly ChoreOpsUser[]): Promise<boolean> {
+    if (users.length === 0) return false;
+
+    const members = await this.getMembers();
+    let changed = false;
+
+    for (const user of users) {
+      const key = user.name.trim().toLowerCase();
+      if (!key) continue;
+
+      const linkedMember = members.find(
+        (candidate) => candidate.choreops_user?.trim().toLowerCase() === key,
+      );
+      const namedMember = members.find(
+        (candidate) =>
+          candidate.name.trim().toLowerCase() === key &&
+          (!candidate.choreops_user || candidate.choreops_user.trim().toLowerCase() === key),
+      );
+      const member = linkedMember ?? namedMember;
+
+      if (import.meta.env.DEV) {
+        console.info('[Beacon] ChoreOps family profile match', {
+          choreOpsUser: user.name,
+          choreOpsUserSlug: user.slug,
+          matchedBy: linkedMember ? 'choreops_user' : namedMember ? 'name' : 'none',
+          familyMemberId: member?.id ?? null,
+          familyMemberName: member?.name ?? null,
+          familyMemberRole: member?.role ?? null,
+        });
+      }
+      if (!member) continue;
+
+      const nextState = {
+        points: user.points,
+        dueToday: user.dueToday,
+        claimed: user.claimed,
+        approved: user.approved,
+        completedToday: user.completedToday,
+      };
+      const previousState = member.choreops_state;
+      if (
+        previousState?.points !== nextState.points ||
+        previousState?.dueToday !== nextState.dueToday ||
+        previousState?.claimed !== nextState.claimed ||
+        previousState?.approved !== nextState.approved ||
+        previousState?.completedToday !== nextState.completedToday
+      ) {
+        member.choreops_state = nextState;
+        changed = true;
+      }
+
+      if (!member.choreops_user) {
+        member.choreops_user = user.name.trim();
+        changed = true;
+      }
+    }
+
+    if (changed) await saveData(STORAGE_KEYS.members, members);
+    return changed;
   }
 
   // --- Chores ---
@@ -117,9 +182,7 @@ export class FamilyStore {
   async getCompletionsToday(): Promise<ChoreCompletion[]> {
     const today = localDayKey();
     const completions = await this.getCompletions();
-    return completions.filter(
-      (c) => localDayKey(c.completed_at) === today
-    );
+    return completions.filter((c) => localDayKey(c.completed_at) === today);
   }
 
   async getCompletionsForPeriod(startDate: string, endDate: string): Promise<ChoreCompletion[]> {
@@ -130,14 +193,16 @@ export class FamilyStore {
     });
   }
 
-  async completeChore(choreId: string, memberId: string, verifiedBy?: string): Promise<ChoreCompletion> {
+  async completeChore(
+    choreId: string,
+    memberId: string,
+    verifiedBy?: string,
+  ): Promise<ChoreCompletion> {
     const completions = await this.getCompletions();
     const today = localDayKey();
     const existing = completions.find(
       (c) =>
-        c.chore_id === choreId &&
-        c.member_id === memberId &&
-        localDayKey(c.completed_at) === today
+        c.chore_id === choreId && c.member_id === memberId && localDayKey(c.completed_at) === today,
     );
     if (existing) return existing;
     const completion: ChoreCompletion = {
@@ -160,9 +225,7 @@ export class FamilyStore {
     const today = localDayKey();
     const index = completions.findIndex(
       (c) =>
-        c.chore_id === choreId &&
-        c.member_id === memberId &&
-        localDayKey(c.completed_at) === today
+        c.chore_id === choreId && c.member_id === memberId && localDayKey(c.completed_at) === today,
     );
     if (index === -1) return false;
     completions.splice(index, 1);
@@ -268,7 +331,7 @@ export class FamilyStore {
         c.routine_id === routineId &&
         c.task_id === taskId &&
         c.member_id === memberId &&
-        localDayKey(c.completed_at) === today
+        localDayKey(c.completed_at) === today,
     );
     if (exists) return;
     completions.push({
@@ -280,7 +343,11 @@ export class FamilyStore {
     await saveData(STORAGE_KEYS.routine_completions, completions);
   }
 
-  async uncompleteRoutineTask(routineId: string, taskId: string, memberId: string): Promise<boolean> {
+  async uncompleteRoutineTask(
+    routineId: string,
+    taskId: string,
+    memberId: string,
+  ): Promise<boolean> {
     const completions = await this.getRoutineTaskCompletions();
     const today = localDayKey();
     const index = completions.findIndex(
@@ -288,7 +355,7 @@ export class FamilyStore {
         c.routine_id === routineId &&
         c.task_id === taskId &&
         c.member_id === memberId &&
-        localDayKey(c.completed_at) === today
+        localDayKey(c.completed_at) === today,
     );
     if (index === -1) return false;
     completions.splice(index, 1);
