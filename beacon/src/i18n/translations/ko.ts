@@ -497,6 +497,7 @@ export const ko: Record<TranslationKey, string> = {
   'chores.removedToast': '삭제했습니다',
   'chores.assignedToast': '할당했습니다',
   'chores.undoneToast': '되돌렸습니다',
+  'chores.today': '오늘',
   'chores.noChoresToday': '지금 할 일이 없습니다.',
   'chores.wellDone': '잘했어요!',
   'chores.missing':

@@ -511,6 +511,7 @@ export const fr: Record<TranslationKey, string> = {
   'chores.removedToast': 'Supprimé',
   'chores.assignedToast': 'Attribué',
   'chores.undoneToast': 'Annulé',
+  'chores.today': 'Aujourd’hui',
   'chores.noChoresToday': 'Rien à faire pour le moment.',
   'chores.wellDone': 'Bravo !',
   'chores.missing':

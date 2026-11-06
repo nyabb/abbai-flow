@@ -508,6 +508,7 @@ export const de: Record<TranslationKey, string> = {
   'chores.removedToast': 'Gelöscht',
   'chores.assignedToast': 'Zugewiesen',
   'chores.undoneToast': 'Rückgängig gemacht',
+  'chores.today': 'Heute',
   'chores.noChoresToday': 'Gerade steht nichts an.',
   'chores.wellDone': 'Super gemacht!',
   'chores.missing':

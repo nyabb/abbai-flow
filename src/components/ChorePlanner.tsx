@@ -1285,7 +1285,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     screen === 'tasks'
       ? c.title
       : screen === 'lobby'
-        ? 'Vandaag'
+        ? c.today
         : screen === 'missions' || screen === 'mission'
           ? c.missions
           : screen === 'closing'
@@ -1784,7 +1784,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           onClick={() => setScreen('lobby')}
         >
           <span>☀</span>
-          <strong>Vandaag</strong>
+          <strong>{c.today}</strong>
         </button>
       </nav>
 

@@ -503,6 +503,7 @@ export const nl: Record<TranslationKey, string> = {
   'chores.removedToast': 'Verwijderd',
   'chores.assignedToast': 'Toegewezen',
   'chores.undoneToast': 'Teruggedraaid',
+  'chores.today': 'Vandaag',
   'chores.noChoresToday': 'Nu even niets te doen.',
   'chores.wellDone': 'Goed gedaan!',
   'chores.missing':

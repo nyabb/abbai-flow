@@ -510,6 +510,7 @@ export const en = {
   'chores.removedToast': 'Deleted',
   'chores.assignedToast': 'Assigned',
   'chores.undoneToast': 'Undone',
+  'chores.today': 'Today',
   'chores.noChoresToday': 'Nothing to do right now.',
   'chores.wellDone': 'Well done!',
   'chores.missing':

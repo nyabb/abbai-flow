@@ -499,6 +499,7 @@ export const ja: Record<TranslationKey, string> = {
   'chores.removedToast': '削除しました',
   'chores.assignedToast': '割り当てました',
   'chores.undoneToast': '取り消しました',
+  'chores.today': '今日',
   'chores.noChoresToday': '今はやることがありません。',
   'chores.wellDone': 'よくできました！',
   'chores.missing':
