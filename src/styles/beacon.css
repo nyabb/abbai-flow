@@ -1304,8 +1304,8 @@ a:focus:not(:focus-visible) {
   animation: pulse 2s infinite;
 }
 
-/* --- Demo Badge --- */
-.demo-badge {
+/* --- Preview Badge --- */
+.preview-badge {
   position: fixed;
   bottom: 24px;
   left: 24px;
@@ -1978,8 +1978,8 @@ a:focus:not(:focus-visible) {
     transform: translateY(0);
   }
 
-  /* --- Demo badge above tab bar --- */
-  .demo-badge {
+  /* --- Preview badge above tab bar --- */
+  .preview-badge {
     bottom: calc(var(--mobile-tab-bar-height) + 12px);
     left: 12px;
   }

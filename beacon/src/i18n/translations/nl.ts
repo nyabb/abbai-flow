@@ -41,7 +41,7 @@ export const nl: Record<TranslationKey, string> = {
   'app.connecting': 'Verbinden...',
   'app.choresDisabled':
     'Klusjes zijn uitgeschakeld. Schakel ze in bij Instellingen → Klusjes om dit scherm te gebruiken.',
-  'app.demoMode': 'Demomodus',
+  'app.previewMode': 'Voorbeeldmodus',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Dashboard bewerken',

@@ -42,7 +42,7 @@ export const de: Record<TranslationKey, string> = {
   'app.connecting': 'Verbindung wird hergestellt...',
   'app.choresDisabled':
     'Aufgaben sind deaktiviert. Aktiviere sie unter Einstellungen → Aufgaben, um diesen Bildschirm zu nutzen.',
-  'app.demoMode': 'Demomodus',
+  'app.previewMode': 'Vorschaumodus',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Übersicht bearbeiten',

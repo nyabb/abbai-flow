@@ -28,6 +28,20 @@ export interface ChoreOpsChore {
   assignee: string | null;
   /** Reward for completing it, when ChoreOps exposes one. */
   points: number | null;
+  /** Due date/time ChoreOps publishes for this chore, when available. */
+  dueDate?: string | null;
+  /** Free-text description, mirrored from the per-user status sensor. */
+  description?: string | null;
+  /** Repeat setting as ChoreOps names it (`daily`, `weekly`, `custom`, ...). */
+  frequency?: string | null;
+  /** Weekday keys (`mon`..`sun`) when the repeat is day-bound. */
+  applicableDays?: string[];
+  /** Due window offset as ChoreOps formats it, e.g. `0d 1h 0m`. */
+  windowOffset?: string | null;
+  /** Whether a completion counts without a parent approving it. */
+  autoApprove?: boolean;
+  /** Every user ChoreOps has this chore assigned to. */
+  assignedUserNames?: string[];
   canClaim: boolean;
   canApprove: boolean;
   actions: ChoreOpsActions;

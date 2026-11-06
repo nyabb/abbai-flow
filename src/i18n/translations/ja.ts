@@ -41,7 +41,7 @@ export const ja: Record<TranslationKey, string> = {
   'app.dismiss': '閉じる',
   'app.connecting': '接続中...',
   'app.choresDisabled': '家事機能は無効です。この画面を使うには設定 → 家事で有効にしてください。',
-  'app.demoMode': 'デモモード',
+  'app.previewMode': 'プレビューモード',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ ダッシュボードを編集',

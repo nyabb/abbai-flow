@@ -1,9 +1,9 @@
 /**
- * Qudoo-style chore and reward cards.
+ * Chore and reward cards for the family kitchen screen.
  *
- * The layout mirrors the Qudoo family planner: a tinted medallion with the
- * chore's icon, the name centred under it, and a split pill at the bottom
- * where the left half is the action and the right half is the reward.
+ * A tinted medallion with the chore's icon, the name centred under it, and a
+ * split pill at the bottom where the left half is the action and the right
+ * half is the reward.
  *
  * Every action comes from ChoreOps' own `button.*` entities (discovered at
  * runtime), so nothing here assumes entity ids or attribute names.

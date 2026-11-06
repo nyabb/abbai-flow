@@ -99,7 +99,7 @@ html[data-theme] .modal-overlay {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-[data-theme="light"] .demo-badge {
+[data-theme="light"] .preview-badge {
   background: var(--bg-tertiary);
   color: var(--text-muted);
 }

@@ -92,7 +92,7 @@ export function useHomeAssistant() {
       }
 
       if (!token) {
-        console.warn('Beacon: No HA token available. Running in demo mode.');
+        console.warn('Beacon: no HA token available. Running with preview data.');
         return;
       }
 
