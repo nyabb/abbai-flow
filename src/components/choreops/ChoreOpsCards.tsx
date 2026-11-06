@@ -16,7 +16,7 @@ import type { ChoreOpsChore, ChoreOpsReward, ChoreOpsUser } from '../../types/ch
 const DONE_STATUS = /^(approved|completed|done)/i;
 
 /** ChoreOps states that mean "the child is done, a parent must sign off". */
-const AWAITING_REVIEW_STATUS = /(claim|pending|review|progress|submit)/i;
+const AWAITING_REVIEW_STATUS = /(claim|review|progress|submit)/i;
 
 /** ChoreOps `icon` may be an emoji or an icon key; only emoji are portable. */
 function choreEmoji(icon: string | null): string {

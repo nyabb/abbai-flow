@@ -294,7 +294,7 @@ export function ChoreOpsPanel() {
               <section key={group.key} className="choreops-group">
                 <div className="choreops-group-head" style={memberColorVars(group.member)}>
                   <span className="choreops-group-avatar" aria-hidden="true">
-                    <MemberAvatar member={group.member} fallback="\u{1F465}" />
+                    <MemberAvatar member={group.member} fallback={'\u{1F465}'} />
                   </span>
                   <span className="choreops-group-name">{group.label}</span>
                   <span className="choreops-group-count">{group.chores.length}</span>
@@ -443,7 +443,7 @@ export function ChoreOpsPanel() {
                       >
                         <MemberAvatar
                           member={resolveMemberForUser(user.name, members)}
-                          fallback="\u{1F464}"
+                          fallback={'\u{1F464}'}
                         />
                       </span>
                       <span className="choreops-claim-name">{user.name}</span>

@@ -35,7 +35,16 @@ describe('chorePrimaryAction', () => {
     });
   });
 
-  it.each(['pending', 'claimed', 'in_progress', 'submitted'])(
+  // ChoreOps' per-user status sensor reports `pending` for a chore nobody has
+  // started yet, so `pending` must not be mistaken for "waiting for a parent".
+  it.each(['pending', 'due'])('offers Claim while the chore is %s', (status) => {
+    expect(chorePrimaryAction(chore({ status }))).toEqual({
+      kind: 'claim',
+      entityId: 'button.maya_choreops_claim_chore_afwassen',
+    });
+  });
+
+  it.each(['claimed', 'in_progress', 'submitted'])(
     'offers Approve while the chore is %s',
     (status) => {
       expect(chorePrimaryAction(chore({ status }))).toEqual({
