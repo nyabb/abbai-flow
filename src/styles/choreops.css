@@ -204,6 +204,16 @@
   gap: 14px;
 }
 
+.choreops-column-empty {
+  margin: 0;
+  padding: 18px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 /* ---- Chore card ---- */
 
 .choreops-card {
@@ -659,6 +669,181 @@
 .choreops-pin-actions .choreops-action {
   flex: 1 1 auto;
   min-height: 52px;
+}
+
+/* ---- New chore button + create sheet ---- */
+
+.choreops-fab {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: #fff;
+  font-size: 1.9rem;
+  font-weight: 300;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition:
+    transform var(--transition),
+    opacity var(--transition);
+}
+
+.choreops-fab:hover:not(:disabled) {
+  transform: scale(1.04);
+}
+
+.choreops-fab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.choreops-fab:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.choreops-create-card {
+  align-items: stretch;
+  width: min(100%, 520px);
+  max-height: min(86vh, 780px);
+  overflow-y: auto;
+  text-align: left;
+}
+
+.choreops-create-card .choreops-pin-title {
+  text-align: center;
+}
+
+.choreops-create-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.choreops-create-field span,
+.choreops-create-field legend {
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.choreops-create-field input,
+.choreops-create-field select {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+}
+
+.choreops-create-field input:focus-visible,
+.choreops-create-field select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.choreops-create-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choreops-create-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 14px 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choreops-create-person > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  font-size: 1rem;
+}
+
+.choreops-create-person.is-selected {
+  border-color: var(--color-brand);
+  background: color-mix(in srgb, var(--color-brand) 14%, var(--bg-surface));
+  color: var(--text-primary);
+}
+
+.choreops-create-stepper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.choreops-create-stepper button {
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.choreops-create-stepper output {
+  min-width: 44px;
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.choreops-create-days {
+  display: flex;
+  gap: 6px;
+}
+
+.choreops-create-days button {
+  flex: 1 1 0;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.choreops-create-days button.is-selected {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
 }
 
 /* ---- "Who claims this?" picker for chores nobody is assigned to ---- */

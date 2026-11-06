@@ -45,7 +45,7 @@ export const en = {
   'app.dismiss': 'Dismiss',
   'app.connecting': 'Connecting...',
   'app.choresDisabled': 'Chores are disabled. Enable them in Settings → Chores to use this screen.',
-  'app.demoMode': 'Demo Mode',
+  'app.previewMode': 'Preview Mode',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Edit Dashboard',

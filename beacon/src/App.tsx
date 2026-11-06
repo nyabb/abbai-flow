@@ -12,7 +12,7 @@ import { EventModal, EventFormData } from './components/EventModal';
 import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
 import { useSettings } from './hooks/useSettings';
-import { ChoreOpsPanel } from './components/ChoreOpsPanel';
+import { ChorePlanner } from './components/ChorePlanner';
 import { Leaderboard } from './components/Leaderboard';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
@@ -637,7 +637,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''}`}
+        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -684,7 +684,15 @@ export function App() {
             </>
           ) : activeView === 'chores' ? (
             settings.choresEnabled ? (
-              <ChoreOpsPanel members={members} />
+              <ChorePlanner
+                members={members}
+                weather={weather}
+                nextAppointment={
+                  visibleEvents
+                    .filter((event) => new Date(event.end).getTime() >= Date.now())
+                    .sort((left, right) => left.start.localeCompare(right.start))[0] ?? null
+                }
+              />
             ) : (
               <div className="chores-empty" style={{ padding: 48 }}>
                 {t('app.choresDisabled')}
@@ -864,8 +872,8 @@ export function App() {
           screenSaverTimeoutMin={settings.screenSaverTimeout}
         />
 
-        {/* Demo indicator — only show outside of add-on ingress */}
-        {!connected && !isHaManaged && <div className="demo-badge">{t('app.demoMode')}</div>}
+        {/* Preview indicator — only show outside of add-on ingress */}
+        {!connected && !isHaManaged && <div className="preview-badge">{t('app.previewMode')}</div>}
       </div>
     </I18nContext.Provider>
   );

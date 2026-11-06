@@ -42,7 +42,7 @@ export const fr: Record<TranslationKey, string> = {
   'app.connecting': 'Connexion...',
   'app.choresDisabled':
     'Les corvées sont désactivées. Activez-les dans Paramètres → Corvées pour utiliser cet écran.',
-  'app.demoMode': 'Mode démo',
+  'app.previewMode': 'Mode apercu',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Modifier le tableau de bord',

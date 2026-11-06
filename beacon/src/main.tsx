@@ -15,6 +15,7 @@ import './styles/settings.css';
 import './styles/weather.css';
 import './styles/focus.css';
 import './styles/choreops.css';
+import './styles/chore-planner.css';
 import { initNativeBridge } from './native';
 import { applyStoredTheme } from './hooks/useTheme';
 

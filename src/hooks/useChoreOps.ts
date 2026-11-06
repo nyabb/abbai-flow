@@ -21,7 +21,14 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { HomeAssistantClient } from '../api/homeassistant';
 import { callHaService, getAllEntityStates, hasToken } from '../api/ha-rest';
 import { useHomeAssistant } from './useHomeAssistant';
-import { normalizeChoreOps, purposeOf } from '../api/choreops';
+import {
+  normalizeChoreOps,
+  purposeOf,
+  buildCreateChorePayload,
+  buildUpdateChorePayload,
+  buildCreateRewardPayload,
+} from '../api/choreops';
+import type { CreateChoreInput, UpdateChoreInput, CreateRewardInput } from '../api/choreops';
 import type { ChoreOpsEntityState, ChoreOpsState } from '../types/choreops';
 
 const REFETCH_DEBOUNCE_MS = 400;
@@ -43,6 +50,14 @@ export interface UseChoreOpsResult {
    * Works for chores nobody is assigned to, which have no button to press.
    */
   claimChore: (choreName: string, userName: string) => Promise<void>;
+  /** Create a chore in ChoreOps and refresh the board. */
+  createChore: (input: Omit<CreateChoreInput, 'entryId'>) => Promise<void>;
+  /** Change an existing chore (assignees, schedule, points, times). */
+  updateChore: (input: Omit<UpdateChoreInput, 'entryId'>) => Promise<void>;
+  /** Create a reward for one or more ChoreOps users. */
+  createReward: (input: Omit<CreateRewardInput, 'entryId'>) => Promise<void>;
+  /** Delete a ChoreOps chore by name. */
+  deleteChore: (choreName: string) => Promise<void>;
 }
 
 interface ChoreOpsSnapshot {
@@ -283,6 +298,79 @@ export function useChoreOps(): UseChoreOpsResult {
     [client, connected],
   );
 
+  /**
+   * Create a chore in ChoreOps. ChoreOps remains the source of truth: Beacon
+   * only sends the fields the user filled in and then re-reads its entities.
+   */
+  const createChore = useCallback(
+    async (input: Omit<CreateChoreInput, 'entryId'>): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      const payload = buildCreateChorePayload({ ...input, entryId });
+      if (!payload) throw new Error('ChoreOps needs a name and at least one assignee');
+
+      await callHaService('choreops', 'create_chore', payload);
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
+
+  /** Create a reward for the given ChoreOps users. */
+  const createReward = useCallback(
+    async (input: Omit<CreateRewardInput, 'entryId'>): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      const payload = buildCreateRewardPayload({ ...input, entryId });
+      if (!payload) throw new Error('ChoreOps needs a reward name and at least one user');
+
+      await callHaService('choreops', 'create_reward', payload);
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
+
+  /** Delete a chore in ChoreOps by name (the id ChoreOps publishes). */
+  const deleteChore = useCallback(
+    async (choreName: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      await callHaService('choreops', 'delete_chore', {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        name: choreName,
+      });
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
+
+  /**
+   * Change an existing ChoreOps chore and re-read its entities.
+   *
+   * ChoreOps refuses a schedule change without a future due date, so callers
+   * must pass both — the edit form pre-fills the due date for exactly that
+   * reason.
+   */
+  const updateChore = useCallback(
+    async (input: Omit<UpdateChoreInput, 'entryId'>): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      const payload = buildUpdateChorePayload({ ...input, entryId });
+      if (!payload) throw new Error('ChoreOps needs a chore name to update it');
+
+      await callHaService('choreops', 'update_chore', payload);
+
+      const activeClient = client();
+      if (activeClient && connected) await loadViaClient(activeClient);
+      else await loadViaRest();
+    },
+    [client, connected],
+  );
+
   return useMemo(
     () => ({
       data: state.data,
@@ -292,7 +380,11 @@ export function useChoreOps(): UseChoreOpsResult {
       refresh,
       pressButton,
       claimChore,
+      createChore,
+      updateChore,
+      createReward,
+      deleteChore,
     }),
-    [state, refresh, pressButton, claimChore],
+    [state, refresh, pressButton, claimChore, createChore, updateChore, createReward, deleteChore],
   );
 }

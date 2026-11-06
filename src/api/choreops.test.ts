@@ -1,5 +1,62 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeChoreOps } from './choreops';
+import { buildCreateChorePayload, groupChoreOpsChores, normalizeChoreOps } from './choreops';
+import type { ChoreOpsChore, ChoreOpsUser } from '../types/choreops';
+import type { FamilyMember } from '../types/family';
+
+describe('buildCreateChorePayload', () => {
+  it('requires a config entry, a name, and at least one assignee', () => {
+    expect(
+      buildCreateChorePayload({ entryId: null, name: 'Afwassen', assignedUserNames: ['Maya'] }),
+    ).toBeNull();
+    expect(
+      buildCreateChorePayload({ entryId: 'e1', name: '   ', assignedUserNames: ['Maya'] }),
+    ).toBeNull();
+    expect(
+      buildCreateChorePayload({ entryId: 'e1', name: 'Afwassen', assignedUserNames: ['  '] }),
+    ).toBeNull();
+  });
+
+  it('sends only the fields the user set, with sane points rounding', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: '  Afwassen  ',
+      assignedUserNames: ['Maya', 'Maya', ' Nova '],
+      points: 4.6,
+    });
+
+    expect(payload).toEqual({
+      config_entry_id: 'entry-1',
+      name: 'Afwassen',
+      assigned_user_names: ['Maya', 'Nova'],
+      points: 5,
+    });
+  });
+
+  it('sends weekly weekdays and custom interval only when relevant', () => {
+    const weekly = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Stofzuigen',
+      assignedUserNames: ['Maya'],
+      frequency: 'weekly',
+      applicableDays: ['mon', 'thu'],
+      customInterval: 3,
+    });
+    expect(weekly).toMatchObject({ frequency: 'weekly', applicable_days: ['mon', 'thu'] });
+    expect(weekly).not.toHaveProperty('custom_interval');
+
+    const custom = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Planten',
+      assignedUserNames: ['Nova'],
+      frequency: 'custom',
+      customInterval: 2,
+      customIntervalUnit: 'weeks',
+      applicableDays: ['mon'],
+    });
+    expect(custom).toMatchObject({ custom_interval: 2, custom_interval_unit: 'weeks' });
+    expect(custom).not.toHaveProperty('applicable_days');
+  });
+});
 
 /**
  * The dashboard helper's `chores` attribute is empty whenever nothing is due,
@@ -287,6 +344,75 @@ describe('normalizeChoreOps — per-user chore status', () => {
     ]);
 
     expect(result.entryId).toBe('entry-123');
+  });
+});
+
+describe('groupChoreOpsChores', () => {
+  const users: ChoreOpsUser[] = ['Maya', 'Nova', 'Zara'].map((name) => ({
+    name,
+    slug: name.toLowerCase(),
+    points: 0,
+    dueToday: 0,
+    claimed: 0,
+    approved: 0,
+    completedToday: 0,
+  }));
+  const members: FamilyMember[] = [
+    {
+      id: 'maya-id',
+      name: 'Maya',
+      avatar: '👧',
+      color: '#3b82f6',
+      role: 'child',
+      choreops_user: 'Maya',
+    },
+    {
+      id: 'zara-id',
+      name: 'Zara',
+      avatar: '👧',
+      color: '#22c55e',
+      role: 'child',
+      choreops_user: 'Zara',
+    },
+  ];
+  const assignedChore = (id: string, name: string, assignee: string | null): ChoreOpsChore => ({
+    id,
+    name,
+    assignee,
+    icon: null,
+    status: 'due',
+    points: null,
+    canClaim: true,
+    canApprove: false,
+    actions: {},
+  });
+
+  it('creates a column for every ChoreOps user, including users with no chores', () => {
+    const groups = groupChoreOpsChores(
+      users,
+      [assignedChore('m1', 'Make bed', 'Maya')],
+      members,
+      'Shared',
+    );
+
+    expect(groups.map((group) => group.label)).toEqual(['Maya', 'Nova', 'Zara']);
+    expect(groups.find((group) => group.label === 'Nova')?.chores).toEqual([]);
+  });
+
+  it('keeps unlinked users in distinct columns and reserves Shared for unassigned chores', () => {
+    const groups = groupChoreOpsChores(
+      users,
+      [assignedChore('n1', 'Feed cat', 'Nova'), assignedChore('s1', 'Tidy hall', null)],
+      members,
+      'Shared',
+    );
+
+    expect(groups.find((group) => group.label === 'Nova')?.chores.map((chore) => chore.id)).toEqual(
+      ['n1'],
+    );
+    expect(
+      groups.find((group) => group.label === 'Shared')?.chores.map((chore) => chore.id),
+    ).toEqual(['s1']);
   });
 });
 

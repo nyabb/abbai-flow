@@ -42,7 +42,7 @@ export const it: Record<TranslationKey, string> = {
   'app.connecting': 'Connessione in corso...',
   'app.choresDisabled':
     'Le faccende sono disattivate. Attivale in Impostazioni → Faccende per usare questa schermata.',
-  'app.demoMode': 'Modalità demo',
+  'app.previewMode': 'Modalita anteprima',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Modifica bacheca',

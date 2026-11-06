@@ -41,7 +41,7 @@ export const ko: Record<TranslationKey, string> = {
   'app.connecting': '연결 중...',
   'app.choresDisabled':
     '집안일 기능이 꺼져 있습니다. 이 화면을 사용하려면 설정 → 집안일에서 켜세요.',
-  'app.demoMode': '데모 모드',
+  'app.previewMode': '미리보기 모드',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ 대시보드 편집',

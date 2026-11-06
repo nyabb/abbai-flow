@@ -42,7 +42,7 @@ export const pt: Record<TranslationKey, string> = {
   'app.connecting': 'A ligar...',
   'app.choresDisabled':
     'As tarefas estão desativadas. Ative-as em Definições → Tarefas para usar este ecrã.',
-  'app.demoMode': 'Modo de demonstração',
+  'app.previewMode': 'Modo de visualizacao',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Editar painel',
