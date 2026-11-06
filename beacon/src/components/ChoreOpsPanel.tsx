@@ -10,12 +10,11 @@
  * stat tiles, then one card grid per family member and goal cards for rewards.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useFamily } from '../hooks/useFamily';
 import { useChoreOps } from '../hooks/useChoreOps';
 import { resolveMemberForUser } from '../api/choreops';
 import { useTranslation } from '../i18n';
 import type { ChoreOpsChore } from '../types/choreops';
-import type { FamilyMember } from '../types/family';
+import { normalizePin, type FamilyMember } from '../types/family';
 import { ChoreTaskCard, RewardGoalCard, memberColorVars } from './choreops/ChoreOpsCards';
 import type { ChoreActionKind } from './choreops/ChoreOpsCards';
 import { MemberAvatar } from './MemberAvatar';
@@ -43,9 +42,8 @@ interface PinPrompt {
 /** A parent PIN is the only identity a shared wall display can check. */
 const MIN_PIN_LENGTH = 4;
 
-export function ChoreOpsPanel() {
+export function ChoreOpsPanel({ members }: { members: FamilyMember[] }) {
   const { t } = useTranslation();
-  const { members } = useFamily();
   const { data, loading, error, available, refresh, pressButton, claimChore } = useChoreOps();
 
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -62,7 +60,7 @@ export function ChoreOpsPanel() {
       // Anything that is not explicitly a child counts as an adult here, so
       // members saved before the role field existed still unlock approval.
       .filter((member) => member.role !== 'child')
-      .map((member) => String(member.pin ?? '').trim())
+      .map((member) => normalizePin(member.pin))
       .filter((pin) => pin.length >= MIN_PIN_LENGTH);
     return Array.from(new Set(pins));
   }, [members]);
@@ -145,14 +143,41 @@ export function ChoreOpsPanel() {
 
   const submitPin = useCallback(() => {
     if (!pinPrompt) return;
-    if (!parentPins.includes(pinInput.trim())) {
+    const enteredPin = normalizePin(pinInput);
+    const eligibleParents = members.filter(
+      (member) => member.role !== 'child' && normalizePin(member.pin).length >= MIN_PIN_LENGTH,
+    );
+    const matchedParent = eligibleParents.find(
+      (member) => normalizePin(member.pin) === enteredPin,
+    );
+
+    if (import.meta.env.DEV) {
+      console.info('[Beacon] parent PIN validation', {
+        actionKey: pinPrompt.key,
+        actionEntityId: pinPrompt.entityId,
+        enteredPinLength: enteredPin.length,
+        matchedFamilyMemberId: matchedParent?.id ?? null,
+        candidates: members.map((member) => ({
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          choreOpsUser: member.choreops_user ?? null,
+          hasPin: normalizePin(member.pin).length > 0,
+          savedPinLength: normalizePin(member.pin).length,
+          eligibleParent: member.role !== 'child' &&
+            normalizePin(member.pin).length >= MIN_PIN_LENGTH,
+        })),
+      });
+    }
+
+    if (!matchedParent) {
       setPinError(true);
       return;
     }
     const prompt = pinPrompt;
     closePinPrompt();
     void runAction(prompt.key, prompt.entityId, prompt.subtitle);
-  }, [pinPrompt, parentPins, closePinPrompt, runAction]);
+  }, [pinPrompt, pinInput, members, closePinPrompt, runAction]);
 
   const users = useMemo(() => data?.users ?? [], [data]);
   const chores = useMemo(() => data?.chores ?? [], [data]);
@@ -290,34 +315,36 @@ export function ChoreOpsPanel() {
           {groups.length === 0 ? (
             <div className="choreops-empty">{t('chores.noChoresToday')}</div>
           ) : (
-            groups.map((group) => (
-              <section key={group.key} className="choreops-group">
-                <div className="choreops-group-head" style={memberColorVars(group.member)}>
-                  <span className="choreops-group-avatar" aria-hidden="true">
-                    <MemberAvatar member={group.member} fallback="\u{1F465}" />
-                  </span>
-                  <span className="choreops-group-name">{group.label}</span>
-                  <span className="choreops-group-count">{group.chores.length}</span>
-                </div>
+            <div className="choreops-groups">
+              {groups.map((group) => (
+                <section key={group.key} className="choreops-group">
+                  <div className="choreops-group-head" style={memberColorVars(group.member)}>
+                    <span className="choreops-group-avatar" aria-hidden="true">
+                      <MemberAvatar member={group.member} fallback={'\u{1F465}'} />
+                    </span>
+                    <span className="choreops-group-name">{group.label}</span>
+                    <span className="choreops-group-count">{group.chores.length}</span>
+                  </div>
 
-                <div className="choreops-grid">
-                  {group.chores.map((chore) => (
-                    <ChoreTaskCard
-                      key={chore.id}
-                      chore={chore}
-                      member={group.member}
-                      pending={pendingAction !== null && pendingAction.startsWith(`${chore.id}:`)}
-                      blocked={pendingAction !== null}
-                      approvalAllowed={approvalAllowed}
-                      onClaimUnassigned={setClaimTarget}
-                      onAction={(key, entityId, kind) => {
-                        handleAction(key, entityId, chore.name, kind);
-                      }}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))
+                  <div className="choreops-grid">
+                    {group.chores.map((chore) => (
+                      <ChoreTaskCard
+                        key={chore.id}
+                        chore={chore}
+                        member={group.member}
+                        pending={pendingAction !== null && pendingAction.startsWith(`${chore.id}:`)}
+                        blocked={pendingAction !== null}
+                        approvalAllowed={approvalAllowed}
+                        onClaimUnassigned={setClaimTarget}
+                        onAction={(key, entityId, kind) => {
+                          handleAction(key, entityId, chore.name, kind);
+                        }}
+                      />
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
           )}
 
           {rewards.length > 0 && (
@@ -385,7 +412,7 @@ export function ChoreOpsPanel() {
               autoFocus
               aria-label={t('chores.pinTitle')}
               onChange={(event) => {
-                setPinInput(event.target.value.replace(/\D/g, '').slice(0, 6));
+                setPinInput(normalizePin(event.target.value));
                 setPinError(false);
               }}
               onKeyDown={(event) => {
@@ -443,7 +470,7 @@ export function ChoreOpsPanel() {
                       >
                         <MemberAvatar
                           member={resolveMemberForUser(user.name, members)}
-                          fallback="\u{1F464}"
+                          fallback={'\u{1F464}'}
                         />
                       </span>
                       <span className="choreops-claim-name">{user.name}</span>

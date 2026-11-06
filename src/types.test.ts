@@ -7,6 +7,23 @@ import {
   getFullColor,
   resolveCalendarColor,
 } from './types';
+import { normalizePin } from './types/family';
+
+describe('normalizePin', () => {
+  it('keeps stored and entered PINs consistent across whitespace and legacy values', () => {
+    expect(normalizePin(' 1234 ')).toBe('1234');
+    expect(normalizePin('12a34')).toBe('1234');
+    expect(normalizePin(1234)).toBe('1234');
+    expect(normalizePin('000123')).toBe('000123');
+  });
+
+  it('requires the same normalized value for approval checks', () => {
+    const savedPins = [' 1234 ', '5678', '000123'];
+    const enteredPin = normalizePin('12a34');
+
+    expect(savedPins.map(normalizePin)).toContain(enteredPin);
+  });
+});
 
 describe('CALENDAR_COLORS', () => {
   it('has exactly 4 category colors (Sage/Lavender/Coral/Teal per design-tokens.md)', () => {
@@ -92,7 +109,11 @@ describe('getPastelColor / getFullColor', () => {
 describe('resolveCalendarColor', () => {
   const members = [
     { color: '#3b82f6', calendar_entity: 'calendar.mom' },
-    { color: '#22c55e', calendar_entity: 'calendar.dad', additional_calendar_entities: ['calendar.dad_soccer'] },
+    {
+      color: '#22c55e',
+      calendar_entity: 'calendar.dad',
+      additional_calendar_entities: ['calendar.dad_soccer'],
+    },
   ];
 
   it('prioritizes a user-customized calendar color above everything else', () => {

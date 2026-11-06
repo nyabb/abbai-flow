@@ -14,11 +14,25 @@ export interface FamilyMember {
   /** ChoreOps `user_name` this member is linked to (used when the
    *  chore_backend is 'choreops' so points/chores map to the right person). */
   choreops_user?: string;
+  choreops_state?: {
+    points: number;
+    dueToday: number;
+    claimed: number;
+    approved: number;
+    completedToday: number;
+  };
   /** Additional HA calendar entity_ids linked to this member (e.g. a
    *  kid's sports team calendar), so their events group under this member
    *  too instead of falling into the "Other" bucket. `calendar_entity`
    *  remains the primary/back-compat single-calendar field. */
   additional_calendar_entities?: string[];
+}
+
+export function normalizePin(pin: unknown): string {
+  if (pin === null || pin === undefined) return '';
+
+  const raw = typeof pin === 'string' ? pin : String(pin);
+  return raw.replace(/\D/g, '').slice(0, 6);
 }
 
 export interface Chore {

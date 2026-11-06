@@ -56,7 +56,7 @@ export function App() {
   const i18n = useMemo(() => createI18n(settings.locale), [settings.locale]);
   const { t } = i18n;
 
-  const { members, addMember, updateMember, removeMember } = useFamily();
+  const { members, addMember, updateMember, removeMember, syncChoreOpsMembers } = useFamily();
 
   const {
     calendars: haCalendars,
@@ -490,6 +490,11 @@ export function App() {
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
+  useEffect(() => {
+    if (!choreOpsData?.users.length) return;
+    void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
+  }, [choreOpsData?.users, members, syncChoreOpsMembers]);
+
   const dashboardChores = useMemo(
     () =>
       (choreOpsData?.chores ?? []).map((chore) => ({
@@ -679,7 +684,7 @@ export function App() {
             </>
           ) : activeView === 'chores' ? (
             settings.choresEnabled ? (
-              <ChoreOpsPanel />
+              <ChoreOpsPanel members={members} />
             ) : (
               <div className="chores-empty" style={{ padding: 48 }}>
                 {t('app.choresDisabled')}
