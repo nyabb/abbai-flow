@@ -489,6 +489,7 @@ export const fr: Record<TranslationKey, string> = {
     'Définissez un code sur un parent dans Réglages → Famille pour valider les tâches ici.',
   'chores.pendingApprovals': '{count} en attente de validation',
   'chores.assignToClaim': 'Attribuez cette tâche dans ChoreOps pour qu’elle puisse être réclamée.',
+  'chores.awaitingApproval': 'En attente d’un parent',
   'chores.refresh': 'Actualiser',
   'chores.everyone': 'Tout le monde',
   'chores.noChoresToday': 'Rien à faire pour le moment.',

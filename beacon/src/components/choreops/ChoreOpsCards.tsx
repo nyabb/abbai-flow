@@ -81,8 +81,6 @@ export function ChoreTaskCard({
   const done = DONE_STATUS.test(chore.status);
   const primary = chorePrimaryAction(chore);
   const declineEid = chore.actions.disapprove;
-  // Decline only makes sense next to an Approve — not beside a Claim.
-  const showDecline = Boolean(declineEid) && primary?.kind === 'approve';
   // A child must not be able to sign off their own chore on a shared screen.
   const approveLocked = !approvalAllowed || blocked || pending;
 
@@ -101,47 +99,62 @@ export function ChoreTaskCard({
 
       <h3 className="choreops-card-title">{chore.name}</h3>
 
-      {primary ? (
+      {primary?.kind === 'claim' && (
         <button
           type="button"
           className="choreops-action"
-          disabled={primary.kind === 'approve' ? approveLocked : blocked || pending}
-          onClick={() => onAction(`${chore.id}:${primary.kind}`, primary.entityId, primary.kind)}
+          disabled={blocked || pending}
+          onClick={() => onAction(`${chore.id}:claim`, primary.entityId, 'claim')}
         >
-          <span className="choreops-action-main">
-            {pending
-              ? '\u2026'
-              : primary.kind === 'claim'
-                ? t('chores.claim')
-                : t('chores.approve')}
-          </span>
+          <span className="choreops-action-main">{pending ? '\u2026' : t('chores.claim')}</span>
           <span className="choreops-action-reward">
             <span aria-hidden="true">{'\u{1F3C6}'}</span>
             {chore.points !== null && chore.points > 0 ? chore.points : null}
           </span>
         </button>
-      ) : done ? (
+      )}
+
+      {/* Claimed: the child's part is done, so nothing here is theirs to press.
+          Signing off is a parent action and needs the PIN. */}
+      {primary?.kind === 'approve' && (
+        <>
+          <p className="choreops-card-waiting">{t('chores.awaitingApproval')}</p>
+          <button
+            type="button"
+            className="choreops-action"
+            disabled={approveLocked}
+            onClick={() => onAction(`${chore.id}:approve`, primary.entityId, 'approve')}
+          >
+            <span className="choreops-action-main">{pending ? '\u2026' : t('chores.approve')}</span>
+            <span className="choreops-action-reward" aria-hidden="true">
+              {'\u{1F512}'}
+            </span>
+          </button>
+          {declineEid && (
+            <button
+              type="button"
+              className="choreops-secondary"
+              disabled={approveLocked}
+              onClick={() => onAction(`${chore.id}:decline`, declineEid, 'disapprove')}
+            >
+              {t('chores.decline')}
+            </button>
+          )}
+        </>
+      )}
+
+      {!primary && done && (
         <button type="button" className="choreops-action choreops-action--done" disabled>
           <span className="choreops-action-main">{t('common.done')}</span>
           <span className="choreops-action-reward" aria-hidden="true">
             {'\u2713'}
           </span>
         </button>
-      ) : null}
+      )}
+
       {/* An unassigned chore has no claim button to press, so it renders as a
           read-only card rather than a button that cannot do anything. */}
       {!primary && !done && <p className="choreops-card-hint">{t('chores.assignToClaim')}</p>}
-
-      {showDecline && declineEid && (
-        <button
-          type="button"
-          className="choreops-secondary"
-          disabled={approveLocked}
-          onClick={() => onAction(`${chore.id}:decline`, declineEid, 'disapprove')}
-        >
-          {t('chores.decline')}
-        </button>
-      )}
     </article>
   );
 }

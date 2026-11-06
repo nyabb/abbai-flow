@@ -486,6 +486,7 @@ export const de: Record<TranslationKey, string> = {
     'Lege eine PIN für ein Elternteil unter Einstellungen → Familie fest, um hier Aufgaben zu genehmigen.',
   'chores.pendingApprovals': '{count} warten auf Freigabe',
   'chores.assignToClaim': 'Ordne diese Aufgabe in ChoreOps zu, damit sie übernommen werden kann.',
+  'chores.awaitingApproval': 'Wartet auf ein Elternteil',
   'chores.refresh': 'Aktualisieren',
   'chores.everyone': 'Alle',
   'chores.noChoresToday': 'Gerade steht nichts an.',

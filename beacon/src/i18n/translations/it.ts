@@ -487,6 +487,7 @@ export const it: Record<TranslationKey, string> = {
     'Imposta un PIN su un genitore in Impostazioni → Famiglia per approvare le faccende qui.',
   'chores.pendingApprovals': '{count} in attesa di approvazione',
   'chores.assignToClaim': 'Assegna questa faccenda in ChoreOps per consentire di rivendicarla.',
+  'chores.awaitingApproval': 'In attesa di un genitore',
   'chores.refresh': 'Aggiorna',
   'chores.everyone': 'Tutti',
   'chores.noChoresToday': 'Niente da fare per ora.',

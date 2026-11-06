@@ -476,6 +476,7 @@ export const ko: Record<TranslationKey, string> = {
   'chores.pinRequired': '설정 → 가족에서 보호자 PIN을 설정하면 여기서 집안일을 승인할 수 있습니다.',
   'chores.pendingApprovals': '{count}건 승인 대기 중',
   'chores.assignToClaim': 'ChoreOps에서 이 집안일을 할당하면 맡을 수 있습니다.',
+  'chores.awaitingApproval': '보호자 승인 대기 중',
   'chores.refresh': '새로고침',
   'chores.everyone': '모두',
   'chores.noChoresToday': '지금 할 일이 없습니다.',

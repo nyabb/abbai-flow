@@ -489,6 +489,7 @@ export const en = {
   'chores.pinRequired': 'Set a PIN on a parent in Settings → Family to approve chores here.',
   'chores.pendingApprovals': '{count} waiting for approval',
   'chores.assignToClaim': 'Assign this chore in ChoreOps so someone can claim it.',
+  'chores.awaitingApproval': 'Waiting for a parent',
   'chores.refresh': 'Refresh',
   'chores.everyone': 'Everyone',
   'chores.noChoresToday': 'Nothing to do right now.',
