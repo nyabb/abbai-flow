@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import { ChorePlannerState, PlannerTask, getPlannerTaskStatus } from '../api/chore-planner-model';
+import type { PlannerMember } from '../api/chore-planner-model';
 import { buildChorePlannerView } from '../api/chore-planner-view';
 import {
   resolveMemberForUser,
@@ -604,6 +605,43 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
 
+  /** Chores that need attention first, then by deadline. */
+  const byUrgency = (a: PlannerTask, b: PlannerTask) => {
+    const rank = (task: PlannerTask) =>
+      ['late', 'retry', 'expired'].includes(taskStatus(task)) ? 0 : 1;
+    return rank(a) - rank(b) || byDeadline(a, b);
+  };
+
+  /**
+   * The "everyone" board is grouped by child rather than by status: with the
+   * whole family on screen a parent wants to see who still has work left, not
+   * one long mixed list. Completed chores are grouped the same way so the
+   * history stays attributable at a glance.
+   */
+  const byMember = data.members.map((member) => {
+    const mine = filteredTasks.filter((task) => task.memberId === member.id);
+    return {
+      member,
+      open: mine.filter((task) => taskStatus(task) !== 'completed').sort(byUrgency),
+      done: mine
+        .filter((task) => taskStatus(task) === 'completed')
+        .sort((a, b) => byDeadline(b, a)),
+    };
+  });
+  const memberGroups = byMember.filter((group) => group.open.length > 0);
+  const completedGroups = byMember.filter((group) => group.done.length > 0);
+
+  /** Avatar + name + count heading, shared by the open and completed groups. */
+  const memberHeading = (member: PlannerMember, count: number) => (
+    <h2>
+      <span className="planner-member-heading-avatar">
+        <MemberAvatar member={member} />
+      </span>
+      {member.name}
+      <span className="planner-member-heading-count">{count}</span>
+    </h2>
+  );
+
   const showToast = (message: string) => setToast(message);
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
@@ -887,6 +925,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     const status = taskStatus(task);
     const assigned = memberFor(task.memberId);
     const deadline = status === 'upcoming' ? task.startsAt : (task.deadlineAt ?? task.expiresAt);
+    // ChoreOps reports completion as a status, so fall back to the due time for
+    // the label instead of printing an invalid date.
+    const completedAt = task.completedAt ?? deadline;
     const subtitle =
       status === 'upcoming'
         ? `${c.upcoming} ${new Date(task.startsAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
@@ -900,7 +941,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               ? c.late
               : status === 'expired'
                 ? c.expired
-                : `${c.completedAt} ${new Date(task.completedAt!).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`;
+                : completedAt
+                  ? `${c.completedAt} ${new Date(completedAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+                  : c.done;
     const timeLabel =
       task.timeBlock === 'morning'
         ? c.morning
@@ -1153,8 +1196,18 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 </div>
               </section>
             )}
-            {section(c.today, todayTasks)}
-            {section(c.late, lateTasks, 'planner-section--late')}
+            {memberFilter === 'all'
+              ? memberGroups.map(({ member, open }) => (
+                  <section
+                    className="planner-section planner-section--member"
+                    key={member.id}
+                    style={{ '--member-color': member.color } as React.CSSProperties}
+                  >
+                    {memberHeading(member, open.length)}
+                    <div className="planner-task-list">{open.map((task) => renderTask(task))}</div>
+                  </section>
+                ))
+              : [section(c.today, todayTasks), section(c.late, lateTasks, 'planner-section--late')]}
             <section className="planner-section planner-section--completed">
               <button
                 className="planner-collapse"
@@ -1165,11 +1218,27 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 </span>
                 {completedExpanded ? <ChevronDown /> : <ChevronRight />}
               </button>
-              {completedExpanded && (
-                <div className="planner-task-list">
-                  {completedTasks.sort(byDeadline).map((task) => renderTask(task))}
-                </div>
-              )}
+              {completedExpanded &&
+                (memberFilter === 'all' ? (
+                  <div className="planner-completed-groups">
+                    {completedGroups.map(({ member, done }) => (
+                      <section
+                        className="planner-section planner-section--member planner-section--member-done"
+                        key={member.id}
+                        style={{ '--member-color': member.color } as React.CSSProperties}
+                      >
+                        {memberHeading(member, done.length)}
+                        <div className="planner-task-list">
+                          {done.map((task) => renderTask(task))}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="planner-task-list">
+                    {completedTasks.sort(byDeadline).map((task) => renderTask(task))}
+                  </div>
+                ))}
             </section>
             {freeTasks.length + todayTasks.length + lateTasks.length + completedTasks.length ===
               0 && (

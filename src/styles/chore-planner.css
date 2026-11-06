@@ -347,6 +347,61 @@
 .planner-free-section > h2 {
   color: var(--planner-accent);
 }
+
+/* "Everyone" board: one block per child, headed by their photo and count. */
+.planner-section--member > h2 {
+  align-items: center;
+  gap: 10px;
+  color: var(--planner-ink);
+  font-size: 18px;
+}
+.planner-section--member > h2 .planner-member-heading-avatar {
+  display: grid;
+  min-width: 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--member-color, var(--planner-accent)) 42%, transparent);
+  border-radius: 50%;
+  background: color-mix(
+    in srgb,
+    var(--member-color, var(--planner-accent)) 18%,
+    var(--planner-surface)
+  );
+  color: var(--planner-ink);
+  font-size: 16px;
+}
+.planner-section--member > h2 .planner-member-heading-avatar > * {
+  display: grid;
+  min-width: 0;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  border-radius: 50%;
+  background: transparent;
+  object-fit: cover;
+  object-position: center;
+  font-size: 16px;
+  line-height: 1;
+}
+.planner-section--member > h2 .planner-member-heading-count {
+  display: grid;
+  min-width: 26px;
+  height: 26px;
+  margin-left: auto;
+  padding: 0 8px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--member-color, var(--planner-accent));
+  background: color-mix(
+    in srgb,
+    var(--member-color, var(--planner-accent)) 16%,
+    var(--planner-surface)
+  );
+  font-size: 13px;
+  font-weight: 800;
+}
 .planner-task-list {
   display: grid;
   gap: 10px;
@@ -584,6 +639,31 @@
 }
 .planner-section--completed .planner-task-list {
   margin-top: 6px;
+}
+
+/* Completed history, grouped per child when "Everyone" is selected. */
+.planner-completed-groups {
+  display: grid;
+  gap: 2px;
+  margin-top: 8px;
+}
+.planner-section--member-done {
+  margin: 0;
+  padding: 4px 0 12px;
+}
+.planner-section--member-done > h2 {
+  color: var(--planner-muted);
+  font-size: 16px;
+}
+.planner-section--member-done > h2 .planner-member-heading-avatar {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  font-size: 14px;
+  opacity: 0.85;
+}
+.planner-section--member-done .planner-task {
+  opacity: 0.86;
 }
 
 .planner-routines {
