@@ -1,3 +1,19 @@
+# [1.44.0](https://github.com/nyabb/beacon/compare/v1.43.1...v1.44.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **choreops:** respect pending status and keep the unassigned claim picker ([d7cf3e2](https://github.com/nyabb/beacon/commit/d7cf3e2634b8f95c5c8b22971e86a2b90aed04b7))
+* **store:** await the server write so a refresh cannot revert a fresh edit ([620772a](https://github.com/nyabb/beacon/commit/620772a633f9b3c583fc8252773f9b6c4d145ba1))
+
+
+### Features
+
+* **choreops:** list chores from ChoreOps action buttons and require a parent PIN to approve ([599cb45](https://github.com/nyabb/beacon/commit/599cb45d6d8e276245917cd997c90ec7f109951e))
+* **chores:** let anyone claim a chore that nobody is assigned to ([883e393](https://github.com/nyabb/beacon/commit/883e393298c42e5678c16603f6e0667aa8ce98fe))
+* **chores:** make the claim-then-approve flow explicit on the card ([b3f1417](https://github.com/nyabb/beacon/commit/b3f141783d10d7a7f28f9e585e72a897fc6f368f))
+* normalize PIN handling across components and add ChoreOps state syncing ([b9b4306](https://github.com/nyabb/beacon/commit/b9b4306bf76d759b356d3314f1ab37a96c9fe2b7))
+
 ## [1.43.1](https://github.com/nyabb/beacon/compare/v1.43.0...v1.43.1) (2026-11-05)
 
 
