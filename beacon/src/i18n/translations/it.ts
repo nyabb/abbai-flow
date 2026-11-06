@@ -490,6 +490,10 @@ export const it: Record<TranslationKey, string> = {
   'chores.awaitingApproval': 'In attesa di un genitore',
   'chores.refresh': 'Aggiorna',
   'chores.everyone': 'Tutti',
+  'chores.assign': 'Assegna',
+  'chores.assigned': 'Assegnato · in attesa di conferma',
+  'chores.confirm': 'Conferma',
+  'chores.undo': 'Annulla',
   'chores.noChoresToday': 'Niente da fare per ora.',
   'chores.wellDone': 'Ben fatto!',
   'chores.missing':

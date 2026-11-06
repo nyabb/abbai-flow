@@ -14,9 +14,10 @@ import type {
   PlannerGoal,
   PlannerMember,
   PlannerTask,
+  PlannerTaskAudience,
   PlannerTaskStatus,
 } from './chore-planner-model';
-import type { ChoreOpsState } from '../types/choreops';
+import type { ChoreOpsChore, ChoreOpsState } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 
 export interface ChorePlannerView {
@@ -73,6 +74,47 @@ function memberIdFor(userName: string, member: FamilyMember | null): string {
   return member ? member.id : `choreops:${userName.trim().toLowerCase()}`;
 }
 
+/**
+ * ChoreOps writes this state on the *other* assignees of a `shared_first`
+ * chore once somebody has taken it. It is not "done for them": the chore is
+ * simply no longer theirs, so the planner drops it instead of showing a
+ * completed card on every child's board.
+ */
+const TAKEN_BY_SOMEONE_ELSE = /completed_by_other/i;
+
+/**
+ * Statuses where a `shared_first` chore is still waiting to be picked up.
+ * Everything else (claimed, completed, ...) means one child has it now, and
+ * from that moment the card should look like a normal assigned chore.
+ */
+const STILL_UP_FOR_GRABS = /^(pending|due|waiting|overdue|missed|standby|not_my_turn|unknown)$/i;
+
+/**
+ * Who a chore is for.
+ *
+ * `shared_first` means "anyone can take it": the first child to finish keeps
+ * the points and the others are relieved of it. Once one child claimed it, it
+ * is that child's chore and the card shows them like any other assignment.
+ * `shared_all` (or a chore assigned to the whole household) is "everyone".
+ * Anything else belongs to the one assignee on the card.
+ */
+export function choreAudience(
+  chore: Pick<ChoreOpsChore, 'completionCriteria' | 'assignedUserNames' | 'status'>,
+  userCount: number,
+): PlannerTaskAudience {
+  const criteria = (chore.completionCriteria ?? '').trim().toLowerCase();
+  if (criteria === 'shared_first') {
+    return STILL_UP_FOR_GRABS.test(chore.status) ? 'anyone' : 'member';
+  }
+  if (criteria === 'shared_all') return 'everyone';
+
+  const assigned = new Set(
+    (chore.assignedUserNames ?? []).map((name) => name.trim().toLowerCase()).filter(Boolean),
+  );
+  if (assigned.size > 1 && assigned.size >= userCount) return 'everyone';
+  return 'member';
+}
+
 export function buildChorePlannerView(
   state: ChoreOpsState | null,
   family: FamilyMember[],
@@ -93,31 +135,36 @@ export function buildChorePlannerView(
 
   const memberIds = new Set(members.map((member) => member.id));
 
-  const tasks: PlannerTask[] = (state?.chores ?? []).map((chore) => {
-    const member = resolveMemberForUser(chore.assignee, family);
-    const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
-    const status = choreOpsTaskStatus(chore.status);
-    const awaitingReview = AWAITING_REVIEW.test(chore.status);
+  const tasks: PlannerTask[] = (state?.chores ?? [])
+    // Another child already took this shared_first chore; it is no longer on
+    // this child's list, and ChoreOps only awards points to whoever did it.
+    .filter((chore) => !TAKEN_BY_SOMEONE_ELSE.test(chore.status))
+    .map((chore) => {
+      const member = resolveMemberForUser(chore.assignee, family);
+      const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
+      const status = choreOpsTaskStatus(chore.status);
+      const awaitingReview = AWAITING_REVIEW.test(chore.status);
 
-    return {
-      id: chore.id,
-      name: chore.name,
-      icon: plannerIcon(chore.icon),
-      points: chore.points ?? 0,
-      // A chore whose assignee has no ChoreOps user falls back to unassigned
-      // so it renders in the shared column instead of a phantom person.
-      memberId: assignedId && memberIds.has(assignedId) ? assignedId : null,
-      kind: 'task',
-      startsAt: new Date(0).toISOString(),
-      deadlineAt: chore.dueDate ?? null,
-      expiresAt: null,
-      retryMinutes: null,
-      timeBlock: 'custom',
-      statusOverride: status,
-      awaitingReview,
-      actions: chore.actions,
-    } satisfies PlannerTask;
-  });
+      return {
+        id: chore.id,
+        name: chore.name,
+        icon: plannerIcon(chore.icon),
+        points: chore.points ?? 0,
+        // A chore whose assignee has no ChoreOps user falls back to unassigned
+        // so it renders in the shared column instead of a phantom person.
+        memberId: assignedId && memberIds.has(assignedId) ? assignedId : null,
+        kind: 'task',
+        startsAt: new Date(0).toISOString(),
+        deadlineAt: chore.dueDate ?? null,
+        expiresAt: null,
+        retryMinutes: null,
+        timeBlock: 'custom',
+        statusOverride: status,
+        audience: choreAudience(chore, users.length),
+        awaitingReview,
+        actions: chore.actions,
+      } satisfies PlannerTask;
+    });
 
   const goals: PlannerGoal[] = (state?.rewards ?? []).map((reward) => {
     const member = resolveMemberForUser(reward.assignee, family);

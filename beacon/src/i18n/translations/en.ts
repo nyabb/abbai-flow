@@ -492,6 +492,10 @@ export const en = {
   'chores.awaitingApproval': 'Waiting for a parent',
   'chores.refresh': 'Refresh',
   'chores.everyone': 'Everyone',
+  'chores.assign': 'Assign',
+  'chores.assigned': 'Assigned · waiting for confirmation',
+  'chores.confirm': 'Confirm',
+  'chores.undo': 'Undo',
   'chores.noChoresToday': 'Nothing to do right now.',
   'chores.wellDone': 'Well done!',
   'chores.missing':

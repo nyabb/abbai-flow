@@ -1,6 +1,14 @@
 export type PlannerTaskStatus = 'upcoming' | 'active' | 'late' | 'retry' | 'expired' | 'completed';
 export type PlannerTaskKind = 'task' | 'routine';
 export type PlannerTimeBlock = 'morning' | 'afternoon' | 'evening' | 'custom';
+/**
+ * Who a chore is for:
+ * - `member`: one particular child (the usual case)
+ * - `anyone`: several children share one chore and whoever gets there first
+ *   takes it (ChoreOps `shared_first`)
+ * - `everyone`: the same chore is assigned to the whole household
+ */
+export type PlannerTaskAudience = 'member' | 'anyone' | 'everyone';
 
 export interface PlannerMember {
   id: string;
@@ -33,6 +41,8 @@ export interface PlannerTask {
   awardGoalAmount?: number;
   /** Live ChoreOps task: status comes from ChoreOps, not from local dates. */
   statusOverride?: PlannerTaskStatus;
+  /** Who the chore is meant for; drives the "anyone"/"everyone" chip. */
+  audience?: PlannerTaskAudience;
   /** Live ChoreOps task: entity ids for claim/approve/decline. */
   actions?: { claim?: string; approve?: string; disapprove?: string };
   /** Live ChoreOps task: the child finished it and a parent must sign off. */

@@ -7,6 +7,7 @@ import type { ChoreOpsState } from '../types/choreops';
 const mocks = vi.hoisted(() => ({
   createReward: vi.fn(async () => {}),
   deleteChore: vi.fn(async () => {}),
+  approveReward: vi.fn(async () => {}),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -23,6 +24,7 @@ vi.mock('../hooks/useChoreOps', () => ({
     updateChore: async () => {},
     createReward: mocks.createReward,
     deleteChore: mocks.deleteChore,
+    approveReward: mocks.approveReward,
   }),
 }));
 
@@ -145,6 +147,8 @@ describe('ChorePlanner rewards from ChoreOps', () => {
   beforeEach(() => {
     mocks.state.current = choreOpsState();
     mocks.createReward.mockClear();
+    mocks.approveReward.mockClear();
+    localStorage.clear();
   });
 
   it('lists the rewards ChoreOps publishes with their cost', () => {
@@ -154,8 +158,50 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     expect(container.textContent).toContain('Schermtijd');
     expect(container.textContent).toContain('20 punten');
     // Zara saved 25, so the reward is affordable.
-    const redeem = screen.getByRole('button', { name: 'Inwisselen' }) as HTMLButtonElement;
-    expect(redeem.disabled).toBe(false);
+    const assign = screen.getByRole('button', { name: 'Toewijzen' }) as HTMLButtonElement;
+    expect(assign.disabled).toBe(false);
+  });
+
+  /*
+   * Points must leave the child's balance the moment they pick a reward, not
+   * when a parent confirms it. The allocation is Beacon-local so the child can
+   * take it back; approving later only writes the (single) deduction to
+   * ChoreOps and must not move the visible balance again.
+   */
+  it('sets points aside on assign and frees them on undo', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+
+    await waitFor(() =>
+      expect(container.textContent).toContain('Toegewezen · wacht op bevestiging'),
+    );
+    expect(localStorage.getItem('beacon_reward_reservations')).toContain('schermtijd');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+
+    await waitFor(() => expect(container.textContent).toContain('20 punten'));
+    expect(localStorage.getItem('beacon_reward_reservations')).toBeNull();
+    expect(mocks.approveReward).not.toHaveBeenCalled();
+  });
+
+  it('confirms a reserved reward through ChoreOps once, without a second deduction', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Bevestigen' }));
+
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() => expect(mocks.approveReward).toHaveBeenCalledTimes(1));
+    // The PIN identifies the approving parent for ChoreOps' audit trail.
+    expect(mocks.approveReward).toHaveBeenCalledWith('Zara', 'Schermtijd', 'Papa');
+    // ChoreOps now owns the deduction, so Beacon releases its hold.
+    await waitFor(() => expect(localStorage.getItem('beacon_reward_reservations')).toBeNull());
   });
 
   it('creates a per-child reward in ChoreOps', async () => {

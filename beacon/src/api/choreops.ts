@@ -147,6 +147,8 @@ function normalizeChore(item: unknown, fallbackAssignee: string | null): ChoreOp
     points: pointsOf(item),
     canClaim: flag(item, 'can_claim'),
     canApprove: flag(item, 'can_approve'),
+    completionCriteria: str(item, 'completion_criteria'),
+    assignedUserNames: stringList(item, 'assigned_user_names'),
     actions: discoverActions(item),
   };
 }
@@ -214,6 +216,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       windowOffset: string | null;
       autoApprove: boolean;
       assignedUserNames: string[];
+      completionCriteria: string | null;
       canClaim: boolean;
       canApprove: boolean;
     }
@@ -298,6 +301,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
         // with nobody assigned becomes a single "everyone" entry.
         const assignees = stringList(entity.attributes, 'assigned_user_names');
         const targets: Array<string | null> = assignees.length > 0 ? assignees : [null];
+        const completionCriteria = str(entity.attributes, 'completion_criteria');
         for (const assignee of targets) {
           sharedChores.push({
             // One sensor covers every assignee, so the assignee keeps the ids unique.
@@ -307,6 +311,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
             status: entity.state,
             assignee,
             points: num(entity.attributes, 'default_points'),
+            assignedUserNames: assignees,
+            completionCriteria,
             canClaim: false,
             canApprove: false,
             actions: {},
@@ -347,6 +353,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
           windowOffset: str(entity.attributes, 'chore_due_window_offset'),
           autoApprove: flag(entity.attributes, 'auto_approve'),
           assignedUserNames: stringList(entity.attributes, 'assigned_user_names'),
+          completionCriteria: str(entity.attributes, 'completion_criteria'),
           canClaim: flag(entity.attributes, 'can_claim'),
           canApprove: flag(entity.attributes, 'can_approve'),
         });
@@ -439,6 +446,10 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.icon = existing.icon ?? chore.icon;
       existing.status = chore.status;
       existing.points = existing.points ?? chore.points;
+      existing.completionCriteria = existing.completionCriteria ?? chore.completionCriteria;
+      if (!existing.assignedUserNames?.length && chore.assignedUserNames?.length) {
+        existing.assignedUserNames = chore.assignedUserNames;
+      }
       continue;
     }
     choreMap.set(key, chore);
@@ -471,6 +482,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       if (record.assignedUserNames.length > 0) {
         existing.assignedUserNames = record.assignedUserNames;
       }
+      existing.completionCriteria = record.completionCriteria ?? existing.completionCriteria;
       if (record.canClaim) existing.canClaim = true;
       if (record.canApprove) existing.canApprove = true;
       continue;
@@ -489,6 +501,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       windowOffset: record.windowOffset,
       autoApprove: record.autoApprove,
       assignedUserNames: record.assignedUserNames,
+      completionCriteria: record.completionCriteria,
       canClaim: record.canClaim,
       canApprove: record.canApprove,
       actions: {},
@@ -633,12 +646,34 @@ export const CHOREOPS_WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun
 
 export type ChoreOpsWeekday = (typeof CHOREOPS_WEEKDAYS)[number];
 
+/**
+ * ChoreOps sentinel that resolves `assigned_user_names` to every assignable
+ * user. This is how a chore becomes "free for anyone to claim": an empty
+ * assignee list creates a *dormant* chore that publishes no entities at all,
+ * so Beacon would never see it.
+ */
+export const CHOREOPS_ALL_USERS = '*';
+
+/** Completion rules ChoreOps accepts when a chore is created. */
+export const CHOREOPS_COMPLETION_CRITERIA = ['independent', 'shared_first', 'shared_all'] as const;
+
+export type ChoreOpsCompletionCriteria = (typeof CHOREOPS_COMPLETION_CRITERIA)[number];
+
 export interface CreateChoreInput {
   /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
   entryId: string | null;
   name: string;
-  /** ChoreOps user names, not Beacon member names. At least one is required. */
+  /**
+   * ChoreOps user names, not Beacon member names. At least one is required
+   * unless the caller passes the `CHOREOPS_ALL_USERS` sentinel.
+   */
   assignedUserNames: string[];
+  /**
+   * Create-only completion rule. Open-to-anyone chores use `shared_first`, so
+   * the first person to complete it takes the points and the rest stop seeing
+   * an open task.
+   */
+  completionCriteria?: ChoreOpsCompletionCriteria | null;
   points?: number | null;
   description?: string | null;
   frequency?: ChoreOpsFrequency | null;
@@ -679,6 +714,7 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
     assigned_user_names: Array.from(new Set(assignedUserNames)),
   };
 
+  if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
   if (typeof input.points === 'number' && Number.isFinite(input.points)) {
     payload.points = Math.max(0, Math.round(input.points));
   }

@@ -110,3 +110,113 @@ describe('choreOpsTaskStatus', () => {
     expect(choreOpsTaskStatus('claimed')).toBe('active');
   });
 });
+
+/**
+ * "Anyone" chores (ChoreOps `shared_first`) are one chore several children can
+ * take. The first child to claim it keeps it — ChoreOps locks the others out
+ * with `completed_by_other` — so Beacon must show the "anyone" label and drop
+ * the chore from the other children's boards instead of marking it done there.
+ */
+describe('shared chores', () => {
+  const userId = (name: string) => ({
+    entity_id: `sensor.${name.toLowerCase()}_choreops_points`,
+    state: '0',
+    attributes: { purpose: 'purpose_points', user_name: name },
+  });
+
+  const choreStatus = (user: string, status: string, extra: Record<string, unknown> = {}) => ({
+    entity_id: `sensor.${user.toLowerCase()}_choreops_chore_status_tafeldekken`,
+    state: status,
+    attributes: {
+      purpose: 'purpose_chore_status',
+      user_name: user,
+      chore_name: 'Tafel dekken',
+      default_points: 5,
+      ...extra,
+    },
+  });
+
+  const users = [userId('Maya'), userId('Nova')];
+
+  it('labels a first-come chore as anyone, even under each child', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        ...users,
+        choreStatus('Maya', 'pending', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+        choreStatus('Nova', 'pending', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+      ]),
+      [],
+    );
+
+    expect(view.tasks).toHaveLength(2);
+    expect(view.tasks.every((task) => task.audience === 'anyone')).toBe(true);
+  });
+
+  it('labels a chore assigned to the whole household as everyone', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        ...users,
+        choreStatus('Maya', 'pending', {
+          completion_criteria: 'independent',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+        choreStatus('Nova', 'pending', {
+          completion_criteria: 'independent',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+      ]),
+      [],
+    );
+
+    expect(view.tasks.every((task) => task.audience === 'everyone')).toBe(true);
+  });
+
+  it('drops the chore from the children somebody else already took it from', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        ...users,
+        choreStatus('Maya', 'claimed', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+        choreStatus('Nova', 'completed_by_other', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+      ]),
+      [],
+    );
+
+    expect(view.tasks.map((task) => task.name)).toEqual(['Tafel dekken']);
+    expect(view.tasks[0].awaitingReview).toBe(true);
+    // Only the child who took it keeps the card (and the points).
+    expect(view.tasks[0].memberId).toBe('choreops:maya');
+  });
+
+  it('shows a claimed first-come chore as an ordinary assigned chore', () => {
+    const view = buildChorePlannerView(
+      normalizeChoreOps([
+        ...users,
+        choreStatus('Maya', 'claimed', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+        choreStatus('Nova', 'completed_by_other', {
+          completion_criteria: 'shared_first',
+          assigned_user_names: ['Maya', 'Nova'],
+        }),
+      ]),
+      [],
+    );
+
+    // No longer "anyone": it is Maya's chore until ChoreOps resets it, so the
+    // card shows her name instead of the race label.
+    expect(view.tasks[0].audience).toBe('member');
+  });
+});

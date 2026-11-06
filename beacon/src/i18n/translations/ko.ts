@@ -479,6 +479,10 @@ export const ko: Record<TranslationKey, string> = {
   'chores.awaitingApproval': '보호자 승인 대기 중',
   'chores.refresh': '새로고침',
   'chores.everyone': '모두',
+  'chores.assign': '할당',
+  'chores.assigned': '할당됨 · 확인 대기 중',
+  'chores.confirm': '확인',
+  'chores.undo': '되돌리기',
   'chores.noChoresToday': '지금 할 일이 없습니다.',
   'chores.wellDone': '잘했어요!',
   'chores.missing':

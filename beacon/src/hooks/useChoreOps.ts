@@ -75,6 +75,15 @@ export interface UseChoreOpsResult {
   updateReward: (input: Omit<UpdateRewardInput, 'entryId'>) => Promise<void>;
   /** Remove a reward from ChoreOps. */
   deleteReward: (rewardName: string) => Promise<void>;
+  /**
+   * Confirm a reward a child set points aside for.
+   *
+   * Goes through `choreops.approve_reward` rather than the approve button:
+   * the allocation lives in Beacon, so there is no pending ChoreOps claim for
+   * the button to confirm. ChoreOps deducts the cost here — once — and the
+   * child's Beacon allocation is released so the visible balance stays put.
+   */
+  approveReward: (userName: string, rewardName: string, approverName?: string) => Promise<void>;
   /** Delete a ChoreOps chore by name. */
   deleteChore: (choreName: string) => Promise<void>;
 }
@@ -367,7 +376,6 @@ export function useChoreOps(): UseChoreOpsResult {
       const entryId = snapshot.data?.entryId ?? null;
       const payload = buildCreateChorePayload({ ...input, entryId });
       if (!payload) throw new Error('ChoreOps needs a name and at least one assignee');
-
       await callHaService('choreops', 'create_chore', payload);
 
       await reloadAfterWrite();
@@ -416,6 +424,31 @@ export function useChoreOps(): UseChoreOpsResult {
     },
     [reloadAfterWrite],
   );
+
+  /**
+   * Confirm a reserved reward.
+   *
+   * `approve_reward` is the only ChoreOps entry point that both grants the
+   * reward and deducts the points in one go, and its manual origin accepts a
+   * reward with no pending claim — which is exactly the state a Beacon
+   * allocation leaves behind.
+   */
+  const approveReward = useCallback(
+    async (userName: string, rewardName: string, approverName?: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      await callHaService('choreops', 'approve_reward', {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        approver_name: approverName?.trim() || 'Beacon',
+        user_name: userName,
+        reward_name: rewardName,
+      });
+
+      await reloadAfterWrite();
+    },
+    [reloadAfterWrite],
+  );
+
+  /** Delete a ChoreOps chore by name (the id ChoreOps publishes). */
   const deleteChore = useCallback(
     async (choreName: string): Promise<void> => {
       const entryId = snapshot.data?.entryId ?? null;
@@ -463,6 +496,7 @@ export function useChoreOps(): UseChoreOpsResult {
       createReward,
       updateReward,
       deleteReward,
+      approveReward,
       deleteChore,
     }),
     [
@@ -475,6 +509,7 @@ export function useChoreOps(): UseChoreOpsResult {
       createReward,
       updateReward,
       deleteReward,
+      approveReward,
       deleteChore,
     ],
   );

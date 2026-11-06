@@ -42,6 +42,12 @@ export interface ChoreOpsChore {
   autoApprove?: boolean;
   /** Every user ChoreOps has this chore assigned to. */
   assignedUserNames?: string[];
+  /**
+   * ChoreOps completion rule: `independent`, `shared_all`, `shared_first`
+   * (first one wins) or one of the `rotation_*` modes. `shared_first` is how
+   * an "anyone can take this" chore is expressed.
+   */
+  completionCriteria?: string | null;
   canClaim: boolean;
   canApprove: boolean;
   actions: ChoreOpsActions;
