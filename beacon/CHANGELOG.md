@@ -1,3 +1,10 @@
+## [1.46.1](https://github.com/nyabb/beacon/compare/v1.46.0...v1.46.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **chores:** refresh ChoreOps state as soon as a write lands ([369ab85](https://github.com/nyabb/beacon/commit/369ab85caf4f11451cc686da7a0d3d2a2238b173))
+
 # [1.46.0](https://github.com/nyabb/beacon/compare/v1.45.0...v1.46.0) (2026-11-06)
 
 
