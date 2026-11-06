@@ -30,6 +30,8 @@ export const CHOREOPS_PURPOSE = {
    * `chore_name`, `assigned_user_names`, `default_points` and the live status.
    */
   sharedChore: 'purpose_shared_chore',
+  /** `sensor.<user>_choreops_chore_status_<chore>`: the real per-user status. */
+  choreStatus: 'purpose_chore_status',
   /** `options` lists every chore name, including ones nobody is assigned to. */
   allChores: 'purpose_select_chores',
   pendingChoreApprovals: 'purpose_sensor_chores_pending_approval_extra',
@@ -196,8 +198,10 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
   const sharedChores: ChoreOpsChore[] = [];
   const allChoreNames: string[] = [];
   const choreButtons = new Map<string, ChoreOpsChore>();
+  const choreStatuses = new Map<string, { assignee: string; name: string; status: string }>();
   const rewardButtons = new Map<string, ChoreOpsReward>();
   const pendingApprovals = { chores: 0, rewards: 0 };
+  let entryId: string | null = null;
   const people: HaPerson[] = [];
   let available = false;
 
@@ -277,7 +281,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
         const targets: Array<string | null> = assignees.length > 0 ? assignees : [null];
         for (const assignee of targets) {
           sharedChores.push({
-            id: entity.entity_id,
+            // One sensor covers every assignee, so the assignee keeps the ids unique.
+            id: `${entity.entity_id}::${assignee ?? ''}`,
             name: choreName,
             icon: str(entity.attributes, 'icon'),
             status: entity.state,
@@ -302,6 +307,26 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
 
     if (purpose === CHOREOPS_PURPOSE.pendingChoreApprovals) {
       pendingApprovals.chores = Number(entity.state) || 0;
+      continue;
+    }
+
+    if (purpose === CHOREOPS_PURPOSE.choreStatus) {
+      available = true;
+      const choreName = str(entity.attributes, 'chore_name');
+      if (userName && choreName) {
+        if (slug) ensureUser(slug, userName);
+        choreStatuses.set(choreKey(userName, choreName), {
+          assignee: userName,
+          name: choreName,
+          status: entity.state,
+        });
+      }
+      continue;
+    }
+
+    if (purpose === CHOREOPS_PURPOSE.systemHelper) {
+      available = true;
+      entryId = entryId ?? str(entity.attributes, 'integration_entry_id');
       continue;
     }
 
@@ -398,6 +423,27 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     choreMap.set(key, chore);
   }
 
+  // The per-user status sensors are the only accurate status source; apply them
+  // last so a claim made in HA shows up here without waiting for a helper array.
+  for (const [key, record] of choreStatuses) {
+    const existing = choreMap.get(key);
+    if (existing) {
+      existing.status = record.status;
+      continue;
+    }
+    choreMap.set(key, {
+      id: `status:${key}`,
+      name: record.name,
+      icon: null,
+      status: record.status,
+      assignee: record.assignee,
+      points: null,
+      canClaim: false,
+      canApprove: false,
+      actions: {},
+    });
+  }
+
   // Chores nobody is assigned to appear only in the select's option list, and
   // ChoreOps publishes no claim button for them — they are listed so they can be
   // seen (and fixed in ChoreOps), not so they can be claimed. Runs last so a
@@ -443,6 +489,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     people,
     pointsByUser,
     pendingApprovals,
+    entryId,
     available,
   };
 }

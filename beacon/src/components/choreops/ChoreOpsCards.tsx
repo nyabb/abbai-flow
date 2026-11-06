@@ -67,6 +67,8 @@ export interface ChoreTaskCardProps {
   /** False when no parent PIN is configured — approvals stay locked. */
   approvalAllowed: boolean;
   onAction: (key: string, entityId: string, kind: ChoreActionKind) => void;
+  /** Offered on chores nobody is assigned to (they have no claim button). */
+  onClaimUnassigned?: (chore: ChoreOpsChore) => void;
 }
 
 export function ChoreTaskCard({
@@ -76,6 +78,7 @@ export function ChoreTaskCard({
   blocked,
   approvalAllowed,
   onAction,
+  onClaimUnassigned,
 }: ChoreTaskCardProps) {
   const { t } = useTranslation();
   const done = DONE_STATUS.test(chore.status);
@@ -83,6 +86,7 @@ export function ChoreTaskCard({
   const declineEid = chore.actions.disapprove;
   // A child must not be able to sign off their own chore on a shared screen.
   const approveLocked = !approvalAllowed || blocked || pending;
+  const unassigned = !chore.assignee;
 
   return (
     <article
@@ -152,9 +156,25 @@ export function ChoreTaskCard({
         </button>
       )}
 
-      {/* An unassigned chore has no claim button to press, so it renders as a
-          read-only card rather than a button that cannot do anything. */}
-      {!primary && !done && <p className="choreops-card-hint">{t('chores.assignToClaim')}</p>}
+      {/* Unassigned: ChoreOps publishes no claim button, but the service call can
+          assign and claim in one go — so anyone can take this chore on. */}
+      {!primary && !done && unassigned && onClaimUnassigned && (
+        <button
+          type="button"
+          className="choreops-action"
+          disabled={blocked || pending}
+          onClick={() => onClaimUnassigned(chore)}
+        >
+          <span className="choreops-action-main">{pending ? '\u2026' : t('chores.claim')}</span>
+          <span className="choreops-action-reward" aria-hidden="true">
+            {'\u{1F464}'}
+          </span>
+        </button>
+      )}
+
+      {!primary && !done && unassigned && !onClaimUnassigned && (
+        <p className="choreops-card-hint">{t('chores.assignToClaim')}</p>
+      )}
     </article>
   );
 }

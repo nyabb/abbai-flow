@@ -658,6 +658,52 @@
   min-height: 52px;
 }
 
+/* ---- "Who claims this?" picker for chores nobody is assigned to ---- */
+
+.choreops-claim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.choreops-claim-person {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px 0 8px;
+  justify-content: flex-start;
+}
+
+.choreops-claim-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--member-color, var(--accent)) 22%, var(--bg-surface));
+  font-size: 1.1rem;
+}
+
+.choreops-claim-avatar > * {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.choreops-claim-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
 /* ---- Pending-approval badge (household counter from ChoreOps) ---- */
 
 .choreops-pending-badge {

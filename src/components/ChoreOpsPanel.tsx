@@ -46,12 +46,13 @@ const MIN_PIN_LENGTH = 4;
 export function ChoreOpsPanel() {
   const { t } = useTranslation();
   const { members } = useFamily();
-  const { data, loading, error, available, refresh, pressButton } = useChoreOps();
+  const { data, loading, error, available, refresh, pressButton, claimChore } = useChoreOps();
 
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const [pinPrompt, setPinPrompt] = useState<PinPrompt | null>(null);
+  const [claimTarget, setClaimTarget] = useState<ChoreOpsChore | null>(null);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState(false);
 
@@ -113,6 +114,27 @@ export function ChoreOpsPanel() {
       setPinPrompt({ key, entityId, subtitle });
     },
     [runAction],
+  );
+
+  /**
+   * Claim an unassigned chore as one of the ChoreOps users. ChoreOps refuses
+   * the claim until the person is attached, so `claimChore` assigns first.
+   */
+  const handleClaimAs = useCallback(
+    async (chore: ChoreOpsChore, userName: string) => {
+      setClaimTarget(null);
+      setActionError(null);
+      setPendingAction(`${chore.id}:claim`);
+      try {
+        await claimChore(chore.name, userName);
+        setCelebration({ title: t('chores.wellDone'), subtitle: chore.name });
+      } catch (err) {
+        setActionError(err instanceof Error ? err.message : 'ChoreOps action failed');
+      } finally {
+        setPendingAction(null);
+      }
+    },
+    [claimChore, t],
   );
 
   const closePinPrompt = useCallback(() => {
@@ -287,6 +309,7 @@ export function ChoreOpsPanel() {
                       pending={pendingAction !== null && pendingAction.startsWith(`${chore.id}:`)}
                       blocked={pendingAction !== null}
                       approvalAllowed={approvalAllowed}
+                      onClaimUnassigned={setClaimTarget}
                       onAction={(key, entityId, kind) => {
                         handleAction(key, entityId, chore.name, kind);
                       }}
@@ -384,6 +407,58 @@ export function ChoreOpsPanel() {
                 <span className="choreops-action-reward" aria-hidden="true">
                   {'\u{1F513}'}
                 </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {claimTarget && (
+        <div
+          className="choreops-pin"
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('chores.whoClaims')}
+        >
+          <div className="choreops-pin-card">
+            <span className="choreops-pin-icon" aria-hidden="true">
+              {'\u{1F464}'}
+            </span>
+            <p className="choreops-pin-title">{t('chores.whoClaims')}</p>
+            <p className="choreops-pin-sub">{claimTarget.name}</p>
+            {users.length === 0 ? (
+              <p className="choreops-pin-hint">{t('chores.noChoresAssigned')}</p>
+            ) : (
+              <ul className="choreops-claim-list">
+                {users.map((user) => (
+                  <li key={user.slug}>
+                    <button
+                      type="button"
+                      className="choreops-secondary choreops-claim-person"
+                      disabled={pendingAction !== null}
+                      onClick={() => void handleClaimAs(claimTarget, user.name)}
+                    >
+                      <span
+                        className="choreops-claim-avatar"
+                        style={memberColorVars(resolveMemberForUser(user.name, members))}
+                      >
+                        <MemberAvatar
+                          member={resolveMemberForUser(user.name, members)}
+                          fallback="\u{1F464}"
+                        />
+                      </span>
+                      <span className="choreops-claim-name">{user.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="choreops-pin-actions">
+              <button
+                type="button"
+                className="choreops-secondary"
+                onClick={() => setClaimTarget(null)}
+              >
+                {t('common.cancel')}
               </button>
             </div>
           </div>

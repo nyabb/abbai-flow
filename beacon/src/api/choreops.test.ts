@@ -146,12 +146,8 @@ describe('normalizeChoreOps â€” per-chore buttons', () => {
  * only household-wide chore inventory: it exists whether or not the chore is
  * assigned, and it carries the points value the buttons lack.
  */
-describe('normalizeChoreOps — shared chore records', () => {
-  const sharedChore = (
-    name: string,
-    assignees: string[],
-    extra: Record<string, unknown> = {},
-  ) => ({
+describe('normalizeChoreOps ï¿½ shared chore records', () => {
+  const sharedChore = (name: string, assignees: string[], extra: Record<string, unknown> = {}) => ({
     entity_id: `sensor.system_choreops_${name.toLowerCase().replace(/\s+/g, '_')}_global_status`,
     state: 'due',
     attributes: {
@@ -185,8 +181,18 @@ describe('normalizeChoreOps — shared chore records', () => {
   it('attaches each user claim button to their own copy of the chore', () => {
     const result = normalizeChoreOps([
       sharedChore('Afwassen', ['Maya', 'Zara']),
-      btn('purpose_button_chore_claim', 'Maya', 'Afwassen', 'button.maya_choreops_claim_chore_afwassen'),
-      btn('purpose_button_chore_claim', 'Zara', 'Afwassen', 'button.zara_choreops_claim_chore_afwassen'),
+      btn(
+        'purpose_button_chore_claim',
+        'Maya',
+        'Afwassen',
+        'button.maya_choreops_claim_chore_afwassen',
+      ),
+      btn(
+        'purpose_button_chore_claim',
+        'Zara',
+        'Afwassen',
+        'button.zara_choreops_claim_chore_afwassen',
+      ),
     ]);
 
     const maya = result.chores.find((c) => c.assignee === 'Maya');
@@ -212,9 +218,79 @@ describe('normalizeChoreOps — shared chore records', () => {
 
     expect(result.pendingApprovals).toEqual({ chores: 3, rewards: 1 });
   });
+
+  it('gives each assignee a unique id so React does not collapse the cards', () => {
+    // One sensor covers every assignee; using its entity_id as the card id made
+    // two children share a React key.
+    const result = normalizeChoreOps([sharedChore('Tanden poetsen', ['Maya', 'Zara'])]);
+    const ids = result.chores.map((c) => c.id);
+
+    expect(new Set(ids).size).toBe(2);
+  });
 });
 
-describe('normalizeChoreOps — unassigned chores', () => {
+describe('normalizeChoreOps â€” per-user chore status', () => {
+  it('uses the per-user status sensor as the chore status', () => {
+    // The shared-chore sensor lags behind; the per-user one is authoritative.
+    const result = normalizeChoreOps([
+      {
+        entity_id: 'sensor.system_choreops_bed_opmaken_global_status',
+        state: 'due',
+        attributes: {
+          purpose: 'purpose_shared_chore',
+          chore_name: 'Bed opmaken',
+          assigned_user_names: ['Nova'],
+        },
+      },
+      {
+        entity_id: 'sensor.nova_choreops_chore_status_bed_opmaken',
+        state: 'claimed',
+        attributes: {
+          purpose: 'purpose_chore_status',
+          user_name: 'Nova',
+          chore_name: 'Bed opmaken',
+        },
+      },
+    ]);
+
+    expect(result.chores).toHaveLength(1);
+    expect(result.chores[0]).toMatchObject({ name: 'Bed opmaken', status: 'claimed' });
+  });
+
+  it('adds a card for a status sensor whose buttons have not been seen yet', () => {
+    const result = normalizeChoreOps([
+      {
+        entity_id: 'sensor.nova_choreops_chore_status_bed_opmaken',
+        state: 'claimed',
+        attributes: {
+          purpose: 'purpose_chore_status',
+          user_name: 'Nova',
+          chore_name: 'Bed opmaken',
+        },
+      },
+    ]);
+
+    expect(result.chores).toHaveLength(1);
+    expect(result.chores[0]).toMatchObject({ name: 'Bed opmaken', assignee: 'Nova' });
+  });
+
+  it('exposes the ChoreOps config entry id for service calls', () => {
+    const result = normalizeChoreOps([
+      {
+        entity_id: 'sensor.system_choreops_dashboard_helper',
+        state: 'ok',
+        attributes: {
+          purpose: 'purpose_system_dashboard_helper',
+          integration_entry_id: 'entry-123',
+        },
+      },
+    ]);
+
+    expect(result.entryId).toBe('entry-123');
+  });
+});
+
+describe('normalizeChoreOps ï¿½ unassigned chores', () => {
   it('lists chores that only appear in the ChoreOps chore select', () => {
     const result = normalizeChoreOps([
       {
@@ -222,7 +298,12 @@ describe('normalizeChoreOps — unassigned chores', () => {
         state: 'unknown',
         attributes: { purpose: 'purpose_select_chores', options: ['Stofzuigen', 'Lezen'] },
       },
-      btn('purpose_button_chore_claim', 'Maya', 'Stofzuigen', 'button.maya_choreops_claim_chore_stofzuigen'),
+      btn(
+        'purpose_button_chore_claim',
+        'Maya',
+        'Stofzuigen',
+        'button.maya_choreops_claim_chore_stofzuigen',
+      ),
     ]);
 
     expect(result.chores.map((c) => c.name).sort()).toEqual(['Lezen', 'Stofzuigen']);

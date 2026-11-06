@@ -57,6 +57,14 @@ const STATES = [
     state: 'home',
     attributes: { friendly_name: 'Maya', entity_picture: '/api/image/serve/abc/512x512' },
   },
+  {
+    entity_id: 'sensor.system_choreops_dashboard_helper',
+    state: 'ok',
+    attributes: {
+      purpose: 'purpose_system_dashboard_helper',
+      integration_entry_id: 'entry-123',
+    },
+  },
 ];
 
 describe('useChoreOps', () => {
@@ -155,5 +163,66 @@ describe('useChoreOps', () => {
     await expect(result.current.pressButton('sensor.not_a_button')).rejects.toThrow(
       /Not a button entity/,
     );
+  });
+
+  it('claims a chore directly when ChoreOps accepts it', async () => {
+    mocks.getAllEntityStates.mockResolvedValue(STATES);
+
+    const { useChoreOps } = await import('./useChoreOps');
+    const { result } = renderHook(() => useChoreOps());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await result.current.claimChore('Bed opmaken', 'Nova');
+
+    expect(mocks.callHaService).toHaveBeenCalledTimes(1);
+    expect(mocks.callHaService).toHaveBeenCalledWith('choreops', 'claim_chore', {
+      config_entry_id: 'entry-123',
+      user_name: 'Nova',
+      chore_name: 'Bed opmaken',
+    });
+  });
+
+  it('assigns the chore first when the claim is rejected', async () => {
+    // ChoreOps answers HTTP 500 for a claim on a chore nobody is assigned to,
+    // and such a chore has no claim button either. Attaching the user is what
+    // makes the chore claimable, so the hook retries after assigning.
+    mocks.getAllEntityStates.mockResolvedValue(STATES);
+    mocks.callHaService.mockImplementation(async (domain: string, service: string) => {
+      if (service === 'claim_chore' && mocks.callHaService.mock.calls.length === 1) {
+        throw new Error('Service call failed: 500');
+      }
+      return domain && service ? {} : {};
+    });
+
+    const { useChoreOps } = await import('./useChoreOps');
+    const { result } = renderHook(() => useChoreOps());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await result.current.claimChore('Bed opmaken', 'Nova');
+
+    const calls = mocks.callHaService.mock.calls.map(([, service, data]) => ({ service, data }));
+    expect(calls).toHaveLength(3);
+    expect(calls[0].service).toBe('claim_chore');
+    expect(calls[1]).toMatchObject({
+      service: 'update_chore',
+      data: {
+        config_entry_id: 'entry-123',
+        name: 'Bed opmaken',
+        assignment_action: 'add',
+        assigned_user_names: ['Nova'],
+      },
+    });
+    expect(calls[2].service).toBe('claim_chore');
+  });
+
+  it('surfaces the error when the retried claim also fails', async () => {
+    mocks.getAllEntityStates.mockResolvedValue(STATES);
+    mocks.callHaService.mockRejectedValue(new Error('Service call failed: 500'));
+
+    const { useChoreOps } = await import('./useChoreOps');
+    const { result } = renderHook(() => useChoreOps());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await expect(result.current.claimChore('Bed opmaken', 'Nova')).rejects.toThrow(/500/);
   });
 });
