@@ -530,11 +530,29 @@
 }
 
 /* Still up for grabs ("anyone" chore): a dashed accent ring says nobody owns
-   it yet. As soon as a child claims it the card loses the ring and shows that
-   child's chip like any other assigned chore. */
+   it yet, and the check target becomes a hand ("take it"). As soon as a child
+   claims it the card loses the ring and shows that child's chip like any other
+   assigned chore. */
 .planner-task--anyone {
   outline: 2px dashed color-mix(in srgb, var(--planner-accent) 45%, transparent);
   outline-offset: -2px;
+}
+.planner-task--anyone .planner-check {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--planner-accent) 55%, transparent);
+}
+.planner-task--anyone .planner-check:not(:disabled):hover {
+  border-color: var(--planner-accent);
+}
+/* The hand glyph replaces the small "to do" dot; `.planner-check span` sets a
+   14px dot, so this has to outrank it. */
+.planner-check .planner-check-hand {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  font-size: 20px;
+  line-height: 1;
 }
 .planner-task--late .planner-status-dot,
 .planner-task--retry .planner-status-dot {

@@ -1112,7 +1112,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             pendingTaskId === task.id ||
             (!task.memberId && status !== 'expired')
           }
-          aria-label={status === 'completed' ? c.done : c.task}
+          aria-label={
+            status === 'completed' ? c.done : task.audience === 'anyone' ? c.claim : c.task
+          }
           onClick={() => void completeTask(task)}
         >
           {pendingTaskId === task.id ? (
@@ -1121,6 +1123,12 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <Check />
           ) : status === 'expired' ? (
             <RotateCcw />
+          ) : task.audience === 'anyone' ? (
+            /* Up for grabs: a hand instead of the empty "done" circle, so it
+               reads as "take this" rather than "this is your task". */
+            <span className="planner-check-hand" aria-hidden="true">
+              {'\u270B'}
+            </span>
           ) : (
             <span />
           )}
