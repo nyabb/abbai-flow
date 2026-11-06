@@ -143,6 +143,73 @@ describe('ChorePlanner parent PIN gate', () => {
   });
 });
 
+/**
+ * A chore anybody may take looks different until somebody takes it: it says so
+ * in the chip and offers a hand to grab it. Once claimed it must read exactly
+ * like a chore assigned to the child who took it, and it must be gone from the
+ * other children's boards.
+ */
+describe('ChorePlanner anyone chores', () => {
+  const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
+
+  /** Two children sharing a `shared_first` chore, one row per child. */
+  function anyoneState(zaraStatus: string, mayaStatus: string): ChoreOpsState {
+    const base = choreOpsState();
+    const row = (name: string, status: string) => ({
+      id: `status:${name.toLowerCase()}::tafeldekken`,
+      name: 'Tafel dekken',
+      icon: 'mdi:silverware',
+      status,
+      assignee: name,
+      points: 5,
+      dueDate: null,
+      completionCriteria: 'shared_first',
+      assignedUserNames: ['Maya', 'Zara'],
+      canClaim: true,
+      canApprove: false,
+      actions: { claim: `button.${name.toLowerCase()}_claim_tafeldekken` },
+    });
+
+    return {
+      ...base,
+      users: [
+        { ...base.users[0], name: 'Maya', slug: 'maya', points: 10 },
+        { ...base.users[0], name: 'Zara', slug: 'zara', points: 25 },
+      ],
+      chores: [row('Zara', zaraStatus), row('Maya', mayaStatus)],
+    };
+  }
+
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('labels an unclaimed chore as anyone and offers a hand to take it', () => {
+    mocks.state.current = anyoneState('pending', 'pending');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const cards = container.querySelectorAll('.planner-task');
+    expect(cards).toHaveLength(2);
+    expect(container.querySelectorAll('.planner-task--anyone')).toHaveLength(2);
+    expect(container.textContent).toContain('Wie het eerst is');
+    expect(screen.getAllByRole('button', { name: 'Pakken' })).toHaveLength(2);
+    expect(container.querySelector('.planner-check-hand')).not.toBeNull();
+  });
+
+  it('looks like an ordinary assignment once a child claimed it', () => {
+    mocks.state.current = anyoneState('claimed', 'completed_by_other');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    // The other child's card is gone; only Zara's remains.
+    const cards = container.querySelectorAll('.planner-task');
+    expect(cards).toHaveLength(1);
+    expect(container.querySelector('.planner-task--anyone')).toBeNull();
+    expect(container.textContent).not.toContain('Wie het eerst is');
+    expect(cards[0].querySelector('.planner-member-chip')?.textContent).toContain('Zara');
+    expect(container.querySelector('.planner-check-hand')).toBeNull();
+  });
+});
+
 describe('ChorePlanner rewards from ChoreOps', () => {
   beforeEach(() => {
     mocks.state.current = choreOpsState();
