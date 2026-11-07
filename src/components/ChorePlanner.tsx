@@ -1093,20 +1093,29 @@ export function ChorePlanner({
           }
           onClick={() => void completeTask(task)}
         >
-          {pendingTaskId === task.id ? (
-            <span className="planner-spinner" />
-          ) : status === 'completed' ? (
-            <Check />
-          ) : status === 'expired' ? (
-            <RotateCcw />
-          ) : task.audience === 'anyone' ? (
-            /* Up for grabs: a hand instead of the empty "done" circle, so it
-               reads as "take this" rather than "this is your task". */
-            <span className="planner-check-hand" aria-hidden="true">
-              {'\u270B'}
+          {/* Pill action with the points in its own coloured segment — the
+              family-planner "Afvinken maar! | 🏆 25" pattern. */}
+          <span className="planner-check-label">
+            {status === 'completed' ? c.done : task.audience === 'anyone' ? c.claim : c.done}
+          </span>
+          <span className="planner-check-icon" aria-hidden="true">
+            {pendingTaskId === task.id ? (
+              <span className="planner-spinner" />
+            ) : status === 'completed' ? (
+              <Check />
+            ) : status === 'expired' ? (
+              <RotateCcw />
+            ) : task.audience === 'anyone' ? (
+              /* Up for grabs: a hand instead of the empty "done" circle, so it
+                 reads as "take this" rather than "this is your task". */
+              <span className="planner-check-hand">{'\u270B'}</span>
+            ) : null}
+          </span>
+          {task.points > 0 && (
+            <span className="planner-check-points" aria-hidden="true">
+              <span>{'\u{1F3C6}'}</span>
+              {task.points}
             </span>
-          ) : (
-            <span />
           )}
         </button>
         <div className="planner-task-copy">
@@ -1122,7 +1131,6 @@ export function ChorePlanner({
           <p>{subtitle}</p>
         </div>
         <div className="planner-task-meta">
-          {task.points > 0 && <span className="planner-points">⭐ {task.points}</span>}
           {/* "Anyone" and "Everyone" chores are still grouped per child, so the
               chip has to say who the chore is really for instead of naming the
               child the group happens to be for. */}

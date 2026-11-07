@@ -529,14 +529,20 @@
 .planner-task {
   --member-color: var(--planner-accent);
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) auto;
+  /* Centred card: badge, title, chips, then the full-width action pill. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'copy'
+    'meta'
+    'cta';
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   min-height: 0;
-  padding: 12px 18px;
-  border-radius: 22px;
+  padding: 16px 16px 14px;
+  border: 1.5px solid color-mix(in srgb, var(--planner-amber) 45%, transparent);
+  border-radius: 26px;
   background: var(--planner-surface);
-  box-shadow: 0 8px 22px rgba(63, 58, 68, 0.07);
+  box-shadow: 0 10px 26px rgba(63, 58, 68, 0.06);
   transition:
     opacity 200ms ease-out,
     transform 220ms ease-out,
@@ -545,70 +551,128 @@
   user-select: none;
 }
 
+/* ── The action pill ─────────────────────────────────────────────────────
+   Label on the left, points in their own filled segment on the right — the
+   "Afvinken maar! | 🏆 25" pattern from the reference card. */
 .planner-check {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  border: 2px solid color-mix(in srgb, var(--planner-ink) 14%, transparent);
-  border-radius: 50%;
-  color: #fff;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.planner-check span {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--planner-soft);
-}
-.planner-check svg {
-  width: 30px;
-  height: 30px;
-  stroke-width: 3;
-}
-.planner-check:not(:disabled):hover {
-  border-color: var(--planner-green);
-  transform: scale(1.04);
-}
-.planner-check.is-checked {
-  border-color: var(--planner-green);
-  background: var(--planner-green);
-  animation: planner-check-spring 280ms ease-out;
-}
-.planner-check:disabled {
-  cursor: default;
-}
-.planner-task-icon {
-  display: grid;
-  flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  /* Soft pastel disc, like the big emoji bubble on the Qudoo task card. */
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--member-color) 13%, var(--planner-surface));
-  font-size: 26px;
-}
-.planner-task-copy {
-  min-width: 0;
-}
-.planner-task-title-row {
+  grid-area: cta;
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 2px;
+  padding: 0 6px 0 20px;
+  border: 1.5px solid var(--planner-amber);
+  border-radius: 999px;
+  color: var(--planner-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+.planner-check-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-check-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--planner-amber-ink);
+}
+
+.planner-check-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 3;
+}
+
+.planner-check-points {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--planner-amber);
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.planner-check:not(:disabled):hover {
+  background: color-mix(in srgb, var(--planner-amber) 10%, transparent);
+}
+
+.planner-check:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+.planner-check.is-checked {
+  border-color: var(--planner-green);
+  background: color-mix(in srgb, var(--planner-green) 12%, transparent);
+  color: var(--planner-green);
+  animation: planner-check-spring 280ms ease-out;
+}
+
+.planner-check.is-checked .planner-check-icon,
+.planner-check.is-checked .planner-check-points {
+  color: #fff;
+  background: var(--planner-green);
+}
+
+.planner-check:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.planner-task-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  /* Soft pastel disc, like the big emoji bubble on the reference card. */
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--member-color) 14%, var(--planner-surface));
+  font-size: 30px;
+}
+.planner-task-copy {
+  grid-area: copy;
+  min-width: 0;
+  text-align: center;
+}
+.planner-task-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 .planner-task-title-row h3 {
   overflow: hidden;
   min-width: 0;
   margin: 0;
   color: var(--planner-ink);
-  font-size: clamp(20px, 1.55vw, 27px);
+  font-size: clamp(19px, 1.5vw, 25px);
   font-weight: 800;
   line-height: 1.2;
+  text-align: center;
   text-overflow: ellipsis;
 }
 .planner-task-title-row h3.is-struck {
@@ -616,17 +680,15 @@
   text-decoration: line-through;
 }
 .planner-task-copy p {
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   color: var(--planner-muted);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
+  text-align: center;
 }
 .planner-status-dot {
-  flex: 0 0 9px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--planner-blue);
+  display: none;
 }
 .planner-task--active .planner-status-dot {
   background: var(--planner-green);
@@ -647,13 +709,8 @@
 .planner-task--anyone .planner-check:not(:disabled):hover {
   border-color: var(--planner-accent);
 }
-/* The hand glyph replaces the small "to do" dot; `.planner-check span` sets a
-   14px dot, so this has to outrank it. */
+/* The hand glyph sits inside the pill while the chore is still up for grabs. */
 .planner-check .planner-check-hand {
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  background: none;
   font-size: 20px;
   line-height: 1;
 }
@@ -684,10 +741,12 @@
 }
 
 .planner-task-meta {
+  grid-area: meta;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 11px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .planner-points {
   padding: 10px 13px;
@@ -995,8 +1054,14 @@
   background: var(--planner-accent-soft);
 }
 .planner-bottom-nav button.is-active span {
-  color: white;
-  background: var(--planner-accent);
+  /* Same highlight as the app tab bar: tinted rounded tile, not a solid dot. */
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 16%, transparent);
+  border-radius: 16px;
+}
+
+.planner-bottom-nav button.is-active strong {
+  color: var(--planner-accent);
 }
 
 .planner-backdrop {
@@ -1713,20 +1778,17 @@
 }
 
 @media (max-width: 1050px) {
-  /* Two columns only: the emoji badge lives *inside* the copy row now, so the
-     old `54px 46px minmax(130px, 1fr)` layout squeezed the title into the 46px
-     icon column ("Ta / n…"). The meta row goes underneath, full width. */
+  /* The card is a single centred column at every width; only the padding
+     tightens on smaller screens. */
   .planner-task {
-    grid-template-columns: 54px minmax(0, 1fr);
-    gap: 13px;
-    padding: 15px;
+    gap: 9px;
+    padding: 14px;
   }
   .planner-task-copy {
     min-width: 0;
   }
   .planner-task-meta {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+    justify-content: center;
     flex-wrap: wrap;
   }
   .planner-today-lobby {
@@ -1820,23 +1882,25 @@
     font-size: 16px;
   }
   .planner-task {
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 9px;
+    gap: 8px;
     min-height: 0;
     padding: 12px;
-    border-radius: 13px;
+    border-radius: 20px;
   }
   .planner-check {
-    width: 42px;
-    height: 42px;
-    border-width: 2px;
-    font-size: 9px;
+    min-height: 48px;
+    padding: 0 5px 0 16px;
+    font-size: 15px;
+  }
+  .planner-check-points {
+    min-height: 38px;
+    padding: 0 13px;
+    font-size: 14px;
   }
   .planner-task-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    font-size: 15px;
+    width: 48px;
+    height: 48px;
+    font-size: 26px;
   }
   .planner-task-title-row {
     gap: 6px;
@@ -1848,19 +1912,8 @@
     margin-top: 4px;
     font-size: 13px;
   }
-  .planner-status-dot {
-    flex-basis: 7px;
-    width: 7px;
-    height: 7px;
-  }
   .planner-task-meta {
-    grid-column: 1 / -1;
     gap: 7px;
-    padding-left: 51px;
-  }
-  .planner-points {
-    padding: 7px 9px;
-    font-size: 13px;
   }
   .planner-member-chip {
     font-size: 13px;

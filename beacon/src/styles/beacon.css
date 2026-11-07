@@ -1680,19 +1680,23 @@ a:focus:not(:focus-visible) {
 
 .mobile-tab--active {
   color: var(--accent, #3b82f6);
-  position: relative;
 }
 
-.mobile-tab--active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--accent, #3b82f6);
+/* Active tab: a soft tinted rounded tile behind the icon (the family-planner
+   pattern) instead of an underline. The tile is painted on the icon itself so
+   the markup stays a plain icon + label. */
+.mobile-tab--active svg {
+  box-sizing: content-box;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 9px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 14%, transparent);
+}
+
+.mobile-tab--active .mobile-tab-label {
+  font-weight: 700;
 }
 
 .mobile-tab-label {
