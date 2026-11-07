@@ -1696,11 +1696,14 @@
   text-align: center;
   pointer-events: none;
 }
+/* Dark theme keeps the same geometry; only the palette changes. */
 .planner-toast {
   position: fixed;
   z-index: 35;
   right: 24px;
   bottom: 104px;
+  /* Never eat taps: the notification floats over the cards. */
+  pointer-events: none;
   max-width: min(92vw, 560px);
   padding: 16px 21px;
   border-radius: 13px;

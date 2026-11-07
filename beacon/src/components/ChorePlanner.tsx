@@ -714,6 +714,9 @@ export function ChorePlanner({
       if (screen === 'mission') advanceMission();
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail, 'error');
+    } finally {
+      /* Must clear on success too: leaving it set made `completeTask` bail out
+         for every later card, so a second chore only worked after a reload. */
       setPendingTaskId(null);
     }
   };

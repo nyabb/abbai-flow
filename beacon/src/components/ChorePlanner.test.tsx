@@ -427,6 +427,40 @@ describe('ChorePlanner completion confirmation', () => {
   });
 
   /*
+   * Regression: `pendingTaskId` used to be cleared only on the error path, so
+   * after one successful claim/approve every later tap was swallowed by
+   * `completeTask`'s in-flight guard and the board needed a page reload.
+   */
+  it('keeps working after one chore is confirmed (no reload needed)', async () => {
+    mocks.state.current = choreOpsState({
+      chores: [
+        { ...choreOpsState().chores[0], id: 'status:zara::afwassen', name: 'Afwassen' },
+        {
+          ...choreOpsState().chores[0],
+          id: 'status:zara::afdrogen',
+          name: 'Afdrogen',
+          actions: { claim: 'button.zara_claim_afdrogen' },
+        },
+      ],
+    });
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    for (const [label, entityId] of [
+      ['Afwassen', 'button.zara_claim_afwassen'],
+      ['Afdrogen', 'button.zara_claim_afdrogen'],
+    ] as const) {
+      const card = [...container.querySelectorAll('.planner-task')].find((element) =>
+        element.textContent?.includes(label),
+      );
+      fireEvent.click(card!.querySelector('.planner-check')!);
+      fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+      await waitFor(() => expect(mocks.pressButton).toHaveBeenCalledWith(entityId));
+    }
+
+    expect(mocks.pressButton).toHaveBeenCalledTimes(2);
+  });
+
+  /*
    * The bottom-tab badge counts what is still on the child's plate. A claimed
    * chore is done as far as the child is concerned (a parent's approval is a
    * real-life confirmation), so it must not keep the badge alive.
