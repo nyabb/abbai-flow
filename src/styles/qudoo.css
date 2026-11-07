@@ -1,0 +1,272 @@
+/* ===========================================================================
+   Screen design layer — "family planner" look
+
+   One consistent visual language for every view, applied on top of the theme
+   tokens so it works with the light themes and the dark theme:
+
+     - a soft gradient band at the top of a screen (colour per section),
+       with a small uppercase eyebrow and a large light title
+     - warm off-white page, white cards with generous corners and a soft
+       shadow
+     - pill-shaped actions, rounded-square checkboxes, circular translucent
+       icon buttons inside the band
+     - everything fluid: the band, cards and type scale down on phones and
+       widen on wall displays
+
+   Loaded last (see main.tsx) so it can refine the per-view stylesheets
+   without them having to know about it.
+   =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Tokens local to this layer
+   --------------------------------------------------------------------------- */
+.beacon {
+  --qs-card-radius: 22px;
+  --qs-control-radius: 14px;
+  --qs-band-radius: 26px;
+  --qs-card-shadow: 0 8px 24px rgba(63, 58, 68, 0.08);
+  --qs-card-shadow-hover: 0 12px 30px rgba(63, 58, 68, 0.13);
+  --qs-hairline: color-mix(in srgb, var(--color-ink-soft) 8%, transparent);
+
+  background: var(--color-paper-warm);
+  color: var(--color-ink-soft);
+}
+
+[data-theme='dark'] .beacon {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* The page behind the app (kiosk/standalone) matches the app. */
+body {
+  background: var(--color-paper-warm);
+}
+
+[data-theme='dark'] body {
+  background: var(--bg-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   Screen bands — the rounded gradient strip at the top of a view.
+   Real markup: Dashboard = header.dash-topbar, Calendar = header.beacon-header,
+   Lists/Tasks = .grocery-view-header. Chores has its own band in
+   chore-planner.css (sand palette).
+   --------------------------------------------------------------------------- */
+.dash-topbar,
+.beacon-header,
+.grocery-view-header {
+  border-bottom: 0;
+  border-radius: 0 0 var(--qs-band-radius) var(--qs-band-radius);
+  color: #fff;
+  background: linear-gradient(140deg, var(--color-band-blue), var(--color-accent));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-band-blue) 26%, transparent);
+}
+
+.dash-topbar {
+  height: auto;
+  min-height: var(--header-height);
+  padding: 10px clamp(14px, 2.2vw, 36px) 16px;
+}
+
+.beacon-header {
+  height: auto;
+  min-height: var(--header-height);
+  padding: 12px clamp(16px, 2.4vw, 40px) 16px;
+}
+
+.grocery-view-header {
+  padding: 14px clamp(14px, 2vw, 28px) 18px;
+  background: linear-gradient(140deg, var(--color-band-coral), var(--color-band-sand));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-band-coral) 26%, transparent);
+}
+
+/* Text and controls inside a band go white/translucent. */
+.dash-topbar-time,
+.dash-topbar-date,
+.header-family-name,
+.header-date,
+.dash-topbar-weather {
+  color: inherit;
+}
+
+.dash-topbar-time,
+.header-family-name {
+  font-family: var(--font-body);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.dash-topbar-date,
+.header-date {
+  color: color-mix(in srgb, #fff 80%, transparent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.dash-day-nav-btn,
+.beacon-header .icon-btn,
+.beacon-header .header-action {
+  color: inherit;
+  background: color-mix(in srgb, #fff 20%, transparent);
+  border: 0;
+  border-radius: var(--qs-pill, 999px);
+}
+
+.dash-day-nav-btn:hover,
+.beacon-header .icon-btn:hover,
+.beacon-header .header-action:hover {
+  background: color-mix(in srgb, #fff 34%, transparent);
+}
+
+.dash-topbar-weather {
+  background: color-mix(in srgb, #fff 20%, transparent);
+  border-radius: var(--qs-control-radius);
+  padding: 8px 14px;
+}
+
+/* The list selector keeps its white card look on the coral band. */
+.grocery-view-select {
+  background: #fff;
+  color: var(--color-ink-soft);
+  border-color: transparent;
+  box-shadow: 0 6px 16px rgba(63, 58, 68, 0.12);
+}
+
+/* ---------------------------------------------------------------------------
+   Cards: lists, panels, sections
+   --------------------------------------------------------------------------- */
+.grocery-view-section,
+.dash-sidebar-section,
+.settings-section,
+.weather-panel,
+.timer-panel-inner {
+  border-radius: var(--qs-card-radius);
+  background: var(--bg-surface);
+  box-shadow: var(--qs-card-shadow);
+}
+
+.grocery-view {
+  background: var(--color-paper-warm);
+}
+
+[data-theme='dark'] .grocery-view {
+  background: var(--bg-primary);
+}
+
+/* Lists / tasks: the section becomes a card with its own header, and the
+   rows lose their individual backgrounds so the card reads as one panel. */
+.grocery-view-section {
+  padding: 4px 6px 6px;
+  margin-bottom: 14px;
+}
+
+.grocery-view-section-header {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  padding: 12px 12px 8px;
+}
+
+.grocery-view-item {
+  border-radius: var(--qs-control-radius);
+  padding: 10px 12px;
+  gap: 12px;
+  min-height: 52px;
+}
+
+.grocery-view-item:hover {
+  background: color-mix(in srgb, var(--color-ink-soft) 4%, transparent);
+}
+
+/* Rounded-square checkbox instead of the old circle. */
+.grocery-view-checkbox {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  border: 2px solid color-mix(in srgb, var(--color-ink-soft) 22%, transparent);
+}
+
+.grocery-view-checkbox--checked {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.grocery-view-item-name {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Buttons and inputs
+   --------------------------------------------------------------------------- */
+.grocery-view-add-btn,
+.btn--primary {
+  border-radius: var(--qs-control-radius);
+  font-weight: 700;
+  box-shadow: var(--qs-card-shadow);
+}
+
+.grocery-view-select,
+.settings-select,
+.settings-input {
+  border-radius: var(--qs-control-radius);
+}
+
+/* Visible, soft focus ring everywhere. */
+:where(button, [role='button'], select, input, textarea):focus-visible {
+  outline: 2px solid var(--color-band-blue);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Responsive: phones keep the band smaller, wall displays get more air
+   --------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .beacon {
+    --qs-card-radius: 18px;
+    --qs-band-radius: 20px;
+  }
+  .dash-topbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px 14px;
+  }
+  .dash-topbar-time {
+    font-size: 1.8rem;
+    line-height: 1.1;
+  }
+  .dash-topbar-date {
+    font-size: 0.72rem;
+  }
+  .dash-topbar-weather {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+  .beacon-header {
+    min-height: 56px;
+    padding: 10px 14px 12px;
+  }
+  .beacon-header .header-date {
+    display: none;
+  }
+  .grocery-view-header {
+    padding: 12px 14px 16px;
+  }
+  .grocery-view-list {
+    padding: 0 14px 20px;
+  }
+  .grocery-view-item {
+    min-height: 48px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .beacon {
+    --qs-card-radius: 24px;
+  }
+  .grocery-view-list {
+    padding-left: clamp(20px, 3vw, 48px);
+    padding-right: clamp(20px, 3vw, 48px);
+  }
+}
