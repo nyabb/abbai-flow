@@ -25,7 +25,6 @@ export const it: Record<TranslationKey, string> = {
   'nav.chores': 'Faccende',
   'nav.grocery': 'Liste',
   'nav.tasks': 'Attività',
-  'nav.leaderboard': 'Classifica',
   'nav.music': 'Musica',
   'nav.photos': 'Foto',
   'nav.timer': 'Timer',
@@ -545,15 +544,6 @@ export const it: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': 'Nessuna faccenda assegnata',
   'chores.addChoreFor': 'Aggiungi faccenda per {name}',
   'chores.saveChanges': 'Salva modifiche',
-
-  // ---- leaderboard ----
-  'leaderboard.title': 'Classifica',
-  'leaderboard.thisWeek': 'Questa settimana',
-  'leaderboard.thisMonth': 'Questo mese',
-  'leaderboard.empty':
-    'Collega i membri della famiglia agli utenti ChoreOps nelle impostazioni per vedere la classifica.',
-  'leaderboard.choresCompleted': '{count} faccende',
-  'leaderboard.choreCompletedSingular': '{count} faccenda',
 
   // ---- streak badge ----
   'streak.longestTooltip': 'Serie più lunga: {count} giorni',

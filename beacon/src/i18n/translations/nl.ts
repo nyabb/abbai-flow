@@ -25,7 +25,6 @@ export const nl: Record<TranslationKey, string> = {
   'nav.chores': 'Klusjes',
   'nav.grocery': 'Lijsten',
   'nav.tasks': 'Taken',
-  'nav.leaderboard': 'Ranglijst',
   'nav.music': 'Muziek',
   'nav.photos': "Foto's",
   'nav.timer': 'Timer',
@@ -539,15 +538,6 @@ export const nl: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': 'Geen karweitjes toegewezen',
   'chores.addChoreFor': 'Karweitje toevoegen voor {name}',
   'chores.saveChanges': 'Wijzigingen opslaan',
-
-  // ---- leaderboard ----
-  'leaderboard.title': 'Klassement',
-  'leaderboard.thisWeek': 'Deze week',
-  'leaderboard.thisMonth': 'Deze maand',
-  'leaderboard.empty':
-    'Koppel gezinsleden in de instellingen aan ChoreOps-gebruikers om het klassement te zien.',
-  'leaderboard.choresCompleted': '{count} karweitjes',
-  'leaderboard.choreCompletedSingular': '{count} karweitje',
 
   // ---- streak badge ----
   'streak.longestTooltip': 'Langste reeks: {count} dagen',

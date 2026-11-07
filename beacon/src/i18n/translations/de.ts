@@ -25,7 +25,6 @@ export const de: Record<TranslationKey, string> = {
   'nav.chores': 'Aufgaben',
   'nav.grocery': 'Listen',
   'nav.tasks': 'To-dos',
-  'nav.leaderboard': 'Bestenliste',
   'nav.music': 'Musik',
   'nav.photos': 'Fotos',
   'nav.timer': 'Timer',
@@ -544,15 +543,6 @@ export const de: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': 'Keine Aufgaben zugewiesen',
   'chores.addChoreFor': 'Aufgabe für {name} hinzufügen',
   'chores.saveChanges': 'Änderungen speichern',
-
-  // ---- leaderboard ----
-  'leaderboard.title': 'Bestenliste',
-  'leaderboard.thisWeek': 'Diese Woche',
-  'leaderboard.thisMonth': 'Dieser Monat',
-  'leaderboard.empty':
-    'Verknüpfe Familienmitglieder in den Einstellungen mit ChoreOps-Benutzern, um die Bestenliste zu sehen.',
-  'leaderboard.choresCompleted': '{count} Aufgaben',
-  'leaderboard.choreCompletedSingular': '{count} Aufgabe',
 
   // ---- streak badge ----
   'streak.longestTooltip': 'Längste Serie: {count} Tage',

@@ -25,7 +25,6 @@ export const ko: Record<TranslationKey, string> = {
   'nav.chores': '집안일',
   'nav.grocery': '목록',
   'nav.tasks': '할 일',
-  'nav.leaderboard': '순위표',
   'nav.music': '음악',
   'nav.photos': '사진',
   'nav.timer': '타이머',
@@ -533,14 +532,6 @@ export const ko: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': '배정된 집안일이 없습니다',
   'chores.addChoreFor': '{name}의 집안일 추가',
   'chores.saveChanges': '변경사항 저장',
-
-  // ---- leaderboard ----
-  'leaderboard.title': '리더보드',
-  'leaderboard.thisWeek': '이번 주',
-  'leaderboard.thisMonth': '이번 달',
-  'leaderboard.empty': '설정에서 가족 구성원을 ChoreOps 사용자와 연결하면 순위표가 표시됩니다.',
-  'leaderboard.choresCompleted': '{count}개 집안일',
-  'leaderboard.choreCompletedSingular': '{count}개 집안일',
 
   // ---- streak badge ----
   'streak.longestTooltip': '최장 연속 기록: {count}일',

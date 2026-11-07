@@ -1713,13 +1713,19 @@
 }
 
 @media (max-width: 1050px) {
+  /* Two columns only: the emoji badge lives *inside* the copy row now, so the
+     old `54px 46px minmax(130px, 1fr)` layout squeezed the title into the 46px
+     icon column ("Ta / n…"). The meta row goes underneath, full width. */
   .planner-task {
-    grid-template-columns: 54px 46px minmax(130px, 1fr);
+    grid-template-columns: 54px minmax(0, 1fr);
     gap: 13px;
     padding: 15px;
   }
+  .planner-task-copy {
+    min-width: 0;
+  }
   .planner-task-meta {
-    grid-column: 2 / -1;
+    grid-column: 1 / -1;
     justify-content: flex-start;
     flex-wrap: wrap;
   }
@@ -1814,7 +1820,7 @@
     font-size: 16px;
   }
   .planner-task {
-    grid-template-columns: 44px minmax(0, 1fr) auto;
+    grid-template-columns: 44px minmax(0, 1fr);
     gap: 9px;
     min-height: 0;
     padding: 12px;
@@ -2102,7 +2108,9 @@
   text-overflow: ellipsis;
 }
 
-/* Chore names may wrap onto a second line, then clamp with an ellipsis. */
+/* Chore names may wrap onto a second line, then clamp with an ellipsis.
+   `break-word` (not `anywhere`) keeps whole words together, so a narrow card
+   never renders "Ta / n…". */
 .planner-task-title-row h3 {
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -2110,7 +2118,7 @@
   line-clamp: 2;
   overflow: hidden;
   white-space: normal;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 /* Group heading: keep the avatar and count, ellipsize only the name. */

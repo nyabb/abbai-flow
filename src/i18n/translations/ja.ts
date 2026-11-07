@@ -25,7 +25,6 @@ export const ja: Record<TranslationKey, string> = {
   'nav.chores': '家事',
   'nav.grocery': 'リスト',
   'nav.tasks': 'タスク',
-  'nav.leaderboard': 'ランキング',
   'nav.music': '音楽',
   'nav.photos': '写真',
   'nav.timer': 'タイマー',
@@ -535,15 +534,6 @@ export const ja: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': '割り当てられた家事はありません',
   'chores.addChoreFor': '{name}の家事を追加',
   'chores.saveChanges': '変更を保存',
-
-  // ---- leaderboard ----
-  'leaderboard.title': 'リーダーボード',
-  'leaderboard.thisWeek': '今週',
-  'leaderboard.thisMonth': '今月',
-  'leaderboard.empty':
-    '設定で家族メンバーをChoreOpsユーザーにリンクするとランキングが表示されます。',
-  'leaderboard.choresCompleted': '{count}件の家事',
-  'leaderboard.choreCompletedSingular': '{count}件の家事',
 
   // ---- streak badge ----
   'streak.longestTooltip': '最長連続記録：{count}日',

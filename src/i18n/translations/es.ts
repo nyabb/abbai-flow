@@ -25,7 +25,6 @@ export const es: Record<TranslationKey, string> = {
   'nav.chores': 'Tareas',
   'nav.grocery': 'Listas',
   'nav.tasks': 'Pendientes',
-  'nav.leaderboard': 'Clasificación',
   'nav.music': 'Música',
   'nav.photos': 'Fotos',
   'nav.timer': 'Temporizador',
@@ -542,15 +541,6 @@ export const es: Record<TranslationKey, string> = {
   'chores.noChoresAssigned': 'No hay tareas asignadas',
   'chores.addChoreFor': 'Agregar tarea para {name}',
   'chores.saveChanges': 'Guardar cambios',
-
-  // ---- leaderboard ----
-  'leaderboard.title': 'Tabla de clasificación',
-  'leaderboard.thisWeek': 'Esta semana',
-  'leaderboard.thisMonth': 'Este mes',
-  'leaderboard.empty':
-    'Vincula los miembros de la familia con usuarios de ChoreOps en Ajustes para ver la clasificación.',
-  'leaderboard.choresCompleted': '{count} tareas',
-  'leaderboard.choreCompletedSingular': '{count} tarea',
 
   // ---- streak badge ----
   'streak.longestTooltip': 'Racha más larga: {count} días',
