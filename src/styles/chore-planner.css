@@ -214,10 +214,50 @@
   background: transparent;
 }
 
+/* Language picker in the header: same list as Settings > General, dressed like
+   the other header controls (surface, soft shadow, rounded corners). */
 .planner-language {
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--planner-surface) 65%, transparent);
-  font-size: 13px;
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 0;
+}
+.planner-language svg {
+  position: absolute;
+  right: 11px;
+  width: 16px;
+  height: 16px;
+  color: var(--planner-muted);
+  pointer-events: none;
+}
+.planner-language-select {
+  max-width: 168px;
+  min-height: 42px;
+  padding: 0 32px 0 14px;
+  border: 0;
+  border-radius: 14px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  box-shadow: 0 2px 9px rgba(38, 51, 47, 0.06);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  text-overflow: ellipsis;
+  transition:
+    background-color 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+
+.planner-language-select:hover {
+  background: var(--planner-soft);
+}
+
+.planner-language-select:focus-visible {
+  outline: 2px solid var(--planner-accent);
+  outline-offset: 2px;
 }
 
 .planner-icon-button:hover,
@@ -850,20 +890,24 @@
   font: inherit;
   cursor: pointer;
 }
-/* Count of claimed-but-not-finished chores, sitting on the Chores tab. */
-.planner-nav-badge {
+/* Count of open chores, sitting on the Chores tab. Kept deliberately small so
+   it reads as a hint and never competes with the tab label. The extra `button`
+   in the selector is required: the tab's icon rule
+   (`.planner-bottom-nav button span`) would otherwise size it to 42px. */
+.planner-bottom-nav button .planner-nav-badge {
   position: absolute;
   top: 6px;
   right: 10px;
   display: grid;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  width: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   place-items: center;
   border-radius: 999px;
   color: #fff;
   background: var(--planner-accent);
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
 }
@@ -1196,6 +1240,84 @@
   color: var(--planner-accent);
 }
 
+/* Two ways to spend the day: distribute points or start the missions. */
+.planner-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  width: min(100%, 720px);
+  margin-top: 14px;
+}
+.planner-choice-card {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 170px;
+  padding: 22px 18px;
+  border: 0;
+  border-radius: 18px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  box-shadow: 0 5px 20px rgba(38, 51, 47, 0.07);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+.planner-choice-card > span:first-child {
+  font-size: 44px;
+  line-height: 1;
+}
+.planner-choice-card strong {
+  font-size: 21px;
+}
+.planner-choice-card small {
+  max-width: 15ch;
+  color: var(--planner-muted);
+  font-size: 14px;
+  text-align: center;
+}
+.planner-choice-card:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(38, 51, 47, 0.12);
+}
+.planner-choice-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .planner-choice-card {
+    min-height: 128px;
+    padding: 16px 12px;
+  }
+  .planner-choice-card > span:first-child {
+    font-size: 34px;
+  }
+  .planner-choice-card strong {
+    font-size: 18px;
+  }
+}
+
+/* Point distribution: its own screen, not a step in the mission flow. */
+.planner-points {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 10px;
+}
+.planner-points h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+.planner-points-balance {
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: 20px;
+  font-weight: 800;
+}
+
 .planner-today-lobby {
   display: grid;
   /* auto-fit + justify-content centres the group even when the household has
@@ -1206,6 +1328,10 @@
   height: calc(100% - 176px);
   padding: 24px clamp(18px, 4vw, 72px) 120px;
   align-content: center;
+  /* On a short screen the cards would otherwise spill over each other; the
+     avatars keep their own height now, so let the lobby scroll instead. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .planner-lobby-member {
   display: flex;
@@ -1224,14 +1350,29 @@
 .planner-lobby-avatar,
 .planner-hero-avatar {
   display: grid;
+  /* Both wrappers are flex items in a column: without this a tight screen
+     squashes their height while the width stays put, which turns uploaded
+     photos into ovals. */
+  flex: 0 0 auto;
   width: 112px;
   height: 112px;
+  /* Belt and braces: if one side is ever auto, keep the box square. */
+  aspect-ratio: 1 / 1;
   margin-inline: auto;
   place-items: center;
   overflow: hidden;
   border: 3px solid var(--member-color, transparent);
   border-radius: 50%;
   font-size: 64px;
+}
+.planner-lobby-avatar > img,
+.planner-hero-avatar > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  object-position: center;
 }
 .planner-lobby-member strong {
   font-size: 25px;
@@ -1536,6 +1677,18 @@
     width: 37px;
     height: 37px;
     min-height: 37px;
+  }
+  /* Phones: the picker keeps its pill shape but only the short endonym fits. */
+  .planner-language-select {
+    max-width: 96px;
+    min-height: 37px;
+    padding: 0 26px 0 10px;
+    font-size: 13px;
+  }
+  .planner-language svg {
+    right: 9px;
+    width: 14px;
+    height: 14px;
   }
   .planner-filters {
     display: grid;
