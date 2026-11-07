@@ -1,3 +1,11 @@
+# [1.48.0](https://github.com/nyabb/beacon/compare/v1.47.0...v1.48.0) (2026-11-07)
+
+
+### Features
+
+* **i18n:** add translations for chores and planner in Korean, Dutch, and Portuguese ([85b7a71](https://github.com/nyabb/beacon/commit/85b7a71a98d977a1fe38eb7433f06ad6eb166b4a))
+* **i18n:** add translations for chores planner in Japanese, Korean, Dutch, and Portuguese ([1205944](https://github.com/nyabb/beacon/commit/1205944ed082c2d67edccfe883a0cd7d294a15b1))
+
 # [1.47.0](https://github.com/nyabb/beacon/compare/v1.46.1...v1.47.0) (2026-11-06)
 
 
