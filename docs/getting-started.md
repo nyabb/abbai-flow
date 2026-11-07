@@ -12,6 +12,7 @@ A visual walkthrough of Beacon — your family's daily signal. This guide shows 
 - [Calendar](#calendar)
 - [Chores](#chores)
 - [Lists (Grocery / Shopping)](#lists-grocery--shopping)
+- [Meal Plan](#meal-plan)
 - [Tasks](#tasks)
 - [Music Controls](#music-controls)
 - [Weather](#weather)
@@ -113,6 +114,33 @@ The lists view manages shopping and inventory lists from multiple providers.
 ![Lists — mobile](images/lists-mobile.png)
 
 On mobile the list selector is a full-width dropdown at the top, with the add-item input directly below it.
+
+---
+
+## Meal Plan
+
+Today's meals are shown by the **Menu** card on the Dashboard: in the sidebar for the Family layout, in the right-hand column for the Classic layout. The card is hidden while nothing is planned for today, so an empty household never gets a blank block.
+
+Each row is one meal, in breakfast → lunch → dinner → snack order:
+
+| Meal | Icon |
+|------|------|
+| Breakfast | 🌅 |
+| Lunch | ☀️ |
+| Dinner | 🌙 |
+| Snack | 🍎 |
+
+**Where the data comes from:**
+
+- Beacon stores the plan as a `beacon_meal_plans` array in its data store (the Home Assistant add-on keeps it server-side; the standalone build keeps it in the browser). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
+- Meals are **written by a sync, not typed into Beacon**. AnyList plans go through `scripts/sync-meals.mjs`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
+- The dashboard re-reads the store every 5 minutes, so a sync shows up without reloading the page.
+
+**Key features:**
+
+- **Per-day filtering** -- only entries whose `date` is today are shown; the list rolls over automatically at midnight.
+- **Meal types** -- breakfast, lunch, dinner and snack each get their own icon.
+- **Optional recipes** -- entries may carry a `recipe_id` for anything that links back to a recipe.
 
 ---
 

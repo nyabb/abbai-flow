@@ -221,8 +221,7 @@ export const en = {
   'settings.family.child': 'Child',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Photo',
-  'settings.family.photoHint':
-    'Shown instead of the emoji on the dashboard and chores screens.',
+  'settings.family.photoHint': 'Shown instead of the emoji on the dashboard and chores screens.',
   'settings.family.photoUpload': 'Upload photo',
   'settings.family.photoRemove': 'Remove photo',
   'settings.family.photoFromHa': 'Use Home Assistant photo',

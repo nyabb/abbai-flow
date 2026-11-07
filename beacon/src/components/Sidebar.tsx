@@ -16,7 +16,17 @@ import {
 import beaconIcon from '../assets/beacon-app-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
 
-export type SidebarView = 'dashboard' | 'calendar' | 'chores' | 'grocery' | 'tasks' | 'music' | 'photos' | 'timer' | 'weather' | 'settings';
+export type SidebarView =
+  | 'dashboard'
+  | 'calendar'
+  | 'chores'
+  | 'grocery'
+  | 'tasks'
+  | 'music'
+  | 'photos'
+  | 'timer'
+  | 'weather'
+  | 'settings';
 
 interface SidebarProps {
   activeView: SidebarView;
@@ -34,25 +44,57 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'dashboard', icon: <LayoutDashboard size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.dashboard' },
-  { id: 'calendar', icon: <Calendar size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.calendar' },
-  { id: 'chores', icon: <ListChecks size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.chores' },
-  { id: 'grocery', icon: <ShoppingCart size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.grocery' },
-  { id: 'tasks', icon: <ClipboardList size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.tasks' },
-  { id: 'music', icon: <Music size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.music' },
-  { id: 'photos', icon: <Image size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.photos' },
-  { id: 'timer', icon: <TimerIcon size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.timer' },
-  { id: 'weather', icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />, labelKey: 'nav.weather' },
+  {
+    id: 'dashboard',
+    icon: <LayoutDashboard size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.dashboard',
+  },
+  {
+    id: 'calendar',
+    icon: <Calendar size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.calendar',
+  },
+  {
+    id: 'chores',
+    icon: <ListChecks size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.chores',
+  },
+  {
+    id: 'grocery',
+    icon: <ShoppingCart size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.grocery',
+  },
+  {
+    id: 'tasks',
+    icon: <ClipboardList size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.tasks',
+  },
+  {
+    id: 'music',
+    icon: <Music size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.music',
+  },
+  {
+    id: 'photos',
+    icon: <Image size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.photos',
+  },
+  {
+    id: 'timer',
+    icon: <TimerIcon size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.timer',
+  },
+  {
+    id: 'weather',
+    icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.weather',
+  },
 ];
 
 /** Items shown directly in the mobile bottom tab bar */
 const MOBILE_TAB_IDS: SidebarView[] = ['dashboard', 'calendar', 'chores', 'music'];
 
-export function Sidebar({
-  activeView,
-  onChangeView,
-  position = 'left',
-}: SidebarProps) {
+export function Sidebar({ activeView, onChangeView, position = 'left' }: SidebarProps) {
   const { t } = useTranslation();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
@@ -138,10 +180,7 @@ export function Sidebar({
         {/* Overflow menu */}
         {mobileMoreOpen && (
           <>
-            <div
-              className="mobile-more-backdrop"
-              onClick={() => setMobileMoreOpen(false)}
-            />
+            <div className="mobile-more-backdrop" onClick={() => setMobileMoreOpen(false)} />
             <div className="mobile-more-menu">
               <div className="mobile-more-header">
                 <span className="mobile-more-title">{t('nav.more')}</span>
