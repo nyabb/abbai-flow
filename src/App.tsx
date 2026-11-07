@@ -686,6 +686,8 @@ export function App() {
             settings.choresEnabled ? (
               <ChorePlanner
                 members={members}
+                locale={settings.locale}
+                onLocaleChange={(locale) => updateSettings({ locale })}
                 weather={weather}
                 nextAppointment={
                   visibleEvents

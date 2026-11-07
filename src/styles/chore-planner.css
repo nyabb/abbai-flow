@@ -214,10 +214,26 @@
   background: transparent;
 }
 
-.planner-language {
+/* Language picker in the header: same list as Settings > General. */
+.planner-language-select {
+  flex: 0 0 auto;
+  max-width: 148px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 0;
   border-radius: 12px;
+  color: var(--planner-ink);
   background: color-mix(in srgb, var(--planner-surface) 65%, transparent);
+  font: inherit;
   font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  appearance: none;
+  text-overflow: ellipsis;
+}
+
+.planner-language-select:hover {
+  background: var(--planner-soft);
 }
 
 .planner-icon-button:hover,
@@ -850,20 +866,21 @@
   font: inherit;
   cursor: pointer;
 }
-/* Count of claimed-but-not-finished chores, sitting on the Chores tab. */
+/* Count of open chores, sitting on the Chores tab. Kept deliberately small so
+   it reads as a hint and never competes with the tab label. */
 .planner-nav-badge {
   position: absolute;
-  top: 6px;
-  right: 10px;
+  top: 8px;
+  right: 14px;
   display: grid;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
   place-items: center;
   border-radius: 999px;
   color: #fff;
   background: var(--planner-accent);
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 800;
   line-height: 1;
 }
@@ -1194,6 +1211,84 @@
 }
 .planner-danger {
   color: var(--planner-accent);
+}
+
+/* Two ways to spend the day: distribute points or start the missions. */
+.planner-choice {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  width: min(100%, 720px);
+  margin-top: 14px;
+}
+.planner-choice-card {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 170px;
+  padding: 22px 18px;
+  border: 0;
+  border-radius: 18px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  box-shadow: 0 5px 20px rgba(38, 51, 47, 0.07);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 180ms ease-out,
+    box-shadow 180ms ease-out;
+}
+.planner-choice-card > span:first-child {
+  font-size: 44px;
+  line-height: 1;
+}
+.planner-choice-card strong {
+  font-size: 21px;
+}
+.planner-choice-card small {
+  max-width: 15ch;
+  color: var(--planner-muted);
+  font-size: 14px;
+  text-align: center;
+}
+.planner-choice-card:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(38, 51, 47, 0.12);
+}
+.planner-choice-card:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+@media (max-width: 640px) {
+  .planner-choice-card {
+    min-height: 128px;
+    padding: 16px 12px;
+  }
+  .planner-choice-card > span:first-child {
+    font-size: 34px;
+  }
+  .planner-choice-card strong {
+    font-size: 18px;
+  }
+}
+
+/* Point distribution: its own screen, not a step in the mission flow. */
+.planner-points {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 10px;
+}
+.planner-points h2 {
+  margin: 0;
+  font-size: clamp(24px, 3vw, 32px);
+}
+.planner-points-balance {
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: 20px;
+  font-weight: 800;
 }
 
 .planner-today-lobby {

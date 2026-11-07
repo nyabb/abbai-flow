@@ -14,7 +14,12 @@ import { langForLocale, dateFnsLocaleFor, type LangCode } from './locales';
 export type { TranslationKey } from './translations/en';
 export type { LangCode } from './locales';
 
-const DICTIONARIES: Record<LangCode, Record<TranslationKey, string>> = {
+/**
+ * Each locale may be partial: anything it does not translate yet falls back to
+ * English. `en` is the source of truth for the key list (`TranslationKey`), so
+ * new strings only have to be added there before they can be used.
+ */
+const DICTIONARIES: Record<LangCode, Partial<Record<TranslationKey, string>>> = {
   en,
   es,
   fr,

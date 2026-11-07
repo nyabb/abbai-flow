@@ -33,6 +33,7 @@ import { buildFocusUrl } from '../focus';
 import { useRoutines } from '../hooks/useRoutines';
 import { resolveCalendarColor, CALENDAR_COLOR_PRESETS } from '../types';
 import { useTranslation, type TranslationKey } from '../i18n';
+import { LOCALE_OPTIONS } from '../i18n/locales';
 import { MemberAvatar } from './MemberAvatar';
 import { imageFileToDataUrl, resolveMemberPhoto } from '../utils/member-photo';
 
@@ -539,16 +540,11 @@ export function SettingsView({
             value={settings.locale}
             onChange={(e) => onUpdateSettings({ locale: e.target.value })}
           >
-            <option value="en-US">English (US)</option>
-            <option value="en-GB">English (UK)</option>
-            <option value="es">Espa&#241;ol</option>
-            <option value="fr">Fran&#231;ais</option>
-            <option value="de">Deutsch</option>
-            <option value="it">Italiano</option>
-            <option value="pt">Portugu&#234;s</option>
-            <option value="nl">Nederlands</option>
-            <option value="ja">日本語</option>
-            <option value="ko">한국어</option>
+            {LOCALE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
         {isAddOn() && (

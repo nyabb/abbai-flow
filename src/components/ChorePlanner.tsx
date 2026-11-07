@@ -38,12 +38,21 @@ import {
 import type { RewardReservation } from '../api/reward-reservations';
 import type { ChoreOpsChore, ChoreOpsReward } from '../types/choreops';
 import { useChoreOps } from '../hooks/useChoreOps';
+import { useTranslation, type TranslationKey } from '../i18n';
+import { LOCALE_OPTIONS } from '../i18n/locales';
 import { normalizePin, type FamilyMember } from '../types/family';
 import { MemberAvatar } from './MemberAvatar';
 import type { CalendarEvent, WeatherData } from '../types';
 
-type Language = 'nl' | 'en';
-type Screen = 'tasks' | 'lobby' | 'welcome' | 'overview' | 'missions' | 'mission' | 'closing';
+type Screen =
+  | 'tasks'
+  | 'lobby'
+  | 'welcome'
+  | 'overview'
+  | 'points'
+  | 'missions'
+  | 'mission'
+  | 'closing';
 
 /** Parent PINs must be at least this long to unlock approvals. */
 const MIN_PIN_LENGTH = 4;
@@ -51,46 +60,30 @@ const MIN_PIN_LENGTH = 4;
 /** Planner weekday indexes (Monday first) → ChoreOps day keys. */
 const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
-/** Repeat labels for the ChoreOps schedule picker. */
-const FREQUENCY_LABEL: Record<Language, Record<string, string>> = {
-  nl: {
-    none: 'Eenmalig',
-    daily: 'Dagelijks',
-    daily_multi: 'Meerdere keren per dag',
-    weekly: 'Wekelijks',
-    biweekly: 'Tweewekelijks',
-    monthly: 'Maandelijks',
-    quarterly: 'Per kwartaal',
-    yearly: 'Jaarlijks',
-    custom: 'Aangepast interval',
-    custom_from_complete: 'Interval vanaf afronden',
-    week_end: 'Einde van de week',
-    month_end: 'Einde van de maand',
-    quarter_end: 'Einde van het kwartaal',
-    year_end: 'Einde van het jaar',
-  },
-  en: {
-    none: 'One-off',
-    daily: 'Daily',
-    daily_multi: 'Several times a day',
-    weekly: 'Weekly',
-    biweekly: 'Fortnightly',
-    monthly: 'Monthly',
-    quarterly: 'Quarterly',
-    yearly: 'Yearly',
-    custom: 'Custom interval',
-    custom_from_complete: 'Interval after completion',
-    week_end: 'End of the week',
-    month_end: 'End of the month',
-    quarter_end: 'End of the quarter',
-    year_end: 'End of the year',
-  },
+/** ChoreOps repeat options → dictionary keys, so the picker follows the app language. */
+const FREQUENCY_KEY: Record<ChoreOpsFrequency, TranslationKey> = {
+  none: 'planner.freq.none',
+  daily: 'planner.freq.daily',
+  daily_multi: 'planner.freq.daily_multi',
+  weekly: 'planner.freq.weekly',
+  biweekly: 'planner.freq.biweekly',
+  monthly: 'planner.freq.monthly',
+  quarterly: 'planner.freq.quarterly',
+  yearly: 'planner.freq.yearly',
+  custom: 'planner.freq.custom',
+  custom_from_complete: 'planner.freq.custom_from_complete',
+  week_end: 'planner.freq.week_end',
+  month_end: 'planner.freq.month_end',
+  quarter_end: 'planner.freq.quarter_end',
+  year_end: 'planner.freq.year_end',
 };
 
 /** Interval unit labels for `custom` repeats. */
-const UNIT_LABEL: Record<Language, Record<ChoreOpsIntervalUnit, string>> = {
-  nl: { hours: 'uur', days: 'dagen', weeks: 'weken', months: 'maanden' },
-  en: { hours: 'hours', days: 'days', weeks: 'weeks', months: 'months' },
+const UNIT_KEY: Record<ChoreOpsIntervalUnit, TranslationKey> = {
+  hours: 'planner.unit.hours',
+  days: 'planner.unit.days',
+  weeks: 'planner.unit.weeks',
+  months: 'planner.unit.months',
 };
 
 /** "Aangemaakt · Afwassen": the action first, then the chore it happened to. */
@@ -135,271 +128,148 @@ interface ChorePlannerProps {
   nextAppointment: CalendarEvent | null;
   /** Beacon family members supply photos, colours, and display names. */
   members: FamilyMember[];
+  /** App language (`BeaconSettings.locale`); the planner has no own language switch. */
+  locale: string;
+  /** The same updater Settings uses, so picking a language here changes the whole app. */
+  onLocaleChange: (locale: string) => void;
 }
 
-const COPY = {
-  nl: {
-    title: 'Taakjes & Routines',
-    shortTitle: 'Taakjes',
-    pause: 'Routines pauzeren',
-    resume: 'Routines hervatten',
-    paused: 'Alle routines gepauzeerd',
-    everyone: 'Iedereen',
-    open: 'Open',
-    late: 'Te laat',
-    done: 'Afgerond',
-    created: 'Aangemaakt',
-    claimedToast: 'Geclaimd',
-    approved: 'Goedgekeurd',
-    removedToast: 'Verwijderd',
-    assignedToast: 'Toegewezen',
-    undoneToast: 'Teruggedraaid',
-    today: 'Vandaag',
-    weather: 'Weer',
-    nextAppointment: 'Volgende afspraak',
-    noAppointment: 'Geen afspraken meer vandaag',
-    free: 'Vrij te pakken',
-    nothing: 'Geen taakjes vandaag 🎉',
-    add: 'Taakje toevoegen',
-    anyone: 'Wie het eerst is',
-    edit: 'Bewerken',
-    undo: 'Ongedaan maken',
-    remove: 'Verwijderen',
-    cancel: 'Annuleren',
-    save: 'Opslaan',
-    task: 'Taakje',
-    routine: 'Routine',
-    name: 'Naam',
-    points: 'Punten',
-    forWho: 'Voor wie',
-    freeTask: 'Vrij te pakken door iedereen',
-    deadline: 'Deadline',
-    todayChip: 'Vandaag',
-    tomorrow: 'Morgen',
-    retry: 'Herkansing toestaan',
-    grace: 'Herkansingstijd (minuten)',
-    frequency: 'Frequentie',
-    daily: 'Dagelijks',
-    weekly: 'Wekelijks',
-    monthly: 'Maandelijks',
-    interval: 'Aangepast interval',
-    time: 'Wanneer',
-    morning: 'Ochtend',
-    afternoon: 'Middag',
-    evening: 'Avond',
-    custom: 'Aangepast',
-    due: 'Tot',
-    claim: 'Pakken',
-    confirmClaimTitle: 'Taakje claimen?',
-    confirmClaimBody: 'Weet je zeker dat je dit taakje wilt claimen?',
-    confirmDoneTitle: 'Taakje afronden?',
-    confirmDoneBody: 'Weet je zeker dat je klaar bent met dit taakje?',
-    expired: 'Vervallen',
-    recreate: 'Opnieuw',
-    upcoming: 'Start om',
-    active: 'Nog',
-    retryCopy: 'Je bent te laat, maar je krijgt nog één kans',
-    completedAt: 'Afgerond om',
-    noFail: 'Niet gelukt, probeer opnieuw',
-    pointsReturned: 'Punten teruggezet',
-    pauseInfo:
-      'Nieuwe routine-taakjes worden niet meer aangemaakt tot je hervat. Bestaande taakjes blijven staan.',
-    pauseNow: 'Pauzeren',
-    resumeInfo: 'Routines gaan verder vanaf nu. Gemiste taakjes worden niet ingehaald.',
-    pot: 'Spaarpot',
-    later: 'Later bepalen',
-    destination: 'Waar gaan de',
-    chooseChild: 'Wie pakt dit taakje?',
-    back: 'Terug',
-    startMissions: 'Start missies',
-    missions: 'Missies',
-    continue: 'Verder',
-    iDidIt: 'Ik heb het gedaan!',
-    pass: 'Geef het bord door',
-    todayEarned: 'Vandaag verdiend',
-    noMissions: 'Geen taakjes meer. Goed gedaan!',
-    action: 'Acties',
-    language: 'EN',
-    privacy: 'Privacy',
-    sound: 'Geluid',
-    routines: 'Routines',
-    routineLabel: 'Routine',
-    routinePlaceholder: 'Bijv. Ochtendroutine',
-    routineHint: 'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
-    invalid: 'Deze dag bestaat niet in elke maand; de routine wordt dan overgeslagen.',
-    potWarning: 'De punten zijn teruggezet naar nul.',
-    offline: 'Geen internetverbinding — wijzigingen worden niet opgeslagen',
-    assignToClaim: 'Deze taak heeft nog geen ChoreOps-knop; wijs hem eerst toe in Home Assistant.',
-    pinTitle: 'Goedkeuring door ouder',
-    pinHint: 'Voer de pincode van een ouder in.',
-    pinWrong: 'Die pincode klopt niet.',
-    pinConfirm: 'Ontgrendelen',
-    create: 'Taakje aanmaken',
-    sure: 'Zeker weten?',
-    score: 'taakjes vandaag',
-    description: 'Beschrijving',
-    dueAt: 'Vervaldatum en tijd',
-    dueWindow: 'Mag al vóór de vervaldatum',
-    dueWindowHint: 'Bijv. 1h, 1d 6h of 0 om uit te zetten.',
-    reminder: 'Herinnering',
-    reminderHint: 'Leeg laten houdt de huidige herinnering.',
-    autoApprove: 'Direct goedkeuren, zonder ouder',
-    every: 'Elke',
-    renameLocked: 'Naam wijzigen kan alleen in ChoreOps.',
-    rewards: 'Beloningen',
-    noRewards: 'Nog geen beloningen in ChoreOps.',
-    newReward: 'Beloning toevoegen',
-    cost: 'Kosten (punten)',
-    redeem: 'Inwisselen',
-    assign: 'Toewijzen',
-    assigned: 'Toegewezen · wacht op bevestiging',
-    confirm: 'Bevestigen',
-    undoShort: 'Terug',
-    pointsUnit: 'punten',
-    saved: 'gespaard',
-    locked: 'nog niet genoeg',
-    claimed: 'wacht op goedkeuring',
-    openTodo: 'nog te doen',
-    savedToast: 'Opgeslagen',
-  },
-  en: {
-    title: 'Chores & Routines',
-    shortTitle: 'Chores',
-    pause: 'Pause routines',
-    resume: 'Resume routines',
-    paused: 'All routines paused',
-    everyone: 'Everyone',
-    open: 'Open',
-    late: 'Late',
-    done: 'Completed',
-    created: 'Created',
-    claimedToast: 'Claimed',
-    approved: 'Approved',
-    removedToast: 'Deleted',
-    assignedToast: 'Assigned',
-    undoneToast: 'Undone',
-    today: 'Today',
-    weather: 'Weather',
-    nextAppointment: 'Next appointment',
-    noAppointment: 'No more appointments today',
-    free: 'Free to claim',
-    nothing: 'No chores today 🎉',
-    add: 'Add a chore',
-    anyone: 'Anyone (first)',
-    edit: 'Edit',
-    undo: 'Undo',
-    remove: 'Delete',
-    cancel: 'Cancel',
-    save: 'Save',
-    task: 'Task',
-    routine: 'Routine',
-    name: 'Name',
-    points: 'Points',
-    forWho: 'For whom',
-    freeTask: 'Free for anyone to claim',
-    deadline: 'Deadline',
-    todayChip: 'Today',
-    tomorrow: 'Tomorrow',
-    retry: 'Allow retry',
-    grace: 'Grace window (minutes)',
-    frequency: 'Frequency',
-    daily: 'Daily',
-    weekly: 'Weekly',
-    monthly: 'Monthly',
-    interval: 'Custom interval',
-    time: 'When',
-    morning: 'Morning',
-    afternoon: 'Afternoon',
-    evening: 'Evening',
-    custom: 'Custom',
-    due: 'Until',
-    claim: 'Claim',
-    confirmClaimTitle: 'Claim this chore?',
-    confirmClaimBody: 'Are you sure you want to claim this chore?',
-    confirmDoneTitle: 'Finish this chore?',
-    confirmDoneBody: 'Are you sure you are done with this chore?',
-    expired: 'Expired',
-    recreate: 'Recreate',
-    upcoming: 'Starts at',
-    active: 'Remaining',
-    retryCopy: 'You are late, but you get one more chance',
-    completedAt: 'Completed at',
-    noFail: 'Could not save, try again',
-    pointsReturned: 'Points returned',
-    pauseInfo: 'No new routine tasks will be created until you resume. Existing tasks stay.',
-    pauseNow: 'Pause',
-    resumeInfo: 'Routines resume from now. Missed tasks will not be backfilled.',
-    pot: 'Savings pot',
-    later: 'Decide later',
-    destination: 'Where should the',
-    chooseChild: 'Who is claiming this task?',
-    back: 'Back',
-    startMissions: 'Start missions',
-    missions: 'Missions',
-    continue: 'Continue',
-    iDidIt: 'I did it!',
-    pass: 'Pass the board',
-    todayEarned: 'Earned today',
-    noMissions: 'No more tasks. Well done!',
-    action: 'Actions',
-    language: 'NL',
-    privacy: 'Privacy',
-    sound: 'Sound',
-    routines: 'Routines',
-    routineLabel: 'Routine',
-    routinePlaceholder: 'e.g. Morning routine',
-    routineHint: 'Daily chores with the same routine name are grouped under Routines.',
-    invalid: 'This date does not exist every month; the routine will be skipped.',
-    potWarning: 'Points were reset to zero.',
-    offline: 'No internet connection — changes will not be saved',
-    assignToClaim: 'This chore has no ChoreOps button yet; assign it in Home Assistant first.',
-    pinTitle: 'Parent approval',
-    pinHint: "Enter a parent's PIN to approve.",
-    pinWrong: 'That PIN is not correct.',
-    pinConfirm: 'Unlock',
-    create: 'Create chore',
-    sure: 'Delete for sure?',
-    score: 'tasks today',
-    description: 'Description',
-    dueAt: 'Due date and time',
-    dueWindow: 'Becomes available before due',
-    dueWindowHint: 'e.g. 1h, 1d 6h — or 0 to disable.',
-    reminder: 'Reminder',
-    reminderHint: 'Leave empty to keep the current reminder.',
-    autoApprove: 'Approve without a parent',
-    every: 'Every',
-    renameLocked: 'Renaming is only possible in ChoreOps.',
-    rewards: 'Rewards',
-    noRewards: 'No rewards in ChoreOps yet.',
-    newReward: 'Add reward',
-    cost: 'Cost (points)',
-    redeem: 'Redeem',
-    assign: 'Assign',
-    assigned: 'Assigned · waiting for confirmation',
-    confirm: 'Confirm',
-    undoShort: 'Undo',
-    pointsUnit: 'points',
-    saved: 'saved',
-    locked: 'not enough yet',
-    claimed: 'awaiting approval',
-    openTodo: 'to do',
-    savedToast: 'Saved',
-  },
-} as const;
-
+/**
+ * Planner copy comes from the shared i18n dictionary (`planner.*`), so the
+ * chores screen speaks whatever language is selected in Beacon's settings.
+ * There is no private EN/NL switch to keep in sync any more.
+ */
+function usePlannerCopy() {
+  const { t } = useTranslation();
+  return useMemo(
+    () => ({
+      title: t('planner.title'),
+      shortTitle: t('planner.shortTitle'),
+      everyone: t('planner.everyone'),
+      open: t('planner.open'),
+      late: t('planner.late'),
+      done: t('planner.done'),
+      created: t('planner.created'),
+      claimedToast: t('planner.claimedToast'),
+      approved: t('planner.approved'),
+      removedToast: t('planner.removedToast'),
+      assignedToast: t('planner.assignedToast'),
+      undoneToast: t('planner.undoneToast'),
+      today: t('planner.today'),
+      weather: t('planner.weather'),
+      nextAppointment: t('planner.nextAppointment'),
+      noAppointment: t('planner.noAppointment'),
+      free: t('planner.free'),
+      nothing: t('planner.nothing'),
+      add: t('planner.add'),
+      anyone: t('planner.anyone'),
+      edit: t('planner.edit'),
+      remove: t('planner.remove'),
+      cancel: t('planner.cancel'),
+      save: t('planner.save'),
+      savedToast: t('planner.savedToast'),
+      task: t('planner.task'),
+      name: t('planner.name'),
+      points: t('planner.points'),
+      pointsUnit: t('planner.pointsUnit'),
+      forWho: t('planner.forWho'),
+      freeTask: t('planner.freeTask'),
+      frequency: t('planner.frequency'),
+      daily: t('planner.daily'),
+      weekly: t('planner.weekly'),
+      monthly: t('planner.monthly'),
+      interval: t('planner.interval'),
+      every: t('planner.every'),
+      morning: t('planner.morning'),
+      afternoon: t('planner.afternoon'),
+      evening: t('planner.evening'),
+      due: t('planner.due'),
+      claim: t('planner.claim'),
+      confirm: t('planner.confirm'),
+      confirmClaimTitle: t('planner.confirmClaimTitle'),
+      confirmClaimBody: t('planner.confirmClaimBody'),
+      confirmDoneTitle: t('planner.confirmDoneTitle'),
+      confirmDoneBody: t('planner.confirmDoneBody'),
+      expired: t('planner.expired'),
+      upcoming: t('planner.upcoming'),
+      active: t('planner.active'),
+      retryCopy: t('planner.retryCopy'),
+      completedAt: t('planner.completedAt'),
+      noFail: t('planner.noFail'),
+      pot: t('planner.pot'),
+      back: t('planner.back'),
+      startMissions: t('planner.startMissions'),
+      chooseWhat: t('planner.chooseWhat'),
+      assignPoints: t('planner.assignPoints'),
+      assignPointsHint: t('planner.assignPointsHint'),
+      missionsHint: t('planner.missionsHint'),
+      missions: t('planner.missions'),
+      continue: t('planner.continue'),
+      iDidIt: t('planner.iDidIt'),
+      pass: t('planner.pass'),
+      todayEarned: t('planner.todayEarned'),
+      noMissions: t('planner.noMissions'),
+      action: t('planner.action'),
+      privacy: t('planner.privacy'),
+      sound: t('planner.sound'),
+      routines: t('planner.routines'),
+      routineLabel: t('planner.routineLabel'),
+      routinePlaceholder: t('planner.routinePlaceholder'),
+      routineHint: t('planner.routineHint'),
+      offline: t('planner.offline'),
+      assignToClaim: t('planner.assignToClaim'),
+      pinTitle: t('planner.pinTitle'),
+      pinHint: t('planner.pinHint'),
+      pinWrong: t('planner.pinWrong'),
+      pinConfirm: t('planner.pinConfirm'),
+      create: t('planner.create'),
+      sure: t('planner.sure'),
+      score: t('planner.score'),
+      description: t('planner.description'),
+      dueAt: t('planner.dueAt'),
+      dueWindow: t('planner.dueWindow'),
+      dueWindowHint: t('planner.dueWindowHint'),
+      reminder: t('planner.reminder'),
+      reminderHint: t('planner.reminderHint'),
+      autoApprove: t('planner.autoApprove'),
+      renameLocked: t('planner.renameLocked'),
+      rewards: t('planner.rewards'),
+      noRewards: t('planner.noRewards'),
+      newReward: t('planner.newReward'),
+      cost: t('planner.cost'),
+      assign: t('planner.assign'),
+      assigned: t('planner.assigned'),
+      undoShort: t('planner.undoShort'),
+      locked: t('planner.locked'),
+      claimed: t('planner.claimed'),
+      openTodo: t('planner.openTodo'),
+      hoursShort: t('planner.hoursShort'),
+      minutesShort: t('planner.minutesShort'),
+    }),
+    [t],
+  );
+}
+type PlannerCopy = ReturnType<typeof usePlannerCopy>;
 function localDateTime(date: Date): string {
   const shifted = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return shifted.toISOString().slice(0, 16);
 }
 
-function countdown(target: string | null, now: Date, language: Language): string {
+/** `10:30` in the app's locale — every clock time on the board goes through this. */
+function clockTime(value: Date | string, intl: string): string {
+  return new Date(value).toLocaleTimeString(intl, { hour: '2-digit', minute: '2-digit' });
+}
+
+function countdown(
+  target: string | null,
+  now: Date,
+  copy: Pick<PlannerCopy, 'hoursShort' | 'minutesShort'>,
+): string {
   if (!target) return '';
   const minutes = Math.max(0, Math.ceil((new Date(target).getTime() - now.getTime()) / 60_000));
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  return language === 'nl'
-    ? `${hours ? `${hours}u ` : ''}${rest}m`
-    : `${hours ? `${hours}h ` : ''}${rest}m`;
+  return `${hours ? `${hours}${copy.hoursShort} ` : ''}${rest}${copy.minutesShort}`;
 }
 
 function formFromTask(task: PlannerTask): FormValue {
@@ -485,7 +355,13 @@ function emptyForm(now: Date): FormValue {
   };
 }
 
-export function ChorePlanner({ weather, nextAppointment, members }: ChorePlannerProps) {
+export function ChorePlanner({
+  weather,
+  nextAppointment,
+  members,
+  locale,
+  onLocaleChange,
+}: ChorePlannerProps) {
   const choreOps = useChoreOps();
   const [now, setNow] = useState(new Date());
   /**
@@ -506,9 +382,9 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     routinesPaused: false,
     soundEnabled: true,
   };
-  const [language, setLanguage] = useState<Language>(() =>
-    localStorage.getItem('beacon_chore_language') === 'en' ? 'en' : 'nl',
-  );
+  const { lang, dateLocale, t } = useTranslation();
+  /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
+  const timeLocale = dateLocale.code || lang;
   const [screen, setScreen] = useState<Screen>('tasks');
   const [memberFilter, setMemberFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'late' | 'completed'>('all');
@@ -574,11 +450,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
     readRewardReservations(),
   );
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const c = COPY[language];
+  const c = usePlannerCopy();
 
-  useEffect(() => {
-    localStorage.setItem('beacon_chore_language', language);
-  }, [language]);
   useEffect(() => {
     writeRewardReservations(reservations);
   }, [reservations]);
@@ -1136,19 +1009,19 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       task.awaitingReview && status !== 'completed'
         ? c.claimed
         : status === 'upcoming'
-          ? `${c.upcoming} ${new Date(task.startsAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+          ? `${c.upcoming} ${clockTime(task.startsAt, timeLocale)}`
           : status === 'active'
             ? deadline
-              ? `${c.active} ${countdown(deadline, now, language)}`
+              ? `${c.active} ${countdown(deadline, now, c)}`
               : c.open
             : status === 'retry'
-              ? `${c.retryCopy} · ${countdown(deadline ? new Date(new Date(deadline).getTime() + (task.retryMinutes ?? 0) * 60_000).toISOString() : null, now, language)}`
+              ? `${c.retryCopy} · ${countdown(deadline ? new Date(new Date(deadline).getTime() + (task.retryMinutes ?? 0) * 60_000).toISOString() : null, now, c)}`
               : status === 'late'
                 ? c.late
                 : status === 'expired'
                   ? c.expired
                   : completedAt
-                    ? `${c.completedAt} ${new Date(completedAt).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+                    ? `${c.completedAt} ${clockTime(completedAt, timeLocale)}`
                     : c.done;
     const timeLabel =
       task.timeBlock === 'morning'
@@ -1158,7 +1031,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
           : task.timeBlock === 'evening'
             ? c.evening
             : deadline
-              ? `${c.due} ${new Date(deadline).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+              ? `${c.due} ${clockTime(deadline, timeLocale)}`
               : null;
     return (
       <article
@@ -1320,14 +1193,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <ArrowLeft />
           </button>
         )}
-        {screen === 'closing' && (
-          <div className="planner-clock">
-            {now.toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
-        )}
+        {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
         <h1>
           {/* Phones get the short name so the header can stay on one row. */}
           <span className="planner-title-full">{heading}</span>
@@ -1338,13 +1204,19 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <Plus />
           </button>
         )}
-        <button
-          className="planner-icon-button planner-language"
-          onClick={() => setLanguage(language === 'nl' ? 'en' : 'nl')}
-          aria-label="Language"
+        <select
+          className="planner-language-select"
+          value={locale}
+          onChange={(event) => onLocaleChange(event.target.value)}
+          aria-label={t('settings.general.languageLabel')}
+          title={t('settings.general.languageLabel')}
         >
-          {c.language}
-        </button>
+          {LOCALE_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button
           className="planner-icon-button"
           onClick={() => setPrivacy((value) => !value)}
@@ -1370,14 +1242,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
 
       {screen === 'tasks' && (
         <>
-          {privacy && (
-            <div className="planner-private-clock">
-              {now.toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
-          )}
+          {privacy && <div className="planner-private-clock">{clockTime(now, timeLocale)}</div>}
           {!online && (
             <div className="planner-offline-banner" role="alert">
               {c.offline}
@@ -1548,17 +1413,13 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <MemberAvatar member={selectedTodayMember} />
           </span>
           <p className="planner-eyebrow">
-            {now.toLocaleDateString(language === 'nl' ? 'nl-NL' : 'en-US', {
+            {now.toLocaleDateString(timeLocale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
             })}
           </p>
-          <h2>
-            {language === 'nl'
-              ? `Goedemorgen, ${selectedTodayMember.name}`
-              : `Good morning, ${selectedTodayMember.name}`}
-          </h2>
+          <h2>{t('planner.greeting', { name: selectedTodayMember.name })}</h2>
           <p>
             {memberTodayCount(selectedTodayMember.id)} {c.score}
           </p>
@@ -1572,7 +1433,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
             <span>
               <strong>{c.nextAppointment}</strong>
               {nextAppointment
-                ? `${nextAppointment.title} · ${new Date(nextAppointment.start).toLocaleTimeString(language === 'nl' ? 'nl-NL' : 'en-US', { hour: '2-digit', minute: '2-digit' })}`
+                ? `${nextAppointment.title} · ${clockTime(nextAppointment.start, timeLocale)}`
                 : c.noAppointment}
             </span>
           </div>
@@ -1585,11 +1446,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
       {screen === 'overview' && selectedTodayMember && (
         <main className="planner-today-step">
           <p className="planner-eyebrow">02 / 04</p>
-          <h2>
-            {language === 'nl'
-              ? `Dit staat er voor je klaar, ${selectedTodayMember.name}`
-              : `Here is your day, ${selectedTodayMember.name}`}
-          </h2>
+          <h2>{c.chooseWhat}</h2>
           <div className="planner-overview-stats">
             <span>
               <strong>{memberTodayCount(selectedTodayMember.id)}</strong>
@@ -1600,9 +1457,39 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               {c.pot}
             </span>
           </div>
-          {rewardsForMember(selectedTodayMember.id).length > 0 && (
+          {/*
+           * Two separate things a child can do today. Point distribution used
+           * to be a step you had to walk through before the missions started;
+           * it is a choice now, and the missions are one tap away.
+           */}
+          <div className="planner-choice">
+            <button
+              className="planner-choice-card"
+              disabled={rewardsForMember(selectedTodayMember.id).length === 0}
+              onClick={() => setScreen('points')}
+            >
+              <span aria-hidden="true">{'\u{1F381}'}</span>
+              <strong>{c.assignPoints}</strong>
+              <small>{c.assignPointsHint}</small>
+            </button>
+            <button className="planner-choice-card" onClick={() => setScreen('missions')}>
+              <span aria-hidden="true">{'\u{1F3AF}'}</span>
+              <strong>{c.startMissions}</strong>
+              <small>{c.missionsHint}</small>
+            </button>
+          </div>
+        </main>
+      )}
+      {screen === 'points' && selectedTodayMember && (
+        <main className="planner-content planner-points">
+          <h2>{c.assignPoints}</h2>
+          <p className="planner-points-balance">
+            ⭐ {spendableFor(selectedTodayMember)} {c.pointsUnit}
+          </p>
+          {rewardsForMember(selectedTodayMember.id).length === 0 ? (
+            <p className="planner-empty-copy">{c.noRewards}</p>
+          ) : (
             <section className="planner-child-rewards">
-              <h3>{c.rewards}</h3>
               {rewardsForMember(selectedTodayMember.id).map((reward) => {
                 const { reserved, saved, available, pending, affordable } = rewardState(reward);
                 const approveId = reward.actions.approve;
@@ -1673,9 +1560,8 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
               })}
             </section>
           )}
-          <button className="planner-primary" onClick={() => setScreen('missions')}>
-            {c.continue}
-            <ChevronRight />
+          <button className="planner-primary" onClick={() => setScreen('overview')}>
+            {c.back}
           </button>
         </main>
       )}
@@ -1709,7 +1595,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
         <main className="planner-mission-screen">
           <div className="planner-mission-progress">
             <span>
-              {missionIndex + 1} {language === 'nl' ? 'van' : 'of'} {missionIds.length}
+              {missionIndex + 1} {t('planner.of')} {missionIds.length}
             </span>
             <div>
               <i style={{ width: `${((missionIndex + 1) / missionIds.length) * 100}%` }} />
@@ -1724,7 +1610,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                 ? c.late
                 : activeMissionStatus === 'retry'
                   ? c.retryCopy
-                  : `${c.active} ${countdown(missionTask.deadlineAt, now, language)}`}
+                  : `${c.active} ${countdown(missionTask.deadlineAt, now, c)}`}
             </p>
           </div>
           <button
@@ -1930,14 +1816,14 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                     >
                       {CHOREOPS_FREQUENCIES.map((frequency) => (
                         <option key={frequency} value={frequency}>
-                          {FREQUENCY_LABEL[language][frequency] ?? frequency}
+                          {t(FREQUENCY_KEY[frequency])}
                         </option>
                       ))}
                     </select>
                   </label>
                   {form.liveFrequency === 'weekly' && (
                     <div className="planner-weekdays">
-                      {['M', 'D', 'W', 'D', 'V', 'Z', 'Z'].map((day, index) => (
+                      {DAY_KEYS.map((day, index) => (
                         <button
                           key={index}
                           className={form.liveWeekdays.includes(index) ? 'is-selected' : ''}
@@ -1950,7 +1836,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                             }))
                           }
                         >
-                          {day}
+                          {t(`planner.day.${day}`)}
                         </button>
                       ))}
                     </div>
@@ -1986,7 +1872,7 @@ export function ChorePlanner({ weather, nextAppointment, members }: ChorePlanner
                         >
                           {CHOREOPS_INTERVAL_UNITS.map((unit) => (
                             <option key={unit} value={unit}>
-                              {UNIT_LABEL[language][unit]}
+                              {t(UNIT_KEY[unit])}
                             </option>
                           ))}
                         </select>

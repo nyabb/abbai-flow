@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen, waitFor } from '@testing-library/react';
 import { ChorePlanner } from './ChorePlanner';
+import { I18nContext, createI18n } from '../i18n';
 import type { FamilyMember } from '../types/family';
 import type { ChoreOpsState } from '../types/choreops';
 
@@ -91,8 +92,25 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
   };
 }
 
+/**
+ * The planner takes its copy from the shared i18n dictionary. These tests pin
+ * the Dutch locale so the assertions stay readable while still exercising the
+ * real `useTranslation` path.
+ */
+const NL = createI18n('nl');
+
 function renderPlanner(members: FamilyMember[]) {
-  return render(<ChorePlanner members={members} weather={null} nextAppointment={null} />);
+  return render(
+    <I18nContext.Provider value={NL}>
+      <ChorePlanner
+        members={members}
+        weather={null}
+        nextAppointment={null}
+        locale="nl"
+        onLocaleChange={() => {}}
+      />
+    </I18nContext.Provider>,
+  );
 }
 
 /** Open the actions sheet of the first chore card. */
