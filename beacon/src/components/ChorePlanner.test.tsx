@@ -211,8 +211,22 @@ describe('ChorePlanner anyone chores', () => {
     expect(cards).toHaveLength(2);
     expect(container.querySelectorAll('.planner-task--anyone')).toHaveLength(2);
     expect(container.textContent).toContain('Wie het eerst is');
-    expect(screen.getAllByRole('button', { name: 'Pakken' })).toHaveLength(2);
+    // The pill's accessible name is "<action>: <chore>", so match on the verb.
+    expect(screen.getAllByRole('button', { name: /^Pakken: / })).toHaveLength(2);
     expect(container.querySelector('.planner-check-hand')).not.toBeNull();
+  });
+
+  it('says "Bevestigen" (approve) once a free chore is claimed, never "Afgerond"', () => {
+    mocks.state.current = anyoneState('claimed', 'pending');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const labels = [...container.querySelectorAll('.planner-check')].map(
+      (pill) => pill.textContent ?? '',
+    );
+    // Zara claimed hers, so her pill offers the parent sign-off; Maya's is still
+    // up for grabs. Neither may claim the chore is finished.
+    expect(labels.some((text) => text.includes('Bevestigen'))).toBe(true);
+    expect(labels.some((text) => text.includes('Afgerond'))).toBe(false);
   });
 
   it('looks like an ordinary assignment once a child claimed it', () => {

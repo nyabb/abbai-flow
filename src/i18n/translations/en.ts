@@ -716,6 +716,7 @@ export const en = {
   'planner.pinWrong': 'That PIN is not correct.',
   'planner.pinConfirm': 'Unlock',
   'planner.greeting': 'Good morning, {name}',
+  'planner.wellDone': 'Well done, {name}!',
   'planner.of': 'of',
   'planner.hoursShort': 'h',
   'planner.minutesShort': 'm',

@@ -708,6 +708,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.pinWrong': 'PIN が正しくありません。',
   'planner.pinConfirm': 'ロック解除',
   'planner.greeting': 'おはよう、{name}',
+  'planner.wellDone': 'よくできました、{name}！',
   'planner.of': '／',
   'planner.hoursShort': '時間',
   'planner.minutesShort': '分',

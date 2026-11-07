@@ -504,6 +504,20 @@ export function ChorePlanner({
 
   const taskStatus = (task: PlannerTask) => getPlannerTaskStatus(task, now);
 
+  /**
+   * Label for the pill button, naming the action a tap performs:
+   * claim an unclaimed shared chore, approve one that waits for a parent,
+   * tick off the child's own chore. A claimed chore must never read
+   * "Completed" — it is only finished once a parent signs it off.
+   */
+  const pillLabel = (task: PlannerTask, status: ReturnType<typeof taskStatus>) => {
+    if (status === 'completed') return c.done;
+    if (status === 'expired') return c.expired;
+    if (task.awaitingReview) return c.confirm;
+    if (task.audience === 'anyone') return c.claim;
+    return c.done;
+  };
+
   const openActions = (taskId: string) => {
     setSelectedTaskId(taskId);
     setConfirmingDelete(false);
@@ -1088,16 +1102,16 @@ export function ChorePlanner({
             pendingTaskId === task.id ||
             (!task.memberId && status !== 'expired')
           }
-          aria-label={
-            status === 'completed' ? c.done : task.audience === 'anyone' ? c.claim : c.task
-          }
+          /* The visible label alone repeats across cards ("Completed" x3), so
+             the accessible name carries the chore too. */
+          aria-label={`${pillLabel(task, status)}: ${task.name}`}
           onClick={() => void completeTask(task)}
         >
           {/* Pill action with the points in its own coloured segment — the
-              family-planner "Afvinken maar! | 🏆 25" pattern. */}
-          <span className="planner-check-label">
-            {status === 'completed' ? c.done : task.audience === 'anyone' ? c.claim : c.done}
-          </span>
+              family-planner "Afvinken maar! | 🏆 25" pattern. The label names
+              the action the tap performs, so a claimed chore reads "Approve",
+              not "Completed". */}
+          <span className="planner-check-label">{pillLabel(task, status)}</span>
           <span className="planner-check-icon" aria-hidden="true">
             {pendingTaskId === task.id ? (
               <span className="planner-spinner" />
@@ -1660,18 +1674,20 @@ export function ChorePlanner({
         </main>
       )}
       {screen === 'closing' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <span
-            className="planner-hero-avatar"
-            style={{ background: selectedTodayMember.color + '24' }}
-          >
-            <MemberAvatar member={selectedTodayMember} />
-          </span>
-          <p className="planner-eyebrow">04 / 04</p>
-          <h2>
-            {c.todayEarned}: ⭐ {completedTodayPoints(selectedTodayMember.id)}
+        <main className="planner-today-step planner-celebrate">
+          {/* Celebration card: soft glow, trophy, "{Well done, name}!" and the
+              goal pill — the closing screen of the reference app. */}
+          <div className="planner-celebrate-glow" aria-hidden="true">
+            <span>{'\u{1F3C6}'}</span>
+          </div>
+          <h2 className="planner-celebrate-title">
+            {t('planner.wellDone', { name: selectedTodayMember.name })}
           </h2>
-          <p>
+          <p className="planner-celebrate-pill">
+            <span aria-hidden="true">{'\u{1F3AF}'}</span>
+            {c.todayEarned}: {completedTodayPoints(selectedTodayMember.id)}
+          </p>
+          <p className="planner-celebrate-sub">
             {c.pot}: {spendableFor(selectedTodayMember)}
           </p>
           <button

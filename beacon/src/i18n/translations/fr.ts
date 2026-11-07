@@ -723,6 +723,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.pinWrong': 'Ce code PIN est incorrect.',
   'planner.pinConfirm': 'Déverrouiller',
   'planner.greeting': 'Bonjour, {name}',
+  'planner.wellDone': 'Bravo, {name} !',
   'planner.of': 'sur',
   'planner.hoursShort': 'h',
   'planner.minutesShort': 'min',

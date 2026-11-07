@@ -705,6 +705,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.pinWrong': 'PIN이 올바르지 않습니다.',
   'planner.pinConfirm': '잠금 해제',
   'planner.greeting': '좋은 아침이에요, {name}',
+  'planner.wellDone': '잘했어요, {name}!',
   'planner.of': '중',
   'planner.hoursShort': '시간',
   'planner.minutesShort': '분',

@@ -2126,9 +2126,170 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Text overflow guards
+   Celebration screen (closing): soft glow, trophy, "Well done, {name}!" and a
+   pill with what the child earned today.
+   --------------------------------------------------------------------------- */
+.planner-celebrate {
+  gap: 14px;
+}
 
-   The planner runs on fixed-size tiles, so any label that can grow (a chore
+.planner-celebrate-glow {
+  display: grid;
+  width: clamp(140px, 18vw, 190px);
+  height: clamp(140px, 18vw, 190px);
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(252, 211, 77, 0.45),
+    rgba(252, 211, 77, 0.12) 60%,
+    transparent 72%
+  );
+  font-size: clamp(56px, 7vw, 76px);
+  line-height: 1;
+}
+
+.planner-celebrate-title {
+  margin: 0;
+  color: var(--planner-amber-ink);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.planner-celebrate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.planner-celebrate-sub {
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Compact scale
+   ---------------------------------------------------------------------------
+   The board runs on a family display: everything stays readable from a step
+   back, but nothing needs to be poster-sized. These rules tighten the type
+   and control sizes the per-screen styles set above. */
+
+.planner-header {
+  min-height: 68px;
+  padding: 8px clamp(16px, 2.4vw, 40px) 12px;
+}
+
+.planner-header h1 {
+  font-size: clamp(18px, 1.4vw, 23px);
+}
+
+.planner-today-step h2 {
+  font-size: clamp(22px, 2.4vw, 32px);
+}
+
+.planner-hero-avatar {
+  width: 84px;
+  height: 84px;
+  font-size: 46px;
+}
+
+.planner-lobby-avatar {
+  width: 84px;
+  height: 84px;
+  font-size: 46px;
+}
+
+.planner-lobby-member {
+  min-height: 200px;
+  padding: 18px 12px;
+}
+
+.planner-lobby-member strong {
+  font-size: 20px;
+}
+
+.planner-mission-hero > span {
+  font-size: 64px;
+}
+
+.planner-mission-hero h2 {
+  font-size: clamp(22px, 2.6vw, 32px);
+}
+
+.planner-section > h2 {
+  font-size: clamp(16px, 1.3vw, 20px);
+}
+
+.planner-task {
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+}
+
+.planner-task-icon {
+  width: 48px;
+  height: 48px;
+  font-size: 26px;
+}
+
+.planner-task-title-row h3 {
+  font-size: clamp(16px, 1.15vw, 20px);
+}
+
+.planner-task-copy p {
+  font-size: 13px;
+}
+
+.planner-check {
+  min-height: 46px;
+  padding: 0 5px 0 16px;
+  font-size: 15px;
+}
+
+.planner-check-points {
+  min-height: 36px;
+  padding: 0 13px;
+  font-size: 14px;
+}
+
+.planner-primary {
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 15px;
+}
+
+.planner-member-chip,
+.planner-time {
+  padding: 6px 10px;
+  font-size: 13px;
+}
+
+.planner-member-chip > span {
+  width: 24px;
+  height: 24px;
+  font-size: 13px;
+}
+
+.planner-content {
+  padding-bottom: 104px;
+}
+
+.planner-routine-row strong {
+  font-size: 15px;
+}
+
+The planner runs on fixed-size tiles, so any label that can grow (a chore
    name, a member name, a calendar title, a toast) must ellipsize instead of
    pushing the layout or spilling out of its card. Flex/grid children also need
    `min-width: 0`, otherwise they refuse to shrink below their content width

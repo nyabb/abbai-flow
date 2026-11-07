@@ -711,6 +711,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.pinWrong': 'Die pincode klopt niet.',
   'planner.pinConfirm': 'Ontgrendelen',
   'planner.greeting': 'Goedemorgen, {name}',
+  'planner.wellDone': 'Goed gedaan, {name}!',
   'planner.of': 'van',
   'planner.hoursShort': 'u',
   'planner.minutesShort': 'm',
