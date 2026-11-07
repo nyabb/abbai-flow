@@ -633,8 +633,8 @@ export const ja: Record<TranslationKey, string> = {
   'planner.routines': 'ルーティン',
   'planner.routineLabel': 'ルーティン',
   'planner.routinePlaceholder': '例：朝のルーティン',
-  'planner.routineHint':
-    '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
+  'planner.routineHint': '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
+  'planner.otherDaily': 'その他の毎日のタスク',
   'planner.name': '名前',
   'planner.points': 'ポイント',
   'planner.pointsUnit': 'ポイント',

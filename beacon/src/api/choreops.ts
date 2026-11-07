@@ -815,8 +815,9 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
   }
   if (input.description !== undefined) payload.description = input.description.trim();
   if (input.labels) {
-    const labels = Array.from(new Set(input.labels.map((label) => label.trim()).filter(Boolean)));
-    if (labels.length > 0) payload.labels = labels;
+    // An empty array is meaningful: it clears the labels (and with them the
+    // routine grouping). Only a missing property means "leave them alone".
+    payload.labels = Array.from(new Set(input.labels.map((label) => label.trim()).filter(Boolean)));
   }
   if (input.frequency) payload.frequency = input.frequency;
 

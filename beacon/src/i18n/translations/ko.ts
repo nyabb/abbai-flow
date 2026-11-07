@@ -630,6 +630,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.routineLabel': '루틴',
   'planner.routinePlaceholder': '예: 아침 루틴',
   'planner.routineHint': '같은 루틴 이름의 매일 집안일은 루틴으로 묶입니다.',
+  'planner.otherDaily': '기타 매일 할 일',
   'planner.name': '이름',
   'planner.points': '포인트',
   'planner.pointsUnit': '포인트',

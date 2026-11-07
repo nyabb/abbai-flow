@@ -645,6 +645,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'z. B. Morgenroutine',
   'planner.routineHint':
     'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
+  'planner.otherDaily': 'Weitere tägliche Aufgaben',
   'planner.name': 'Name',
   'planner.points': 'Punkte',
   'planner.pointsUnit': 'Punkte',

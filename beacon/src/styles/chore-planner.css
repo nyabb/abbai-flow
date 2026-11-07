@@ -19,32 +19,40 @@
 }
 
 .chore-planner {
-  --planner-bg: #f3f5f1;
+  --planner-bg: #fbf4ef;
   --planner-surface: #fff;
-  --planner-ink: #26332f;
-  --planner-muted: #687570;
-  --planner-line: #e4e9e4;
-  --planner-accent: #c7614e;
-  --planner-accent-soft: #f7e6e1;
-  --planner-green: #43856b;
-  --planner-green-soft: #e5f1eb;
-  --planner-amber: #a76b13;
-  --planner-amber-soft: #fff1d7;
-  --planner-blue: #527b9f;
-  --planner-blue-soft: #e9f1f8;
+  --planner-ink: #3f3a44;
+  --planner-muted: #8a8389;
+  --planner-line: #f0e3da;
+  --planner-accent: #e0785e;
+  --planner-accent-soft: #fbe8e1;
+  --planner-green: #4f9a72;
+  --planner-green-soft: #e6f4ec;
+  --planner-amber: #e59f3c;
+  --planner-amber-soft: #fdf0da;
+  --planner-blue: #6f8fca;
+  --planner-blue-soft: #eceff9;
   /* Reusable soft fill and warm-amber ink for the light palette. */
-  --planner-soft: #edf1ed;
-  --planner-amber-ink: #8b5a16;
+  --planner-soft: #f7efe8;
+  --planner-amber-ink: #a86b15;
+  /* Hero band gradient (header) — a soft peach wash like the Qudoo screens. */
+  --planner-band-1: #f3b39c;
+  --planner-band-2: #e0785e;
+  --planner-band-ink: #fff;
   position: relative;
   height: 100%;
   /* dvh keeps the board + its bottom tabs inside the visible area on phones,
      where the browser bars make 100vh taller than what you can see. */
   min-height: 100vh;
   min-height: 100dvh;
+  /* Column layout: the hero band keeps its height and every screen below it
+     takes the rest. No magic `calc(100% - Npx)` offsets to keep in sync. */
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   color: var(--planner-ink);
   background:
-    radial-gradient(ellipse at 92% -12%, rgba(194, 215, 198, 0.6), transparent 38%),
+    radial-gradient(ellipse at 88% -8%, rgba(255, 214, 190, 0.55), transparent 42%),
     var(--planner-bg);
   font-family: var(--font-body, 'Trebuchet MS', sans-serif);
 }
@@ -52,26 +60,30 @@
 /* Dark theme: the planner keeps its own palette, so mirror it here instead of
    inheriting the app tokens (the warm paper look was designed light-first). */
 [data-theme='dark'] .chore-planner {
-  --planner-bg: #0f172a;
-  --planner-surface: #1e293b;
-  --planner-ink: #f8fafc;
-  --planner-muted: #9aa8b8;
-  --planner-line: #334155;
-  --planner-accent: #e0806c;
-  --planner-accent-soft: #3a2723;
+  --planner-bg: #161320;
+  --planner-surface: #221d2d;
+  --planner-ink: #f6f1f7;
+  --planner-muted: #b0a6b6;
+  --planner-line: #362d43;
+  --planner-accent: #e8896f;
+  --planner-accent-soft: #3c2723;
   --planner-green: #5aa88b;
   --planner-green-soft: #1b3a30;
-  --planner-amber: #d9a44f;
+  --planner-amber: #e9b25a;
   --planner-amber-soft: #3a2f1b;
-  --planner-blue: #7aa5c9;
-  --planner-blue-soft: #1d2b38;
-  --planner-soft: #26344a;
+  --planner-blue: #8aa5d8;
+  --planner-blue-soft: #232a3f;
+  --planner-soft: #2d2739;
   --planner-amber-ink: #f0c684;
+  --planner-band-1: #5a3a3a;
+  --planner-band-2: #3a2530;
+  --planner-band-ink: #fdf6f2;
 }
 
 [data-theme='dark'] .chore-planner {
   background:
-    radial-gradient(ellipse at 92% -12%, rgba(56, 84, 70, 0.5), transparent 38%), var(--planner-bg);
+    radial-gradient(ellipse at 88% -8%, rgba(224, 120, 94, 0.22), transparent 42%),
+    var(--planner-bg);
 }
 
 /* Surfaces that used to be literal white get an explicit dark declaration so no
@@ -109,14 +121,44 @@
   position: relative;
   z-index: 3;
   display: flex;
+  /* Must not shrink: it is a flex item in the planner's column layout. */
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  max-width: 1240px;
-  margin-inline: auto;
-  min-height: 64px;
-  padding: 6px clamp(18px, 3vw, 56px);
-  background: color-mix(in srgb, var(--planner-bg) 92%, transparent);
+  min-height: 80px;
+  padding: 10px clamp(18px, 3vw, 48px) 14px;
+  border-radius: 0 0 28px 28px;
+  color: var(--planner-band-ink);
+  background: linear-gradient(140deg, var(--planner-band-1), var(--planner-band-2));
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--planner-band-2) 28%, transparent);
+}
+
+/* Small line above the page title (today's date), like the Qudoo hero. */
+.planner-header-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planner-header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.planner-header .planner-eyebrow {
+  overflow: hidden;
+  color: color-mix(in srgb, var(--planner-band-ink) 78%, transparent);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .planner-header h1 {
@@ -125,9 +167,9 @@
   margin: 0;
   font-family: var(--font-display, 'Trebuchet MS', sans-serif);
   font-size: clamp(21px, 1.8vw, 29px);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.12;
-  color: var(--planner-ink);
+  color: inherit;
 }
 
 /* The header is a single row on every screen; long names truncate instead of
@@ -214,6 +256,23 @@
   background: transparent;
 }
 
+/* Inside the hero band the controls go translucent white, like the circular
+   buttons on the Qudoo screen headers. */
+.planner-header .planner-icon-button {
+  color: color-mix(in srgb, var(--planner-band-ink) 92%, transparent);
+  background: color-mix(in srgb, #fff 20%, transparent);
+}
+
+.planner-header .planner-icon-button:hover {
+  background: color-mix(in srgb, #fff 34%, transparent);
+}
+
+.planner-header .planner-add {
+  color: var(--planner-accent);
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(63, 58, 68, 0.14);
+}
+
 /* Language picker in the header: same list as Settings > General, dressed like
    the other header controls (surface, soft shadow, rounded corners). */
 .planner-language {
@@ -237,9 +296,8 @@
   padding: 0 32px 0 14px;
   border: 0;
   border-radius: 14px;
-  color: var(--planner-ink);
-  background: var(--planner-surface);
-  box-shadow: 0 2px 9px rgba(38, 51, 47, 0.06);
+  color: var(--planner-band-ink);
+  background: color-mix(in srgb, #fff 20%, transparent);
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -252,7 +310,11 @@
 }
 
 .planner-language-select:hover {
-  background: var(--planner-soft);
+  background: color-mix(in srgb, #fff 32%, transparent);
+}
+
+.planner-language svg {
+  color: color-mix(in srgb, var(--planner-band-ink) 80%, transparent);
 }
 
 .planner-language-select:focus-visible {
@@ -363,8 +425,8 @@
 }
 
 .planner-content {
-  /* Header 64 + filter bar 63 + the 8px gap between them + section padding. */
-  height: calc(100% - 224px);
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
@@ -471,10 +533,10 @@
   align-items: center;
   gap: 16px;
   min-height: 0;
-  padding: 9px 20px;
-  border-radius: 16px;
+  padding: 12px 18px;
+  border-radius: 22px;
   background: var(--planner-surface);
-  box-shadow: 0 3px 14px rgba(38, 51, 47, 0.055);
+  box-shadow: 0 8px 22px rgba(63, 58, 68, 0.07);
   transition:
     opacity 200ms ease-out,
     transform 220ms ease-out,
@@ -488,7 +550,7 @@
   width: 46px;
   height: 46px;
   place-items: center;
-  border: 3px solid var(--planner-line);
+  border: 2px solid color-mix(in srgb, var(--planner-ink) 14%, transparent);
   border-radius: 50%;
   color: #fff;
   background: transparent;
@@ -523,12 +585,13 @@
 .planner-task-icon {
   display: grid;
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
   place-items: center;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--member-color) 12%, var(--planner-surface));
-  font-size: 20px;
+  /* Soft pastel disc, like the big emoji bubble on the Qudoo task card. */
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--member-color) 13%, var(--planner-surface));
+  font-size: 26px;
 }
 .planner-task-copy {
   min-width: 0;
@@ -865,16 +928,18 @@
 .planner-bottom-nav {
   position: absolute;
   z-index: 4;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
   display: flex;
   justify-content: center;
-  gap: 16px;
-  min-height: 82px;
-  padding: 9px 16px max(9px, env(safe-area-inset-bottom));
-  background: var(--planner-surface);
-  box-shadow: 0 -3px 18px rgba(38, 51, 47, 0.07);
+  gap: 12px;
+  min-height: 70px;
+  padding: 8px 10px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--planner-surface) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(63, 58, 68, 0.16);
 }
 .planner-bottom-nav button {
   position: relative;
@@ -1325,7 +1390,8 @@
   grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
   justify-content: center;
   gap: 18px;
-  height: calc(100% - 176px);
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 24px clamp(18px, 4vw, 72px) 120px;
   align-content: center;
   /* On a short screen the cards would otherwise spill over each other; the
@@ -1393,7 +1459,9 @@
   align-items: center;
   justify-content: center;
   gap: 17px;
-  height: calc(100% - 176px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 24px 18px 120px;
   text-align: center;
 }
@@ -1460,7 +1528,9 @@
   font-size: 28px;
 }
 .planner-missions {
-  height: calc(100% - 176px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 .planner-missions h2 {
   margin: 0 0 12px;
@@ -1474,7 +1544,9 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: calc(100% - 176px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding: 18px clamp(20px, 7vw, 120px) 120px;
 }
 .planner-mission-progress {
@@ -1645,7 +1717,21 @@
   .planner-header {
     min-height: 74px;
     gap: 5px;
-    padding: 10px 12px;
+    padding: 10px 12px 14px;
+    border-radius: 0 0 22px 22px;
+    /* Phones: title on the first row, controls on the second, so the hero
+       never squeezes the title down to nothing. */
+    flex-wrap: wrap;
+  }
+  .planner-header-actions {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  /* Phones: the band is too short for the date line, the title carries it. */
+  .planner-header .planner-eyebrow {
+    display: none;
   }
   .planner-header h1 {
     font-size: 19px;
@@ -1704,7 +1790,6 @@
     font-size: 14px;
   }
   .planner-content {
-    height: calc(100% - 194px);
     padding: 2px 12px 112px;
   }
   .planner-section {
@@ -1821,7 +1906,6 @@
     font-size: 13px;
   }
   .planner-today-lobby {
-    height: calc(100% - 142px);
     gap: 10px;
     padding: 14px 12px 90px;
   }
@@ -1843,7 +1927,6 @@
   }
   .planner-today-step,
   .planner-missions {
-    height: calc(100% - 142px);
     padding: 16px 12px 90px;
   }
   .planner-today-step h2 {
@@ -1862,7 +1945,6 @@
     font-size: 22px;
   }
   .planner-mission-screen {
-    height: calc(100% - 142px);
     padding: 15px 15px 90px;
   }
   .planner-mission-hero > span {
@@ -1967,4 +2049,82 @@
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Text overflow guards
+
+   The planner runs on fixed-size tiles, so any label that can grow (a chore
+   name, a member name, a calendar title, a toast) must ellipsize instead of
+   pushing the layout or spilling out of its card. Flex/grid children also need
+   `min-width: 0`, otherwise they refuse to shrink below their content width
+   and the ellipsis never appears.
+   --------------------------------------------------------------------------- */
+
+.planner-task-title-row h3,
+.planner-task-copy p,
+.planner-member-chip,
+.planner-time,
+.planner-points,
+.planner-lobby-member strong,
+.planner-lobby-member > span:last-child,
+.planner-lobby-member small,
+.planner-routine-row strong,
+.planner-routine-row small,
+.planner-routine-time,
+.planner-reward-copy strong,
+.planner-reward-copy small,
+.planner-choice-card strong,
+.planner-choice-card small,
+.planner-today-info span,
+.planner-filter-group button,
+.planner-member-picker button,
+.planner-destination strong,
+.planner-collapse span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Chore names may wrap onto a second line, then clamp with an ellipsis. */
+.planner-task-title-row h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* Group heading: keep the avatar and count, ellipsize only the name. */
+.planner-section--member > h2 {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.planner-member-heading-avatar,
+.planner-member-heading-count {
+  flex: 0 0 auto;
+}
+
+/* Sheet headings and dialog copy. */
+.planner-sheet > h2,
+.planner-sheet p,
+.planner-confirm-target,
+.planner-points h2,
+.planner-mission-hero h2,
+.planner-missions h2,
+.planner-today-step h2 {
+  overflow-wrap: anywhere;
+}
+
+/* Long toast messages get one line with an ellipsis rather than a wide box. */
+.planner-toast {
+  max-width: min(92vw, 560px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

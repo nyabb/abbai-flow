@@ -5,6 +5,7 @@ import { useCalendarEvents, CalendarNotSupportedError } from './hooks/useCalenda
 import { useFamily } from './hooks/useFamily';
 import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
+import { resolveMemberForUser } from './api/choreops';
 import { Clock } from './components/Clock';
 import { WeekCalendar } from './components/WeekCalendar';
 import { DashboardView } from './components/DashboardView';
@@ -497,15 +498,33 @@ export function App() {
 
   const dashboardChores = useMemo(
     () =>
-      (choreOpsData?.chores ?? []).map((chore) => ({
-        id: chore.id,
-        name: chore.name,
-        assigned_to: [] as string[],
-        frequency: 'once' as const,
-        value_cents: 0,
-        icon: chore.icon ?? undefined,
-      })),
-    [choreOpsData],
+      (choreOpsData?.chores ?? []).map((chore) => {
+        /*
+         * Resolve ChoreOps' assignee names onto Beacon member ids. Without
+         * this the sidebar checklist showed every chore as "nobody's", which
+         * made three identical chore names look like duplicates.
+         */
+        const assignees = (
+          chore.assignedUserNames?.length
+            ? chore.assignedUserNames
+            : chore.assignee
+              ? [chore.assignee]
+              : []
+        )
+          .map((name) => resolveMemberForUser(name, members))
+          .filter((member): member is NonNullable<typeof member> => Boolean(member))
+          .map((member) => member.id);
+
+        return {
+          id: chore.id,
+          name: chore.name,
+          assigned_to: Array.from(new Set(assignees)),
+          frequency: 'once' as const,
+          value_cents: 0,
+          icon: chore.icon ?? undefined,
+        };
+      }),
+    [choreOpsData, members],
   );
 
   const dashboardCompletedChoreIds = useMemo(() => {

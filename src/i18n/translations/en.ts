@@ -642,6 +642,7 @@ export const en = {
   'planner.routineLabel': 'Routine',
   'planner.routinePlaceholder': 'e.g. Morning routine',
   'planner.routineHint': 'Daily chores with the same routine name are grouped under Routines.',
+  'planner.otherDaily': 'Other daily tasks',
   'planner.name': 'Name',
   'planner.points': 'Points',
   'planner.pointsUnit': 'points',

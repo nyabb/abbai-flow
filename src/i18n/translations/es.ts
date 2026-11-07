@@ -641,6 +641,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.routineLabel': 'Rutina',
   'planner.routinePlaceholder': 'p. ej. Rutina de la mañana',
   'planner.routineHint': 'Las tareas diarias con el mismo nombre de rutina se agrupan en Rutinas.',
+  'planner.otherDaily': 'Otras tareas diarias',
   'planner.name': 'Nombre',
   'planner.points': 'Puntos',
   'planner.pointsUnit': 'puntos',

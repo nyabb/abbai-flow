@@ -131,6 +131,10 @@ a:focus:not(:focus-visible) {
 /* --- Sidebar width variable --- */
 :root {
   --sidebar-width: 64px;
+  /* Height the bottom tab bar reserves. Declared globally (not only in the
+     phone media query) so `Sidebar Position: Bottom` pads correctly on wide
+     screens too. */
+  --mobile-tab-bar-height: 72px;
 }
 
 /* --- Main Layout (sidebar + content grid) --- */
@@ -1642,6 +1646,138 @@ a:focus:not(:focus-visible) {
 /* Hide mobile tab bar on desktop */
 .mobile-tab-bar {
   display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--mobile-tab-bar-height, 72px);
+  background: var(--bg-surface, #ffffff);
+  border-top: 1px solid var(--border, #e5e5e5);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 90;
+  align-items: stretch;
+  justify-content: space-around;
+  padding: 8px 4px 0;
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+}
+
+/* Rows of that bar. Defined at base scope (not inside the phone media query)
+   so `Sidebar Position: Bottom` also renders a styled bar on a wall display. */
+.mobile-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 56px;
+  min-height: 48px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  transition: color var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-tab--active {
+  color: var(--accent, #3b82f6);
+  position: relative;
+}
+
+.mobile-tab--active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 3px 3px;
+  background: var(--accent, #3b82f6);
+}
+
+.mobile-tab-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Overflow menu opened by the "More" tab. */
+.mobile-more-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 99;
+}
+
+.mobile-more-menu {
+  position: fixed;
+  bottom: var(--mobile-tab-bar-height, 72px);
+  left: 0;
+  right: 0;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  padding: 8px 0 16px;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  animation: slide-up 200ms ease;
+}
+
+.mobile-more-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 20px 12px;
+}
+
+.mobile-more-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mobile-more-close {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: all var(--transition);
+}
+
+.mobile-more-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.mobile-more-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-height: 48px;
+  transition: background var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-more-item:hover,
+.mobile-more-item:active {
+  background: var(--bg-hover);
+}
+
+.mobile-more-item--active {
+  color: var(--accent, #3b82f6);
+}
+
+.mobile-more-theme {
+  padding: 8px 24px 0;
 }
 
 /* Hide mobile calendar nav on desktop */
@@ -1686,139 +1822,11 @@ a:focus:not(:focus-visible) {
     display: none !important;
   }
 
-  /* --- Show mobile bottom tab bar --- */
+  /* The bar itself is styled at base scope (see `.mobile-tab-bar` below) so the
+     same bar also works when Settings > Sidebar Position is "Bottom" on a wide
+     screen. Here we only switch it on for phones. */
   .mobile-tab-bar {
     display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: var(--mobile-tab-bar-height);
-    background: var(--bg-surface, #ffffff);
-    border-top: 1px solid var(--border, #e5e5e5);
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
-    z-index: 90;
-    align-items: stretch;
-    justify-content: space-around;
-    padding: 8px 4px 0;
-    padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
-  }
-
-  .mobile-tab {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    min-width: 56px;
-    min-height: 48px;
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-    color: var(--text-muted);
-    transition: color var(--transition);
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .mobile-tab--active {
-    color: var(--accent, #3b82f6);
-    position: relative;
-  }
-
-  .mobile-tab--active::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 24px;
-    height: 3px;
-    border-radius: 0 0 3px 3px;
-    background: var(--accent, #3b82f6);
-  }
-
-  .mobile-tab-label {
-    font-size: 0.6rem;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-  }
-
-  /* --- Mobile overflow menu --- */
-  .mobile-more-backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.25);
-    z-index: 99;
-  }
-
-  .mobile-more-menu {
-    position: fixed;
-    bottom: var(--mobile-tab-bar-height);
-    left: 0;
-    right: 0;
-    background: var(--bg-surface);
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    box-shadow: var(--shadow-lg);
-    z-index: 100;
-    padding: 8px 0 16px;
-    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-    animation: slide-up 200ms ease;
-  }
-
-  .mobile-more-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 20px 12px;
-  }
-
-  .mobile-more-title {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-  }
-
-  .mobile-more-close {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    color: var(--text-muted);
-    transition: all var(--transition);
-  }
-
-  .mobile-more-close:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-  }
-
-  .mobile-more-item {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    width: 100%;
-    padding: 14px 24px;
-    font-size: 0.95rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    min-height: 48px;
-    transition: background var(--transition);
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .mobile-more-item:hover,
-  .mobile-more-item:active {
-    background: var(--bg-hover);
-  }
-
-  .mobile-more-item--active {
-    color: var(--accent, #3b82f6);
-  }
-
-  .mobile-more-theme {
-    padding: 8px 24px 0;
   }
 
   /* --- Header: simplified on mobile --- */

@@ -61,6 +61,12 @@ export interface PlannerRoutine {
   customStart?: string;
   customEnd?: string;
   points: number;
+  /**
+   * "Other daily tasks": daily chores without a ChoreOps label, collected here
+   * only once the household has at least one named routine. The UI shows a
+   * localized title for this group instead of `name`.
+   */
+  fallback?: boolean;
 }
 
 export interface PlannerGoal {

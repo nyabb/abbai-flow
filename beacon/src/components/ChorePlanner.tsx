@@ -216,6 +216,7 @@ function usePlannerCopy() {
       routineLabel: t('planner.routineLabel'),
       routinePlaceholder: t('planner.routinePlaceholder'),
       routineHint: t('planner.routineHint'),
+      otherDaily: t('planner.otherDaily'),
       offline: t('planner.offline'),
       assignToClaim: t('planner.assignToClaim'),
       pinTitle: t('planner.pinTitle'),
@@ -772,6 +773,19 @@ export function ChorePlanner({
     }
 
     const frequency = form.liveFrequency;
+    /*
+     * Labels are the routine name. They are only sent when the field differs
+     * from what ChoreOps already has, so editing e.g. the points of a chore
+     * whose label Beacon cannot see never wipes that label. Clearing the field
+     * sends `[]`, which is how a routine is removed again.
+     */
+    const currentLabel = (
+      choreOps.data?.chores.find(
+        (item) => item.name.trim().toLowerCase() === form.name.trim().toLowerCase(),
+      )?.labels?.[0] ?? ''
+    ).trim();
+    const nextLabel = form.liveLabel.trim();
+    const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
     const schedule = {
       frequency,
       customInterval:
@@ -786,7 +800,7 @@ export function ChorePlanner({
       description: form.liveDescription,
       autoApprove: form.liveAutoApprove,
       // The first ChoreOps label groups daily chores into a named routine.
-      labels: form.liveLabel.trim() ? [form.liveLabel.trim()] : undefined,
+      labels,
     };
     try {
       setSaving(true);
@@ -1194,53 +1208,63 @@ export function ChorePlanner({
           </button>
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
-        <h1>
-          {/* Phones get the short name so the header can stay on one row. */}
-          <span className="planner-title-full">{heading}</span>
-          <span className="planner-title-short">{screen === 'tasks' ? c.shortTitle : heading}</span>
-        </h1>
-        {screen === 'tasks' && (
-          <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
-            <Plus />
-          </button>
-        )}
-        <span className="planner-language">
-          <select
-            className="planner-language-select"
-            value={locale}
-            onChange={(event) => onLocaleChange(event.target.value)}
-            aria-label={t('settings.general.languageLabel')}
-            title={t('settings.general.languageLabel')}
+        <div className="planner-header-copy">
+          {/* Qudoo-style hero: a small line with the date above the page title. */}
+          <span className="planner-eyebrow">
+            {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
+          </span>
+          <h1>
+            {/* Phones get the short name so the header can stay on one row. */}
+            <span className="planner-title-full">{heading}</span>
+            <span className="planner-title-short">
+              {screen === 'tasks' ? c.shortTitle : heading}
+            </span>
+          </h1>
+        </div>
+        <div className="planner-header-actions">
+          {screen === 'tasks' && (
+            <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
+              <Plus />
+            </button>
+          )}
+          <span className="planner-language">
+            <select
+              className="planner-language-select"
+              value={locale}
+              onChange={(event) => onLocaleChange(event.target.value)}
+              aria-label={t('settings.general.languageLabel')}
+              title={t('settings.general.languageLabel')}
+            >
+              {LOCALE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
+          <button
+            className="planner-icon-button"
+            onClick={() => setPrivacy((value) => !value)}
+            aria-label={c.privacy}
           >
-            {LOCALE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown aria-hidden="true" />
-        </span>
-        <button
-          className="planner-icon-button"
-          onClick={() => setPrivacy((value) => !value)}
-          aria-label={c.privacy}
-        >
-          {privacy ? <Eye /> : <EyeOff />}
-        </button>
-        <button
-          className="planner-icon-button"
-          onClick={() => setSoundEnabled((value) => !value)}
-          aria-label={c.sound}
-        >
-          {soundEnabled ? <Volume2 /> : <VolumeX />}
-        </button>
-        <button
-          className="planner-icon-button"
-          onClick={() => setModal('rewards')}
-          aria-label={c.rewards}
-        >
-          <Sparkles />
-        </button>
+            {privacy ? <Eye /> : <EyeOff />}
+          </button>
+          <button
+            className="planner-icon-button"
+            onClick={() => setSoundEnabled((value) => !value)}
+            aria-label={c.sound}
+          >
+            {soundEnabled ? <Volume2 /> : <VolumeX />}
+          </button>
+          <button
+            className="planner-icon-button"
+            onClick={() => setModal('rewards')}
+            aria-label={c.rewards}
+          >
+            <Sparkles />
+          </button>
+        </div>
       </header>
 
       {screen === 'tasks' && (
@@ -1357,7 +1381,7 @@ export function ChorePlanner({
                   {data.routines.map((routine) => (
                     <div key={routine.id} className="planner-routine-row">
                       <span>{routine.icon}</span>
-                      <strong>{routine.name}</strong>
+                      <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
                       <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
                       <span className="planner-routine-time">
                         {routine.timeBlock === 'morning'
@@ -1415,13 +1439,6 @@ export function ChorePlanner({
           >
             <MemberAvatar member={selectedTodayMember} />
           </span>
-          <p className="planner-eyebrow">
-            {now.toLocaleDateString(timeLocale, {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </p>
           <h2>{t('planner.greeting', { name: selectedTodayMember.name })}</h2>
           <p>
             {memberTodayCount(selectedTodayMember.id)} {c.score}
