@@ -123,12 +123,12 @@ Today's meals are shown by the **Menu** card on the Dashboard: in the sidebar fo
 
 Each row is one meal, in breakfast → lunch → dinner → snack order:
 
-| Meal | Icon |
-|------|------|
-| Breakfast | 🌅 |
-| Lunch | ☀️ |
-| Dinner | 🌙 |
-| Snack | 🍎 |
+| Meal      | Icon |
+| --------- | ---- |
+| Breakfast | 🌅   |
+| Lunch     | ☀️   |
+| Dinner    | 🌙   |
+| Snack     | 🍎   |
 
 **Where the data comes from:**
 

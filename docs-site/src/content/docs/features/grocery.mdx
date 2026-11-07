@@ -1,6 +1,6 @@
 ---
-title: "Grocery"
-description: "Set up grocery list integration with Grocy or AnyList in Beacon — shopping lists, quick-add, expiring items, and meal planning."
+title: 'Grocery'
+description: 'Set up grocery list integration with Grocy or AnyList in Beacon — shopping lists, quick-add, expiring items, and meal planning.'
 order: 5
 ---
 
@@ -116,6 +116,7 @@ Updates are optimistic — the UI updates immediately while the API call happens
 ### Item details
 
 Each item may show:
+
 - **Name**: The item name
 - **Quantity**: Number or amount (if set in Grocy/AnyList)
 - **Category**: Product category or group (if available)
@@ -145,6 +146,7 @@ When using Grocy with a meal plan configured, Beacon can display today's planned
 The meal plan data is fetched from `sensor.grocy_meal_plan` and filtered to the current day. The bar is collapsible — tap it to collapse to a small icon, tap again to expand. See [Meal Plan](/docs/features/meal-planning/) for how the data is stored and refreshed.
 
 Meal types are mapped from Grocy's section labels:
+
 - Sections containing "breakfast" or "morning" map to Breakfast
 - Sections containing "lunch" or "noon" map to Lunch
 - Everything else maps to Dinner
