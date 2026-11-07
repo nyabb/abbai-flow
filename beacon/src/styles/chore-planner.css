@@ -1636,13 +1636,28 @@
   z-index: 35;
   right: 24px;
   bottom: 104px;
+  max-width: min(92vw, 560px);
   padding: 16px 21px;
   border-radius: 13px;
   color: white;
   background: var(--planner-ink);
   font-size: 16px;
   font-weight: 700;
+  line-height: 1.35;
+  /* Error messages come straight from ChoreOps and can be long: wrap them
+     instead of clipping the reason the request failed. */
+  overflow-wrap: anywhere;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.18);
+}
+
+/* Green when the request went through, red when ChoreOps refused it. */
+.planner-toast--success {
+  background: #2f9163;
+}
+
+.planner-toast--error {
+  background: #c0392b;
+  box-shadow: 0 8px 26px rgba(150, 40, 30, 0.32);
 }
 .planner-confetti {
   position: fixed;
@@ -2119,12 +2134,4 @@
 .planner-missions h2,
 .planner-today-step h2 {
   overflow-wrap: anywhere;
-}
-
-/* Long toast messages get one line with an ellipsis rather than a wide box. */
-.planner-toast {
-  max-width: min(92vw, 560px);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
