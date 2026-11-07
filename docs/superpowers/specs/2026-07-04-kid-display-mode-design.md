@@ -12,14 +12,14 @@ wall showing their morning/night routines and chores.
 
 ## Decisions (from brainstorming)
 
-| Question | Decision |
-|---|---|
+| Question              | Decision                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------- |
 | Device lock mechanism | Both: URL param `?display=<memberId>` takes precedence, plain-`localStorage` fallback |
-| Interactivity | Tap to complete (no PIN) |
-| Routine management | Editor in Settings → Family section |
-| Display content | Time-aware auto-switch routine + chores; clock + name/avatar header |
-| Lock & exit | Fully locked (no nav); 5 taps on clock within 3s → confirm dialog to exit |
-| Architecture | Early-return "focus shell" branch in `App.tsx` (same pattern as `OnboardingView`) |
+| Interactivity         | Tap to complete (no PIN)                                                              |
+| Routine management    | Editor in Settings → Family section                                                   |
+| Display content       | Time-aware auto-switch routine + chores; clock + name/avatar header                   |
+| Lock & exit           | Fully locked (no nav); 5 taps on clock within 3s → confirm dialog to exit             |
+| Architecture          | Early-return "focus shell" branch in `App.tsx` (same pattern as `OnboardingView`)     |
 
 ## 1. Mode resolution & lock
 

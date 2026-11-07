@@ -1,5 +1,5 @@
 ---
-title: "Chores"
+title: 'Chores'
 description: "Complete guide to Beacon's chore system — creating chores, assigning members, values, frequency, streaks, and routines."
 order: 4
 ---
@@ -27,23 +27,29 @@ On mobile, tap **Chores** in the bottom tab bar.
 3. The "New Chore" form appears with these fields:
 
 ### Icon
+
 Choose from 12 emoji icons:
+
 - Broom, Plate, Dog, Bed, Book, Trash, Shirt, Laundry basket, Toothbrush, Shower, Soap, Flexed bicep
 
 ### Name
+
 Enter the chore name (required). Examples: "Vacuum living room", "Feed the dog", "Make bed".
 
 ### Value
+
 Set a dollar value for the chore. The default is $1.00. Use the step control (increments of $0.25) to adjust. Set to $0.00 if you do not want a monetary value.
 
 ### Frequency
-| Option | Description |
-|--------|-------------|
-| **Daily** | Must be completed every day |
-| **Weekly** | Must be completed once per week |
+
+| Option       | Description                                 |
+| ------------ | ------------------------------------------- |
+| **Daily**    | Must be completed every day                 |
+| **Weekly**   | Must be completed once per week             |
 | **One-time** | Only needs to be done once, then disappears |
 
 ### Assign To
+
 Select one or more family members. Tap a member's name to toggle them on/off. Selected members show a colored border. At least one member must be assigned (the Add Chore button is disabled otherwise).
 
 4. Click **Add Chore** to save
@@ -59,6 +65,7 @@ Chores are grouped by family member in the Chores panel. Each member group shows
 3. **Chore cards**: One card per assigned chore
 
 Each chore card displays:
+
 - The member's avatar (left side)
 - The chore icon and name
 - The dollar value (if > $0)
@@ -126,11 +133,11 @@ Streaks reset to 1 when a member misses a day. There is no grace period — if n
 
 Chore data is stored in the browser's localStorage:
 
-| Key | Contents |
-|-----|----------|
-| `beacon_chores` | List of chore definitions |
+| Key                  | Contents                                     |
+| -------------------- | -------------------------------------------- |
+| `beacon_chores`      | List of chore definitions                    |
 | `beacon_completions` | Log of all chore completions with timestamps |
-| `beacon_streaks` | Streak records per member |
+| `beacon_streaks`     | Streak records per member                    |
 
 This data persists across page reloads but is tied to the specific browser/device.
 
@@ -161,6 +168,7 @@ Streaks are based on consecutive calendar days. If a member completes chores on 
 ### Points stay at zero for everyone
 
 Verify that:
+
 1. Chores have a value greater than 0 points
 2. Chores have been completed
 3. The completions are recorded for the correct member IDs

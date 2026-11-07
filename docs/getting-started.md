@@ -54,6 +54,7 @@ On mobile, Beacon's navigation moves to a bottom tab bar with the most-used view
 The calendar shows a full week view with color-coded events from every connected calendar entity in Home Assistant.
 
 **Key features:**
+
 - **Calendar filter pills** -- toggle individual calendars on/off. Each pill shows the calendar name and its color.
 - **Inline weather** -- high/low temperatures and condition icons appear in each day's header.
 - **All-day events** -- displayed in a banner row at the top of each day.
@@ -79,6 +80,7 @@ On mobile, the calendar shows a scrollable 3-day view with page navigation dots.
 The chores view lets you assign recurring or one-off tasks to family members and track completion.
 
 **Key features:**
+
 - **Per-member cards** -- each family member shows their avatar, name, and assigned chores.
 - **Add Chore button** -- create new chores with assignee, frequency, and optional allowance value.
 - **Completion tracking** -- tap a chore to mark it done; completed chores add their points to that child's pot.
@@ -96,6 +98,7 @@ On desktop the chores planner takes over the full content column, with the app s
 The lists view manages shopping and inventory lists from multiple providers.
 
 **Key features:**
+
 - **List selector dropdown** -- switch between lists: local Shopping List, Home Assistant shopping lists, store-specific lists (Costco, Walmart, Target), and inventory lists (Pantry, Freezer, Fridge).
 - **Quick add** -- type an item name and tap Add to append it to the active list.
 - **Check off items** -- tap items to mark them as purchased/completed.
@@ -118,6 +121,7 @@ On mobile the list selector is a full-width dropdown at the top, with the add-it
 The tasks view shows todo items from Home Assistant's todo entities and Beacon's built-in task list.
 
 **Key features:**
+
 - **Task list selector** -- switch between different HA todo lists.
 - **Add tasks** -- type a task and press Enter or tap Add.
 - **Mark complete** -- check off tasks to remove them from the active list.
@@ -138,6 +142,7 @@ The tasks view shows todo items from Home Assistant's todo entities and Beacon's
 Control your Home Assistant media players directly from Beacon.
 
 **Key features:**
+
 - **Player selector** -- choose which media player to control (e.g., Kitchen, Living Room).
 - **Now playing** -- shows the current track, artist, and album art.
 - **Transport controls** -- play/pause, previous, next.
@@ -161,6 +166,7 @@ Music is accessible directly from the mobile bottom tab bar (no need to open the
 Real-time weather data from your Home Assistant weather entity.
 
 **Key features:**
+
 - **Current conditions** -- large temperature display with condition icon and description.
 - **Detail cards** -- humidity, wind speed, and barometric pressure.
 - **7-day forecast** -- each day shows the condition icon, high, and low temperatures.
@@ -183,6 +189,7 @@ The 7-day forecast stacks vertically on mobile for easy scrolling.
 The settings view is where you configure Beacon's behavior, appearance, and integrations.
 
 **Key sections:**
+
 - **Theme** -- choose from 8+ themes (Skylight, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
 - **Calendar Sources** -- manage which HA calendar entities appear in Beacon.
@@ -202,12 +209,12 @@ The settings view is where you configure Beacon's behavior, appearance, and inte
 
 ## Navigation: Desktop vs. Mobile
 
-| | Desktop | Mobile |
-|---|---------|--------|
-| **Layout** | Vertical icon sidebar on the left | Bottom tab bar with 4 tabs + More |
-| **Primary tabs** | All views visible at once | Dashboard, Calendar, Chores, Music |
-| **Overflow** | N/A (all visible) | More menu: Lists, Tasks, Photos, Timer, Weather, Settings |
-| **Chore planner** | Full content column next to the sidebar | Scrolls below the header, own tab bar at the bottom |
+|                   | Desktop                                 | Mobile                                                    |
+| ----------------- | --------------------------------------- | --------------------------------------------------------- |
+| **Layout**        | Vertical icon sidebar on the left       | Bottom tab bar with 4 tabs + More                         |
+| **Primary tabs**  | All views visible at once               | Dashboard, Calendar, Chores, Music                        |
+| **Overflow**      | N/A (all visible)                       | More menu: Lists, Tasks, Photos, Timer, Weather, Settings |
+| **Chore planner** | Full content column next to the sidebar | Scrolls below the header, own tab bar at the bottom       |
 
 ---
 
@@ -233,18 +240,19 @@ Family members appear on the Dashboard chores panel, the Chore planner and in Ca
 
 Beacon ships with 8+ built-in themes:
 
-| Theme | Style |
-|-------|-------|
-| Skylight | Clean, bright, modern (default) |
-| Midnight | Dark blue with warm accents |
-| Midnight Light | Light variant of Midnight |
-| Nord | Cool arctic tones from the Nord palette |
-| Dracula | Dark purple with vibrant accents |
-| Monokai | Dark with syntax-highlighting-inspired colors |
-| Rose | Soft pink and warm tones |
-| Forest | Deep green nature-inspired palette |
+| Theme          | Style                                         |
+| -------------- | --------------------------------------------- |
+| Skylight       | Clean, bright, modern (default)               |
+| Midnight       | Dark blue with warm accents                   |
+| Midnight Light | Light variant of Midnight                     |
+| Nord           | Cool arctic tones from the Nord palette       |
+| Dracula        | Dark purple with vibrant accents              |
+| Monokai        | Dark with syntax-highlighting-inspired colors |
+| Rose           | Soft pink and warm tones                      |
+| Forest         | Deep green nature-inspired palette            |
 
 To change themes:
+
 1. Go to **Settings**.
 2. Find the **Theme** selector.
 3. Pick a theme -- the change applies immediately.

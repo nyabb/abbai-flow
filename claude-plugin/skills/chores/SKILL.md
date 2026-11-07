@@ -21,6 +21,7 @@ Chores are tasks assigned to family members with optional dollar payouts. Comple
 ## Creating a Chore
 
 Use `beacon_create_chore` with:
+
 - `name` (required) — e.g., "Make bed", "Feed the dog"
 - `assigned_to` — array of member names (case-insensitive fuzzy match)
 - `frequency` — `daily` (default), `weekly`, or `once`
@@ -46,14 +47,14 @@ Completions are timestamped. Each member completes independently — one person 
 
 ## Chore Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Auto-generated unique ID |
-| `name` | string | Display name |
-| `assigned_to` | string[] | Member IDs |
-| `frequency` | string | daily, weekly, or once |
-| `value_cents` | number | Payout value in cents |
-| `icon` | string | Emoji icon |
+| Field         | Type     | Description              |
+| ------------- | -------- | ------------------------ |
+| `id`          | string   | Auto-generated unique ID |
+| `name`        | string   | Display name             |
+| `assigned_to` | string[] | Member IDs               |
+| `frequency`   | string   | daily, weekly, or once   |
+| `value_cents` | number   | Payout value in cents    |
+| `icon`        | string   | Emoji icon               |
 
 ## Querying
 

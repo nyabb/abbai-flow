@@ -1,6 +1,6 @@
 ---
-title: "Contributing"
-description: "Architecture deep dive, development setup, and guides for adding themes, sidebar views, and integrations to Beacon."
+title: 'Contributing'
+description: 'Architecture deep dive, development setup, and guides for adding themes, sidebar views, and integrations to Beacon.'
 order: 4
 ---
 
@@ -81,16 +81,16 @@ docker run -d -p 3000:3000 \
 
 ### Technology stack
 
-| Layer | Technology | Why |
-|-------|-----------|-----|
-| UI Framework | React 18 | Component model, hooks, large ecosystem |
-| Language | TypeScript | Type safety, better IDE support |
-| Build tool | Vite | Fast HMR, optimized production builds |
-| Styling | CSS (no framework) | Custom properties for theming, minimal bundle |
-| Icons | Lucide React | Consistent icon set, tree-shakeable |
-| Date handling | date-fns | Modular, lightweight date utilities |
-| HA Communication | WebSocket API | Real-time bidirectional communication |
-| Container | Alpine Linux + serve | Minimal image size, static file serving |
+| Layer            | Technology           | Why                                           |
+| ---------------- | -------------------- | --------------------------------------------- |
+| UI Framework     | React 18             | Component model, hooks, large ecosystem       |
+| Language         | TypeScript           | Type safety, better IDE support               |
+| Build tool       | Vite                 | Fast HMR, optimized production builds         |
+| Styling          | CSS (no framework)   | Custom properties for theming, minimal bundle |
+| Icons            | Lucide React         | Consistent icon set, tree-shakeable           |
+| Date handling    | date-fns             | Modular, lightweight date utilities           |
+| HA Communication | WebSocket API        | Real-time bidirectional communication         |
+| Container        | Alpine Linux + serve | Minimal image size, static file serving       |
 
 ### Directory structure
 
@@ -262,11 +262,13 @@ See [Themes > Creating custom themes](/docs/customization/themes/) for the compl
 ## Adding a new sidebar view
 
 1. **Define the view ID**: Add it to the `SidebarView` type in `src/components/Sidebar.tsx`:
+
    ```typescript
    export type SidebarView = 'dashboard' | 'calendar' | ... | 'myview';
    ```
 
 2. **Add the nav item**: Add an entry to `NAV_ITEMS` in `Sidebar.tsx`:
+
    ```typescript
    { id: 'myview', icon: <MyIcon size={ICON_SIZE} />, label: 'My View' },
    ```
@@ -274,6 +276,7 @@ See [Themes > Creating custom themes](/docs/customization/themes/) for the compl
 3. **Create the component**: Create `src/components/MyView.tsx` with your view content.
 
 4. **Wire it in App.tsx**: Add a case in the `activeView` switch in `App.tsx`:
+
    ```typescript
    ) : activeView === 'myview' ? (
      <MyView ... />
@@ -291,6 +294,7 @@ Example: Adding a new data source (e.g., a task manager).
 1. **Define types**: Create `src/types/mytool.ts` with the data types.
 
 2. **Create the API client**: Create `src/api/mytool.ts` that communicates with HA:
+
    ```typescript
    export class MyToolClient {
      private async haFetch(path: string): Promise<unknown> { ... }
@@ -299,6 +303,7 @@ Example: Adding a new data source (e.g., a task manager).
    ```
 
 3. **Create a hook**: Create `src/hooks/useMyTool.ts`:
+
    ```typescript
    export function useMyTool(connected: boolean): UseMyToolResult {
      const [data, setData] = useState([]);
