@@ -1,3 +1,15 @@
+# [1.49.0](https://github.com/nyabb/beacon/compare/v1.48.0...v1.49.0) (2026-11-07)
+
+
+### Bug Fixes
+
+* **chores:** show ChoreOps errors in a red toast and sync add-on copy ([a2b01ab](https://github.com/nyabb/beacon/commit/a2b01abfcb578eef75719365790bedbf8baa26f8))
+
+
+### Features
+
+* **choreops:** enhance chore assignment resolution and add fallback for unlabelled daily tasks ([a9a294f](https://github.com/nyabb/beacon/commit/a9a294f1ae0a7722428c1ac500207c473bc5692e))
+
 # [1.48.0](https://github.com/nyabb/beacon/compare/v1.47.0...v1.48.0) (2026-11-07)
 
 
