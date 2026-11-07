@@ -30,7 +30,6 @@ export const en = {
   'nav.chores': 'Chores',
   'nav.grocery': 'Lists',
   'nav.tasks': 'Tasks',
-  'nav.leaderboard': 'Leaderboard',
   'nav.music': 'Music',
   'nav.photos': 'Photos',
   'nav.timer': 'Timer',
@@ -223,7 +222,7 @@ export const en = {
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Photo',
   'settings.family.photoHint':
-    'Shown instead of the emoji on the dashboard, chores and leaderboard.',
+    'Shown instead of the emoji on the dashboard and chores screens.',
   'settings.family.photoUpload': 'Upload photo',
   'settings.family.photoRemove': 'Remove photo',
   'settings.family.photoFromHa': 'Use Home Assistant photo',
@@ -547,14 +546,6 @@ export const en = {
   'chores.addChoreFor': 'Add chore for {name}',
   'chores.saveChanges': 'Save Changes',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'Leaderboard',
-  'leaderboard.thisWeek': 'This Week',
-  'leaderboard.thisMonth': 'This Month',
-  'leaderboard.empty': 'Link family members to ChoreOps users in Settings to see the leaderboard.',
-  'leaderboard.choresCompleted': '{count} chores',
-  'leaderboard.choreCompletedSingular': '{count} chore',
-
   // ---- streak badge ----
   'streak.longestTooltip': 'Longest streak: {count} days',
   'streak.best': 'Best:',
@@ -642,6 +633,7 @@ export const en = {
   'planner.routineLabel': 'Routine',
   'planner.routinePlaceholder': 'e.g. Morning routine',
   'planner.routineHint': 'Daily chores with the same routine name are grouped under Routines.',
+  'planner.otherDaily': 'Other daily tasks',
   'planner.name': 'Name',
   'planner.points': 'Points',
   'planner.pointsUnit': 'points',

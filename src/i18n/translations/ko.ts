@@ -25,7 +25,6 @@ export const ko: Record<TranslationKey, string> = {
   'nav.chores': '집안일',
   'nav.grocery': '목록',
   'nav.tasks': '할 일',
-  'nav.leaderboard': '순위표',
   'nav.music': '음악',
   'nav.photos': '사진',
   'nav.timer': '타이머',
@@ -534,14 +533,6 @@ export const ko: Record<TranslationKey, string> = {
   'chores.addChoreFor': '{name}의 집안일 추가',
   'chores.saveChanges': '변경사항 저장',
 
-  // ---- leaderboard ----
-  'leaderboard.title': '리더보드',
-  'leaderboard.thisWeek': '이번 주',
-  'leaderboard.thisMonth': '이번 달',
-  'leaderboard.empty': '설정에서 가족 구성원을 ChoreOps 사용자와 연결하면 순위표가 표시됩니다.',
-  'leaderboard.choresCompleted': '{count}개 집안일',
-  'leaderboard.choreCompletedSingular': '{count}개 집안일',
-
   // ---- streak badge ----
   'streak.longestTooltip': '최장 연속 기록: {count}일',
   'streak.best': '최고:',
@@ -630,6 +621,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.routineLabel': '루틴',
   'planner.routinePlaceholder': '예: 아침 루틴',
   'planner.routineHint': '같은 루틴 이름의 매일 집안일은 루틴으로 묶입니다.',
+  'planner.otherDaily': '기타 매일 할 일',
   'planner.name': '이름',
   'planner.points': '포인트',
   'planner.pointsUnit': '포인트',

@@ -155,7 +155,7 @@ feature follows suit. Verification:
 ## Out of scope (v1)
 
 - PIN gates (for completion or exit)
-- Routine streaks / leaderboard integration
+- Routine streaks integration
 - Calendar events on the kid display
 - MCP tools for routine management
 - Per-display theming

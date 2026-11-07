@@ -5,6 +5,7 @@ import { useCalendarEvents, CalendarNotSupportedError } from './hooks/useCalenda
 import { useFamily } from './hooks/useFamily';
 import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
+import { resolveMemberForUser } from './api/choreops';
 import { Clock } from './components/Clock';
 import { WeekCalendar } from './components/WeekCalendar';
 import { DashboardView } from './components/DashboardView';
@@ -13,7 +14,6 @@ import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
 import { useSettings } from './hooks/useSettings';
 import { ChorePlanner } from './components/ChorePlanner';
-import { Leaderboard } from './components/Leaderboard';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { PhotoFrame } from './components/PhotoFrame';
@@ -216,10 +216,6 @@ export function App() {
 
   // Event notifications (browser + HA mobile_app)
   useNotifications(events, client, !focusMemberId, settings.notificationMinutes);
-
-  // Leaderboard is still a slide-over panel (not a full view); Chores is now
-  // a real full-screen activeView (see PRD: dedicated chores screen).
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
 
   // Fetch data when connected, or when the user navigates to a different week.
   useEffect(() => {
@@ -469,19 +465,7 @@ export function App() {
   }, [activeView, dashboardDate]);
 
   const handleChangeView = useCallback((view: SidebarView) => {
-    // Leaderboard opens as an overlay, doesn't change the main view.
-    // Chores is a real activeView now (dedicated full-screen view).
-    if (view === 'leaderboard') {
-      setShowLeaderboard(true);
-      return;
-    }
-    // All other views: close any open panel and switch view
-    setShowLeaderboard(false);
     setActiveView(view);
-  }, []);
-
-  const handleClosePanel = useCallback(() => {
-    setShowLeaderboard(false);
   }, []);
 
   // ---- Chore data ----
@@ -497,15 +481,33 @@ export function App() {
 
   const dashboardChores = useMemo(
     () =>
-      (choreOpsData?.chores ?? []).map((chore) => ({
-        id: chore.id,
-        name: chore.name,
-        assigned_to: [] as string[],
-        frequency: 'once' as const,
-        value_cents: 0,
-        icon: chore.icon ?? undefined,
-      })),
-    [choreOpsData],
+      (choreOpsData?.chores ?? []).map((chore) => {
+        /*
+         * Resolve ChoreOps' assignee names onto Beacon member ids. Without
+         * this the sidebar checklist showed every chore as "nobody's", which
+         * made three identical chore names look like duplicates.
+         */
+        const assignees = (
+          chore.assignedUserNames?.length
+            ? chore.assignedUserNames
+            : chore.assignee
+              ? [chore.assignee]
+              : []
+        )
+          .map((name) => resolveMemberForUser(name, members))
+          .filter((member): member is NonNullable<typeof member> => Boolean(member))
+          .map((member) => member.id);
+
+        return {
+          id: chore.id,
+          name: chore.name,
+          assigned_to: Array.from(new Set(assignees)),
+          frequency: 'once' as const,
+          value_cents: 0,
+          icon: chore.icon ?? undefined,
+        };
+      }),
+    [choreOpsData, members],
   );
 
   const dashboardCompletedChoreIds = useMemo(() => {
@@ -551,7 +553,6 @@ export function App() {
       '3': 'chores',
       '4': 'grocery',
       '5': 'tasks',
-      '6': 'leaderboard',
       '7': 'music',
       '8': 'photos',
       '9': 'timer',
@@ -845,10 +846,6 @@ export function App() {
             prefillTime={prefillTime}
           />
         )}
-
-        {/* Leaderboard Slide Panel */}
-        <Leaderboard open={showLeaderboard} onClose={handleClosePanel} />
-        {showLeaderboard && <div className="slide-panel-backdrop" onClick={handleClosePanel} />}
 
         {/* GroceryView is now rendered as a full view above */}
 

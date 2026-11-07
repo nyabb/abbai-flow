@@ -25,7 +25,6 @@ export const nl: Record<TranslationKey, string> = {
   'nav.chores': 'Klusjes',
   'nav.grocery': 'Lijsten',
   'nav.tasks': 'Taken',
-  'nav.leaderboard': 'Ranglijst',
   'nav.music': 'Muziek',
   'nav.photos': "Foto's",
   'nav.timer': 'Timer',
@@ -540,15 +539,6 @@ export const nl: Record<TranslationKey, string> = {
   'chores.addChoreFor': 'Karweitje toevoegen voor {name}',
   'chores.saveChanges': 'Wijzigingen opslaan',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'Klassement',
-  'leaderboard.thisWeek': 'Deze week',
-  'leaderboard.thisMonth': 'Deze maand',
-  'leaderboard.empty':
-    'Koppel gezinsleden in de instellingen aan ChoreOps-gebruikers om het klassement te zien.',
-  'leaderboard.choresCompleted': '{count} karweitjes',
-  'leaderboard.choreCompletedSingular': '{count} karweitje',
-
   // ---- streak badge ----
   'streak.longestTooltip': 'Langste reeks: {count} dagen',
   'streak.best': 'Beste:',
@@ -637,6 +627,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.routineLabel': 'Routine',
   'planner.routinePlaceholder': 'Bijv. Ochtendroutine',
   'planner.routineHint': 'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
+  'planner.otherDaily': 'Overige dagelijkse taken',
   'planner.name': 'Naam',
   'planner.points': 'Punten',
   'planner.pointsUnit': 'punten',

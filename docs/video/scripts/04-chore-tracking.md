@@ -24,10 +24,10 @@
 
 ---
 
-## Scene 3: Leaderboard (25s–45s)
+## Scene 3: Points & Routines (25s–45s)
 
-**Scene:** Show the leaderboard or summary view — streaks, completion percentages, maybe earnings if configured. One kid has a 5-day streak.
+**Scene:** Scroll down to the Routines strip and the per-child points. A child's finished chores have already added points to their savings pot, and the Today tab shows what they can spend them on.
 
-**Voice:** "Here's the fun part — the leaderboard. Streaks for doing chores consistently, and if you set it up, you can tie chores to allowance. Five-day streak? That's worth bragging about at dinner."
+**Voice:** "Every finished chore adds points to that child's pot, and daily chores can be grouped into routines — the morning routine, bedtime, whatever your household calls it. Kids see their own progress, and points can go towards a reward the family agrees on."
 
-**Transitions:** Scroll to leaderboard section, highlight streak badge, fade out.
+**Transitions:** Scroll to the routines strip, highlight the points pill, fade out.

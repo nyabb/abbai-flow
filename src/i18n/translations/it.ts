@@ -25,7 +25,6 @@ export const it: Record<TranslationKey, string> = {
   'nav.chores': 'Faccende',
   'nav.grocery': 'Liste',
   'nav.tasks': 'Attività',
-  'nav.leaderboard': 'Classifica',
   'nav.music': 'Musica',
   'nav.photos': 'Foto',
   'nav.timer': 'Timer',
@@ -546,15 +545,6 @@ export const it: Record<TranslationKey, string> = {
   'chores.addChoreFor': 'Aggiungi faccenda per {name}',
   'chores.saveChanges': 'Salva modifiche',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'Classifica',
-  'leaderboard.thisWeek': 'Questa settimana',
-  'leaderboard.thisMonth': 'Questo mese',
-  'leaderboard.empty':
-    'Collega i membri della famiglia agli utenti ChoreOps nelle impostazioni per vedere la classifica.',
-  'leaderboard.choresCompleted': '{count} faccende',
-  'leaderboard.choreCompletedSingular': '{count} faccenda',
-
   // ---- streak badge ----
   'streak.longestTooltip': 'Serie più lunga: {count} giorni',
   'streak.best': 'Migliore:',
@@ -645,6 +635,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'es. Routine del mattino',
   'planner.routineHint':
     'Le attività giornaliere con lo stesso nome di routine sono raggruppate in Routine.',
+  'planner.otherDaily': 'Altre attività giornaliere',
   'planner.name': 'Nome',
   'planner.points': 'Punti',
   'planner.pointsUnit': 'punti',

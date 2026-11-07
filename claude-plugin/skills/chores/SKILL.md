@@ -2,7 +2,7 @@
 description: >
   Use this skill when creating, managing, or querying family chores in Beacon.
   Covers chore creation with assignments, frequencies, payouts, completion
-  tracking, streaks, and the leaderboard.
+  tracking and routines.
 triggers:
   - beacon chore
   - create chore
@@ -10,14 +10,13 @@ triggers:
   - chore assignment
   - allowance
   - chore payout
-  - leaderboard
 ---
 
 # Beacon Chores
 
 ## Overview
 
-Chores are tasks assigned to family members with optional dollar payouts. Members earn streaks for consecutive days of completion, and earnings are tracked on a leaderboard.
+Chores are tasks assigned to family members with optional dollar payouts. Completing a chore adds its points to that child's pot, and daily chores can be grouped into named routines.
 
 ## Creating a Chore
 

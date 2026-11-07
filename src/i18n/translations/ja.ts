@@ -25,7 +25,6 @@ export const ja: Record<TranslationKey, string> = {
   'nav.chores': '家事',
   'nav.grocery': 'リスト',
   'nav.tasks': 'タスク',
-  'nav.leaderboard': 'ランキング',
   'nav.music': '音楽',
   'nav.photos': '写真',
   'nav.timer': 'タイマー',
@@ -536,15 +535,6 @@ export const ja: Record<TranslationKey, string> = {
   'chores.addChoreFor': '{name}の家事を追加',
   'chores.saveChanges': '変更を保存',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'リーダーボード',
-  'leaderboard.thisWeek': '今週',
-  'leaderboard.thisMonth': '今月',
-  'leaderboard.empty':
-    '設定で家族メンバーをChoreOpsユーザーにリンクするとランキングが表示されます。',
-  'leaderboard.choresCompleted': '{count}件の家事',
-  'leaderboard.choreCompletedSingular': '{count}件の家事',
-
   // ---- streak badge ----
   'streak.longestTooltip': '最長連続記録：{count}日',
   'streak.best': '最高：',
@@ -633,8 +623,8 @@ export const ja: Record<TranslationKey, string> = {
   'planner.routines': 'ルーティン',
   'planner.routineLabel': 'ルーティン',
   'planner.routinePlaceholder': '例：朝のルーティン',
-  'planner.routineHint':
-    '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
+  'planner.routineHint': '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
+  'planner.otherDaily': 'その他の毎日のタスク',
   'planner.name': '名前',
   'planner.points': 'ポイント',
   'planner.pointsUnit': 'ポイント',

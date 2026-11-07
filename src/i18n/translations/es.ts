@@ -25,7 +25,6 @@ export const es: Record<TranslationKey, string> = {
   'nav.chores': 'Tareas',
   'nav.grocery': 'Listas',
   'nav.tasks': 'Pendientes',
-  'nav.leaderboard': 'Clasificación',
   'nav.music': 'Música',
   'nav.photos': 'Fotos',
   'nav.timer': 'Temporizador',
@@ -543,15 +542,6 @@ export const es: Record<TranslationKey, string> = {
   'chores.addChoreFor': 'Agregar tarea para {name}',
   'chores.saveChanges': 'Guardar cambios',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'Tabla de clasificación',
-  'leaderboard.thisWeek': 'Esta semana',
-  'leaderboard.thisMonth': 'Este mes',
-  'leaderboard.empty':
-    'Vincula los miembros de la familia con usuarios de ChoreOps en Ajustes para ver la clasificación.',
-  'leaderboard.choresCompleted': '{count} tareas',
-  'leaderboard.choreCompletedSingular': '{count} tarea',
-
   // ---- streak badge ----
   'streak.longestTooltip': 'Racha más larga: {count} días',
   'streak.best': 'Mejor:',
@@ -641,6 +631,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.routineLabel': 'Rutina',
   'planner.routinePlaceholder': 'p. ej. Rutina de la mañana',
   'planner.routineHint': 'Las tareas diarias con el mismo nombre de rutina se agrupan en Rutinas.',
+  'planner.otherDaily': 'Otras tareas diarias',
   'planner.name': 'Nombre',
   'planner.points': 'Puntos',
   'planner.pointsUnit': 'puntos',

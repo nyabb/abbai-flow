@@ -25,7 +25,6 @@ export const pt: Record<TranslationKey, string> = {
   'nav.chores': 'Tarefas',
   'nav.grocery': 'Listas',
   'nav.tasks': 'Afazeres',
-  'nav.leaderboard': 'Classificação',
   'nav.music': 'Música',
   'nav.photos': 'Fotos',
   'nav.timer': 'Temporizador',
@@ -541,15 +540,6 @@ export const pt: Record<TranslationKey, string> = {
   'chores.addChoreFor': 'Adicionar tarefa para {name}',
   'chores.saveChanges': 'Salvar alterações',
 
-  // ---- leaderboard ----
-  'leaderboard.title': 'Classificação',
-  'leaderboard.thisWeek': 'Esta semana',
-  'leaderboard.thisMonth': 'Este mês',
-  'leaderboard.empty':
-    'Vincule os membros da família aos usuários do ChoreOps nas configurações para ver a classificação.',
-  'leaderboard.choresCompleted': '{count} tarefas',
-  'leaderboard.choreCompletedSingular': '{count} tarefa',
-
   // ---- streak badge ----
   'streak.longestTooltip': 'Sequência mais longa: {count} dias',
   'streak.best': 'Melhor:',
@@ -638,8 +628,8 @@ export const pt: Record<TranslationKey, string> = {
   'planner.routines': 'Rotinas',
   'planner.routineLabel': 'Rotina',
   'planner.routinePlaceholder': 'ex. Rotina da manhã',
-  'planner.routineHint':
-    'Tarefas diárias com o mesmo nome de rotina são agrupadas em Rotinas.',
+  'planner.routineHint': 'Tarefas diárias com o mesmo nome de rotina são agrupadas em Rotinas.',
+  'planner.otherDaily': 'Outras tarefas diárias',
   'planner.name': 'Nome',
   'planner.points': 'Pontos',
   'planner.pointsUnit': 'pontos',

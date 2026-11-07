@@ -231,18 +231,43 @@ export function buildChorePlannerView(
     }
   >();
 
+  /**
+   * Daily chores without a label. They only join the routine section once the
+   * household has at least one *named* routine: on its own this bucket used to
+   * produce a "Routines" bar for plain daily chores, which reads like a bug.
+   * Mixing them in keeps everything that repeats daily in one place as soon as
+   * routines are actually in use.
+   */
+  const unlabelledBucket = {
+    icon: null as string | null,
+    memberIds: new Set<string>(),
+    points: 0,
+    dueDate: null as string | null,
+  };
+
   for (const chore of state?.chores ?? []) {
     if (!DAILY_FREQUENCY.test(chore.frequency ?? '')) continue;
     if (!chore.assignee) continue;
 
-    // No label → not a named routine. It stays a normal daily chore instead of
-    // inventing a catch-all "daily routines" bar nobody asked for.
-    const label = routineLabel(chore);
-    if (!label) continue;
-
-    const key = label.trim().toLowerCase();
     const member = resolveMemberForUser(chore.assignee, family);
     const memberId = memberIdFor(chore.assignee, member);
+
+    // No label → collected separately; a named routine needs `labels[0]`.
+    const label = routineLabel(chore);
+    if (!label) {
+      if (memberIds.has(memberId)) unlabelledBucket.memberIds.add(memberId);
+      unlabelledBucket.points += chore.points ?? 0;
+      unlabelledBucket.icon ??= plannerIcon(chore.icon);
+      if (
+        chore.dueDate &&
+        (!unlabelledBucket.dueDate || chore.dueDate < unlabelledBucket.dueDate)
+      ) {
+        unlabelledBucket.dueDate = chore.dueDate;
+      }
+      continue;
+    }
+
+    const key = label.trim().toLowerCase();
     const bucket = routineBuckets.get(key) ?? {
       name: label,
       icon: plannerIcon(chore.icon),
@@ -268,6 +293,21 @@ export function buildChorePlannerView(
     timeBlock: timeBlockFor(bucket.dueDate),
     points: bucket.points,
   }));
+
+  // Only added when a named routine exists, so a household without routines
+  // never gets a bar full of plain daily chores.
+  if (routines.length > 0 && unlabelledBucket.memberIds.size > 0) {
+    routines.push({
+      id: 'routine:__unlabelled__',
+      name: '',
+      icon: unlabelledBucket.icon ?? '\u23F0',
+      memberIds: Array.from(unlabelledBucket.memberIds),
+      frequency: 'daily' as const,
+      timeBlock: timeBlockFor(unlabelledBucket.dueDate),
+      points: unlabelledBucket.points,
+      fallback: true,
+    });
+  }
 
   const goals: PlannerGoal[] = (state?.rewards ?? []).map((reward) => {
     const member = resolveMemberForUser(reward.assignee, family);

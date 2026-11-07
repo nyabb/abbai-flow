@@ -54,6 +54,9 @@ type Screen =
   | 'mission'
   | 'closing';
 
+/** Outcome shown in the bottom-right notification. */
+type ToastKind = 'success' | 'error';
+
 /** Parent PINs must be at least this long to unlock approvals. */
 const MIN_PIN_LENGTH = 4;
 
@@ -216,6 +219,7 @@ function usePlannerCopy() {
       routineLabel: t('planner.routineLabel'),
       routinePlaceholder: t('planner.routinePlaceholder'),
       routineHint: t('planner.routineHint'),
+      otherDaily: t('planner.otherDaily'),
       offline: t('planner.offline'),
       assignToClaim: t('planner.assignToClaim'),
       pinTitle: t('planner.pinTitle'),
@@ -413,7 +417,8 @@ export function ChorePlanner({
     action: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState('');
+  /** Bottom-right notification: green for "done", red for "that failed". */
+  const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
   const [confetti, setConfetti] = useState(false);
   const [goalCelebration, setGoalCelebration] = useState(false);
   const [privacy, setPrivacy] = useState(false);
@@ -461,7 +466,9 @@ export function ChorePlanner({
   }, []);
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => setToast(''), 2600);
+    // Errors stay a little longer: a parent needs time to read what ChoreOps
+    // rejected, successes are just a confirmation.
+    const timer = setTimeout(() => setToast(null), toast.kind === 'error' ? 6000 : 2600);
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
@@ -625,7 +632,7 @@ export function ChorePlanner({
     </h2>
   );
 
-  const showToast = (message: string) => setToast(message);
+  const showToast = (message: string, kind: ToastKind = 'success') => setToast({ message, kind });
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
     try {
@@ -692,8 +699,7 @@ export function ChorePlanner({
       showToast(toastWith(action, label));
       if (screen === 'mission') advanceMission();
     } catch (err) {
-      showToast(err instanceof Error ? err.message : c.noFail);
-    } finally {
+      showToast(err instanceof Error ? err.message : c.noFail, 'error');
       setPendingTaskId(null);
     }
   };
@@ -772,6 +778,19 @@ export function ChorePlanner({
     }
 
     const frequency = form.liveFrequency;
+    /*
+     * Labels are the routine name. They are only sent when the field differs
+     * from what ChoreOps already has, so editing e.g. the points of a chore
+     * whose label Beacon cannot see never wipes that label. Clearing the field
+     * sends `[]`, which is how a routine is removed again.
+     */
+    const currentLabel = (
+      choreOps.data?.chores.find(
+        (item) => item.name.trim().toLowerCase() === form.name.trim().toLowerCase(),
+      )?.labels?.[0] ?? ''
+    ).trim();
+    const nextLabel = form.liveLabel.trim();
+    const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
     const schedule = {
       frequency,
       customInterval:
@@ -781,12 +800,13 @@ export function ChorePlanner({
       customIntervalUnit: form.liveIntervalUnit,
       applicableDays:
         frequency === 'weekly' ? form.liveWeekdays.map((day) => DAY_KEYS[day]) : undefined,
-      // ChoreOps rejects a repeat change without a future due date.
+      // Sent exactly as the form shows it: ChoreOps decides whether the date is
+      // acceptable and its message is what the (red) toast shows.
       dueDate: form.deadlineAt ? new Date(form.deadlineAt).toISOString() : undefined,
       description: form.liveDescription,
       autoApprove: form.liveAutoApprove,
       // The first ChoreOps label groups daily chores into a named routine.
-      labels: form.liveLabel.trim() ? [form.liveLabel.trim()] : undefined,
+      labels,
     };
     try {
       setSaving(true);
@@ -813,9 +833,11 @@ export function ChorePlanner({
         });
       }
       setModal(null);
-      showToast(toastWith(c.created, form.name.trim()));
+      showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : c.noFail);
+      // ChoreOps replies with the exact reason (e.g. "The requested changes
+      // require a future due date"); show it verbatim in the red toast.
+      showToast(err instanceof Error ? err.message : c.noFail, 'error');
     } finally {
       setSaving(false);
     }
@@ -827,7 +849,7 @@ export function ChorePlanner({
       setModal(null);
       showToast(toastWith(c.removedToast, task.name));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : c.noFail);
+      showToast(err instanceof Error ? err.message : c.noFail, 'error');
     }
   };
 
@@ -849,7 +871,7 @@ export function ChorePlanner({
           setModal('rewards');
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail);
+          showToast(err instanceof Error ? err.message : c.noFail, 'error');
         } finally {
           setSaving(false);
         }
@@ -874,7 +896,7 @@ export function ChorePlanner({
         setModal('rewards');
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
-        showToast(err instanceof Error ? err.message : c.noFail);
+        showToast(err instanceof Error ? err.message : c.noFail, 'error');
       } finally {
         setSaving(false);
       }
@@ -891,7 +913,7 @@ export function ChorePlanner({
         setModal('rewards');
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
-        showToast(err instanceof Error ? err.message : c.noFail);
+        showToast(err instanceof Error ? err.message : c.noFail, 'error');
       } finally {
         setSaving(false);
       }
@@ -911,7 +933,7 @@ export function ChorePlanner({
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
     if (!userName) {
-      showToast(c.assignToClaim);
+      showToast(c.assignToClaim, 'error');
       return;
     }
     setReservations((list) =>
@@ -932,7 +954,7 @@ export function ChorePlanner({
    */
   const confirmReward = (reward: ChoreOpsReward) => {
     if (!reward.assignee) {
-      showToast(c.assignToClaim);
+      showToast(c.assignToClaim, 'error');
       return;
     }
     requestPin(c.rewards, reward.name, (approverName) => {
@@ -944,7 +966,7 @@ export function ChorePlanner({
           playCompletionSound();
           showToast(toastWith(c.approved, reward.name));
         } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail);
+          showToast(err instanceof Error ? err.message : c.noFail, 'error');
         } finally {
           setSaving(false);
         }
@@ -1194,53 +1216,63 @@ export function ChorePlanner({
           </button>
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
-        <h1>
-          {/* Phones get the short name so the header can stay on one row. */}
-          <span className="planner-title-full">{heading}</span>
-          <span className="planner-title-short">{screen === 'tasks' ? c.shortTitle : heading}</span>
-        </h1>
-        {screen === 'tasks' && (
-          <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
-            <Plus />
-          </button>
-        )}
-        <span className="planner-language">
-          <select
-            className="planner-language-select"
-            value={locale}
-            onChange={(event) => onLocaleChange(event.target.value)}
-            aria-label={t('settings.general.languageLabel')}
-            title={t('settings.general.languageLabel')}
+        <div className="planner-header-copy">
+          {/* Qudoo-style hero: a small line with the date above the page title. */}
+          <span className="planner-eyebrow">
+            {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
+          </span>
+          <h1>
+            {/* Phones get the short name so the header can stay on one row. */}
+            <span className="planner-title-full">{heading}</span>
+            <span className="planner-title-short">
+              {screen === 'tasks' ? c.shortTitle : heading}
+            </span>
+          </h1>
+        </div>
+        <div className="planner-header-actions">
+          {screen === 'tasks' && (
+            <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
+              <Plus />
+            </button>
+          )}
+          <span className="planner-language">
+            <select
+              className="planner-language-select"
+              value={locale}
+              onChange={(event) => onLocaleChange(event.target.value)}
+              aria-label={t('settings.general.languageLabel')}
+              title={t('settings.general.languageLabel')}
+            >
+              {LOCALE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown aria-hidden="true" />
+          </span>
+          <button
+            className="planner-icon-button"
+            onClick={() => setPrivacy((value) => !value)}
+            aria-label={c.privacy}
           >
-            {LOCALE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDown aria-hidden="true" />
-        </span>
-        <button
-          className="planner-icon-button"
-          onClick={() => setPrivacy((value) => !value)}
-          aria-label={c.privacy}
-        >
-          {privacy ? <Eye /> : <EyeOff />}
-        </button>
-        <button
-          className="planner-icon-button"
-          onClick={() => setSoundEnabled((value) => !value)}
-          aria-label={c.sound}
-        >
-          {soundEnabled ? <Volume2 /> : <VolumeX />}
-        </button>
-        <button
-          className="planner-icon-button"
-          onClick={() => setModal('rewards')}
-          aria-label={c.rewards}
-        >
-          <Sparkles />
-        </button>
+            {privacy ? <Eye /> : <EyeOff />}
+          </button>
+          <button
+            className="planner-icon-button"
+            onClick={() => setSoundEnabled((value) => !value)}
+            aria-label={c.sound}
+          >
+            {soundEnabled ? <Volume2 /> : <VolumeX />}
+          </button>
+          <button
+            className="planner-icon-button"
+            onClick={() => setModal('rewards')}
+            aria-label={c.rewards}
+          >
+            <Sparkles />
+          </button>
+        </div>
       </header>
 
       {screen === 'tasks' && (
@@ -1357,7 +1389,7 @@ export function ChorePlanner({
                   {data.routines.map((routine) => (
                     <div key={routine.id} className="planner-routine-row">
                       <span>{routine.icon}</span>
-                      <strong>{routine.name}</strong>
+                      <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
                       <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
                       <span className="planner-routine-time">
                         {routine.timeBlock === 'morning'
@@ -1415,13 +1447,6 @@ export function ChorePlanner({
           >
             <MemberAvatar member={selectedTodayMember} />
           </span>
-          <p className="planner-eyebrow">
-            {now.toLocaleDateString(timeLocale, {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </p>
           <h2>{t('planner.greeting', { name: selectedTodayMember.name })}</h2>
           <p>
             {memberTodayCount(selectedTodayMember.id)} {c.score}
@@ -2265,8 +2290,11 @@ export function ChorePlanner({
         </div>
       )}
       {toast && (
-        <div className="planner-toast" role="status">
-          {toast}
+        <div
+          className={`planner-toast planner-toast--${toast.kind}`}
+          role={toast.kind === 'error' ? 'alert' : 'status'}
+        >
+          {toast.message}
         </div>
       )}
     </div>
