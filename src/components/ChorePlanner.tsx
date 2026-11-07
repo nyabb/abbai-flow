@@ -1204,19 +1204,22 @@ export function ChorePlanner({
             <Plus />
           </button>
         )}
-        <select
-          className="planner-language-select"
-          value={locale}
-          onChange={(event) => onLocaleChange(event.target.value)}
-          aria-label={t('settings.general.languageLabel')}
-          title={t('settings.general.languageLabel')}
-        >
-          {LOCALE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <span className="planner-language">
+          <select
+            className="planner-language-select"
+            value={locale}
+            onChange={(event) => onLocaleChange(event.target.value)}
+            aria-label={t('settings.general.languageLabel')}
+            title={t('settings.general.languageLabel')}
+          >
+            {LOCALE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown aria-hidden="true" />
+        </span>
         <button
           className="planner-icon-button"
           onClick={() => setPrivacy((value) => !value)}
