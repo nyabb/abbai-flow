@@ -33,13 +33,13 @@ The dashboard is your family's home screen. At a glance you see:
 - **Weather chip** -- current temperature and conditions (tap to open the full weather view)
 - **Task summary** -- outstanding tasks from your HA todo lists
 - **Chores panel** -- each family member's assigned chores for the day
-- **Leaderboard** -- weekly/monthly chore completion rankings
+- **Chore planner** -- full-screen chores, routines and points view per child
 
 ### Desktop (1280 x 800)
 
 ![Dashboard — desktop](images/dashboard-desktop.png)
 
-The sidebar on the left is the standard Home Assistant navigation. Beacon's own sidebar runs vertically inside the add-on panel with icons for every view: Dashboard, Calendar, Chores, Lists, Tasks, Leaderboard, Music, Photos, Timer, Weather, and Settings.
+The sidebar on the left is the standard Home Assistant navigation. Beacon's own sidebar runs vertically inside the add-on panel with icons for every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
 
 ### Mobile (390 x 844)
 
@@ -81,13 +81,13 @@ The chores view lets you assign recurring or one-off tasks to family members and
 **Key features:**
 - **Per-member cards** -- each family member shows their avatar, name, and assigned chores.
 - **Add Chore button** -- create new chores with assignee, frequency, and optional allowance value.
-- **Completion tracking** -- tap a chore to mark it done; it feeds into the Leaderboard.
+- **Completion tracking** -- tap a chore to mark it done; completed chores add their points to that child's pot.
 
 ### Desktop
 
 ![Chores — desktop](images/chores-desktop.png)
 
-On desktop, the chores panel and leaderboard sit side by side in the right-hand column alongside whatever main view you have open.
+On desktop the chores planner takes over the full content column, with the app sidebar still visible next to it.
 
 ---
 
@@ -206,8 +206,8 @@ The settings view is where you configure Beacon's behavior, appearance, and inte
 |---|---------|--------|
 | **Layout** | Vertical icon sidebar on the left | Bottom tab bar with 4 tabs + More |
 | **Primary tabs** | All views visible at once | Dashboard, Calendar, Chores, Music |
-| **Overflow** | N/A (all visible) | More menu: Lists, Tasks, Leaderboard, Photos, Timer, Weather, Settings |
-| **Chores/Leaderboard panels** | Always visible in right column | Scroll below main content |
+| **Overflow** | N/A (all visible) | More menu: Lists, Tasks, Photos, Timer, Weather, Settings |
+| **Chore planner** | Full content column next to the sidebar | Scrolls below the header, own tab bar at the bottom |
 
 ---
 
@@ -225,7 +225,7 @@ The settings view is where you configure Beacon's behavior, appearance, and inte
 5. Tap **Add Member**.
 6. Repeat for each family member.
 
-Family members appear on the Dashboard chores panel, Calendar color-coding, and the Leaderboard.
+Family members appear on the Dashboard chores panel, the Chore planner and in Calendar color-coding.
 
 ---
 

@@ -203,8 +203,8 @@ export function ffmpegStitchCommand(featuretteId: string, name: string): string 
 
 /**
  * Beacon sidebar nav buttons (inside iframe, stable across navigations):
- *   Dashboard, Calendar, Chores, Lists, Tasks, Leaderboard,
- *   Music, Photos, Timer, Weather, Settings
+ *   Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather,
+ *   Settings
  *
  * Use take_snapshot to get the current uid for each button, then click.
  */
@@ -222,7 +222,7 @@ export const FEATURETTES = {
       'Weather',
       'Music',
       'Timer',
-      'Chores + Leaderboard',
+      'Chores',
       'Dashboard (return, closing shot)',
     ],
   },

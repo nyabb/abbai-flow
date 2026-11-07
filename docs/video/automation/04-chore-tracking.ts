@@ -22,14 +22,12 @@ smoothScroll({ target: '.family-member[data-member="emma"]', duration: 1500 });
 wait(3000); // show their chores, some already done
 stopRecording();
 
-// Scene 3: Leaderboard (25s–45s)
-startRecording('04-leaderboard');
-// scroll to or click leaderboard section
-click('.chores-tab[data-tab="leaderboard"]');
-wait(2000);
-// show streaks, completion percentages
-wait(5000); // hold on leaderboard
-// highlight a streak badge
-hover('.streak-badge[data-member="jake"]');
+// Scene 3: Points & Routines (25s–45s)
+startRecording('04-points-routines');
+// scroll to the routines strip at the bottom of the planner
+smoothScroll({ target: '.planner-routines', duration: 1500 });
+wait(3000); // hold on the routine rows
+// highlight a child's points pill
+hover('.planner-points');
 wait(3000);
 stopRecording();
