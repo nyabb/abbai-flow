@@ -131,6 +131,19 @@ function openFirstTaskActions(container: HTMLElement): boolean {
   return Boolean(container.querySelector('.planner-destination.planner-danger'));
 }
 
+/** Switch to one of the child page's tabs by its label. */
+function openTab(container: HTMLElement, label: string) {
+  const tab = [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((element) =>
+    element.textContent?.includes(label),
+  );
+  fireEvent.click(tab!);
+}
+
+/** Free-for-all chores have their own tab on the child's page. */
+function openFreeTab(container: HTMLElement) {
+  openTab(container, 'Vrije taakjes');
+}
+
 function openRewards(container: HTMLElement) {
   fireEvent.click(container.querySelector('button[aria-label="Beloningen"]')!);
 }
@@ -219,6 +232,7 @@ describe('ChorePlanner anyone chores', () => {
     mocks.state.current = anyoneState('pending', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openChild(container, 'Zara');
+    openFreeTab(container);
 
     // Only this child's card is on screen; the sibling's lives on their page.
     const cards = container.querySelectorAll('.planner-task');
@@ -234,6 +248,7 @@ describe('ChorePlanner anyone chores', () => {
     mocks.state.current = anyoneState('claimed', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openChild(container);
+    openFreeTab(container);
 
     const labels = [...container.querySelectorAll('.planner-check')].map(
       (pill) => pill.textContent ?? '',
@@ -248,6 +263,7 @@ describe('ChorePlanner anyone chores', () => {
     mocks.state.current = anyoneState('claimed', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openChild(container);
+    openFreeTab(container);
 
     // The other child's card is gone; only Zara's remains.
     const cards = container.querySelectorAll('.planner-task');
@@ -256,6 +272,39 @@ describe('ChorePlanner anyone chores', () => {
     expect(container.textContent).not.toContain('Wie het eerst is');
     expect(cards[0].querySelector('.planner-member-chip')?.textContent).toContain('Zara');
     expect(container.querySelector('.planner-check-hand')).toBeNull();
+  });
+
+  /*
+   * A chore anybody may take does not leave the free tab when it is claimed: it
+   * becomes that child's chore and stays on their page, right where they took
+   * it, while the sibling no longer sees it at all.
+   */
+  it('keeps a claimed free chore in the claimer’s free tab and out of the sibling’s', () => {
+    mocks.state.current = anyoneState('claimed', 'completed_by_other');
+
+    const mine = renderPlanner([PARENT, ZARA, MAYA]);
+    openChild(mine.container, 'Zara');
+    openFreeTab(mine.container);
+    expect(mine.container.querySelectorAll('.planner-task')).toHaveLength(1);
+    expect(mine.container.textContent).toContain('Tafel dekken');
+    mine.unmount();
+
+    const theirs = renderPlanner([PARENT, ZARA, MAYA]);
+    openChild(theirs.container, 'Maya');
+    openFreeTab(theirs.container);
+    expect(theirs.container.querySelectorAll('.planner-task')).toHaveLength(0);
+    expect(theirs.container.textContent).not.toContain('Tafel dekken');
+  });
+
+  it('does not list a free chore twice: it leaves the chores tab for the free tab', () => {
+    mocks.state.current = anyoneState('claimed', 'completed_by_other');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChild(container);
+
+    // Chores tab is open by default and only shows owned chores.
+    expect(container.textContent).not.toContain('Tafel dekken');
+    openFreeTab(container);
+    expect(container.textContent).toContain('Tafel dekken');
   });
 });
 
@@ -437,6 +486,7 @@ describe('ChorePlanner completion confirmation', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
     openChild(container);
+    openFreeTab(container);
 
     fireEvent.click(container.querySelector('.planner-check')!);
 
@@ -485,7 +535,6 @@ describe('ChorePlanner completion confirmation', () => {
 
     expect(mocks.pressButton).toHaveBeenCalledTimes(2);
   });
-
 });
 
 /**
@@ -549,13 +598,19 @@ describe('ChorePlanner child page tabs', () => {
     const name = () => container.querySelector('.planner-child-switch-name')?.textContent;
     expect(name()).toBe('Zara');
 
-    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1]);
+    fireEvent.click(
+      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
+    );
     expect(name()).toBe('Maya');
 
     // Wraps around in both directions.
-    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1]);
+    fireEvent.click(
+      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
+    );
     expect(name()).toBe('Zara');
-    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[0]);
+    fireEvent.click(
+      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[0],
+    );
     expect(name()).toBe('Maya');
   });
 
@@ -563,7 +618,9 @@ describe('ChorePlanner child page tabs', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openChild(container);
 
-    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1]);
+    fireEvent.click(
+      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
+    );
     fireEvent.click(
       [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((tab) =>
         tab.textContent?.includes('Doelen'),

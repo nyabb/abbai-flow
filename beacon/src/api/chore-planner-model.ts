@@ -43,6 +43,12 @@ export interface PlannerTask {
   statusOverride?: PlannerTaskStatus;
   /** Who the chore is meant for; drives the "anyone"/"everyone" chip. */
   audience?: PlannerTaskAudience;
+  /**
+   * ChoreOps `shared_first`: whoever grabs it first keeps the points. It stays
+   * flagged after a child claims it, so the free-chores tab can keep showing
+   * the chore to the child who took it.
+   */
+  freeForAll?: boolean;
   /** Live ChoreOps task: entity ids for claim/approve/decline. */
   actions?: { claim?: string; approve?: string; disapprove?: string };
   /** Live ChoreOps task: the child finished it and a parent must sign off. */

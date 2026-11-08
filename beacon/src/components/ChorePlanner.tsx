@@ -575,6 +575,20 @@ export function ChorePlanner({
     return spendablePoints(member.savings, reservations, rewards, userName);
   };
 
+  /**
+   * The free-chores tab: everything up for grabs that this child may take, plus
+   * the ones they took. A claimed free chore stays with whoever claimed it
+   * instead of disappearing from the tab.
+   */
+  const freeTasksForChild = selectedTodayMember
+    ? data.tasks.filter(
+        (task) =>
+          task.freeForAll &&
+          (task.memberId === selectedTodayMember.id || !task.memberId) &&
+          taskStatus(task) !== 'completed',
+      )
+    : [];
+
   /** Calendar order for a list of chores. */
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
@@ -1410,11 +1424,14 @@ export function ChorePlanner({
 
             {childTab === 'chores' && (
               <>
+                {/* Chores this child owns. Free-for-all chores live in their own
+                    tab and keep doing so after somebody claims one. */}
                 {section(
                   c.open,
                   data.tasks.filter(
                     (task) =>
                       task.memberId === selectedTodayMember.id &&
+                      !task.freeForAll &&
                       ['active', 'upcoming'].includes(taskStatus(task)),
                   ),
                 )}
@@ -1423,6 +1440,7 @@ export function ChorePlanner({
                   data.tasks.filter(
                     (task) =>
                       task.memberId === selectedTodayMember.id &&
+                      !task.freeForAll &&
                       ['late', 'retry'].includes(taskStatus(task)),
                   ),
                   'planner-section--late',
@@ -1478,21 +1496,11 @@ export function ChorePlanner({
               <>
                 {section(
                   c.free,
-                  /* Only "anyone can take it" chores — a chore for the whole
-                     household is already on every child's list. */
-                  data.tasks.filter(
-                    (task) =>
-                      !task.memberId &&
-                      task.audience === 'anyone' &&
-                      taskStatus(task) !== 'completed',
-                  ),
+                  freeTasksForChild,
                 )}
-                {data.tasks.filter(
-                  (task) =>
-                    !task.memberId &&
-                    task.audience === 'anyone' &&
-                    taskStatus(task) !== 'completed',
-                ).length === 0 && <p className="planner-empty-copy">{c.nothing}</p>}
+                {freeTasksForChild.length === 0 && (
+                  <p className="planner-empty-copy">{c.nothing}</p>
+                )}
               </>
             )}
           </div>
