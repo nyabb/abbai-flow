@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from './ChorePlanner';
 import { I18nContext, createI18n } from '../i18n';
 import type { FamilyMember } from '../types/family';
@@ -99,30 +99,45 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
  */
 const NL = createI18n('nl');
 
-function renderPlanner(members: FamilyMember[]) {
+function renderPlanner(
+  members: FamilyMember[],
+  createRequest?: { kind: 'chore' | 'routine'; token: number },
+) {
   return render(
     <I18nContext.Provider value={NL}>
       <ChorePlanner
         members={members}
-        weather={null}
-        nextAppointment={null}
         locale="nl"
         onLocaleChange={() => {}}
+        createRequest={createRequest}
       />
     </I18nContext.Provider>,
   );
 }
 
-/** Open the actions sheet of the first chore card. */
+/** The column for one child, or the free-to-claim column. */
+function column(container: HTMLElement, name: string): HTMLElement {
+  const found = [...container.querySelectorAll<HTMLElement>('.planner-col')].find((element) =>
+    element.querySelector('.planner-col-head strong')?.textContent?.includes(name),
+  );
+  return found!;
+}
+
+const freeColumn = (container: HTMLElement) => column(container, 'Vrij te pakken');
+
+/** Open the actions sheet of the first chore row. */
 function openFirstTaskActions(container: HTMLElement): boolean {
-  const more = container.querySelector<HTMLButtonElement>('.planner-task-more');
+  const more = container.querySelector<HTMLButtonElement>('.planner-row-more');
   if (!more) return false;
   fireEvent.click(more);
   return Boolean(container.querySelector('.planner-destination.planner-danger'));
 }
 
-function openRewards(container: HTMLElement) {
-  fireEvent.click(container.querySelector('button[aria-label="Beloningen"]')!);
+/** The goals sheet of one child opens from their points badge. */
+function openRewards(container: HTMLElement, name = 'Zara') {
+  fireEvent.click(
+    column(container, name).querySelector<HTMLButtonElement>('.planner-col-points')!,
+  );
 }
 
 describe('ChorePlanner parent PIN gate', () => {
@@ -168,6 +183,11 @@ describe('ChorePlanner parent PIN gate', () => {
  * like a chore assigned to the child who took it, and it must be gone from the
  * other children's boards.
  */
+/**
+ * A chore anybody may take sits in its own column on the board. Once a child
+ * claims it ChoreOps hands the row to that child, so it moves into their column
+ * and nobody sees it twice.
+ */
 describe('ChorePlanner anyone chores', () => {
   const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
 
@@ -206,26 +226,40 @@ describe('ChorePlanner anyone chores', () => {
   it('labels an unclaimed chore as anyone and offers a hand to take it', () => {
     mocks.state.current = anyoneState('pending', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const free = freeColumn(container);
 
-    const cards = container.querySelectorAll('.planner-task');
-    expect(cards).toHaveLength(2);
-    expect(container.querySelectorAll('.planner-task--anyone')).toHaveLength(2);
-    expect(container.textContent).toContain('Wie het eerst is');
-    expect(screen.getAllByRole('button', { name: 'Pakken' })).toHaveLength(2);
-    expect(container.querySelector('.planner-check-hand')).not.toBeNull();
+    expect(free.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(free.querySelector('.planner-row--anyone')).not.toBeNull();
+    expect(free.textContent).toContain('Tafel dekken');
+    // The row's accessible name is "<action>: <chore>", so match on the verb.
+    expect(within(free).getByRole('button', { name: /^Pakken: / })).toBeTruthy();
+    // The children's own columns stay empty: nobody owns it yet.
+    expect(column(container, 'Zara').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('looks like an ordinary assignment once a child claimed it', () => {
+  it('says "Bevestigen" (approve) once a free chore is claimed, never "Afgerond"', () => {
+    mocks.state.current = anyoneState('claimed', 'pending');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const labels = [...container.querySelectorAll('.planner-row-check')].map(
+      (button) => button.getAttribute('aria-label') ?? '',
+    );
+
+    // Zara claimed it, so her row offers the parent sign-off; the free column
+    // still shows it for Maya. Neither may claim the chore is finished.
+    expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(true);
+    expect(labels.some((text) => text.startsWith('Afgerond'))).toBe(false);
+  });
+
+  it('moves the chore into the claimer’s column, out of the free column', () => {
     mocks.state.current = anyoneState('claimed', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
-    // The other child's card is gone; only Zara's remains.
-    const cards = container.querySelectorAll('.planner-task');
-    expect(cards).toHaveLength(1);
-    expect(container.querySelector('.planner-task--anyone')).toBeNull();
-    expect(container.textContent).not.toContain('Wie het eerst is');
-    expect(cards[0].querySelector('.planner-member-chip')?.textContent).toContain('Zara');
-    expect(container.querySelector('.planner-check-hand')).toBeNull();
+    const zara = column(container, 'Zara');
+    expect(zara.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(zara.textContent).toContain('Tafel dekken');
+    // Maya is relieved of it, and it is no longer up for grabs.
+    expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
+    expect(freeColumn(container).querySelectorAll('.planner-row')).toHaveLength(0);
   });
 });
 
@@ -265,7 +299,10 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     );
     expect(localStorage.getItem('beacon_reward_reservations')).toContain('schermtijd');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Terug' }));
+    const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
+      element.textContent?.includes('Schermtijd'),
+    )!;
+    fireEvent.click(within(row).getByRole('button', { name: 'Terug' }));
 
     await waitFor(() => expect(container.textContent).toContain('20 punten'));
     expect(localStorage.getItem('beacon_reward_reservations')).toBeNull();
@@ -294,18 +331,18 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: /Beloning toevoegen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Stel een doel in/ }));
 
     const nameInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[0];
     const costInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[1];
     fireEvent.change(nameInput, { target: { value: 'Naar de film' } });
     fireEvent.change(costInput, { target: { value: '40' } });
 
-    // Pick Zara inside the reward form's member picker.
-    const picker = Array.from(
-      container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button'),
-    ).find((button) => button.textContent?.includes('Zara'))!;
-    fireEvent.click(picker);
+    // The child whose page we are on is already selected in the picker.
+    const selected = container.querySelectorAll('.planner-member-picker button.is-selected');
+    expect(selected).toHaveLength(1);
+    expect(selected[0].textContent).toContain('Zara');
+
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
 
     // Creating a reward is a parent action, so the PIN comes first.
@@ -338,7 +375,7 @@ describe('ChorePlanner completion confirmation', () => {
   it('asks before finishing the child’s own chore and does nothing on cancel', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
 
     // The chore is already Zara's, so this is finishing it, not claiming it.
     expect(container.textContent).toContain('Taakje afronden?');
@@ -353,7 +390,7 @@ describe('ChorePlanner completion confirmation', () => {
   it('finishes the chore once the child confirms', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
     await waitFor(() =>
@@ -377,7 +414,7 @@ describe('ChorePlanner completion confirmation', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
 
     expect(container.textContent).toContain('Taakje afronden?');
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
@@ -399,10 +436,10 @@ describe('ChorePlanner completion confirmation', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
-
-    expect(container.textContent).toContain('Taakje claimen?');
-    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+    // A free chore asks who is taking it — that picker is the confirmation.
+    fireEvent.click(freeColumn(container).querySelector('.planner-row-check')!);
+    expect(container.textContent).toContain('Wie pakt dit op?');
+    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: 'Zara' }));
 
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
@@ -413,23 +450,210 @@ describe('ChorePlanner completion confirmation', () => {
   });
 
   /*
-   * The bottom-tab badge counts what is still on the child's plate. A claimed
-   * chore is done as far as the child is concerned (a parent's approval is a
-   * real-life confirmation), so it must not keep the badge alive.
+   * Regression: `pendingTaskId` used to be cleared only on the error path, so
+   * after one successful claim/approve every later tap was swallowed by
+   * `completeTask`'s in-flight guard and the board needed a page reload.
    */
-  it('drops the badge once every chore is claimed or finished', () => {
-    mocks.state.current = choreOpsState();
-    const open = renderPlanner([PARENT, ZARA]);
-    expect(open.container.querySelector('.planner-nav-badge')?.textContent).toBe('1');
-    open.unmount();
+  it('keeps working after one chore is confirmed (no reload needed)', async () => {
+    mocks.state.current = choreOpsState({
+      chores: [
+        { ...choreOpsState().chores[0], id: 'status:zara::afwassen', name: 'Afwassen' },
+        {
+          ...choreOpsState().chores[0],
+          id: 'status:zara::afdrogen',
+          name: 'Afdrogen',
+          actions: { claim: 'button.zara_claim_afdrogen' },
+        },
+      ],
+    });
+    const { container } = renderPlanner([PARENT, ZARA]);
 
-    for (const status of ['claimed', 'completed']) {
-      mocks.state.current = choreOpsState({
-        chores: [{ ...choreOpsState().chores[0], status }],
-      });
-      const done = renderPlanner([PARENT, ZARA]);
-      expect(done.container.querySelector('.planner-nav-badge')).toBeNull();
-      done.unmount();
+    for (const [label, entityId] of [
+      ['Afwassen', 'button.zara_claim_afwassen'],
+      ['Afdrogen', 'button.zara_claim_afdrogen'],
+    ] as const) {
+      const row = [...container.querySelectorAll<HTMLElement>('.planner-row')].find((element) =>
+        element.textContent?.includes(label),
+      );
+      fireEvent.click(row!.querySelector('.planner-row-check')!);
+      fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+      await waitFor(() => expect(mocks.pressButton).toHaveBeenCalledWith(entityId));
     }
+
+    expect(mocks.pressButton).toHaveBeenCalledTimes(2);
+  });
+});
+
+/**
+ * The board shows every child as a column of their own chores and routines, plus
+ * the chores anyone may take. Rows act in place: nothing opens a separate page.
+ */
+describe('ChorePlanner board', () => {
+  const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
+
+  function twoChildren(): ChoreOpsState {
+    const base = choreOpsState();
+    return {
+      ...base,
+      users: [
+        { ...base.users[0], name: 'Maya', slug: 'maya', points: 10 },
+        { ...base.users[0], name: 'Zara', slug: 'zara', points: 25 },
+      ],
+    };
+  }
+
+  beforeEach(() => {
+    mocks.state.current = twoChildren();
+    mocks.createReward.mockClear();
+  });
+
+  it('shows a column per child plus the free-chore column, and no header rewards button', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const names = [...container.querySelectorAll('.planner-col-head strong')].map(
+      (element) => element.textContent,
+    );
+    expect(names).toEqual(['Maya', 'Zara', 'Vrij te pakken']);
+    // Adding a chore never requires picking a child first.
+    expect(container.querySelector('.planner-add')).not.toBeNull();
+    // Rewards are per child: they live behind each column's points badge.
+    expect(container.querySelector('button[aria-label="Beloningen"]')).toBeNull();
+  });
+
+  it('puts each chore in the column of the child it belongs to', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const zara = column(container, 'Zara');
+    expect(zara.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(zara.textContent).toContain('Afwassen');
+    expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
+  });
+
+  it('shows a child’s routines under their chores', () => {
+    // ChoreOps groups daily chores into routines by their label.
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        ...base.chores,
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+          actions: { claim: 'button.zara_claim_kamer_opruimen' },
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const zara = column(container, 'Zara');
+    expect(zara.textContent).toContain('Ochtendroutine');
+    expect(zara.querySelector('.planner-row--routine')).not.toBeNull();
+    expect(column(container, 'Maya').querySelector('.planner-row--routine')).toBeNull();
+  });
+
+  it('opens the new-chore form when quick add asks for one', () => {
+    const { container } = renderPlanner([PARENT, ZARA], { kind: 'routine', token: 1 });
+
+    const form = container.querySelector('.planner-sheet--form')!;
+    expect(form).not.toBeNull();
+    // A routine starts as a daily chore.
+    expect((form.querySelector('select') as HTMLSelectElement | null)?.value).toBe('daily');
+  });
+
+  it('opens a child’s detail page from their column header', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+
+    const detail = container.querySelector('.planner-detail')!;
+    expect(detail).not.toBeNull();
+    expect(detail.textContent).toContain('Zara');
+    expect(container.querySelector('.planner-title-full')?.textContent).toBe('Zara');
+
+    // Back returns to the board with every column again (two children + free).
+    fireEvent.click(container.querySelector('.planner-header .planner-icon-button')!);
+    expect(container.querySelector('.planner-detail')).toBeNull();
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+  });
+
+  /*
+   * Qudoo asks where the earned Qudoos should go once a chore is ticked off, so
+   * the child can push them towards a savings goal instead of a blind balance.
+   */
+  it('asks where the Qudoos go after a chore is confirmed', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(column(container, 'Zara').querySelector('.planner-row-check')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() => expect(container.textContent).toContain('Waar wil je de Qudoos aan koppelen?'));
+    expect(container.textContent).toContain('Spaarpot');
+    expect(container.textContent).toContain('Schermtijd');
+    expect(container.textContent).toContain('Stel een doel in');
+  });
+
+  it('hides a member from the board from the filter sheet', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+
+    fireEvent.click(container.querySelector('button[aria-label="Filteren"]')!);
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    fireEvent.click(within(sheet).getByRole('button', { name: /Maya/ }));
+
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(2);
+  });
+
+  it('pauses and resumes a routine', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        ...base.chores,
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const pause = container.querySelector<HTMLButtonElement>(
+      'button[aria-label^="Pauzeren: Ochtendroutine"]',
+    )!;
+    fireEvent.click(pause);
+
+    const row = container.querySelector('.planner-row--routine')!;
+    expect(row.className).toContain('is-paused');
+    expect(container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]')).not.toBeNull();
+  });
+
+  it('opens one child’s goals from their points badge', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openRewards(container, 'Zara');
+
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    expect(sheet.textContent).toContain('Doelen');
+    expect(sheet.textContent).toContain('Schermtijd');
+    expect(sheet.textContent).toContain('25');
+  });
+
+  it('pre-selects the child whose goals you opened when you set a new goal', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openRewards(container, 'Maya');
+    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: /Stel een doel in/ }));
+
+    const selected = container.querySelectorAll('.planner-member-picker button.is-selected');
+    expect(selected).toHaveLength(1);
+    expect(selected[0].textContent).toContain('Maya');
   });
 });

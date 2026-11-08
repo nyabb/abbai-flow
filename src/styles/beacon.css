@@ -1678,21 +1678,54 @@ a:focus:not(:focus-visible) {
   -webkit-tap-highlight-color: transparent;
 }
 
-.mobile-tab--active {
-  color: var(--accent, #3b82f6);
-  position: relative;
+/* Quick add in the sidebar: a filled button that stands out from the icons. */
+.sidebar-icon--add {
+  color: var(--planner-on-accent, #fff);
+  background: var(--accent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 38%, transparent);
 }
 
-.mobile-tab--active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 3px;
-  border-radius: 0 0 3px 3px;
-  background: var(--accent, #3b82f6);
+.sidebar-icon--add:hover {
+  background: color-mix(in srgb, var(--accent) 86%, #000);
+}
+
+/* Quick add sits in the middle of the tab bar, raised above the rest. */
+.mobile-tab--add {
+  flex: 0 0 auto;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-top: -18px;
+  border-radius: 50%;
+  color: var(--planner-on-accent, #fff);
+  background: var(--accent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.mobile-tab--add svg {
+  width: 26px;
+  height: 26px;
+}
+
+.mobile-tab--active {
+  color: var(--accent, #3b82f6);
+}
+
+/* Active tab: a soft tinted rounded tile behind the icon (the family-planner
+   pattern) instead of an underline. The tile is painted on the icon itself so
+   the markup stays a plain icon + label. */
+.mobile-tab--active svg {
+  box-sizing: content-box;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 9px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 14%, transparent);
+}
+
+.mobile-tab--active .mobile-tab-label {
+  font-weight: 700;
 }
 
 .mobile-tab-label {
@@ -1737,14 +1770,24 @@ a:focus:not(:focus-visible) {
   color: var(--text-primary);
 }
 
+/* The close button sits above the list: a tap on it must never reach the item
+   underneath (that used to fire the first menu entry). */
 .mobile-more-close {
+  position: relative;
+  z-index: 2;
   width: 44px;
   height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 0;
+  border: 0;
   border-radius: 50%;
   color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
   transition: all var(--transition);
 }
 
@@ -1753,7 +1796,14 @@ a:focus:not(:focus-visible) {
   color: var(--text-primary);
 }
 
+.mobile-more-menu {
+  /* Own stacking context, so the header stays above the scrollable list. */
+  isolation: isolate;
+}
+
 .mobile-more-item {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   gap: 14px;

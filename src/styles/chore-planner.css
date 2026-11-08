@@ -19,26 +19,32 @@
 }
 
 .chore-planner {
-  --planner-bg: #fbf4ef;
-  --planner-surface: #fff;
-  --planner-ink: #3f3a44;
-  --planner-muted: #8a8389;
-  --planner-line: #f0e3da;
-  --planner-accent: #e0785e;
-  --planner-accent-soft: #fbe8e1;
-  --planner-green: #4f9a72;
-  --planner-green-soft: #e6f4ec;
-  --planner-amber: #e59f3c;
-  --planner-amber-soft: #fdf0da;
-  --planner-blue: #6f8fca;
-  --planner-blue-soft: #eceff9;
-  /* Reusable soft fill and warm-amber ink for the light palette. */
-  --planner-soft: #f7efe8;
-  --planner-amber-ink: #a86b15;
-  /* Hero band gradient (header) — a soft peach wash like the Qudoo screens. */
-  --planner-band-1: #f3b39c;
-  --planner-band-2: #e0785e;
-  --planner-band-ink: #fff;
+  /* Every planner colour is derived from the Beacon theme tokens, so changing
+     the colour scheme in Settings re-themes the whole chores flow along with
+     the dashboard, calendar and lists. Nothing here is a literal colour. */
+  --planner-bg: var(--bg-primary);
+  --planner-surface: var(--bg-surface);
+  --planner-ink: var(--text-primary);
+  --planner-muted: var(--text-secondary);
+  --planner-line: var(--border, var(--grid-lines));
+  --planner-accent: var(--accent);
+  --planner-accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-surface));
+  /* Text/icons that sit on top of the accent fill. */
+  --planner-on-accent: #fff;
+  --planner-green: var(--color-success);
+  --planner-green-soft: color-mix(in srgb, var(--color-success) 16%, var(--bg-surface));
+  --planner-amber: var(--color-brand);
+  --planner-amber-soft: color-mix(in srgb, var(--color-brand) 20%, var(--bg-surface));
+  --planner-blue: var(--color-accent);
+  --planner-blue-soft: color-mix(in srgb, var(--color-accent) 14%, var(--bg-surface));
+  /* Reusable soft fill and readable brand ink for text on a tint. */
+  --planner-soft: color-mix(in srgb, var(--text-primary) 7%, var(--bg-surface));
+  --planner-amber-ink: color-mix(in srgb, var(--color-brand) 55%, var(--text-primary));
+  /* Header band: the theme accent laid over the page surface, so the hero
+     follows the colour scheme instead of a fixed peach wash. */
+  --planner-band-1: color-mix(in srgb, var(--accent) 18%, var(--bg-surface));
+  --planner-band-2: color-mix(in srgb, var(--accent) 34%, var(--bg-surface));
+  --planner-band-ink: var(--text-primary);
   position: relative;
   height: 100%;
   /* dvh keeps the board + its bottom tabs inside the visible area on phones,
@@ -51,55 +57,8 @@
   flex-direction: column;
   overflow: hidden;
   color: var(--planner-ink);
-  background:
-    radial-gradient(ellipse at 88% -8%, rgba(255, 214, 190, 0.55), transparent 42%),
-    var(--planner-bg);
+  background: var(--planner-bg);
   font-family: var(--font-body, 'Trebuchet MS', sans-serif);
-}
-
-/* Dark theme: the planner keeps its own palette, so mirror it here instead of
-   inheriting the app tokens (the warm paper look was designed light-first). */
-[data-theme='dark'] .chore-planner {
-  --planner-bg: #161320;
-  --planner-surface: #221d2d;
-  --planner-ink: #f6f1f7;
-  --planner-muted: #b0a6b6;
-  --planner-line: #362d43;
-  --planner-accent: #e8896f;
-  --planner-accent-soft: #3c2723;
-  --planner-green: #5aa88b;
-  --planner-green-soft: #1b3a30;
-  --planner-amber: #e9b25a;
-  --planner-amber-soft: #3a2f1b;
-  --planner-blue: #8aa5d8;
-  --planner-blue-soft: #232a3f;
-  --planner-soft: #2d2739;
-  --planner-amber-ink: #f0c684;
-  --planner-band-1: #5a3a3a;
-  --planner-band-2: #3a2530;
-  --planner-band-ink: #fdf6f2;
-}
-
-[data-theme='dark'] .chore-planner {
-  background:
-    radial-gradient(ellipse at 88% -8%, rgba(224, 120, 94, 0.22), transparent 42%),
-    var(--planner-bg);
-}
-
-/* Surfaces that used to be literal white get an explicit dark declaration so no
-   stale light rule can outrank the palette above. */
-[data-theme='dark'] .chore-planner .planner-task,
-[data-theme='dark'] .chore-planner .planner-sheet,
-[data-theme='dark'] .chore-planner .planner-add,
-[data-theme='dark'] .chore-planner .planner-icon-button,
-[data-theme='dark'] .chore-planner .planner-member-picker button,
-[data-theme='dark'] .chore-planner .planner-stepper button {
-  background: var(--planner-surface);
-  color: var(--planner-ink);
-}
-
-[data-theme='dark'] .chore-planner .planner-task {
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* Hide scrollbars inside the planner — the board and the sheets still scroll by
@@ -241,7 +200,7 @@
   height: 48px;
   min-height: 48px;
   border-radius: 50%;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   box-shadow: 0 5px 13px rgba(151, 71, 54, 0.2);
 }
@@ -260,16 +219,16 @@
    buttons on the Qudoo screen headers. */
 .planner-header .planner-icon-button {
   color: color-mix(in srgb, var(--planner-band-ink) 92%, transparent);
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
 }
 
 .planner-header .planner-icon-button:hover {
-  background: color-mix(in srgb, #fff 34%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 26%, transparent);
 }
 
 .planner-header .planner-add {
   color: var(--planner-accent);
-  background: #fff;
+  background: var(--planner-surface);
   box-shadow: 0 6px 16px rgba(63, 58, 68, 0.14);
 }
 
@@ -297,7 +256,7 @@
   border: 0;
   border-radius: 14px;
   color: var(--planner-band-ink);
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -310,7 +269,7 @@
 }
 
 .planner-language-select:hover {
-  background: color-mix(in srgb, #fff 32%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 24%, transparent);
 }
 
 .planner-language svg {
@@ -416,11 +375,11 @@
   font-size: 16px;
 }
 .planner-filter-group button.is-selected {
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-ink);
 }
 .planner-status-filters button.is-selected {
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 
@@ -529,14 +488,20 @@
 .planner-task {
   --member-color: var(--planner-accent);
   display: grid;
-  grid-template-columns: 58px minmax(0, 1fr) auto;
+  /* Centred card: badge, title, chips, then the full-width action pill. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'copy'
+    'meta'
+    'cta';
   align-items: center;
-  gap: 16px;
+  gap: 10px;
   min-height: 0;
-  padding: 12px 18px;
-  border-radius: 22px;
+  padding: 16px 16px 14px;
+  border: 1px solid var(--planner-line);
+  border-radius: 26px;
   background: var(--planner-surface);
-  box-shadow: 0 8px 22px rgba(63, 58, 68, 0.07);
+  box-shadow: 0 10px 26px rgba(63, 58, 68, 0.06);
   transition:
     opacity 200ms ease-out,
     transform 220ms ease-out,
@@ -545,70 +510,128 @@
   user-select: none;
 }
 
+/* ── The action pill ─────────────────────────────────────────────────────
+   Label on the left, points in their own filled segment on the right — the
+   "Afvinken maar! | 🏆 25" pattern from the reference card. */
 .planner-check {
-  display: grid;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  border: 2px solid color-mix(in srgb, var(--planner-ink) 14%, transparent);
-  border-radius: 50%;
-  color: #fff;
-  background: transparent;
-  font-size: 11px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.planner-check span {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--planner-soft);
-}
-.planner-check svg {
-  width: 30px;
-  height: 30px;
-  stroke-width: 3;
-}
-.planner-check:not(:disabled):hover {
-  border-color: var(--planner-green);
-  transform: scale(1.04);
-}
-.planner-check.is-checked {
-  border-color: var(--planner-green);
-  background: var(--planner-green);
-  animation: planner-check-spring 280ms ease-out;
-}
-.planner-check:disabled {
-  cursor: default;
-}
-.planner-task-icon {
-  display: grid;
-  flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
-  place-items: center;
-  /* Soft pastel disc, like the big emoji bubble on the Qudoo task card. */
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--member-color) 13%, var(--planner-surface));
-  font-size: 26px;
-}
-.planner-task-copy {
-  min-width: 0;
-}
-.planner-task-title-row {
+  grid-area: cta;
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  margin-top: 2px;
+  padding: 0 6px 0 20px;
+  border: 1.5px solid var(--planner-line);
+  border-radius: 999px;
+  color: var(--planner-ink);
+  background: transparent;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease-out,
+    border-color 180ms ease-out,
+    transform 180ms ease-out;
+}
+
+.planner-check-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-check-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: var(--planner-amber-ink);
+}
+
+.planner-check-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 3;
+}
+
+.planner-check-points {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: var(--planner-on-accent);
+  background: var(--planner-amber);
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.planner-check:not(:disabled):hover {
+  background: color-mix(in srgb, var(--planner-amber) 10%, transparent);
+}
+
+.planner-check:not(:disabled):active {
+  transform: scale(0.99);
+}
+
+.planner-check.is-checked {
+  border-color: var(--planner-green);
+  background: color-mix(in srgb, var(--planner-green) 12%, transparent);
+  color: var(--planner-green);
+  animation: planner-check-spring 280ms ease-out;
+}
+
+.planner-check.is-checked .planner-check-icon,
+.planner-check.is-checked .planner-check-points {
+  color: var(--planner-on-accent);
+  background: var(--planner-green);
+}
+
+.planner-check:disabled {
+  cursor: default;
+  opacity: 0.75;
+}
+
+.planner-task-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  /* Soft pastel disc, like the big emoji bubble on the reference card. */
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--member-color) 14%, var(--planner-surface));
+  font-size: 30px;
+}
+.planner-task-copy {
+  grid-area: copy;
+  min-width: 0;
+  text-align: center;
+}
+.planner-task-title-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 .planner-task-title-row h3 {
   overflow: hidden;
   min-width: 0;
   margin: 0;
   color: var(--planner-ink);
-  font-size: clamp(20px, 1.55vw, 27px);
+  font-size: clamp(19px, 1.5vw, 25px);
   font-weight: 800;
   line-height: 1.2;
+  text-align: center;
   text-overflow: ellipsis;
 }
 .planner-task-title-row h3.is-struck {
@@ -616,17 +639,15 @@
   text-decoration: line-through;
 }
 .planner-task-copy p {
-  margin: 7px 0 0;
+  margin: 6px 0 0;
   color: var(--planner-muted);
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
   line-height: 1.35;
+  text-align: center;
 }
 .planner-status-dot {
-  flex: 0 0 9px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--planner-blue);
+  display: none;
 }
 .planner-task--active .planner-status-dot {
   background: var(--planner-green);
@@ -647,13 +668,8 @@
 .planner-task--anyone .planner-check:not(:disabled):hover {
   border-color: var(--planner-accent);
 }
-/* The hand glyph replaces the small "to do" dot; `.planner-check span` sets a
-   14px dot, so this has to outrank it. */
+/* The hand glyph sits inside the pill while the chore is still up for grabs. */
 .planner-check .planner-check-hand {
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  background: none;
   font-size: 20px;
   line-height: 1;
 }
@@ -684,10 +700,12 @@
 }
 
 .planner-task-meta {
+  grid-area: meta;
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 11px;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .planner-points {
   padding: 10px 13px;
@@ -758,7 +776,7 @@
 .planner-claim {
   min-width: 86px;
   padding: 0 16px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 .planner-claim:hover {
@@ -907,7 +925,7 @@
   padding: 0 24px;
   border: 0;
   border-radius: 14px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   font: inherit;
   font-size: 18px;
@@ -970,7 +988,7 @@
   padding: 0 4px;
   place-items: center;
   border-radius: 999px;
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   font-size: 10px;
   font-weight: 800;
@@ -995,8 +1013,14 @@
   background: var(--planner-accent-soft);
 }
 .planner-bottom-nav button.is-active span {
-  color: white;
-  background: var(--planner-accent);
+  /* Same highlight as the app tab bar: tinted rounded tile, not a solid dot. */
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 16%, transparent);
+  border-radius: 16px;
+}
+
+.planner-bottom-nav button.is-active strong {
+  color: var(--planner-accent);
 }
 
 .planner-backdrop {
@@ -1009,7 +1033,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(31, 43, 38, 0.36);
+  background: color-mix(in srgb, var(--planner-ink) 42%, transparent);
   backdrop-filter: blur(3px);
 }
 .planner-sheet {
@@ -1247,7 +1271,7 @@
   background: var(--planner-soft);
 }
 .planner-weekdays button.is-selected {
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 .planner-validation {
@@ -1383,76 +1407,10 @@
   font-weight: 800;
 }
 
-.planner-today-lobby {
-  display: grid;
-  /* auto-fit + justify-content centres the group even when the household has
-     fewer children than there are tracks (3 kids in a 4-column grid sat left). */
-  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
-  justify-content: center;
-  gap: 18px;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 24px clamp(18px, 4vw, 72px) 120px;
-  align-content: center;
-  /* On a short screen the cards would otherwise spill over each other; the
-     avatars keep their own height now, so let the lobby scroll instead. */
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.planner-lobby-member {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  min-height: 255px;
-  padding: 24px 12px;
-  border: 0;
-  border-radius: 18px;
-  color: var(--planner-ink);
-  background: var(--planner-surface);
-  box-shadow: 0 5px 20px rgba(38, 51, 47, 0.07);
-  cursor: pointer;
-}
 .planner-lobby-avatar,
-.planner-hero-avatar {
-  display: grid;
-  /* Both wrappers are flex items in a column: without this a tight screen
-     squashes their height while the width stays put, which turns uploaded
-     photos into ovals. */
-  flex: 0 0 auto;
-  width: 112px;
-  height: 112px;
-  /* Belt and braces: if one side is ever auto, keep the box square. */
-  aspect-ratio: 1 / 1;
-  margin-inline: auto;
-  place-items: center;
-  overflow: hidden;
-  border: 3px solid var(--member-color, transparent);
-  border-radius: 50%;
-  font-size: 64px;
-}
+
 .planner-lobby-avatar > img,
-.planner-hero-avatar > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-  object-position: center;
-}
-.planner-lobby-member strong {
-  font-size: 25px;
-}
-.planner-lobby-member > span:last-child {
-  color: var(--planner-muted);
-  font-size: 16px;
-}
-.planner-lobby-member small {
-  max-width: 100%;
-  color: var(--planner-muted);
-  font-size: 13px;
-  text-align: center;
-}
+
 .planner-today-step {
   display: flex;
   flex-direction: column;
@@ -1631,15 +1589,18 @@
   text-align: center;
   pointer-events: none;
 }
+/* Dark theme keeps the same geometry; only the palette changes. */
 .planner-toast {
   position: fixed;
   z-index: 35;
   right: 24px;
   bottom: 104px;
+  /* Never eat taps: the notification floats over the cards. */
+  pointer-events: none;
   max-width: min(92vw, 560px);
   padding: 16px 21px;
   border-radius: 13px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-ink);
   font-size: 16px;
   font-weight: 700;
@@ -1652,12 +1613,12 @@
 
 /* Green when the request went through, red when ChoreOps refused it. */
 .planner-toast--success {
-  background: #2f9163;
+  background: var(--color-success);
 }
 
 .planner-toast--error {
-  background: #c0392b;
-  box-shadow: 0 8px 26px rgba(150, 40, 30, 0.32);
+  background: var(--color-error);
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--color-error) 32%, transparent);
 }
 .planner-confetti {
   position: fixed;
@@ -1713,20 +1674,17 @@
 }
 
 @media (max-width: 1050px) {
-  /* Two columns only: the emoji badge lives *inside* the copy row now, so the
-     old `54px 46px minmax(130px, 1fr)` layout squeezed the title into the 46px
-     icon column ("Ta / n…"). The meta row goes underneath, full width. */
+  /* The card is a single centred column at every width; only the padding
+     tightens on smaller screens. */
   .planner-task {
-    grid-template-columns: 54px minmax(0, 1fr);
-    gap: 13px;
-    padding: 15px;
+    gap: 9px;
+    padding: 14px;
   }
   .planner-task-copy {
     min-width: 0;
   }
   .planner-task-meta {
-    grid-column: 1 / -1;
-    justify-content: flex-start;
+    justify-content: center;
     flex-wrap: wrap;
   }
   .planner-today-lobby {
@@ -1820,23 +1778,25 @@
     font-size: 16px;
   }
   .planner-task {
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 9px;
+    gap: 8px;
     min-height: 0;
     padding: 12px;
-    border-radius: 13px;
+    border-radius: 20px;
   }
   .planner-check {
-    width: 42px;
-    height: 42px;
-    border-width: 2px;
-    font-size: 9px;
+    min-height: 48px;
+    padding: 0 5px 0 16px;
+    font-size: 15px;
+  }
+  .planner-check-points {
+    min-height: 38px;
+    padding: 0 13px;
+    font-size: 14px;
   }
   .planner-task-icon {
-    width: 26px;
-    height: 26px;
-    border-radius: 8px;
-    font-size: 15px;
+    width: 48px;
+    height: 48px;
+    font-size: 26px;
   }
   .planner-task-title-row {
     gap: 6px;
@@ -1848,19 +1808,8 @@
     margin-top: 4px;
     font-size: 13px;
   }
-  .planner-status-dot {
-    flex-basis: 7px;
-    width: 7px;
-    height: 7px;
-  }
   .planner-task-meta {
-    grid-column: 1 / -1;
     gap: 7px;
-    padding-left: 51px;
-  }
-  .planner-points {
-    padding: 7px 9px;
-    font-size: 13px;
   }
   .planner-member-chip {
     font-size: 13px;
@@ -1987,32 +1936,27 @@
 }
 
 /* --- Rewards (ChoreOps reward entities) --- */
-.planner-child-rewards {
-  display: grid;
-  gap: 8px;
-  width: min(720px, 100%);
-  margin: 4px 0 20px;
-  text-align: left;
-}
-
-.planner-child-rewards h3 {
-  margin: 0;
-  color: var(--planner-muted);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 
 .planner-reward {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) auto;
+  /* Icon + text on the first row, actions on their own full-width row so a
+     "Confirm" button can never be squeezed into an unreadable stub. */
+  grid-template-columns: 40px minmax(0, 1fr);
   align-items: center;
-  gap: 12px;
+  gap: 10px 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 16px;
   background: var(--planner-soft);
   text-align: left;
+}
+
+.planner-reward-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .planner-reward > span {
@@ -2052,13 +1996,16 @@
 }
 
 .planner-reward-action {
-  min-height: 44px;
-  padding: 0 14px;
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 18px;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .planner-reward-new {
   width: 100%;
+  margin-top: 10px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2073,9 +2020,235 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Text overflow guards
+   Celebration screen (closing): soft glow, trophy, "Well done, {name}!" and a
+   pill with what the child earned today.
+   --------------------------------------------------------------------------- */
+.planner-celebrate {
+  gap: 14px;
+}
 
-   The planner runs on fixed-size tiles, so any label that can grow (a chore
+.planner-celebrate-glow {
+  display: grid;
+  width: clamp(140px, 18vw, 190px);
+  height: clamp(140px, 18vw, 190px);
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 45%,
+    color-mix(in srgb, var(--color-brand) 45%, transparent),
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 60%,
+    transparent 72%
+  );
+  font-size: clamp(56px, 7vw, 76px);
+  line-height: 1;
+}
+
+.planner-celebrate-title {
+  margin: 0;
+  color: var(--planner-amber-ink);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.planner-celebrate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.planner-celebrate-sub {
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Section dividers
+   ---------------------------------------------------------------------------
+   Reference screens separate groups with a centred, uppercase label between
+   two hairlines ("— Actief (5) —"). Member headings keep their avatar row. */
+.planner-section:not(.planner-section--member) > h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 10px;
+  color: var(--planner-amber-ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  justify-content: center;
+}
+
+.planner-section:not(.planner-section--member) > h2::before,
+.planner-section:not(.planner-section--member) > h2::after {
+  content: '';
+  flex: 1 1 24px;
+  height: 1px;
+  background: color-mix(in srgb, var(--planner-amber) 40%, transparent);
+}
+
+.planner-section:not(.planner-section--member) > h2 > span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--planner-amber-soft);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Compact scale
+   ---------------------------------------------------------------------------
+   The board runs on a family display: everything stays readable from a step
+   back, but nothing needs to be poster-sized. These rules tighten the type
+   and control sizes the per-screen styles set above. */
+
+.planner-header {
+  min-height: 60px;
+  padding: 6px clamp(14px, 2vw, 32px) 10px;
+}
+
+.planner-header h1 {
+  font-size: clamp(16px, 1.2vw, 20px);
+}
+
+.planner-header .planner-eyebrow {
+  font-size: 9px;
+}
+
+.planner-today-step h2 {
+  font-size: clamp(20px, 2vw, 28px);
+}
+
+.planner-mission-hero > span {
+  font-size: 54px;
+}
+
+.planner-mission-hero h2 {
+  font-size: clamp(20px, 2vw, 26px);
+}
+
+.planner-task {
+  gap: 8px;
+  padding: 12px 12px 10px;
+  border-radius: 20px;
+}
+
+.planner-task-icon {
+  width: 42px;
+  height: 42px;
+  font-size: 22px;
+}
+
+.planner-task-title-row {
+  gap: 6px;
+}
+
+.planner-task-title-row h3 {
+  font-size: clamp(15px, 1vw, 17px);
+}
+
+.planner-task-copy p {
+  margin-top: 4px;
+  font-size: 12px;
+}
+
+.planner-check {
+  min-height: 40px;
+  padding: 0 4px 0 14px;
+  font-size: 14px;
+}
+
+.planner-check-icon {
+  width: 26px;
+  height: 26px;
+}
+
+.planner-check-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.planner-check-points {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+
+.planner-primary {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+.planner-ghost {
+  min-height: 40px;
+}
+
+.planner-member-chip,
+.planner-time {
+  padding: 5px 9px;
+  font-size: 12px;
+}
+
+.planner-member-chip > span {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+.planner-content {
+  padding-bottom: 96px;
+}
+
+.planner-routine-row {
+  padding: 8px 10px;
+}
+
+.planner-routine-row strong {
+  font-size: 13px;
+}
+
+.planner-routine-row small,
+.planner-routine-time {
+  font-size: 11px;
+}
+
+.planner-celebrate-glow {
+  width: clamp(110px, 14vw, 150px);
+  height: clamp(110px, 14vw, 150px);
+  font-size: clamp(44px, 5vw, 60px);
+}
+
+.planner-celebrate-title {
+  font-size: clamp(20px, 2.4vw, 30px);
+}
+
+.planner-celebrate-pill {
+  padding: 6px 14px;
+  font-size: 13px;
+}
+
+.planner-celebrate-sub {
+  font-size: 12px;
+}
+
+The planner runs on fixed-size tiles, so any label that can grow (a chore
    name, a member name, a calendar title, a toast) must ellipsize instead of
    pushing the layout or spilling out of its card. Flex/grid children also need
    `min-width: 0`, otherwise they refuse to shrink below their content width
@@ -2142,4 +2315,553 @@
 .planner-missions h2,
 .planner-today-step h2 {
   overflow-wrap: anywhere;
+}
+
+.planner-header-clock {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------------
+   The board: one column per family member plus the free-chore column
+   --------------------------------------------------------------------------- */
+.planner-board {
+  display: grid;
+  flex: 1 1 auto;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  gap: 12px;
+  min-height: 0;
+  padding: 10px clamp(12px, 2vw, 28px) 20px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.planner-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--planner-ink) 22%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--planner-surface) 72%, transparent);
+}
+
+.planner-col--free {
+  border-color: color-mix(in srgb, var(--planner-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--planner-accent) 6%, var(--planner-surface));
+}
+
+.planner-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planner-col-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--planner-soft);
+  font-size: 15px;
+}
+
+.planner-col-avatar--free {
+  color: var(--planner-accent);
+  background: var(--planner-accent-soft);
+}
+
+.planner-col-head strong {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--planner-ink);
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* The points badge doubles as the way into that child's goals. */
+.planner-col-points {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planner-col-points:hover {
+  background: color-mix(in srgb, var(--planner-amber) 26%, var(--planner-surface));
+}
+
+.planner-col-play {
+  display: grid;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 14%, var(--planner-surface));
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.planner-col-play:hover {
+  background: color-mix(in srgb, var(--planner-accent) 24%, var(--planner-surface));
+}
+
+.planner-col-play:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
+.planner-col-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+}
+
+.planner-col-body h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0 2px;
+  color: var(--planner-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planner-col-body h2 > span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--planner-soft);
+  color: var(--planner-muted);
+  font-size: 11px;
+}
+
+.planner-col-empty {
+  margin: 2px 0 6px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--planner-ink) 14%, transparent);
+  border-radius: 12px;
+  color: var(--planner-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* One chore (or routine) inside a column. Chores are tinted green, routines
+   blue, free chores in the accent and late ones amber — the reference's colour
+   language for "what kind of thing is this". */
+.planner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--planner-green) 8%, var(--planner-surface));
+  box-shadow: 0 1px 2px rgba(63, 58, 68, 0.06);
+}
+
+.planner-row--late,
+.planner-row--retry {
+  background: color-mix(in srgb, var(--planner-amber) 18%, var(--planner-surface));
+}
+
+.planner-row--anyone {
+  background: color-mix(in srgb, var(--planner-accent) 12%, var(--planner-surface));
+}
+
+.planner-row--routine {
+  background: color-mix(in srgb, var(--planner-blue) 14%, var(--planner-surface));
+}
+
+/* Small time bar on a routine row, showing how far through its window we are. */
+.planner-row-progress {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--planner-blue) 24%, transparent);
+}
+
+.planner-row-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--planner-blue);
+}
+
+.planner-row-check {
+  display: grid;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--planner-ink) 24%, transparent);
+  border-radius: 50%;
+  color: var(--planner-accent);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.planner-row-check.is-done {
+  border-color: var(--planner-green);
+  color: var(--planner-on-accent);
+  background: var(--planner-green);
+}
+
+.planner-row-check svg {
+  width: 13px;
+  height: 13px;
+}
+
+.planner-row-icon {
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+
+.planner-row-name {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--planner-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.planner-row-name small {
+  color: var(--planner-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.planner-row-points {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  color: var(--planner-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.planner-row-more {
+  flex: 0 0 auto;
+  padding: 0 3px;
+  border: 0;
+  color: var(--planner-muted);
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planner-row-more:hover {
+  color: var(--planner-ink);
+}
+
+.planner-col-start {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--planner-on-accent);
+  background: var(--planner-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planner-col-start--ghost {
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 12%, var(--planner-surface));
+}
+
+.planner-col-start--ghost:hover {
+  background: color-mix(in srgb, var(--planner-accent) 20%, var(--planner-surface));
+}
+
+.planner-col-start:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
+.planner-col-start svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* The child's name in a column header is the way into their detail page. */
+.planner-col-open {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner-col-open:hover strong {
+  color: var(--planner-accent);
+}
+
+.planner-col-play--big {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Child detail page — everything about one child, opened from the board
+   --------------------------------------------------------------------------- */
+.planner-detail {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 760px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 10px clamp(12px, 2vw, 28px) 32px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.planner-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--planner-surface);
+  box-shadow: 0 4px 16px rgba(63, 58, 68, 0.08);
+}
+
+.planner-detail-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--planner-soft);
+  font-size: 26px;
+}
+
+.planner-detail-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planner-detail-copy h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--planner-ink);
+  font-family: var(--font-display, 'Trebuchet MS', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-detail-points {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Walk to the next family member without going back to the board. */
+.planner-detail-nav {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.planner-detail-nav .planner-icon-button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  color: var(--planner-accent);
+  background: var(--planner-accent-soft);
+}
+
+.planner-detail-nav .planner-icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.planner-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--planner-surface);
+  box-shadow: 0 4px 16px rgba(63, 58, 68, 0.06);
+}
+
+.planner-detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planner-detail-section h3 > span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--planner-soft);
+  font-size: 11px;
+}
+
+/* A paused routine: still visible so it can be resumed, but out of the way. */
+.planner-row.is-paused {
+  background: color-mix(in srgb, var(--planner-ink) 6%, var(--planner-surface));
+  opacity: 0.72;
+}
+
+.planner-row.is-paused .planner-row-name {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--planner-ink) 35%, transparent);
+}
+
+/* Goal picker: "where should these Qudoos go?" */
+.planner-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.planner-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--planner-line);
+  border-radius: 14px;
+  background: var(--planner-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner-goal:hover:not(:disabled) {
+  border-color: var(--planner-accent);
+}
+
+.planner-goal:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.planner-goal-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--planner-accent-soft);
+  font-size: 16px;
+}
+
+.planner-goal-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planner-goal-copy strong {
+  overflow: hidden;
+  color: var(--planner-ink);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-goal-copy small {
+  color: var(--planner-muted);
+  font-size: 12px;
+}
+
+.planner-goal--new {
+  border-style: dashed;
+}
+
+.planner-goal--new .planner-goal-icon {
+  color: var(--planner-accent);
+  background: transparent;
+  font-weight: 800;
+}
+
+/* Phones: one column per row, so the board reads as a vertical list. */
+@media (max-width: 640px) {
+  .planner-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

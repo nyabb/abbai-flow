@@ -1,5 +1,5 @@
 ---
-title: "Dashboard"
+title: 'Dashboard'
 description: "Guide to Beacon's dashboard view — layout presets, per-member calendar columns, weather widget, meal plan, task checklist, and countdown widget."
 order: 1
 ---
@@ -26,11 +26,11 @@ The Family layout is a per-member calendar view designed for a family command ce
 
 The original three-column layout:
 
-| Section | Position | Contents |
-|---------|----------|----------|
-| **Left** | Left column | Large clock, date, personalized greeting |
-| **Center** | Middle column | Today's events list |
-| **Right** | Right column | Weather, task checklist, countdown widget |
+| Section    | Position      | Contents                                  |
+| ---------- | ------------- | ----------------------------------------- |
+| **Left**   | Left column   | Large clock, date, personalized greeting  |
+| **Center** | Middle column | Today's events list                       |
+| **Right**  | Right column  | Weather, task checklist, countdown widget |
 
 Good for simple setups where per-member calendar columns are not needed.
 
@@ -67,13 +67,13 @@ To assign a calendar to a family member, go to **Settings > Family Members**, ed
 
 The meal plan widget appears in the sidebar (Family layout) or the right column (Classic layout). It shows today's planned meals:
 
-| Meal | Icon |
-|------|------|
+| Meal      | Icon    |
+| --------- | ------- |
 | Breakfast | Sunrise |
-| Lunch | Sun |
-| Dinner | Moon |
+| Lunch     | Sun     |
+| Dinner    | Moon    |
 
-Meal data comes from AnyList via the sync script or MCP tools. If no meals are planned for today, the widget is hidden.
+Meal data comes from AnyList via the sync script or MCP tools. If no meals are planned for today, the widget is hidden. See [Meal Plan](/docs/features/meal-planning/) for the sync and storage details.
 
 ---
 
@@ -87,22 +87,22 @@ The weather widget appears in the top bar (Family layout) or the right column (C
 
 ### Supported weather conditions
 
-| Condition | Icon |
-|-----------|------|
-| sunny | Sun |
-| clear-night | Crescent moon |
-| cloudy | Cloud |
-| partlycloudy | Sun behind cloud |
-| rainy | Rain cloud |
-| pouring | Heavy rain |
-| snowy | Snowflake |
-| snowy-rainy | Sleet |
-| fog | Fog |
-| hail | Hail |
-| lightning | Lightning bolt |
-| lightning-rainy | Thunderstorm |
-| windy | Wind |
-| exceptional | Warning |
+| Condition       | Icon             |
+| --------------- | ---------------- |
+| sunny           | Sun              |
+| clear-night     | Crescent moon    |
+| cloudy          | Cloud            |
+| partlycloudy    | Sun behind cloud |
+| rainy           | Rain cloud       |
+| pouring         | Heavy rain       |
+| snowy           | Snowflake        |
+| snowy-rainy     | Sleet            |
+| fog             | Fog              |
+| hail            | Hail             |
+| lightning       | Lightning bolt   |
+| lightning-rainy | Thunderstorm     |
+| windy           | Wind             |
+| exceptional     | Warning          |
 
 The weather data comes from whatever weather entity you configure (Met.no, OpenWeatherMap, AccuWeather, etc.) and refreshes every 10 minutes.
 
@@ -116,6 +116,7 @@ Below the weather widget, a task checklist shows today's chores. Each task displ
 - The **chore icon** (emoji) and **chore name**
 
 Tasks are divided into two groups:
+
 1. **Incomplete tasks** appear first with empty checkboxes
 2. **Completed tasks** appear below with checked boxes and strikethrough text
 
@@ -165,16 +166,16 @@ The widget is hidden entirely if there are no active countdowns and the add form
 
 ## Customizing the dashboard
 
-| What to customize | How |
-|-------------------|-----|
-| Dashboard layout | **Settings > General > Dashboard Layout** — choose Family, Classic, or Compact |
-| Family member columns | Assign a `calendar_entity` to each member in **Settings > Family Members** |
-| Family name in greeting (Classic) | Set `family_name` in configuration |
-| Weather display | Set `weather_entity` in configuration; leave blank to hide weather |
-| Meal plan | Configure AnyList sync to populate today's meals |
-| Task list content | Add chores in the Chores panel, or configure HA todo entities |
-| Countdown items | Add `#countdown` to event descriptions, or add manual countdowns |
-| Theme and colors | Use the theme selector in the sidebar |
+| What to customize                 | How                                                                            |
+| --------------------------------- | ------------------------------------------------------------------------------ |
+| Dashboard layout                  | **Settings > General > Dashboard Layout** — choose Family, Classic, or Compact |
+| Family member columns             | Assign a `calendar_entity` to each member in **Settings > Family Members**     |
+| Family name in greeting (Classic) | Set `family_name` in configuration                                             |
+| Weather display                   | Set `weather_entity` in configuration; leave blank to hide weather             |
+| Meal plan                         | Configure AnyList sync to populate today's meals                               |
+| Task list content                 | Add chores in the Chores panel, or configure HA todo entities                  |
+| Countdown items                   | Add `#countdown` to event descriptions, or add manual countdowns               |
+| Theme and colors                  | Use the theme selector in the sidebar                                          |
 
 ---
 

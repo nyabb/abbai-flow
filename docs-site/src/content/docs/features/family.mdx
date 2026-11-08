@@ -1,6 +1,6 @@
 ---
-title: "Family Members"
-description: "How to add, edit, and manage family members in Beacon — avatars, colors, roles, and PINs."
+title: 'Family Members'
+description: 'How to add, edit, and manage family members in Beacon — avatars, colors, roles, and PINs.'
 order: 3
 ---
 
@@ -33,18 +33,23 @@ The member is saved immediately to the browser's localStorage and (when possible
 Beacon provides 55+ emoji avatars organized into 5 categories:
 
 ### People (16 options)
+
 Boy, Girl, Man, Woman, Old Man, Old Woman, Person, Baby, Child, Princess, Prince, Superhero, Red-haired Woman, Curly-haired Man, Bearded Person, Blonde Person
 
 ### Animals (16 options)
+
 Dog, Cat, Rabbit, Fox, Bear, Panda, Lion, Cow, Pig, Frog, Owl, Bee, Butterfly, Turtle, Octopus, Penguin
 
 ### Nature (9 options)
+
 Cherry Blossom, Sunflower, Hibiscus, Four-leaf Clover, Rainbow, Star, Moon, Sun, Fire
 
 ### Fun (9 options)
+
 Guitar, Art Palette, Soccer Ball, Basketball, Video Game Controller, Rocket, Theatre Masks, Circus Tent, Bullseye
 
 ### Food (5 options)
+
 Pizza, Ice Cream, Cupcake, Donut, Birthday Cake
 
 To select an avatar, scroll through the categories and tap the emoji you want. The selected avatar gets a highlighted border.
@@ -55,18 +60,19 @@ To select an avatar, scroll through the categories and tap the emoji you want. T
 
 Eight colors are available for family members:
 
-| Color | Hex | Swatch |
-|-------|-----|--------|
-| Blue | `#3b82f6` | Used for events and chore cards |
-| Green | `#22c55e` | |
-| Purple | `#a855f7` | |
-| Orange | `#f97316` | |
-| Pink | `#ec4899` | |
-| Teal | `#14b8a6` | |
-| Yellow | `#eab308` | |
-| Red | `#ef4444` | |
+| Color  | Hex       | Swatch                          |
+| ------ | --------- | ------------------------------- |
+| Blue   | `#3b82f6` | Used for events and chore cards |
+| Green  | `#22c55e` |                                 |
+| Purple | `#a855f7` |                                 |
+| Orange | `#f97316` |                                 |
+| Pink   | `#ec4899` |                                 |
+| Teal   | `#14b8a6` |                                 |
+| Yellow | `#eab308` |                                 |
+| Red    | `#ef4444` |                                 |
 
 The color appears in several places:
+
 - As the border and background tint on the member's avatar throughout the app
 - As the progress bar fill in the Chores panel
 - As the background tint on chore cards
@@ -80,10 +86,10 @@ Multiple family members can share the same color, but using different colors mak
 
 Each family member has one of two roles:
 
-| Role | Description |
-|------|-------------|
+| Role       | Description                                                                                          |
+| ---------- | ---------------------------------------------------------------------------------------------------- |
 | **Parent** | Full access. The presence of at least one parent enables the "Add Chore" button in the Chores panel. |
-| **Child** | Standard access. Can complete and uncomplete chores. |
+| **Child**  | Standard access. Can complete and uncomplete chores.                                                 |
 
 Roles are currently informational and used to control UI visibility (e.g., showing the chore creation form). There is no access control enforced by roles at this time.
 
@@ -166,6 +172,7 @@ For larger families, the data may exceed the HA input_text limit. In that case, 
 ### Family members disappear after clearing browser data
 
 Family data is stored in localStorage. If you clear browser data (cache, cookies, site data), family members will be lost. To avoid this:
+
 - Use a kiosk browser (like Fully Kiosk) that does not clear data
 - Avoid clearing site data for your Beacon URL
 

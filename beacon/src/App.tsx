@@ -468,6 +468,17 @@ export function App() {
     setActiveView(view);
   }, []);
 
+  /* Quick add lives in the middle of the tab bar; the chores page listens for a
+     create request so "chore" and "routine" open its form directly. */
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>(
+    { kind: 'chore', token: 0 },
+  );
+  const requestChoreCreate = useCallback((kind: 'chore' | 'routine') => {
+    setActiveView('chores');
+    setChoreCreate((previous) => ({ kind, token: previous.token + 1 }));
+  }, []);
+
   // ---- Chore data ----
   // ChoreOps owns all chore data: chores are created and edited in Home
   // Assistant, so Beacon only reads them and presses the action buttons the
@@ -650,7 +661,12 @@ export function App() {
         )}
         {/* Sidebar — hidden entirely in Kiosk Mode (Settings > Display) */}
         {!settings.kioskMode && (
-          <Sidebar activeView={activeView} onChangeView={handleChangeView} position={sidebarPos} />
+          <Sidebar
+            activeView={activeView}
+            onChangeView={handleChangeView}
+            position={sidebarPos}
+            onQuickAdd={() => setQuickAddOpen(true)}
+          />
         )}
 
         {/* Main content area */}
@@ -678,7 +694,8 @@ export function App() {
               <OmniAdd
                 onAddEvent={handleAddEvent}
                 onAddGroceryItem={() => setActiveView('grocery')}
-                onAddChore={() => handleChangeView('chores')}
+                onAddChore={() => requestChoreCreate('chore')}
+                onAddRoutine={() => requestChoreCreate('routine')}
                 onNavigateTimer={() => setActiveView('timer')}
                 sidebarPosition={sidebarPos}
               />
@@ -689,12 +706,7 @@ export function App() {
                 members={members}
                 locale={settings.locale}
                 onLocaleChange={(locale) => updateSettings({ locale })}
-                weather={weather}
-                nextAppointment={
-                  visibleEvents
-                    .filter((event) => new Date(event.end).getTime() >= Date.now())
-                    .sort((left, right) => left.start.localeCompare(right.start))[0] ?? null
-                }
+                createRequest={choreCreate}
               />
             ) : (
               <div className="chores-empty" style={{ padding: 48 }}>
@@ -825,13 +837,27 @@ export function App() {
               <OmniAdd
                 onAddEvent={handleAddEvent}
                 onAddGroceryItem={() => setActiveView('grocery')}
-                onAddChore={() => handleChangeView('chores')}
+                onAddChore={() => requestChoreCreate('chore')}
+                onAddRoutine={() => requestChoreCreate('routine')}
                 onNavigateTimer={() => setActiveView('timer')}
                 sidebarPosition={sidebarPos}
               />
             </>
           )}
         </div>
+
+        {/* Quick add opened from the middle of the mobile tab bar. */}
+        <OmniAdd
+          open={quickAddOpen}
+          onOpenChange={setQuickAddOpen}
+          showTrigger={false}
+          onAddEvent={handleAddEvent}
+          onAddGroceryItem={() => setActiveView('grocery')}
+          onAddChore={() => requestChoreCreate('chore')}
+          onAddRoutine={() => requestChoreCreate('routine')}
+          onNavigateTimer={() => setActiveView('timer')}
+          sidebarPosition={sidebarPos}
+        />
 
         {/* Event Modal */}
         {showModal && (

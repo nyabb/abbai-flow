@@ -1,0 +1,78 @@
+---
+title: 'Meal Plan'
+description: "Show today's breakfast, lunch, dinner and snacks on the Beacon dashboard, filled by the AnyList sync script or a Grocy meal plan sensor."
+order: 6
+---
+
+# Meal Plan
+
+Beacon's **Menu** card shows what the household is eating today. It sits in the dashboard
+sidebar for the Family layout and in the right-hand column for the Classic layout, and it
+stays hidden while there is nothing planned for today.
+
+Each meal is one row, sorted breakfast → lunch → dinner → snack:
+
+| Meal      | Icon |
+| --------- | ---- |
+| Breakfast | 🌅   |
+| Lunch     | ☀️   |
+| Dinner    | 🌙   |
+| Snack     | 🍎   |
+
+---
+
+## Where the data comes from
+
+Beacon does not have a meal editor: the plan is **written by a sync**, and the dashboard
+only reads it.
+
+### AnyList
+
+`scripts/sync-meals.mjs` turns AnyList meal-plan output into the array Beacon expects:
+
+```bash
+# raw MCP tool-result file, or plain text with lines like:
+# - **2026-11-07** [📖] Pasta pesto [Dinner] — id: abc123
+node scripts/sync-meals.mjs meal-data.txt > meal-plans.json
+
+# limit the range
+node scripts/sync-meals.mjs meal-data.txt --from 2026-11-07 --to 2026-11-21 > meal-plans.json
+```
+
+### Grocy
+
+If you run Grocy with a meal plan, today's meals can come from `sensor.grocy_meal_plan` —
+see [Grocery](/docs/features/grocery/) for the sensor setup.
+
+---
+
+## Storage and refresh
+
+- Entries live under `beacon_meal_plans` in Beacon's data store: server-side in the Home
+  Assistant add-on, in browser storage for the standalone build.
+- Each entry looks like
+  `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "abc123" }`.
+- `meal_type` is one of `Breakfast`, `Lunch`, `Dinner` or `Snack`; `recipe_id` is optional.
+- Only entries whose `date` is today are rendered, so the card rolls over by itself at
+  midnight.
+- The dashboard re-reads the store every 5 minutes, so a fresh sync appears without a page
+  reload.
+
+---
+
+## Troubleshooting
+
+### The Menu card is missing
+
+That is expected when nothing is planned for today — the card hides itself rather than
+showing an empty block. Check that the sync produced entries with today's date.
+
+### Meals show the wrong day
+
+Dates are compared as plain `YYYY-MM-DD` strings in the device's local day, so a sync that
+writes UTC timestamps can land on the neighbouring day. Write the date you want displayed.
+
+### A meal is in the wrong position
+
+Ordering comes from `meal_type`, not from the plan's own order — anything other than the
+four known types sorts last.

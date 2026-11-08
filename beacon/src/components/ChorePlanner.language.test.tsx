@@ -35,13 +35,17 @@ function renderPlanner(locale: string, onLocaleChange: (locale: string) => void)
     <I18nContext.Provider value={createI18n(locale)}>
       <ChorePlanner
         members={[MEMBER]}
-        weather={null}
         nextAppointment={null}
         locale={locale}
         onLocaleChange={onLocaleChange}
       />
     </I18nContext.Provider>,
   );
+}
+
+/** The board titles itself with the section name. */
+function pageTitle(container: HTMLElement): string {
+  return container.querySelector('.planner-header h1 .planner-title-full')?.textContent ?? '';
 }
 
 describe('ChorePlanner language picker', () => {
@@ -69,12 +73,11 @@ describe('ChorePlanner language picker', () => {
   });
 
   it('renders its copy in whatever language the app is set to', () => {
-    const { container, unmount } = renderPlanner('de', () => {});
-
-    expect(container.textContent).toContain('Aufgaben & Routinen');
-    unmount();
+    const german = renderPlanner('de', () => {});
+    expect(pageTitle(german.container)).toBe('Aufgaben & Routinen');
+    german.unmount();
 
     const dutch = renderPlanner('nl', () => {});
-    expect(dutch.container.textContent).toContain('Taakjes & Routines');
+    expect(pageTitle(dutch.container)).toBe('Taakjes & Routines');
   });
 });

@@ -3,21 +3,22 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Eye,
   EyeOff,
+  Filter,
   Pencil,
   Plus,
   RotateCcw,
-  Sparkles,
   Trash2,
   Volume2,
   VolumeX,
   X,
 } from 'lucide-react';
 import { ChorePlannerState, PlannerTask, getPlannerTaskStatus } from '../api/chore-planner-model';
-import type { PlannerMember } from '../api/chore-planner-model';
+import type { PlannerMember, PlannerRoutine } from '../api/chore-planner-model';
 import { buildChorePlannerView } from '../api/chore-planner-view';
 import {
   resolveMemberForUser,
@@ -42,20 +43,37 @@ import { useTranslation, type TranslationKey } from '../i18n';
 import { LOCALE_OPTIONS } from '../i18n/locales';
 import { normalizePin, type FamilyMember } from '../types/family';
 import { MemberAvatar } from './MemberAvatar';
-import type { CalendarEvent, WeatherData } from '../types';
 
-type Screen =
-  | 'tasks'
-  | 'lobby'
-  | 'welcome'
-  | 'overview'
-  | 'points'
-  | 'missions'
-  | 'mission'
-  | 'closing';
+/**
+ * The planner is one board: a column per family member plus a column of chores
+ * anybody may take. The mission screens are the optional step-by-step run
+ * through one child's chores.
+ */
+type Screen = 'board' | 'child' | 'missions' | 'mission' | 'closing';
 
 /** Outcome shown in the bottom-right notification. */
 type ToastKind = 'success' | 'error';
+
+const PAUSED_ROUTINES_KEY = 'beacon_paused_routines';
+
+/** Routines paused for now (holiday, a week off) — kept per device. */
+function readPausedRoutines(): string[] {
+  try {
+    const raw = localStorage.getItem(PAUSED_ROUTINES_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writePausedRoutines(ids: string[]) {
+  try {
+    localStorage.setItem(PAUSED_ROUTINES_KEY, JSON.stringify(ids));
+  } catch {
+    /* Storage is optional. */
+  }
+}
 
 /** Parent PINs must be at least this long to unlock approvals. */
 const MIN_PIN_LENGTH = 4;
@@ -127,14 +145,17 @@ type FormValue = {
 };
 
 interface ChorePlannerProps {
-  weather: WeatherData | null;
-  nextAppointment: CalendarEvent | null;
   /** Beacon family members supply photos, colours, and display names. */
   members: FamilyMember[];
   /** App language (`BeaconSettings.locale`); the planner has no own language switch. */
   locale: string;
   /** The same updater Settings uses, so picking a language here changes the whole app. */
   onLocaleChange: (locale: string) => void;
+  /**
+   * Asks the planner to open its "new chore" form for a chore or a routine,
+   * e.g. from quick add. The token makes repeated requests distinct.
+   */
+  createRequest?: { kind: 'chore' | 'routine'; token: number };
 }
 
 /**
@@ -220,6 +241,23 @@ function usePlannerCopy() {
       routinePlaceholder: t('planner.routinePlaceholder'),
       routineHint: t('planner.routineHint'),
       otherDaily: t('planner.otherDaily'),
+      noRoutines: t('planner.noRoutines'),
+      setGoal: t('planner.setGoal'),
+      claimWho: t('planner.claimWho'),
+      openChild: t('planner.openChild'),
+      filter: t('planner.filter'),
+      filterTitle: t('planner.filterTitle'),
+      awardTitle: t('planner.awardTitle'),
+      stillNeeded: t('planner.stillNeeded'),
+      savingsPot: t('planner.savingsPot'),
+      pausedRoutines: t('planner.pausedRoutines'),
+      resumeRoutine: t('planner.resumeRoutine'),
+      pauseRoutine: t('planner.pauseRoutine'),
+      paused: t('planner.paused'),
+      goals: t('planner.tab.goals'),
+      choresColumn: t('planner.tab.chores'),
+      prevChild: t('planner.prevChild'),
+      nextChild: t('planner.nextChild'),
       offline: t('planner.offline'),
       assignToClaim: t('planner.assignToClaim'),
       pinTitle: t('planner.pinTitle'),
@@ -360,11 +398,10 @@ function emptyForm(now: Date): FormValue {
 }
 
 export function ChorePlanner({
-  weather,
-  nextAppointment,
   members,
   locale,
   onLocaleChange,
+  createRequest,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
   const [now, setNow] = useState(new Date());
@@ -389,12 +426,17 @@ export function ChorePlanner({
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
-  const [screen, setScreen] = useState<Screen>('tasks');
-  const [memberFilter, setMemberFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'late' | 'completed'>('all');
-  const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [screen, setScreen] = useState<Screen>('board');
   const [modal, setModal] = useState<
-    'form' | 'actions' | 'rewards' | 'reward-form' | 'reward-actions' | null
+    | 'form'
+    | 'actions'
+    | 'claim'
+    | 'award'
+    | 'filter'
+    | 'goals'
+    | 'reward-form'
+    | 'reward-actions'
+    | null
   >(null);
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -424,6 +466,19 @@ export function ChorePlanner({
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [todayMemberId, setTodayMemberId] = useState<string | null>(null);
+  /** Child whose goals sheet is open, if any. */
+  const [goalsMemberId, setGoalsMemberId] = useState<string | null>(null);
+  /** Free chore whose "who is taking it?" sheet is open. */
+  const [claimTaskId, setClaimTaskId] = useState<string | null>(null);
+  /** Child whose detail page is open (the board is the overview). */
+  const [childMemberId, setChildMemberId] = useState<string | null>(null);
+  /** Chore just ticked: which goal should its Qudoos go to? */
+  const [awardTaskId, setAwardTaskId] = useState<string | null>(null);
+  /** Members hidden from the board, and routines paused for the day. */
+  const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
+  const [pausedRoutineIds, setPausedRoutineIds] = useState<string[]>(() =>
+    readPausedRoutines(),
+  );
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
   const [pinGate, setPinGate] = useState<{
@@ -460,6 +515,9 @@ export function ChorePlanner({
   useEffect(() => {
     writeRewardReservations(reservations);
   }, [reservations]);
+  useEffect(() => {
+    writePausedRoutines(pausedRoutineIds);
+  }, [pausedRoutineIds]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
@@ -503,6 +561,20 @@ export function ChorePlanner({
   );
 
   const taskStatus = (task: PlannerTask) => getPlannerTaskStatus(task, now);
+
+  /**
+   * Label for the pill button, naming the action a tap performs:
+   * claim an unclaimed shared chore, approve one that waits for a parent,
+   * tick off the child's own chore. A claimed chore must never read
+   * "Completed" — it is only finished once a parent signs it off.
+   */
+  const pillLabel = (task: PlannerTask, status: ReturnType<typeof taskStatus>) => {
+    if (status === 'completed') return c.done;
+    if (status === 'expired') return c.expired;
+    if (task.awaitingReview) return c.confirm;
+    if (task.audience === 'anyone') return c.claim;
+    return c.done;
+  };
 
   const openActions = (taskId: string) => {
     setSelectedTaskId(taskId);
@@ -550,87 +622,320 @@ export function ChorePlanner({
     return spendablePoints(member.savings, reservations, rewards, userName);
   };
 
-  const filteredTasks = useMemo(
-    () =>
-      data.tasks.filter((task) => {
-        const status = getPlannerTaskStatus(task, now);
-        const matchesMember =
-          memberFilter === 'all' ||
-          task.memberId === memberFilter ||
-          (!task.memberId && memberFilter === 'all');
-        const matchesStatus =
-          statusFilter === 'all' ||
-          (statusFilter === 'open' && status !== 'completed') ||
-          (statusFilter === 'late' && (status === 'late' || status === 'retry')) ||
-          (statusFilter === 'completed' && status === 'completed');
-        return matchesMember && matchesStatus;
-      }),
-    [data.tasks, memberFilter, now, statusFilter],
-  );
+  /**
+   * A routine row: name, its part of the day, how far through it we are, and a
+   * pause/resume tap. A paused routine stays visible but greyed out, so a
+   * parent can see it is off and bring it back with one tap.
+   */
+  const routineRow = (routine: PlannerRoutine) => {
+    const paused = pausedRoutineIds.includes(routine.id);
+    return (
+      <div
+        className={`planner-row planner-row--routine ${paused ? 'is-paused' : ''}`}
+        key={routine.id}
+      >
+        <span className="planner-row-icon" aria-hidden="true">
+          {routine.icon}
+        </span>
+        <span className="planner-row-name">
+          {routine.fallback ? c.otherDaily : routine.name}
+          <small>{paused ? c.paused : routineLabel(routine)}</small>
+        </span>
+        {!paused && (
+          <span className="planner-row-progress" aria-hidden="true">
+            <i style={{ width: `${blockProgress(routine.timeBlock)}%` }} />
+          </span>
+        )}
+        <button
+          type="button"
+          className="planner-row-more"
+          aria-label={`${paused ? c.resumeRoutine : c.pauseRoutine}: ${routine.name}`}
+          onClick={() => toggleRoutinePaused(routine.id)}
+        >
+          {paused ? '\u25B6' : '\u23F8'}
+        </button>
+      </div>
+    );
+  };
 
   /**
-   * What is still on the child's plate in the current view: chores nobody has
-   * claimed yet and that are not finished. A claimed chore already counts as
-   * done — the parent's approval is a real-life confirmation, not a task the
-   * child still owes — so once everything is claimed the badge disappears
-   * instead of nagging.
+   * A reward row: progress towards the goal plus its actions. Shared by the
+   * goals sheet and the child's detail page so both behave identically.
    */
-  const openCount = filteredTasks.filter((task) => {
-    if (task.awaitingReview) return false;
-    const status = taskStatus(task);
-    return status !== 'completed' && status !== 'expired';
-  }).length;
+  const renderRewardRow = (reward: ChoreOpsReward) => {
+    const { reserved, saved, available, pending, affordable } = rewardState(reward);
+    const approveId = reward.actions.approve;
+    return (
+      <div className="planner-reward" key={reward.id}>
+        <span aria-hidden="true">{'\u{1F381}'}</span>
+        <div className="planner-reward-copy">
+          <strong>{reward.name}</strong>
+          <small>
+            {reserved
+              ? c.assigned
+              : `${saved} / ${reward.cost} ${c.pointsUnit}${
+                  pending ? ` \u00b7 ${c.claimed}` : available ? '' : ` \u00b7 ${c.locked}`
+                }`}
+          </small>
+          <i>
+            <b
+              style={{
+                width: `${
+                  reserved ? 100 : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
+                }%`,
+              }}
+            />
+          </i>
+        </div>
+        <div className="planner-reward-actions">
+          {reserved ? (
+            <>
+              <button
+                className="planner-ghost planner-reward-action"
+                onClick={() => undoRewardChoice(reward)}
+              >
+                {c.undoShort}
+              </button>
+              <button
+                className="planner-primary planner-reward-action"
+                disabled={saving}
+                onClick={() => confirmReward(reward)}
+              >
+                {c.confirm}
+              </button>
+            </>
+          ) : pending && approveId ? (
+            <button
+              className="planner-primary planner-reward-action"
+              onClick={() =>
+                requestPin(c.rewards, reward.name, () =>
+                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
+                )
+              }
+            >
+              {c.confirm}
+            </button>
+          ) : (
+            <button
+              className="planner-ghost planner-reward-action"
+              disabled={!available || !affordable}
+              onClick={() => assignReward(reward)}
+            >
+              {c.assign}
+            </button>
+          )}
+          <button
+            type="button"
+            className="planner-task-more"
+            aria-label={`${c.action}: ${reward.name}`}
+            onClick={() => {
+              setSelectedReward(reward);
+              setModal('reward-actions');
+            }}
+          >
+            {'\u22ef'}
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-  const freeTasks = filteredTasks.filter(
-    (task) => !task.memberId && taskStatus(task) !== 'completed',
-  );
-  const completedTasks = filteredTasks.filter((task) => taskStatus(task) === 'completed');
-  const lateTasks = filteredTasks.filter(
-    (task) => task.memberId && ['late', 'retry'].includes(taskStatus(task)),
-  );
-  const todayTasks = filteredTasks.filter(
-    (task) => task.memberId && ['active', 'upcoming'].includes(taskStatus(task)),
-  );
+  /**
+   * The one line under a board row's name, when there is something to say. The
+   * board is dense, so quiet chores stay a single line.
+   */
+  const rowHint = (task: PlannerTask, status: string) =>
+    task.awaitingReview && status !== 'completed'
+      ? c.claimed
+      : status === 'late'
+        ? c.late
+        : status === 'retry'
+          ? c.retryCopy
+          : status === 'upcoming'
+            ? `${c.upcoming} ${clockTime(task.startsAt, timeLocale)}`
+            : null;
+
+  /**
+   * One chore on the board: a round status button, the name and the points.
+   * Everything a parent needs (approve, edit, delete) is on the row itself, so
+   * the board never has to send you to a separate child page.
+   */
+  const renderRow = (task: PlannerTask) => {
+    const status = taskStatus(task);
+    const busy = pendingTaskId === task.id;
+    // The accessible name is the action the tap performs, not the chore's state.
+    const label =
+      task.awaitingReview && status !== 'completed'
+        ? c.confirm
+        : task.audience === 'anyone'
+          ? c.claim
+          : c.iDidIt;
+    const hint = rowHint(task, status);
+    return (
+      <div
+        className={`planner-row planner-row--${status}${
+          task.audience === 'anyone' ? ' planner-row--anyone' : ''
+        }`}
+        key={task.id}
+      >
+        <button
+          type="button"
+          className={`planner-row-check ${status === 'completed' ? 'is-done' : ''}`}
+          aria-label={`${label}: ${task.name}`}
+          disabled={!online || status === 'upcoming' || busy}
+          onClick={() => {
+            if (task.audience === 'anyone') {
+              openClaim(task);
+              return;
+            }
+            void completeTask(task);
+          }}
+        >
+          {busy ? (
+            <span className="planner-spinner" />
+          ) : status === 'completed' ? (
+            <Check />
+          ) : task.audience === 'anyone' ? (
+            <span aria-hidden="true">{'\u270B'}</span>
+          ) : null}
+        </button>
+        <span className="planner-row-name">
+          {task.name}
+          {hint && <small>{hint}</small>}
+        </span>
+        {task.points > 0 && (
+          <span className="planner-row-points">
+            <span aria-hidden="true">{'\u{1F3C6}'}</span>
+            {task.points}
+          </span>
+        )}
+        <button
+          type="button"
+          className="planner-row-more"
+          aria-label={`${c.action}: ${task.name}`}
+          onClick={() => openActions(task.id)}
+        >
+          {'\u22ef'}
+        </button>
+      </div>
+    );
+  };
+
+  /** Calendar order for a list of chores. */
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
 
-  /** Chores that need attention first, then by deadline. */
-  const byUrgency = (a: PlannerTask, b: PlannerTask) => {
-    const rank = (task: PlannerTask) =>
-      ['late', 'retry', 'expired'].includes(taskStatus(task)) ? 0 : 1;
-    return rank(a) - rank(b) || byDeadline(a, b);
-  };
+  /**
+   * Open chores on one child's column: late ones first, then by deadline.
+   * Chores still up for grabs are excluded here — they belong to the free
+   * column until somebody takes one.
+   */
+  const columnTasks = (memberId: string) =>
+    data.tasks
+      .filter(
+        (task) =>
+          task.memberId === memberId &&
+          task.audience !== 'anyone' &&
+          !['completed', 'expired'].includes(taskStatus(task)),
+      )
+      .sort((a, b) => {
+        const late = (task: PlannerTask) =>
+          ['late', 'retry'].includes(taskStatus(task)) ? 0 : 1;
+        return late(a) - late(b) || byDeadline(a, b);
+      });
 
   /**
-   * The "everyone" board is grouped by child rather than by status: with the
-   * whole family on screen a parent wants to see who still has work left, not
-   * one long mixed list. Completed chores are grouped the same way so the
-   * history stays attributable at a glance.
+   * Chores still up for grabs. ChoreOps publishes one row per user for a
+   * first-come-first-served chore, so the board shows the chore once and asks
+   * which child is taking it when somebody taps it.
    */
-  const byMember = data.members.map((member) => {
-    const mine = filteredTasks.filter((task) => task.memberId === member.id);
-    return {
-      member,
-      open: mine.filter((task) => taskStatus(task) !== 'completed').sort(byUrgency),
-      done: mine
-        .filter((task) => taskStatus(task) === 'completed')
-        .sort((a, b) => byDeadline(b, a)),
-    };
-  });
-  const memberGroups = byMember.filter((group) => group.open.length > 0);
-  const completedGroups = byMember.filter((group) => group.done.length > 0);
+  const freeTasks = [...data.tasks]
+    .filter((task) => task.audience === 'anyone' && taskStatus(task) !== 'completed')
+    .filter(
+      (task, index, all) => all.findIndex((other) => other.name === task.name) === index,
+    )
+    .sort(byDeadline);
 
-  /** Avatar + name + count heading, shared by the open and completed groups. */
-  const memberHeading = (member: PlannerMember, count: number) => (
-    <h2>
-      <span className="planner-member-heading-avatar">
-        <MemberAvatar member={member} />
-      </span>
-      {member.name}
-      <span className="planner-member-heading-count">{count}</span>
-    </h2>
-  );
+  /** Every row of one free chore, i.e. one claim button per child. */
+  const claimOptionsFor = (task: PlannerTask) =>
+    data.tasks.filter(
+      (other) => other.name === task.name && other.audience === 'anyone' && other.actions?.claim,
+    );
+
+  /** Open the "who is taking this?" sheet for a free chore. */
+  const openClaim = (task: PlannerTask) => {
+    setClaimTaskId(task.id);
+    setModal('claim');
+  };
+
+  /** The routines that belong to one child (ChoreOps groups them by label). */
+  const columnRoutines = (memberId: string) =>
+    data.routines.filter((routine) => routine.memberIds.includes(memberId));
+
+  /** Columns on the board: the ones a parent has not filtered out. */
+  const boardMembers = data.members.filter((member) => !hiddenMemberIds.includes(member.id));
+
+  /** Completed chores of one child today (the detail page's history). */
+  const completedTasksFor = (memberId: string) =>
+    data.tasks.filter(
+      (task) => task.memberId === memberId && taskStatus(task) === 'completed',
+    );
+
+  /** Step to the previous/next child from the detail page. */
+  const stepChild = (delta: number) => {
+    if (!childMember) return;
+    const list = boardMembers;
+    const index = list.findIndex((member) => member.id === childMember.id);
+    if (index === -1) return;
+    const next = list[(index + delta + list.length) % list.length];
+    if (next) setChildMemberId(next.id);
+  };
+
+  /** Pause a routine so it drops out of the day until it is resumed. */
+  const toggleRoutinePaused = (routineId: string) =>
+    setPausedRoutineIds((ids) =>
+      ids.includes(routineId) ? ids.filter((id) => id !== routineId) : [...ids, routineId],
+    );
+
+  /**
+   * Qudoo asks where the earned Qudoos should go as soon as a chore is ticked.
+   * We do the same: complete the chore, then offer this child's goals.
+   */
+  const awardTask = getTask(awardTaskId);
+
+  /**
+   * How far through its part of the day a routine is: the reference app puts a
+   * small time bar on every routine row.
+   */
+  const blockProgress = (block: string) => {
+    const hour = now.getHours() + now.getMinutes() / 60;
+    const [start, end] =
+      block === 'morning' ? [6, 12] : block === 'afternoon' ? [12, 17] : [17, 22];
+    return Math.min(100, Math.max(0, ((hour - start) / (end - start)) * 100));
+  };
+
+  /** "Ochtend · dagelijks" for a routine row's second line. */
+  const routineLabel = (routine: PlannerRoutine) => {
+    const block =
+      routine.timeBlock === 'morning'
+        ? c.morning
+        : routine.timeBlock === 'evening'
+          ? c.evening
+          : c.afternoon;
+    return `${block} · ${routine.frequency === 'daily' ? c.daily : routine.frequency}`;
+  };
+
+  /** Open the goal sheet of one child, where their rewards live. */
+  const openGoals = (memberId: string) => {
+    setGoalsMemberId(memberId);
+    setModal('goals');
+  };
+  const goalsMember = memberFor(goalsMemberId);
+  const claimTask = getTask(claimTaskId);
+  const childMember = memberFor(childMemberId);
+  /** The filter sheet doubles as the board's filter state indicator. */
+  const filterOpen = modal === 'filter';
 
   const showToast = (message: string, kind: ToastKind = 'success') => setToast({ message, kind });
   const playCompletionSound = () => {
@@ -700,6 +1005,9 @@ export function ChorePlanner({
       if (screen === 'mission') advanceMission();
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail, 'error');
+    } finally {
+      /* Must clear on success too: leaving it set made `completeTask` bail out
+         for every later card, so a second chore only worked after a reload. */
       setPendingTaskId(null);
     }
   };
@@ -739,10 +1047,31 @@ export function ChorePlanner({
     setPinGate({ title, description, run });
   };
 
-  const openNewForm = () => {
+  const openNewForm = (kind: 'chore' | 'routine' = 'chore') => {
     setEditingId(null);
-    setForm(emptyForm(now));
+    // A routine is a chore that repeats daily and belongs to a named routine.
+    setForm(
+      kind === 'routine'
+        ? { ...emptyForm(now), frequency: 'daily', liveFrequency: 'daily', timeBlock: 'morning' }
+        : emptyForm(now),
+    );
     setModal('form');
+  };
+
+  /* Quick add's "chore"/"routine" entries land here: the token changes once per
+     request, so the form opens even when this page is already on screen. */
+  const createToken = createRequest?.token ?? 0;
+  useEffect(() => {
+    if (createToken === 0) return;
+    openNewForm(createRequest?.kind ?? 'chore');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
+  }, [createToken]);
+
+  /** Open the reward form with the given child already selected. */
+  const startRewardForm = (memberId: string) => {
+    setEditingReward(null);
+    setRewardForm({ name: '', cost: 10, memberIds: [memberId] });
+    setModal('reward-form');
   };
 
   const openEditForm = (task: PlannerTask) => {
@@ -868,7 +1197,7 @@ export function ChorePlanner({
         try {
           setSaving(true);
           await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
-          setModal('rewards');
+          setModal(null);
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -893,7 +1222,7 @@ export function ChorePlanner({
           cost: rewardForm.cost,
           assignedUserNames: userNames,
         });
-        setModal('rewards');
+        setModal(null);
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -910,7 +1239,7 @@ export function ChorePlanner({
       try {
         setSaving(true);
         await choreOps.deleteReward(reward.name);
-        setModal('rewards');
+        setModal(null);
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -992,12 +1321,13 @@ export function ChorePlanner({
     };
   };
 
-  const beginMissions = () => {
-    if (!todayMemberId) return;
+  /** Start the step-by-step run through one child's chores. */
+  const beginMissions = (memberId: string) => {
+    setTodayMemberId(memberId);
     const queue = data.tasks
       .filter(
         (task) =>
-          task.memberId === todayMemberId && !['completed', 'expired'].includes(taskStatus(task)),
+          task.memberId === memberId && !['completed', 'expired'].includes(taskStatus(task)),
       )
       .sort(byDeadline)
       .map((task) => task.id);
@@ -1005,19 +1335,6 @@ export function ChorePlanner({
     setMissionIndex(0);
     setScreen(queue.length ? 'mission' : 'closing');
   };
-
-  const section = (title: string, tasks: PlannerTask[], tone = '') =>
-    tasks.length > 0 && (
-      <section className={`planner-section ${tone}`} key={title}>
-        <h2>
-          {title}
-          <span>{tasks.length}</span>
-        </h2>
-        <div className="planner-task-list">
-          {tasks.sort(byDeadline).map((task) => renderTask(task))}
-        </div>
-      </section>
-    );
 
   const renderTask = (task: PlannerTask, readOnly = false) => {
     const status = taskStatus(task);
@@ -1088,25 +1405,34 @@ export function ChorePlanner({
             pendingTaskId === task.id ||
             (!task.memberId && status !== 'expired')
           }
-          aria-label={
-            status === 'completed' ? c.done : task.audience === 'anyone' ? c.claim : c.task
-          }
+          /* The visible label alone repeats across cards ("Completed" x3), so
+             the accessible name carries the chore too. */
+          aria-label={`${pillLabel(task, status)}: ${task.name}`}
           onClick={() => void completeTask(task)}
         >
-          {pendingTaskId === task.id ? (
-            <span className="planner-spinner" />
-          ) : status === 'completed' ? (
-            <Check />
-          ) : status === 'expired' ? (
-            <RotateCcw />
-          ) : task.audience === 'anyone' ? (
-            /* Up for grabs: a hand instead of the empty "done" circle, so it
-               reads as "take this" rather than "this is your task". */
-            <span className="planner-check-hand" aria-hidden="true">
-              {'\u270B'}
+          {/* Pill action with the points in its own coloured segment — the
+              family-planner "Afvinken maar! | 🏆 25" pattern. The label names
+              the action the tap performs, so a claimed chore reads "Approve",
+              not "Completed". */}
+          <span className="planner-check-label">{pillLabel(task, status)}</span>
+          <span className="planner-check-icon" aria-hidden="true">
+            {pendingTaskId === task.id ? (
+              <span className="planner-spinner" />
+            ) : status === 'completed' ? (
+              <Check />
+            ) : status === 'expired' ? (
+              <RotateCcw />
+            ) : task.audience === 'anyone' ? (
+              /* Up for grabs: a hand instead of the empty "done" circle, so it
+                 reads as "take this" rather than "this is your task". */
+              <span className="planner-check-hand">{'\u270B'}</span>
+            ) : null}
+          </span>
+          {task.points > 0 && (
+            <span className="planner-check-points" aria-hidden="true">
+              <span>{'\u{1F3C6}'}</span>
+              {task.points}
             </span>
-          ) : (
-            <span />
           )}
         </button>
         <div className="planner-task-copy">
@@ -1122,7 +1448,6 @@ export function ChorePlanner({
           <p>{subtitle}</p>
         </div>
         <div className="planner-task-meta">
-          {task.points > 0 && <span className="planner-points">⭐ {task.points}</span>}
           {/* "Anyone" and "Everyone" chores are still grouped per child, so the
               chip has to say who the chore is really for instead of naming the
               child the group happens to be for. */}
@@ -1177,35 +1502,26 @@ export function ChorePlanner({
   const activeMissionStatus = missionTask ? taskStatus(missionTask) : 'completed';
 
   const heading =
-    screen === 'tasks'
-      ? c.title
-      : screen === 'lobby'
-        ? c.today
-        : screen === 'missions' || screen === 'mission'
-          ? c.missions
-          : screen === 'closing'
-            ? c.todayEarned
-            : (selectedTodayMember?.name ?? c.title);
+    screen === 'missions' || screen === 'mission'
+      ? c.missions
+      : screen === 'closing'
+        ? c.todayEarned
+        : screen === 'child'
+          ? (childMember?.name ?? c.title)
+          : c.title;
 
   return (
     <div className={`chore-planner ${privacy ? 'chore-planner--private' : ''}`}>
       <header className="planner-header">
-        {screen !== 'tasks' &&
-          screen !== 'lobby' &&
-          screen !== 'mission' &&
-          screen !== 'closing' && (
-            <button
-              className="planner-icon-button"
-              onClick={() =>
-                setScreen(
-                  screen === 'welcome' ? 'lobby' : screen === 'overview' ? 'welcome' : 'overview',
-                )
-              }
-              aria-label={c.back}
-            >
-              <ArrowLeft />
-            </button>
-          )}
+        {(screen === 'missions' || screen === 'child') && (
+          <button
+            className="planner-icon-button"
+            onClick={() => setScreen('board')}
+            aria-label={c.back}
+          >
+            <ArrowLeft />
+          </button>
+        )}
         {screen === 'mission' && (
           <button
             className="planner-icon-button"
@@ -1224,14 +1540,26 @@ export function ChorePlanner({
           <h1>
             {/* Phones get the short name so the header can stay on one row. */}
             <span className="planner-title-full">{heading}</span>
-            <span className="planner-title-short">
-              {screen === 'tasks' ? c.shortTitle : heading}
-            </span>
+            <span className="planner-title-short">{heading}</span>
           </h1>
         </div>
         <div className="planner-header-actions">
-          {screen === 'tasks' && (
-            <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
+          {/* The reference puts the wall clock in the header band. */}
+          {screen === 'board' && (
+            <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
+          )}
+          {screen === 'board' && (
+            <button
+              className="planner-icon-button"
+              onClick={() => setModal('filter')}
+              aria-label={c.filter}
+              aria-expanded={filterOpen}
+            >
+              <Filter />
+            </button>
+          )}
+          {(screen === 'board' || screen === 'child') && (
+            <button className="planner-add" onClick={() => openNewForm()} aria-label={c.add}>
               <Plus />
             </button>
           )}
@@ -1265,332 +1593,209 @@ export function ChorePlanner({
           >
             {soundEnabled ? <Volume2 /> : <VolumeX />}
           </button>
-          <button
-            className="planner-icon-button"
-            onClick={() => setModal('rewards')}
-            aria-label={c.rewards}
-          >
-            <Sparkles />
-          </button>
         </div>
       </header>
 
-      {screen === 'tasks' && (
-        <>
-          {privacy && <div className="planner-private-clock">{clockTime(now, timeLocale)}</div>}
-          {!online && (
-            <div className="planner-offline-banner" role="alert">
-              {c.offline}
-            </div>
-          )}
-          <div className="planner-filters">
-            <div className="planner-filter-group">
-              <button
-                className={memberFilter === 'all' ? 'is-selected' : ''}
-                onClick={() => setMemberFilter('all')}
-              >
-                {c.everyone}
-              </button>
-              {data.members.map((member) => (
-                <button
-                  key={member.id}
-                  className={memberFilter === member.id ? 'is-selected' : ''}
-                  onClick={() => setMemberFilter(member.id)}
-                >
-                  <span>
-                    <MemberAvatar member={member} />
-                  </span>
-                  {member.name}
-                </button>
-              ))}
-            </div>
-            <div className="planner-filter-group planner-status-filters">
-              {(['open', 'late', 'completed'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  className={statusFilter === filter ? 'is-selected' : ''}
-                  onClick={() => setStatusFilter(statusFilter === filter ? 'all' : filter)}
-                >
-                  {filter === 'open' ? c.open : filter === 'late' ? c.late : c.done}
-                </button>
-              ))}
-            </div>
-          </div>
-          <main className="planner-content">
-            {freeTasks.length > 0 && (
-              <section className="planner-section planner-free-section">
-                <h2>
-                  {c.free}
-                  <span>{freeTasks.length}</span>
-                </h2>
-                <div className="planner-task-list">
-                  {freeTasks.sort(byDeadline).map((task) => renderTask(task))}
-                </div>
-              </section>
-            )}
-            {memberFilter === 'all'
-              ? memberGroups.map(({ member, open }) => (
-                  <section
-                    className="planner-section planner-section--member"
-                    key={member.id}
-                    style={{ '--member-color': member.color } as React.CSSProperties}
-                  >
-                    {memberHeading(member, open.length)}
-                    <div className="planner-task-list">{open.map((task) => renderTask(task))}</div>
-                  </section>
-                ))
-              : [section(c.today, todayTasks), section(c.late, lateTasks, 'planner-section--late')]}
-            <section className="planner-section planner-section--completed">
-              <button
-                className="planner-collapse"
-                onClick={() => setCompletedExpanded((value) => !value)}
-              >
-                <span>
-                  {c.done} ({completedTasks.length})
-                </span>
-                {completedExpanded ? <ChevronDown /> : <ChevronRight />}
-              </button>
-              {completedExpanded &&
-                (memberFilter === 'all' ? (
-                  <div className="planner-completed-groups">
-                    {completedGroups.map(({ member, done }) => (
-                      <section
-                        className="planner-section planner-section--member planner-section--member-done"
-                        key={member.id}
-                        style={{ '--member-color': member.color } as React.CSSProperties}
-                      >
-                        {memberHeading(member, done.length)}
-                        <div className="planner-task-list">
-                          {done.map((task) => renderTask(task))}
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="planner-task-list">
-                    {completedTasks.sort(byDeadline).map((task) => renderTask(task))}
-                  </div>
-                ))}
-            </section>
-            {freeTasks.length + todayTasks.length + lateTasks.length + completedTasks.length ===
-              0 && (
-              <div className="planner-empty">
-                <Sparkles />
-                <strong>{c.nothing}</strong>
-                <button className="planner-primary" onClick={openNewForm}>
-                  {c.add}
-                </button>
-              </div>
-            )}
-            {data.routines.length > 0 && (
-              <section className="planner-routines">
-                <h2>{c.routines}</h2>
-                <div>
-                  {data.routines.map((routine) => (
-                    <div key={routine.id} className="planner-routine-row">
-                      <span>{routine.icon}</span>
-                      <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                      <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
-                      <span className="planner-routine-time">
-                        {routine.timeBlock === 'morning'
-                          ? c.morning
-                          : routine.timeBlock === 'evening'
-                            ? c.evening
-                            : c.afternoon}
-                      </span>
-                      {routine.memberIds.length > 0 && (
-                        <span className="planner-routine-members">
-                          {routine.memberIds.map((memberId) => {
-                            const member = memberFor(memberId);
-                            return member ? <MemberAvatar key={memberId} member={member} /> : null;
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </main>
-        </>
+      {!online && (
+        <div className="planner-offline-banner" role="alert">
+          {c.offline}
+        </div>
       )}
 
-      {screen === 'lobby' && (
-        <main className="planner-today-lobby">
-          {data.members.map((member) => (
-            <button
-              key={member.id}
-              className="planner-lobby-member"
-              style={{ '--member-color': member.color } as React.CSSProperties}
-              onClick={() => {
-                setTodayMemberId(member.id);
-                setScreen('welcome');
-              }}
-            >
-              <span className="planner-lobby-avatar">
-                <MemberAvatar member={member} />
+      {screen === 'board' && (
+        <main className="planner-board">
+          {boardMembers.map((member) => {
+            const chores = columnTasks(member.id);
+            const routines = columnRoutines(member.id);
+            return (
+              <section
+                className="planner-col"
+                key={member.id}
+                style={{ '--member-color': member.color } as React.CSSProperties}
+              >
+                <header className="planner-col-head">
+                  <button
+                    type="button"
+                    className="planner-col-open"
+                    onClick={() => {
+                      setChildMemberId(member.id);
+                      setScreen('child');
+                    }}
+                    aria-label={`${c.openChild}: ${member.name}`}
+                  >
+                    <span className="planner-col-avatar">
+                      <MemberAvatar member={member} />
+                    </span>
+                    <strong>{member.name}</strong>
+                  </button>
+                  <button
+                    type="button"
+                    className="planner-col-points"
+                    onClick={() => openGoals(member.id)}
+                    aria-label={`${c.goals}: ${member.name}`}
+                  >
+                    <span aria-hidden="true">{'\u{1FA99}'}</span>
+                    {spendableFor(member)}
+                  </button>
+                  <button
+                    type="button"
+                    className="planner-col-play"
+                    disabled={chores.length === 0}
+                    onClick={() => beginMissions(member.id)}
+                    aria-label={`${c.startMissions}: ${member.name}`}
+                  >
+                    {'\u25B6'}
+                  </button>
+                </header>
+
+                <div className="planner-col-body">
+                  <h2>
+                    {c.choresColumn}
+                    <span>{chores.length}</span>
+                  </h2>
+                  {chores.length === 0 ? (
+                    <p className="planner-col-empty">{c.nothing}</p>
+                  ) : (
+                    chores.map((task) => renderRow(task))
+                  )}
+
+                  <h2>
+                    {c.routines}
+                    <span>{routines.length}</span>
+                  </h2>
+                  {routines.length === 0 ? (
+                    <p className="planner-col-empty">{c.noRoutines}</p>
+                  ) : (
+                    routines.map((routine) => routineRow(routine))
+                  )}
+                </div>
+
+              </section>
+            );
+          })}
+
+          {/* Chores nobody owns yet: whoever taps one keeps it, and from then on
+              it shows up in their own column. */}
+          <section className="planner-col planner-col--free">
+            <header className="planner-col-head">
+              <span className="planner-col-avatar planner-col-avatar--free" aria-hidden="true">
+                {'\u{1F450}'}
               </span>
-              <strong>{member.name}</strong>
-              <span>
-                {memberTodayCount(member.id)} {c.score}
+              <strong>{c.free}</strong>
+            </header>
+            <div className="planner-col-body">
+              <h2>
+                {c.choresColumn}
+                <span>{freeTasks.length}</span>
+              </h2>
+              {freeTasks.length === 0 ? (
+                <p className="planner-col-empty">{c.nothing}</p>
+              ) : (
+                freeTasks.map((task) => renderRow(task))
+              )}
+            </div>
+            <button type="button" className="planner-col-start planner-col-start--ghost" onClick={() => openNewForm()}>
+              <Plus />
+              {c.add}
+            </button>
+          </section>
+        </main>
+      )}
+      {screen === 'child' && childMember && (
+        <main className="planner-detail">
+          <header className="planner-detail-hero">
+            <span className="planner-detail-avatar">
+              <MemberAvatar member={childMember} />
+            </span>
+            <div className="planner-detail-copy">
+              <h2>{childMember.name}</h2>
+              <span className="planner-detail-points">
+                <span aria-hidden="true">{'\u{1FA99}'}</span>
+                {spendableFor(childMember)}
               </span>
-              <small>{nextAppointment?.title ?? c.noAppointment}</small>
-            </button>
-          ))}
-        </main>
-      )}
-      {screen === 'welcome' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <span
-            className="planner-hero-avatar"
-            style={{ background: selectedTodayMember.color + '24' }}
-          >
-            <MemberAvatar member={selectedTodayMember} />
-          </span>
-          <h2>{t('planner.greeting', { name: selectedTodayMember.name })}</h2>
-          <p>
-            {memberTodayCount(selectedTodayMember.id)} {c.score}
-          </p>
-          <div className="planner-today-info">
-            <span>
-              <strong>{c.weather}</strong>
-              {weather
-                ? `${Math.round(weather.temperature)}${weather.temperatureUnit} · ${weather.condition}`
-                : '—'}
-            </span>
-            <span>
-              <strong>{c.nextAppointment}</strong>
-              {nextAppointment
-                ? `${nextAppointment.title} · ${clockTime(nextAppointment.start, timeLocale)}`
-                : c.noAppointment}
-            </span>
-          </div>
-          <button className="planner-primary" onClick={() => setScreen('overview')}>
-            {c.continue}
-            <ChevronRight />
-          </button>
-        </main>
-      )}
-      {screen === 'overview' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <p className="planner-eyebrow">02 / 04</p>
-          <h2>{c.chooseWhat}</h2>
-          <div className="planner-overview-stats">
-            <span>
-              <strong>{memberTodayCount(selectedTodayMember.id)}</strong>
-              {c.score}
-            </span>
-            <span>
-              <strong>⭐ {spendableFor(selectedTodayMember)}</strong>
-              {c.pot}
-            </span>
-          </div>
-          {/*
-           * Two separate things a child can do today. Point distribution used
-           * to be a step you had to walk through before the missions started;
-           * it is a choice now, and the missions are one tap away.
-           */}
-          <div className="planner-choice">
+            </div>
+            <div className="planner-detail-nav">
+              <button
+                type="button"
+                className="planner-icon-button"
+                onClick={() => stepChild(-1)}
+                aria-label={c.prevChild}
+              >
+                <ChevronLeft />
+              </button>
+              <button
+                type="button"
+                className="planner-icon-button"
+                onClick={() => stepChild(1)}
+                aria-label={c.nextChild}
+              >
+                <ChevronRight />
+              </button>
+            </div>
             <button
-              className="planner-choice-card"
-              disabled={rewardsForMember(selectedTodayMember.id).length === 0}
-              onClick={() => setScreen('points')}
+              type="button"
+              className="planner-col-play planner-col-play--big"
+              disabled={columnTasks(childMember.id).length === 0}
+              onClick={() => beginMissions(childMember.id)}
+              aria-label={`${c.startMissions}: ${childMember.name}`}
             >
-              <span aria-hidden="true">{'\u{1F381}'}</span>
-              <strong>{c.assignPoints}</strong>
-              <small>{c.assignPointsHint}</small>
+              {'\u25B6'}
             </button>
-            <button className="planner-choice-card" onClick={() => setScreen('missions')}>
-              <span aria-hidden="true">{'\u{1F3AF}'}</span>
-              <strong>{c.startMissions}</strong>
-              <small>{c.missionsHint}</small>
+          </header>
+
+          <section className="planner-detail-section">
+            <h3>
+              {c.goals}
+              <span>{rewardsForMember(childMember.id).length}</span>
+            </h3>
+            {rewardsForMember(childMember.id).length === 0 && (
+              <p className="planner-col-empty">{c.noRewards}</p>
+            )}
+            {rewardsForMember(childMember.id).map((reward) => renderRewardRow(reward))}
+            <button
+              className="planner-ghost planner-reward-new"
+              onClick={() => startRewardForm(childMember.id)}
+            >
+              <Plus />
+              {c.setGoal}
             </button>
-          </div>
-        </main>
-      )}
-      {screen === 'points' && selectedTodayMember && (
-        <main className="planner-content planner-points">
-          <h2>{c.assignPoints}</h2>
-          <p className="planner-points-balance">
-            ⭐ {spendableFor(selectedTodayMember)} {c.pointsUnit}
-          </p>
-          {rewardsForMember(selectedTodayMember.id).length === 0 ? (
-            <p className="planner-empty-copy">{c.noRewards}</p>
-          ) : (
-            <section className="planner-child-rewards">
-              {rewardsForMember(selectedTodayMember.id).map((reward) => {
-                const { reserved, saved, available, pending, affordable } = rewardState(reward);
-                const approveId = reward.actions.approve;
-                return (
-                  <div className="planner-reward" key={reward.id}>
-                    <span aria-hidden="true">{'\u{1F381}'}</span>
-                    <div className="planner-reward-copy">
-                      <strong>{reward.name}</strong>
-                      <small>
-                        {reserved
-                          ? c.assigned
-                          : `${saved} / ${reward.cost} ${c.pointsUnit}${
-                              pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
-                            }`}
-                      </small>
-                      <i>
-                        <b
-                          style={{
-                            width: `${
-                              reserved
-                                ? 100
-                                : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
-                            }%`,
-                          }}
-                        />
-                      </i>
-                    </div>
-                    {reserved ? (
-                      <>
-                        <button
-                          className="planner-ghost planner-reward-action"
-                          onClick={() => undoRewardChoice(reward)}
-                        >
-                          {c.undoShort}
-                        </button>
-                        <button
-                          className="planner-primary planner-reward-action"
-                          disabled={saving}
-                          onClick={() => confirmReward(reward)}
-                        >
-                          {c.confirm}
-                        </button>
-                      </>
-                    ) : pending && approveId ? (
-                      <button
-                        className="planner-primary planner-reward-action"
-                        onClick={() =>
-                          requestPin(
-                            c.rewards,
-                            reward.name,
-                            () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
-                          )
-                        }
-                      >
-                        {c.confirm}
-                      </button>
-                    ) : (
-                      <button
-                        className="planner-ghost planner-reward-action"
-                        disabled={!available || !affordable}
-                        onClick={() => assignReward(reward)}
-                      >
-                        {c.assign}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </section>
-          )}
-          <button className="planner-primary" onClick={() => setScreen('overview')}>
-            {c.back}
-          </button>
+          </section>
+
+          <section className="planner-detail-section">
+            <h3>
+              {c.choresColumn}
+              <span>{columnTasks(childMember.id).length}</span>
+            </h3>
+            {columnTasks(childMember.id).length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              columnTasks(childMember.id).map((task) => renderRow(task))
+            )}
+          </section>
+
+          <section className="planner-detail-section">
+            <h3>
+              {c.done}
+              <span>{completedTasksFor(childMember.id).length}</span>
+            </h3>
+            {completedTasksFor(childMember.id).length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              completedTasksFor(childMember.id).map((task) => renderRow(task))
+            )}
+          </section>
+
+          <section className="planner-detail-section">
+            <h3>
+              {c.routines}
+              <span>{columnRoutines(childMember.id).length}</span>
+            </h3>
+            {columnRoutines(childMember.id).length === 0 ? (
+              <p className="planner-col-empty">{c.noRoutines}</p>
+            ) : (
+              columnRoutines(childMember.id).map((routine) => routineRow(routine))
+            )}
+          </section>
         </main>
       )}
       {screen === 'missions' && selectedTodayMember && (
@@ -1607,12 +1812,12 @@ export function ChorePlanner({
             .sort(byDeadline)
             .map((task) => renderTask(task, true))}
           {memberTodayCount(selectedTodayMember.id) === 0 && (
-            <p className="planner-empty-copy">{c.noMissions}</p>
+            <p className="planner-empty-copy">{c.nothing}</p>
           )}
           <button
             className="planner-primary"
             disabled={memberTodayCount(selectedTodayMember.id) === 0}
-            onClick={beginMissions}
+            onClick={() => beginMissions(selectedTodayMember.id)}
           >
             {c.startMissions}
             <ChevronRight />
@@ -1652,24 +1857,26 @@ export function ChorePlanner({
         </main>
       )}
       {screen === 'closing' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <span
-            className="planner-hero-avatar"
-            style={{ background: selectedTodayMember.color + '24' }}
-          >
-            <MemberAvatar member={selectedTodayMember} />
-          </span>
-          <p className="planner-eyebrow">04 / 04</p>
-          <h2>
-            {c.todayEarned}: ⭐ {completedTodayPoints(selectedTodayMember.id)}
+        <main className="planner-today-step planner-celebrate">
+          {/* Celebration card: soft glow, trophy, "{Well done, name}!" and the
+              goal pill — the closing screen of the reference app. */}
+          <div className="planner-celebrate-glow" aria-hidden="true">
+            <span>{'\u{1F3C6}'}</span>
+          </div>
+          <h2 className="planner-celebrate-title">
+            {t('planner.wellDone', { name: selectedTodayMember.name })}
           </h2>
-          <p>
+          <p className="planner-celebrate-pill">
+            <span aria-hidden="true">{'\u{1F3AF}'}</span>
+            {c.todayEarned}: {completedTodayPoints(selectedTodayMember.id)}
+          </p>
+          <p className="planner-celebrate-sub">
             {c.pot}: {spendableFor(selectedTodayMember)}
           </p>
           <button
             className="planner-primary"
             onClick={() => {
-              setScreen('lobby');
+              setScreen('board');
               setTodayMemberId(null);
             }}
           >
@@ -1677,30 +1884,6 @@ export function ChorePlanner({
           </button>
         </main>
       )}
-
-      <nav className="planner-bottom-nav" aria-label="Chore planner">
-        <button
-          className={screen === 'tasks' ? 'is-active' : ''}
-          aria-label={openCount > 0 ? `${openCount} ${c.openTodo}` : c.shortTitle}
-          onClick={() => setScreen('tasks')}
-        >
-          <span>✓</span>
-          <strong>{c.shortTitle}</strong>
-          {/* Chores still to do. Claimed or finished ones no longer count. */}
-          {openCount > 0 && (
-            <span className="planner-nav-badge" aria-hidden="true">
-              {openCount}
-            </span>
-          )}
-        </button>
-        <button
-          className={screen !== 'tasks' ? 'is-active' : ''}
-          onClick={() => setScreen('lobby')}
-        >
-          <span>☀</span>
-          <strong>{c.today}</strong>
-        </button>
-      </nav>
 
       {modal && (
         <div className="planner-backdrop" onClick={() => setModal(null)}>
@@ -1995,108 +2178,181 @@ export function ChorePlanner({
                 </button>
               </>
             )}
-            {modal === 'rewards' && (
+            {modal === 'award' && awardTask && (
               <>
-                <h2>{c.rewards}</h2>
-                {rewards.length === 0 && <p>{c.noRewards}</p>}
-                {rewards
-                  .slice()
-                  .sort(
-                    (a, b) =>
-                      (a.pendingClaims > 0 ? 0 : a.status === 'available' ? 1 : 2) -
-                      (b.pendingClaims > 0 ? 0 : b.status === 'available' ? 1 : 2),
-                  )
-                  .map((reward) => {
-                    const { reserved, saved, available, pending, affordable } = rewardState(reward);
-                    const approveId = reward.actions.approve;
+                <h2>{c.awardTitle}</h2>
+                <p className="planner-hint">
+                  {awardTask.name}
+                  {awardTask.points > 0 && ` \u00b7 ${'\u{1F3C6}'} ${awardTask.points}`}
+                </p>
+                <div className="planner-goal-list">
+                  <button type="button" className="planner-goal" onClick={() => setModal(null)}>
+                    <span className="planner-goal-icon" aria-hidden="true">
+                      {'\u{1F3E6}'}
+                    </span>
+                    <span className="planner-goal-copy">
+                      <strong>{c.savingsPot}</strong>
+                      <small>
+                        {c.pot} \u00b7 {spendableFor(memberFor(awardTask.memberId))}
+                      </small>
+                    </span>
+                  </button>
+                  {rewardsForMember(awardTask.memberId).map((reward) => {
+                    const { saved, affordable } = rewardState(reward);
                     return (
-                      <div className="planner-reward" key={reward.id}>
-                        <span aria-hidden="true">{'\u{1F381}'}</span>
-                        <div className="planner-reward-copy">
+                      <button
+                        type="button"
+                        className="planner-goal"
+                        key={reward.id}
+                        disabled={!affordable}
+                        onClick={() => {
+                          assignReward(reward);
+                          setModal(null);
+                        }}
+                      >
+                        <span className="planner-goal-icon" aria-hidden="true">
+                          {'\u{1F381}'}
+                        </span>
+                        <span className="planner-goal-copy">
                           <strong>{reward.name}</strong>
                           <small>
-                            {reward.assignee ? `${reward.assignee} · ` : ''}
-                            {reserved
-                              ? c.assigned
-                              : `${saved} / ${reward.cost} ${c.pointsUnit}${
-                                  pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
-                                }`}
+                            {affordable
+                              ? c.assign
+                              : t('planner.stillNeeded', {
+                                  points: String(Math.max(0, reward.cost - saved)),
+                                })}
                           </small>
-                          <i>
-                            <b
-                              style={{
-                                width: `${
-                                  reserved
-                                    ? 100
-                                    : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
-                                }%`,
-                              }}
-                            />
-                          </i>
-                        </div>
-                        {reserved ? (
-                          <>
-                            <button
-                              className="planner-ghost planner-reward-action"
-                              onClick={() => undoRewardChoice(reward)}
-                            >
-                              {c.undoShort}
-                            </button>
-                            <button
-                              className="planner-primary planner-reward-action"
-                              disabled={saving}
-                              onClick={() => confirmReward(reward)}
-                            >
-                              {c.confirm}
-                            </button>
-                          </>
-                        ) : pending && approveId ? (
-                          <button
-                            className="planner-primary planner-reward-action"
-                            onClick={() =>
-                              requestPin(
-                                c.rewards,
-                                reward.name,
-                                () =>
-                                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
-                              )
-                            }
-                          >
-                            {c.confirm}
-                          </button>
-                        ) : (
-                          <button
-                            className="planner-ghost planner-reward-action"
-                            disabled={!available || !affordable}
-                            onClick={() => assignReward(reward)}
-                          >
-                            {c.assign}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="planner-task-more"
-                          aria-label={`${c.action}: ${reward.name}`}
-                          onClick={() => {
-                            setSelectedReward(reward);
-                            setModal('reward-actions');
-                          }}
-                        >
-                          {'\u22ef'}
-                        </button>
-                      </div>
+                        </span>
+                      </button>
                     );
                   })}
+                  <button
+                    type="button"
+                    className="planner-goal planner-goal--new"
+                    onClick={() => {
+                      if (awardTask.memberId) startRewardForm(awardTask.memberId);
+                      else setModal('reward-form');
+                    }}
+                  >
+                    <span className="planner-goal-icon" aria-hidden="true">
+                      +
+                    </span>
+                    <span className="planner-goal-copy">
+                      <strong>{c.setGoal}</strong>
+                    </span>
+                  </button>
+                </div>
+              </>
+            )}
+            {modal === 'filter' && (
+              <>
+                <h2>{c.filterTitle}</h2>
+                <div className="planner-member-picker">
+                  {data.members.map((member) => {
+                    const hidden = hiddenMemberIds.includes(member.id);
+                    return (
+                      <button
+                        type="button"
+                        key={member.id}
+                        className={hidden ? '' : 'is-selected'}
+                        aria-pressed={!hidden}
+                        onClick={() =>
+                          setHiddenMemberIds((ids) =>
+                            ids.includes(member.id)
+                              ? ids.filter((id) => id !== member.id)
+                              : [...ids, member.id],
+                          )
+                        }
+                      >
+                        <MemberAvatar member={member} />
+                        {member.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {data.routines.length > 0 && (
+                  <>
+                    <h2>{c.pausedRoutines}</h2>
+                    <div className="planner-goal-list">
+                      {data.routines.map((routine) => {
+                        const paused = pausedRoutineIds.includes(routine.id);
+                        return (
+                          <button
+                            type="button"
+                            className="planner-goal"
+                            key={routine.id}
+                            onClick={() => toggleRoutinePaused(routine.id)}
+                          >
+                            <span className="planner-goal-icon" aria-hidden="true">
+                              {routine.icon}
+                            </span>
+                            <span className="planner-goal-copy">
+                              <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
+                              <small>{paused ? c.paused : c.active}</small>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                <footer className="planner-sheet-footer">
+                  <button className="planner-ghost" onClick={() => setModal(null)}>
+                    {c.cancel}
+                  </button>
+                </footer>
+              </>
+            )}
+            {modal === 'claim' && claimTask && (
+              <>
+                <h2>{claimTask.name}</h2>
+                <p className="planner-hint">{c.claimWho}</p>
+                <div className="planner-member-picker planner-member-picker--claim">
+                  {claimOptionsFor(claimTask).map((option) => {
+                    const member = memberFor(option.memberId);
+                    if (!member) return null;
+                    return (
+                      <button
+                        key={option.memberId}
+                        type="button"
+                        onClick={() => {
+                          setModal(null);
+                          void runLiveAction(
+                            option.id,
+                            option.actions!.claim!,
+                            option.name,
+                            c.claimedToast,
+                          );
+                        }}
+                      >
+                        <MemberAvatar member={member} />
+                        {member.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                <footer className="planner-sheet-footer">
+                  <button className="planner-ghost" onClick={() => setModal(null)}>
+                    {c.cancel}
+                  </button>
+                </footer>
+              </>
+            )}
+            {modal === 'goals' && goalsMember && (
+              <>
+                <h2>
+                  {c.goals}
+                  {' \u00b7 '}
+                  {goalsMember.name}
+                </h2>
+                {rewardsForMember(goalsMember.id).length === 0 && <p>{c.noRewards}</p>}
+                {rewardsForMember(goalsMember.id).map((reward) => renderRewardRow(reward))}
                 <button
                   className="planner-ghost planner-reward-new"
-                  onClick={() => {
-                    setEditingReward(null);
-                    setRewardForm({ name: '', cost: 10, memberIds: [] });
-                    setModal('reward-form');
-                  }}
+                  onClick={() => startRewardForm(goalsMember.id)}
                 >
                   <Plus />
-                  {c.newReward}
+                  {c.setGoal}
                 </button>
               </>
             )}
@@ -2179,7 +2435,7 @@ export function ChorePlanner({
                   </fieldset>
                 )}
                 <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal('rewards')}>
+                  <button className="planner-ghost" onClick={() => setModal(null)}>
                     {c.cancel}
                   </button>
                   <button
@@ -2223,6 +2479,15 @@ export function ChorePlanner({
                   const action = confirmAction;
                   setConfirmAction(null);
                   void runLiveAction(action.taskId, action.entityId, action.label, action.action);
+                  const task = getTask(action.taskId);
+                  if (
+                    action.kind === 'done' &&
+                    task?.memberId &&
+                    rewardsForMember(task.memberId).length > 0
+                  ) {
+                    setAwardTaskId(task.id);
+                    setModal('award');
+                  }
                 }}
               >
                 {c.confirm}

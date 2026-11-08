@@ -210,6 +210,8 @@ export function buildChorePlannerView(
         timeBlock: 'custom',
         statusOverride: status,
         audience: choreAudience(chore, users.length),
+        // Kept regardless of status: see `freeForAll` on PlannerTask.
+        freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
         awaitingReview,
         actions: chore.actions,
       } satisfies PlannerTask;

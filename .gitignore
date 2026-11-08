@@ -23,3 +23,7 @@ docs/video/raw/
 .superpowers/
 .vscode/
 .history/
+
+# Reference recordings are large; keep them out of git.
+docs/video/*.mov
+docs/video/*.mp4

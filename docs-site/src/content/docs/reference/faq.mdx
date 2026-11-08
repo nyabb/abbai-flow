@@ -1,6 +1,6 @@
 ---
-title: "FAQ"
-description: "Answers to 20+ common questions about Beacon — calendar support, hardware, privacy, features, and troubleshooting."
+title: 'FAQ'
+description: 'Answers to 20+ common questions about Beacon — calendar support, hardware, privacy, features, and troubleshooting.'
 order: 3
 ---
 
@@ -152,6 +152,7 @@ See the [Installation guide](/docs/getting-started/installation/#mounting-and-di
 **Add-on**: Go to **Settings > Add-ons > Beacon** and click **Update** if available.
 
 **Docker**: Pull the latest image and recreate the container:
+
 ```bash
 docker pull ghcr.io/asachs01/beacon:latest
 docker stop beacon && docker rm beacon
@@ -167,6 +168,7 @@ docker run -d --name beacon ... ghcr.io/asachs01/beacon:latest
 ### Can I back up my data?
 
 The browser localStorage data is not easily backed up. For critical family and chore data, consider exporting the localStorage keys:
+
 - `beacon_family_members`
 - `beacon_chores`
 - `beacon_completions`
@@ -181,6 +183,7 @@ You can view and copy these values in the browser's Developer Tools (F12 > Appli
 ### Beacon shows "Demo Mode"
 
 This means Beacon cannot connect to Home Assistant. Check:
+
 1. The HA token is configured (add-on: automatic; Docker: `SUPERVISOR_TOKEN` env var; dev: `VITE_HA_TOKEN`)
 2. The HA URL is reachable from the browser
 3. Home Assistant is running

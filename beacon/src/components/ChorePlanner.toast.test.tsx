@@ -70,7 +70,6 @@ function renderPlanner() {
     <I18nContext.Provider value={NL}>
       <ChorePlanner
         members={[ZARA]}
-        weather={null}
         nextAppointment={null}
         locale="nl"
         onLocaleChange={() => {}}
