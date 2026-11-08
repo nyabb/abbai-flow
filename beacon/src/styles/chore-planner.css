@@ -2430,8 +2430,9 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   min-height: 0;
 }
 
-/* Child switcher: three white rounded boxes — arrow, the child's name, arrow —
-   on its own row between the header and the tabs. */
+/* Child switcher: one pill split into three cells — arrow, the child's name,
+   arrow — on its own row between the header and the tabs. The pill clips its
+   children, so the arrows sit flush against the name box. */
 .planner-child-bar {
   display: flex;
   flex: 0 0 auto;
@@ -2442,8 +2443,12 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
 .planner-child-switch {
   display: inline-flex;
   align-items: stretch;
-  gap: 6px;
+  overflow: hidden;
   max-width: 100%;
+  border: 1px solid var(--planner-line);
+  border-radius: 999px;
+  background: var(--planner-surface);
+  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
 }
 
 .planner-child-switch-arrow {
@@ -2453,12 +2458,11 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   min-height: 34px;
   place-items: center;
   padding: 0;
-  border: 1px solid var(--planner-line);
-  border-radius: 10px;
+  border: 0;
   color: var(--planner-accent);
-  background: var(--planner-surface);
-  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
+  background: transparent;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .planner-child-switch-arrow:hover {
@@ -2476,12 +2480,8 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   max-width: 56vw;
   min-height: 34px;
   overflow: hidden;
-  padding: 0 16px;
-  border: 1px solid var(--planner-line);
-  border-radius: 10px;
+  padding: 0 14px;
   color: var(--planner-accent);
-  background: var(--planner-surface);
-  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
   font-family: var(--font-display, 'Trebuchet MS', sans-serif);
   font-size: 17px;
   font-weight: 700;

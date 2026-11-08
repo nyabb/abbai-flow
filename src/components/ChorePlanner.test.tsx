@@ -144,8 +144,9 @@ function openFreeTab(container: HTMLElement) {
   openTab(container, 'Vrije taakjes');
 }
 
+/** Rewards are per child and live on the child page's Goals tab. */
 function openRewards(container: HTMLElement) {
-  fireEvent.click(container.querySelector('button[aria-label="Beloningen"]')!);
+  openTab(container, 'Doelen');
 }
 
 describe('ChorePlanner parent PIN gate', () => {
@@ -296,6 +297,25 @@ describe('ChorePlanner anyone chores', () => {
     expect(theirs.container.textContent).not.toContain('Tafel dekken');
   });
 
+  /*
+   * Finished free chores are not history yet: they stay in the tab until the day
+   * rolls over, and only there — the Chores tab's done list must not repeat them.
+   */
+  it('keeps a finished free chore in the free tab, once', () => {
+    mocks.state.current = anyoneState('completed', 'completed_by_other');
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChild(container);
+
+    // Chores tab: not in the open list and not repeated in the done list.
+    expect(container.textContent).not.toContain('Tafel dekken');
+
+    openFreeTab(container);
+    const cards = container.querySelectorAll('.planner-task');
+    expect(cards).toHaveLength(1);
+    expect(cards[0].textContent).toContain('Tafel dekken');
+    expect(cards[0].textContent).toContain('Afgerond');
+  });
+
   it('does not list a free chore twice: it leaves the chores tab for the free tab', () => {
     mocks.state.current = anyoneState('claimed', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
@@ -346,8 +366,10 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     );
     expect(localStorage.getItem('beacon_reward_reservations')).toContain('schermtijd');
 
-    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Terug' }));
+    const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
+      element.textContent?.includes('Schermtijd'),
+    )!;
+    fireEvent.click(within(row).getByRole('button', { name: 'Terug' }));
 
     await waitFor(() => expect(container.textContent).toContain('20 punten'));
     expect(localStorage.getItem('beacon_reward_reservations')).toBeNull();
@@ -378,18 +400,18 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     openChild(container);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: /Beloning toevoegen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Stel een doel in/ }));
 
     const nameInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[0];
     const costInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[1];
     fireEvent.change(nameInput, { target: { value: 'Naar de film' } });
     fireEvent.change(costInput, { target: { value: '40' } });
 
-    // Pick Zara inside the reward form's member picker.
-    const picker = Array.from(
-      container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button'),
-    ).find((button) => button.textContent?.includes('Zara'))!;
-    fireEvent.click(picker);
+    // The child whose page we are on is already selected in the picker.
+    const selected = container.querySelectorAll('.planner-member-picker button.is-selected');
+    expect(selected).toHaveLength(1);
+    expect(selected[0].textContent).toContain('Zara');
+
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
 
     // Creating a reward is a parent action, so the PIN comes first.
@@ -560,6 +582,19 @@ describe('ChorePlanner child page tabs', () => {
   beforeEach(() => {
     mocks.state.current = twoChildren();
     mocks.createReward.mockClear();
+  });
+
+  it('offers the add button on the lobby too, and no rewards button in the header', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    // Lobby: adding a chore must not require picking a child first.
+    expect(container.querySelector('.planner-lobby-member')).not.toBeNull();
+    expect(container.querySelector('.planner-add')).not.toBeNull();
+
+    openChild(container);
+    expect(container.querySelector('.planner-add')).not.toBeNull();
+    // Rewards are per child, so the header no longer opens a rewards sheet.
+    expect(container.querySelector('button[aria-label="Beloningen"]')).toBeNull();
   });
 
   it('offers the four tabs with chores open first', () => {

@@ -11,7 +11,6 @@ import {
   Pencil,
   Plus,
   RotateCcw,
-  Sparkles,
   Trash2,
   Volume2,
   VolumeX,
@@ -403,7 +402,7 @@ export function ChorePlanner({
   const timeLocale = dateLocale.code || lang;
   const [screen, setScreen] = useState<Screen>('lobby');
   const [modal, setModal] = useState<
-    'form' | 'actions' | 'rewards' | 'reward-form' | 'reward-actions' | null
+    'form' | 'actions' | 'reward-form' | 'reward-actions' | null
   >(null);
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -575,24 +574,30 @@ export function ChorePlanner({
     return spendablePoints(member.savings, reservations, rewards, userName);
   };
 
-  /**
-   * The free-chores tab: everything up for grabs that this child may take, plus
-   * the ones they took. A claimed free chore stays with whoever claimed it
-   * instead of disappearing from the tab.
-   */
-  const freeTasksForChild = selectedTodayMember
-    ? data.tasks.filter(
-        (task) =>
-          task.freeForAll &&
-          (task.memberId === selectedTodayMember.id || !task.memberId) &&
-          taskStatus(task) !== 'completed',
-      )
-    : [];
-
   /** Calendar order for a list of chores. */
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
+
+  /**
+   * The free-chores tab: everything up for grabs that this child may take, plus
+   * the ones they took. A claimed free chore stays with whoever claimed it, and
+   * finished ones stay until ChoreOps rolls the day over, so the child sees what
+   * they earned instead of watching the row vanish.
+   */
+  const freeTasksForChild = selectedTodayMember
+    ? data.tasks
+        .filter(
+          (task) =>
+            task.freeForAll &&
+            (task.memberId === selectedTodayMember.id || !task.memberId),
+        )
+        .sort((a, b) => {
+          // Still-to-do first; finished ones drop below them.
+          const done = (task: PlannerTask) => (taskStatus(task) === 'completed' ? 1 : 0);
+          return done(a) - done(b) || byDeadline(a, b);
+        })
+    : [];
 
   const showToast = (message: string, kind: ToastKind = 'success') => setToast({ message, kind });
   const playCompletionSound = () => {
@@ -848,7 +853,7 @@ export function ChorePlanner({
         try {
           setSaving(true);
           await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
-          setModal('rewards');
+          setModal(null);
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -873,7 +878,7 @@ export function ChorePlanner({
           cost: rewardForm.cost,
           assignedUserNames: userNames,
         });
-        setModal('rewards');
+        setModal(null);
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -890,7 +895,7 @@ export function ChorePlanner({
       try {
         setSaving(true);
         await choreOps.deleteReward(reward.name);
-        setModal('rewards');
+        setModal(null);
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -1209,7 +1214,7 @@ export function ChorePlanner({
           </h1>
         </div>
         <div className="planner-header-actions">
-          {screen === 'overview' && (
+          {(screen === 'lobby' || screen === 'overview') && (
             <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
               <Plus />
             </button>
@@ -1243,13 +1248,6 @@ export function ChorePlanner({
             aria-label={c.sound}
           >
             {soundEnabled ? <Volume2 /> : <VolumeX />}
-          </button>
-          <button
-            className="planner-icon-button"
-            onClick={() => setModal('rewards')}
-            aria-label={c.rewards}
-          >
-            <Sparkles />
           </button>
         </div>
       </header>
@@ -1408,6 +1406,17 @@ export function ChorePlanner({
                             {c.assign}
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="planner-task-more"
+                          aria-label={`${c.action}: ${reward.name}`}
+                          onClick={() => {
+                            setSelectedReward(reward);
+                            setModal('reward-actions');
+                          }}
+                        >
+                          {'\u22ef'}
+                        </button>
                       </div>
                     </div>
                   );
@@ -1445,11 +1454,15 @@ export function ChorePlanner({
                   ),
                   'planner-section--late',
                 )}
+                {/* Finished free chores stay in their own tab until the day
+                    rolls over, so they are not repeated here. */}
                 {section(
                   c.done,
                   data.tasks.filter(
                     (task) =>
-                      task.memberId === selectedTodayMember.id && taskStatus(task) === 'completed',
+                      task.memberId === selectedTodayMember.id &&
+                      !task.freeForAll &&
+                      taskStatus(task) === 'completed',
                   ),
                 )}
                 {memberTodayCount(selectedTodayMember.id) === 0 && (
@@ -1886,118 +1899,6 @@ export function ChorePlanner({
                 </button>
               </>
             )}
-            {modal === 'rewards' && (
-              <>
-                <h2>{c.rewards}</h2>
-                {rewards.length === 0 && <p>{c.noRewards}</p>}
-                {rewards
-                  .slice()
-                  .sort(
-                    (a, b) =>
-                      (a.pendingClaims > 0 ? 0 : a.status === 'available' ? 1 : 2) -
-                      (b.pendingClaims > 0 ? 0 : b.status === 'available' ? 1 : 2),
-                  )
-                  .map((reward) => {
-                    const { reserved, saved, available, pending, affordable } = rewardState(reward);
-                    const approveId = reward.actions.approve;
-                    return (
-                      <div className="planner-reward" key={reward.id}>
-                        <span aria-hidden="true">{'\u{1F381}'}</span>
-                        <div className="planner-reward-copy">
-                          <strong>{reward.name}</strong>
-                          <small>
-                            {reward.assignee ? `${reward.assignee} · ` : ''}
-                            {reserved
-                              ? c.assigned
-                              : `${saved} / ${reward.cost} ${c.pointsUnit}${
-                                  pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
-                                }`}
-                          </small>
-                          <i>
-                            <b
-                              style={{
-                                width: `${
-                                  reserved
-                                    ? 100
-                                    : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
-                                }%`,
-                              }}
-                            />
-                          </i>
-                        </div>
-                        <div className="planner-reward-actions">
-                          {reserved ? (
-                            <>
-                              <button
-                                className="planner-ghost planner-reward-action"
-                                onClick={() => undoRewardChoice(reward)}
-                              >
-                                {c.undoShort}
-                              </button>
-                              <button
-                                className="planner-primary planner-reward-action"
-                                disabled={saving}
-                                onClick={() => confirmReward(reward)}
-                              >
-                                {c.confirm}
-                              </button>
-                            </>
-                          ) : pending && approveId ? (
-                            <button
-                              className="planner-primary planner-reward-action"
-                              onClick={() =>
-                                requestPin(
-                                  c.rewards,
-                                  reward.name,
-                                  () =>
-                                    void runLiveAction(
-                                      reward.id,
-                                      approveId,
-                                      reward.name,
-                                      c.approved,
-                                    ),
-                                )
-                              }
-                            >
-                              {c.confirm}
-                            </button>
-                          ) : (
-                            <button
-                              className="planner-ghost planner-reward-action"
-                              disabled={!available || !affordable}
-                              onClick={() => assignReward(reward)}
-                            >
-                              {c.assign}
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            className="planner-task-more"
-                            aria-label={`${c.action}: ${reward.name}`}
-                            onClick={() => {
-                              setSelectedReward(reward);
-                              setModal('reward-actions');
-                            }}
-                          >
-                            {'\u22ef'}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                <button
-                  className="planner-ghost planner-reward-new"
-                  onClick={() => {
-                    setEditingReward(null);
-                    setRewardForm({ name: '', cost: 10, memberIds: [] });
-                    setModal('reward-form');
-                  }}
-                >
-                  <Plus />
-                  {c.newReward}
-                </button>
-              </>
-            )}
             {modal === 'reward-actions' && selectedReward && (
               <>
                 <h2>{c.action}</h2>
@@ -2077,7 +1978,7 @@ export function ChorePlanner({
                   </fieldset>
                 )}
                 <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal('rewards')}>
+                  <button className="planner-ghost" onClick={() => setModal(null)}>
                     {c.cancel}
                   </button>
                   <button
