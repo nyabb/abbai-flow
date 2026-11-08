@@ -266,18 +266,27 @@ export function Sidebar({
                 <button
                   type="button"
                   className="mobile-more-close"
-                  onClick={() => setMobileMoreOpen(false)}
+                  onClick={(event) => {
+                    // Keep the tap on the close button: the sheet underneath must
+                    // never receive it as a menu-item click.
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setMobileMoreOpen(false);
+                  }}
                   aria-label={t('nav.closeMenu')}
                 >
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
-              {[...mobileRight.filter((item) => item.id === 'music'), ...navExtra].map((item) => (
+              {[...navRight, ...navExtra].map((item) => (
                 <button
                   key={item.id}
                   type="button"
                   className={`mobile-more-item ${activeView === item.id ? 'mobile-more-item--active' : ''}`}
-                  onClick={() => handleMobileNav(item.id)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleMobileNav(item.id);
+                  }}
                 >
                   {item.icon}
                   <span>{t(item.labelKey)}</span>
