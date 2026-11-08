@@ -1,3 +1,27 @@
+# [1.50.0](https://github.com/nyabb/beacon/compare/v1.49.0...v1.50.0) (2026-11-08)
+
+
+### Bug Fixes
+
+* **chores:** clear the in-flight marker after a successful action ([98c2cc9](https://github.com/nyabb/beacon/commit/98c2cc91802f2f9d9d9e2e0158858c12fe8e0995))
+* **chores:** the pill names the action, not "completed" ([49e1cc4](https://github.com/nyabb/beacon/commit/49e1cc4ad089637ee4b9ee6d7320a3bad56a2874))
+
+
+### Features
+
+* add routine functionality to OmniAdd and Sidebar components ([47bd83f](https://github.com/nyabb/beacon/commit/47bd83fec2088e1fc4d59beea5c489fb928d9f26))
+* **chores:** add-chore button on the lobby, drop the header rewards button ([fed29ab](https://github.com/nyabb/beacon/commit/fed29ab6be3f87cfcc2868cf6ca981201bc6408b))
+* **chores:** board polish from the reference recording ([e7a9268](https://github.com/nyabb/beacon/commit/e7a9268f4aed24ff8fa9b279ce014fe787bba819))
+* **chores:** child switcher between header and tabs, add button back in the header ([5671a3e](https://github.com/nyabb/beacon/commit/5671a3e3bd3a0888cac0999f4acb899d91e69d44))
+* **chores:** claimed free chores stay on the claimer's free tab ([a8ca5e9](https://github.com/nyabb/beacon/commit/a8ca5e95b4a522855fec1af89b62b56849897658))
+* **chores:** open on the children, three-box child switcher, themed palette ([8215490](https://github.com/nyabb/beacon/commit/82154906c87bdad74274ded58ab205da7425ef57))
+* **chores:** rebuild the chores page as the reference board ([62fdbdc](https://github.com/nyabb/beacon/commit/62fdbdcf9a4cbcf09cc9bfe67672ae168de574f0))
+* **chores:** tabbed child page with goals, chores, routines and free chores ([71eb9b3](https://github.com/nyabb/beacon/commit/71eb9b3f840f659897469d1bb92a52aa175e6d15))
+* **design:** app-wide screen style layer ([b70e27d](https://github.com/nyabb/beacon/commit/b70e27d66ab7193ea780d24ed8a92a755df564e8))
+* **design:** tinted active tab and centred chore card ([2331bd9](https://github.com/nyabb/beacon/commit/2331bd9a3234b7029759626e6736ba700fcc2da5))
+* enhance Sidebar component with improved close button functionality and add tests ([98406fb](https://github.com/nyabb/beacon/commit/98406fb818f184fdd2cb2293a79e968a7c0e5317))
+* improve Sidebar close button functionality and add tests for overflow menu ([36f363a](https://github.com/nyabb/beacon/commit/36f363ab4df1480b65be3701bbbee12277f4c468))
+
 # [1.49.0](https://github.com/nyabb/beacon/compare/v1.48.0...v1.49.0) (2026-11-07)
 
 
