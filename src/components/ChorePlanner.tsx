@@ -1150,6 +1150,8 @@ export function ChorePlanner({
       .reduce((sum, task) => sum + task.points, 0);
   const activeMissionStatus = missionTask ? taskStatus(missionTask) : 'completed';
 
+  /* The child's name is not repeated here: it gets its own switcher row right
+     under the header, so the title stays the section name. */
   const heading =
     screen === 'lobby'
       ? c.today
@@ -1157,7 +1159,7 @@ export function ChorePlanner({
         ? c.missions
         : screen === 'closing'
           ? c.todayEarned
-          : (selectedTodayMember?.name ?? c.title);
+          : c.title;
 
   return (
     <div className={`chore-planner ${privacy ? 'chore-planner--private' : ''}`}>
@@ -1186,38 +1188,18 @@ export function ChorePlanner({
           <span className="planner-eyebrow">
             {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
-          {screen === 'overview' && selectedTodayMember ? (
-            /* Three joined segments: an arrow, the child's name set exactly like
-               any other page title, and the arrow back. Only the two outside
-               edges are rounded, so the bar reads as one control. */
-            <div className="planner-child-switch">
-              <button
-                type="button"
-                className="planner-child-switch-arrow"
-                onClick={() => switchChild(-1)}
-                aria-label={c.prevChild}
-              >
-                <ChevronLeft />
-              </button>
-              <h1 className="planner-child-switch-name">{selectedTodayMember.name}</h1>
-              <button
-                type="button"
-                className="planner-child-switch-arrow"
-                onClick={() => switchChild(1)}
-                aria-label={c.nextChild}
-              >
-                <ChevronRight />
-              </button>
-            </div>
-          ) : (
-            <h1>
-              {/* Phones get the short name so the header can stay on one row. */}
-              <span className="planner-title-full">{heading}</span>
-              <span className="planner-title-short">{heading}</span>
-            </h1>
-          )}
+          <h1>
+            {/* Phones get the short name so the header can stay on one row. */}
+            <span className="planner-title-full">{heading}</span>
+            <span className="planner-title-short">{heading}</span>
+          </h1>
         </div>
         <div className="planner-header-actions">
+          {screen === 'overview' && (
+            <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
+              <Plus />
+            </button>
+          )}
           <span className="planner-language">
             <select
               className="planner-language-select"
@@ -1290,6 +1272,30 @@ export function ChorePlanner({
       )}
       {screen === 'overview' && selectedTodayMember && (
         <main className="planner-child">
+          {/* Child switcher: three white boxes — arrow, name, arrow — sitting
+              between the header and the tabs. */}
+          <div className="planner-child-bar">
+            <div className="planner-child-switch">
+              <button
+                type="button"
+                className="planner-child-switch-arrow"
+                onClick={() => switchChild(-1)}
+                aria-label={c.prevChild}
+              >
+                <ChevronLeft />
+              </button>
+              <strong className="planner-child-switch-name">{selectedTodayMember.name}</strong>
+              <button
+                type="button"
+                className="planner-child-switch-arrow"
+                onClick={() => switchChild(1)}
+                aria-label={c.nextChild}
+              >
+                <ChevronRight />
+              </button>
+            </div>
+          </div>
+
           <div className="planner-tabs-row">
             <nav className="planner-tabs" aria-label={c.title}>
               {(['goals', 'chores', 'routines', 'free'] as const).map((tab) => (
@@ -1304,14 +1310,6 @@ export function ChorePlanner({
                 </button>
               ))}
             </nav>
-            <button
-              type="button"
-              className="planner-child-add"
-              onClick={openNewForm}
-              aria-label={c.add}
-            >
-              <Plus />
-            </button>
           </div>
 
           <div className="planner-child-body">

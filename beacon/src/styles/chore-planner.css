@@ -522,7 +522,7 @@
   min-height: 54px;
   margin-top: 2px;
   padding: 0 6px 0 20px;
-  border: 1.5px solid var(--planner-amber);
+  border: 1.5px solid var(--planner-line);
   border-radius: 999px;
   color: var(--planner-ink);
   background: transparent;
@@ -2430,55 +2430,61 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   min-height: 0;
 }
 
-/* Child switcher: three white rounded boxes on the band — arrow, the child's
-   name, arrow — with a small gap between them, like the reference app. */
-.planner-header .planner-child-switch {
+/* Child switcher: three white rounded boxes — arrow, the child's name, arrow —
+   on its own row between the header and the tabs. */
+.planner-child-bar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 10px clamp(12px, 2vw, 28px) 0;
+}
+
+.planner-child-switch {
   display: inline-flex;
-  justify-self: start;
   align-items: stretch;
   gap: 6px;
   max-width: 100%;
 }
 
-.planner-header .planner-child-switch-arrow {
+.planner-child-switch-arrow {
   display: grid;
   flex: 0 0 auto;
   width: 34px;
   min-height: 34px;
   place-items: center;
   padding: 0;
-  border: 0;
+  border: 1px solid var(--planner-line);
   border-radius: 10px;
   color: var(--planner-accent);
   background: var(--planner-surface);
-  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.14);
+  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
   cursor: pointer;
 }
 
-.planner-header .planner-child-switch-arrow:hover {
+.planner-child-switch-arrow:hover {
   background: var(--planner-accent-soft);
 }
 
-.planner-header .planner-child-switch-arrow svg {
+.planner-child-switch-arrow svg {
   width: 17px;
   height: 17px;
 }
 
-/* The name keeps the header-title typography inside its own white box. */
-.planner-header .planner-child-switch .planner-child-switch-name {
+.planner-child-switch-name {
   display: flex;
   align-items: center;
-  max-width: 44vw;
+  max-width: 56vw;
   min-height: 34px;
   overflow: hidden;
-  margin: 0;
-  padding: 0 14px;
+  padding: 0 16px;
+  border: 1px solid var(--planner-line);
   border-radius: 10px;
   color: var(--planner-accent);
   background: var(--planner-surface);
-  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.14);
-  font: inherit;
-  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
+  font-family: var(--font-display, 'Trebuchet MS', sans-serif);
+  font-size: 17px;
+  font-weight: 700;
   line-height: 1.1;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -2501,25 +2507,6 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   min-width: 0;
   overflow-x: auto;
   scrollbar-width: none;
-}
-
-.planner-child-add {
-  display: grid;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border: 0;
-  border-radius: 11px;
-  color: var(--planner-on-accent);
-  background: var(--planner-accent);
-  box-shadow: 0 5px 14px color-mix(in srgb, var(--planner-accent) 30%, transparent);
-  cursor: pointer;
-}
-
-.planner-child-add svg {
-  width: 17px;
-  height: 17px;
 }
 
 .planner-tabs::-webkit-scrollbar {

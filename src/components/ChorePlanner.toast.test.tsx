@@ -81,7 +81,7 @@ function renderPlanner() {
 /** Fill the "new chore" sheet just enough to submit it. */
 function submitNewChore(container: HTMLElement) {
   fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-lobby-member')!);
-  fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-child-add')!);
+  fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
   fireEvent.change(screen.getByLabelText('Naam'), { target: { value: 'Afwassen' } });
   const picker = container.querySelector<HTMLElement>('.planner-member-picker')!;
   const zara = Array.from(picker.querySelectorAll('button')).find((button) =>
