@@ -1311,6 +1311,10 @@ export function ChorePlanner({
           </h1>
         </div>
         <div className="planner-header-actions">
+          {/* The reference puts the wall clock in the header band. */}
+          {screen === 'board' && (
+            <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
+          )}
           {screen === 'board' && (
             <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
               <Plus />

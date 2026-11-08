@@ -1407,76 +1407,10 @@
   font-weight: 800;
 }
 
-.planner-today-lobby {
-  display: grid;
-  /* auto-fit + justify-content centres the group even when the household has
-     fewer children than there are tracks (3 kids in a 4-column grid sat left). */
-  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
-  justify-content: center;
-  gap: 18px;
-  flex: 1 1 auto;
-  min-height: 0;
-  padding: 24px clamp(18px, 4vw, 72px) 120px;
-  align-content: center;
-  /* On a short screen the cards would otherwise spill over each other; the
-     avatars keep their own height now, so let the lobby scroll instead. */
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-.planner-lobby-member {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  min-height: 255px;
-  padding: 24px 12px;
-  border: 0;
-  border-radius: 18px;
-  color: var(--planner-ink);
-  background: var(--planner-surface);
-  box-shadow: 0 5px 20px rgba(38, 51, 47, 0.07);
-  cursor: pointer;
-}
 .planner-lobby-avatar,
-.planner-hero-avatar {
-  display: grid;
-  /* Both wrappers are flex items in a column: without this a tight screen
-     squashes their height while the width stays put, which turns uploaded
-     photos into ovals. */
-  flex: 0 0 auto;
-  width: 112px;
-  height: 112px;
-  /* Belt and braces: if one side is ever auto, keep the box square. */
-  aspect-ratio: 1 / 1;
-  margin-inline: auto;
-  place-items: center;
-  overflow: hidden;
-  border: 3px solid var(--member-color, transparent);
-  border-radius: 50%;
-  font-size: 64px;
-}
+
 .planner-lobby-avatar > img,
-.planner-hero-avatar > img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: inherit;
-  object-fit: cover;
-  object-position: center;
-}
-.planner-lobby-member strong {
-  font-size: 25px;
-}
-.planner-lobby-member > span:last-child {
-  color: var(--planner-muted);
-  font-size: 16px;
-}
-.planner-lobby-member small {
-  max-width: 100%;
-  color: var(--planner-muted);
-  font-size: 13px;
-  text-align: center;
-}
+
 .planner-today-step {
   display: flex;
   flex-direction: column;
@@ -2002,22 +1936,6 @@
 }
 
 /* --- Rewards (ChoreOps reward entities) --- */
-.planner-child-rewards {
-  display: grid;
-  gap: 8px;
-  width: min(720px, 100%);
-  margin: 4px 0 20px;
-  text-align: left;
-}
-
-.planner-child-rewards h3 {
-  margin: 0;
-  color: var(--planner-muted);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
 
 .planner-reward {
   display: grid;
@@ -2217,27 +2135,6 @@
   font-size: clamp(20px, 2vw, 28px);
 }
 
-.planner-hero-avatar {
-  width: 72px;
-  height: 72px;
-  font-size: 40px;
-}
-
-.planner-lobby-avatar {
-  width: 72px;
-  height: 72px;
-  font-size: 40px;
-}
-
-.planner-lobby-member {
-  min-height: 176px;
-  padding: 14px 10px;
-}
-
-.planner-lobby-member strong {
-  font-size: 17px;
-}
-
 .planner-mission-hero > span {
   font-size: 54px;
 }
@@ -2418,6 +2315,16 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
 .planner-missions h2,
 .planner-today-step h2 {
   overflow-wrap: anywhere;
+}
+
+.planner-header-clock {
+  flex: 0 0 auto;
+  color: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.85;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2728,5 +2635,4 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   .planner-board {
     grid-template-columns: minmax(0, 1fr);
   }
-}
 }
