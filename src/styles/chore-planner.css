@@ -2630,6 +2630,235 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   height: 15px;
 }
 
+/* The child's name in a column header is the way into their detail page. */
+.planner-col-open {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner-col-open:hover strong {
+  color: var(--planner-accent);
+}
+
+.planner-col-play--big {
+  width: 34px;
+  height: 34px;
+  font-size: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Child detail page — everything about one child, opened from the board
+   --------------------------------------------------------------------------- */
+.planner-detail {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 760px;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 10px clamp(12px, 2vw, 28px) 32px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.planner-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--planner-surface);
+  box-shadow: 0 4px 16px rgba(63, 58, 68, 0.08);
+}
+
+.planner-detail-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--planner-soft);
+  font-size: 26px;
+}
+
+.planner-detail-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planner-detail-copy h2 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--planner-ink);
+  font-family: var(--font-display, 'Trebuchet MS', sans-serif);
+  font-size: 22px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-detail-points {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-amber-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Walk to the next family member without going back to the board. */
+.planner-detail-nav {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.planner-detail-nav .planner-icon-button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  color: var(--planner-accent);
+  background: var(--planner-accent-soft);
+}
+
+.planner-detail-nav .planner-icon-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.planner-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--planner-surface);
+  box-shadow: 0 4px 16px rgba(63, 58, 68, 0.06);
+}
+
+.planner-detail-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--planner-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planner-detail-section h3 > span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--planner-soft);
+  font-size: 11px;
+}
+
+/* A paused routine: still visible so it can be resumed, but out of the way. */
+.planner-row.is-paused {
+  background: color-mix(in srgb, var(--planner-ink) 6%, var(--planner-surface));
+  opacity: 0.72;
+}
+
+.planner-row.is-paused .planner-row-name {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--planner-ink) 35%, transparent);
+}
+
+/* Goal picker: "where should these Qudoos go?" */
+.planner-goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+
+.planner-goal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--planner-line);
+  border-radius: 14px;
+  background: var(--planner-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner-goal:hover:not(:disabled) {
+  border-color: var(--planner-accent);
+}
+
+.planner-goal:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.planner-goal-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--planner-accent-soft);
+  font-size: 16px;
+}
+
+.planner-goal-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.planner-goal-copy strong {
+  overflow: hidden;
+  color: var(--planner-ink);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.planner-goal-copy small {
+  color: var(--planner-muted);
+  font-size: 12px;
+}
+
+.planner-goal--new {
+  border-style: dashed;
+}
+
+.planner-goal--new .planner-goal-icon {
+  color: var(--planner-accent);
+  background: transparent;
+  font-weight: 800;
+}
+
 /* Phones: one column per row, so the board reads as a vertical list. */
 @media (max-width: 640px) {
   .planner-board {

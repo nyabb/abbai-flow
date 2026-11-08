@@ -99,14 +99,17 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
  */
 const NL = createI18n('nl');
 
-function renderPlanner(members: FamilyMember[]) {
+function renderPlanner(
+  members: FamilyMember[],
+  createRequest?: { kind: 'chore' | 'routine'; token: number },
+) {
   return render(
     <I18nContext.Provider value={NL}>
       <ChorePlanner
         members={members}
-        nextAppointment={null}
         locale="nl"
         onLocaleChange={() => {}}
+        createRequest={createRequest}
       />
     </I18nContext.Provider>,
   );
@@ -550,6 +553,88 @@ describe('ChorePlanner board', () => {
     expect(zara.textContent).toContain('Ochtendroutine');
     expect(zara.querySelector('.planner-row--routine')).not.toBeNull();
     expect(column(container, 'Maya').querySelector('.planner-row--routine')).toBeNull();
+  });
+
+  it('opens the new-chore form when quick add asks for one', () => {
+    const { container } = renderPlanner([PARENT, ZARA], { kind: 'routine', token: 1 });
+
+    const form = container.querySelector('.planner-sheet--form')!;
+    expect(form).not.toBeNull();
+    // A routine starts as a daily chore.
+    expect((form.querySelector('select') as HTMLSelectElement | null)?.value).toBe('daily');
+  });
+
+  it('opens a child’s detail page from their column header', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+
+    const detail = container.querySelector('.planner-detail')!;
+    expect(detail).not.toBeNull();
+    expect(detail.textContent).toContain('Zara');
+    expect(container.querySelector('.planner-title-full')?.textContent).toBe('Zara');
+
+    // Back returns to the board with every column again (two children + free).
+    fireEvent.click(container.querySelector('.planner-header .planner-icon-button')!);
+    expect(container.querySelector('.planner-detail')).toBeNull();
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+  });
+
+  /*
+   * Qudoo asks where the earned Qudoos should go once a chore is ticked off, so
+   * the child can push them towards a savings goal instead of a blind balance.
+   */
+  it('asks where the Qudoos go after a chore is confirmed', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(column(container, 'Zara').querySelector('.planner-row-check')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() => expect(container.textContent).toContain('Waar wil je de Qudoos aan koppelen?'));
+    expect(container.textContent).toContain('Spaarpot');
+    expect(container.textContent).toContain('Schermtijd');
+    expect(container.textContent).toContain('Stel een doel in');
+  });
+
+  it('hides a member from the board from the filter sheet', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+
+    fireEvent.click(container.querySelector('button[aria-label="Filteren"]')!);
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    fireEvent.click(within(sheet).getByRole('button', { name: /Maya/ }));
+
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(2);
+  });
+
+  it('pauses and resumes a routine', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        ...base.chores,
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const pause = container.querySelector<HTMLButtonElement>(
+      'button[aria-label^="Pauzeren: Ochtendroutine"]',
+    )!;
+    fireEvent.click(pause);
+
+    const row = container.querySelector('.planner-row--routine')!;
+    expect(row.className).toContain('is-paused');
+    expect(container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]')).not.toBeNull();
   });
 
   it('opens one child’s goals from their points badge', () => {

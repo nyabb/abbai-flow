@@ -203,3 +203,11 @@
     height: 48px;
   }
 }
+
+/* On phones the tab bar owns quick add (its middle button), so the floating
+   button would only sit on top of it. The sheet opened from the bar stays. */
+@media (max-width: 768px) {
+  .omni-add:not(.omni-add--sheet) {
+    display: none;
+  }
+}

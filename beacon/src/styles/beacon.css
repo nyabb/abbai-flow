@@ -1678,6 +1678,35 @@ a:focus:not(:focus-visible) {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Quick add in the sidebar: a filled button that stands out from the icons. */
+.sidebar-icon--add {
+  color: var(--planner-on-accent, #fff);
+  background: var(--accent);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 38%, transparent);
+}
+
+.sidebar-icon--add:hover {
+  background: color-mix(in srgb, var(--accent) 86%, #000);
+}
+
+/* Quick add sits in the middle of the tab bar, raised above the rest. */
+.mobile-tab--add {
+  flex: 0 0 auto;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-top: -18px;
+  border-radius: 50%;
+  color: var(--planner-on-accent, #fff);
+  background: var(--accent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.mobile-tab--add svg {
+  width: 26px;
+  height: 26px;
+}
+
 .mobile-tab--active {
   color: var(--accent, #3b82f6);
 }
