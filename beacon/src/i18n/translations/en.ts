@@ -722,6 +722,14 @@ export const en = {
   'planner.minutesShort': 'm',
 
   // frequency option labels
+  'planner.tab.goals': 'Goals',
+  'planner.tab.chores': 'Chores',
+  'planner.tab.routines': 'Routines',
+  'planner.tab.free': 'Free chores',
+  'planner.setGoal': 'Set a goal',
+  'planner.prevChild': 'Previous child',
+  'planner.nextChild': 'Next child',
+  'planner.noRoutines': 'No routines yet.',
   'planner.freq.none': 'One-off',
   'planner.freq.daily': 'Daily',
   'planner.freq.daily_multi': 'Several times a day',

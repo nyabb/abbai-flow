@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   Eye,
@@ -49,10 +50,26 @@ type Screen =
   | 'lobby'
   | 'welcome'
   | 'overview'
-  | 'points'
   | 'missions'
   | 'mission'
   | 'closing';
+
+/** Tabs on a child's own page, mirroring the family-planner app. */
+type ChildTab = 'goals' | 'chores' | 'routines' | 'free';
+
+const CHILD_TAB_ICON: Record<ChildTab, string> = {
+  goals: '\u{1F381}',
+  chores: '\u{1F4CB}',
+  routines: '\u{1F501}',
+  free: '\u{1F450}',
+};
+
+const CHILD_TAB_LABEL: Record<ChildTab, TranslationKey> = {
+  goals: 'planner.tab.goals',
+  chores: 'planner.tab.chores',
+  routines: 'planner.tab.routines',
+  free: 'planner.tab.free',
+};
 
 /** Outcome shown in the bottom-right notification. */
 type ToastKind = 'success' | 'error';
@@ -220,6 +237,10 @@ function usePlannerCopy() {
       routinePlaceholder: t('planner.routinePlaceholder'),
       routineHint: t('planner.routineHint'),
       otherDaily: t('planner.otherDaily'),
+      noRoutines: t('planner.noRoutines'),
+      setGoal: t('planner.setGoal'),
+      prevChild: t('planner.prevChild'),
+      nextChild: t('planner.nextChild'),
       offline: t('planner.offline'),
       assignToClaim: t('planner.assignToClaim'),
       pinTitle: t('planner.pinTitle'),
@@ -424,6 +445,8 @@ export function ChorePlanner({
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [todayMemberId, setTodayMemberId] = useState<string | null>(null);
+  /** Which tab of the child's page is open (goals / chores / routines / free). */
+  const [childTab, setChildTab] = useState<ChildTab>('chores');
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
   const [pinGate, setPinGate] = useState<{
@@ -760,6 +783,21 @@ export function ChorePlanner({
     setEditingId(null);
     setForm(emptyForm(now));
     setModal('form');
+  };
+
+  /** Move to the previous/next child on their page (wraps around). */
+  const switchChild = (delta: number) => {
+    if (!data.members.length) return;
+    const index = data.members.findIndex((member) => member.id === todayMemberId);
+    const next = data.members[(index + delta + data.members.length) % data.members.length];
+    if (next) setTodayMemberId(next.id);
+  };
+
+  /** Open the reward form with the given child already selected. */
+  const startRewardForm = (memberId: string) => {
+    setEditingReward(null);
+    setRewardForm({ name: '', cost: 10, memberIds: [memberId] });
+    setModal('reward-form');
   };
 
   const openEditForm = (task: PlannerTask) => {
@@ -1497,125 +1535,228 @@ export function ChorePlanner({
         </main>
       )}
       {screen === 'overview' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <p className="planner-eyebrow">02 / 04</p>
-          <h2>{c.chooseWhat}</h2>
-          <div className="planner-overview-stats">
-            <span>
-              <strong>{memberTodayCount(selectedTodayMember.id)}</strong>
-              {c.score}
-            </span>
-            <span>
-              <strong>⭐ {spendableFor(selectedTodayMember)}</strong>
-              {c.pot}
-            </span>
-          </div>
-          {/*
-           * Two separate things a child can do today. Point distribution used
-           * to be a step you had to walk through before the missions started;
-           * it is a choice now, and the missions are one tap away.
-           */}
-          <div className="planner-choice">
+        <main className="planner-child">
+          {/* Top bar: switch child on the left, add on the right. */}
+          <div className="planner-child-bar">
+            <div className="planner-child-switch">
+              <button
+                type="button"
+                className="planner-child-switch-btn"
+                onClick={() => switchChild(-1)}
+                aria-label={c.prevChild}
+              >
+                <ChevronLeft />
+              </button>
+              <span className="planner-child-switch-name">{selectedTodayMember.name}</span>
+              <button
+                type="button"
+                className="planner-child-switch-btn"
+                onClick={() => switchChild(1)}
+                aria-label={c.nextChild}
+              >
+                <ChevronRight />
+              </button>
+            </div>
             <button
-              className="planner-choice-card"
-              disabled={rewardsForMember(selectedTodayMember.id).length === 0}
-              onClick={() => setScreen('points')}
+              type="button"
+              className="planner-child-add"
+              onClick={openNewForm}
+              aria-label={c.add}
             >
-              <span aria-hidden="true">{'\u{1F381}'}</span>
-              <strong>{c.assignPoints}</strong>
-              <small>{c.assignPointsHint}</small>
-            </button>
-            <button className="planner-choice-card" onClick={() => setScreen('missions')}>
-              <span aria-hidden="true">{'\u{1F3AF}'}</span>
-              <strong>{c.startMissions}</strong>
-              <small>{c.missionsHint}</small>
+              <Plus />
             </button>
           </div>
-        </main>
-      )}
-      {screen === 'points' && selectedTodayMember && (
-        <main className="planner-content planner-points">
-          <h2>{c.assignPoints}</h2>
-          <p className="planner-points-balance">
-            ⭐ {spendableFor(selectedTodayMember)} {c.pointsUnit}
-          </p>
-          {rewardsForMember(selectedTodayMember.id).length === 0 ? (
-            <p className="planner-empty-copy">{c.noRewards}</p>
-          ) : (
-            <section className="planner-child-rewards">
-              {rewardsForMember(selectedTodayMember.id).map((reward) => {
-                const { reserved, saved, available, pending, affordable } = rewardState(reward);
-                const approveId = reward.actions.approve;
-                return (
-                  <div className="planner-reward" key={reward.id}>
-                    <span aria-hidden="true">{'\u{1F381}'}</span>
-                    <div className="planner-reward-copy">
-                      <strong>{reward.name}</strong>
-                      <small>
-                        {reserved
-                          ? c.assigned
-                          : `${saved} / ${reward.cost} ${c.pointsUnit}${
-                              pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
-                            }`}
-                      </small>
-                      <i>
-                        <b
-                          style={{
-                            width: `${
-                              reserved
-                                ? 100
-                                : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
-                            }%`,
-                          }}
-                        />
-                      </i>
+
+          <nav className="planner-tabs" aria-label={c.title}>
+            {(['goals', 'chores', 'routines', 'free'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                className={`planner-tab ${childTab === tab ? 'is-active' : ''}`}
+                onClick={() => setChildTab(tab)}
+              >
+                <span aria-hidden="true">{CHILD_TAB_ICON[tab]}</span>
+                {t(CHILD_TAB_LABEL[tab])}
+              </button>
+            ))}
+          </nav>
+
+          <div className="planner-child-body">
+            {childTab === 'goals' && (
+              <section className="planner-child-rewards">
+                <div className="planner-child-summary">
+                  <span className="planner-child-avatar">
+                    <MemberAvatar member={selectedTodayMember} />
+                  </span>
+                  <strong>{selectedTodayMember.name}</strong>
+                  <span className="planner-child-points">
+                    {'\u2B50'} {spendableFor(selectedTodayMember)}
+                  </span>
+                </div>
+                {rewardsForMember(selectedTodayMember.id).length === 0 && (
+                  <p className="planner-empty-copy">{c.noRewards}</p>
+                )}
+                {rewardsForMember(selectedTodayMember.id).map((reward) => {
+                  const { reserved, saved, available, pending, affordable } = rewardState(reward);
+                  const approveId = reward.actions.approve;
+                  return (
+                    <div className="planner-reward" key={reward.id}>
+                      <span aria-hidden="true">{'\u{1F381}'}</span>
+                      <div className="planner-reward-copy">
+                        <strong>{reward.name}</strong>
+                        <small>
+                          {reserved
+                            ? c.assigned
+                            : `${saved} / ${reward.cost} ${c.pointsUnit}${
+                                pending ? ` · ${c.claimed}` : available ? '' : ` · ${c.locked}`
+                              }`}
+                        </small>
+                        <i>
+                          <b
+                            style={{
+                              width: `${
+                                reserved
+                                  ? 100
+                                  : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
+                              }%`,
+                            }}
+                          />
+                        </i>
+                      </div>
+                      <div className="planner-reward-actions">
+                        {reserved ? (
+                          <>
+                            <button
+                              className="planner-ghost planner-reward-action"
+                              onClick={() => undoRewardChoice(reward)}
+                            >
+                              {c.undoShort}
+                            </button>
+                            <button
+                              className="planner-primary planner-reward-action"
+                              disabled={saving}
+                              onClick={() => confirmReward(reward)}
+                            >
+                              {c.confirm}
+                            </button>
+                          </>
+                        ) : pending && approveId ? (
+                          <button
+                            className="planner-primary planner-reward-action"
+                            onClick={() =>
+                              requestPin(
+                                c.rewards,
+                                reward.name,
+                                () =>
+                                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
+                              )
+                            }
+                          >
+                            {c.confirm}
+                          </button>
+                        ) : (
+                          <button
+                            className="planner-ghost planner-reward-action"
+                            disabled={!available || !affordable}
+                            onClick={() => assignReward(reward)}
+                          >
+                            {c.assign}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {reserved ? (
-                      <>
-                        <button
-                          className="planner-ghost planner-reward-action"
-                          onClick={() => undoRewardChoice(reward)}
-                        >
-                          {c.undoShort}
-                        </button>
-                        <button
-                          className="planner-primary planner-reward-action"
-                          disabled={saving}
-                          onClick={() => confirmReward(reward)}
-                        >
-                          {c.confirm}
-                        </button>
-                      </>
-                    ) : pending && approveId ? (
-                      <button
-                        className="planner-primary planner-reward-action"
-                        onClick={() =>
-                          requestPin(
-                            c.rewards,
-                            reward.name,
-                            () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
-                          )
-                        }
-                      >
-                        {c.confirm}
-                      </button>
-                    ) : (
-                      <button
-                        className="planner-ghost planner-reward-action"
-                        disabled={!available || !affordable}
-                        onClick={() => assignReward(reward)}
-                      >
-                        {c.assign}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </section>
-          )}
-          <button className="planner-primary" onClick={() => setScreen('overview')}>
-            {c.back}
-          </button>
+                  );
+                })}
+                <button
+                  className="planner-ghost planner-reward-new"
+                  onClick={() => startRewardForm(selectedTodayMember.id)}
+                >
+                  <Plus />
+                  {c.setGoal}
+                </button>
+              </section>
+            )}
+
+            {childTab === 'chores' && (
+              <>
+                {section(
+                  c.open,
+                  data.tasks.filter(
+                    (task) =>
+                      task.memberId === selectedTodayMember.id &&
+                      ['active', 'upcoming'].includes(taskStatus(task)),
+                  ),
+                )}
+                {section(
+                  c.late,
+                  data.tasks.filter(
+                    (task) =>
+                      task.memberId === selectedTodayMember.id &&
+                      ['late', 'retry'].includes(taskStatus(task)),
+                  ),
+                  'planner-section--late',
+                )}
+                {section(
+                  c.done,
+                  data.tasks.filter(
+                    (task) =>
+                      task.memberId === selectedTodayMember.id && taskStatus(task) === 'completed',
+                  ),
+                )}
+                {memberTodayCount(selectedTodayMember.id) === 0 && (
+                  <p className="planner-empty-copy">{c.noMissions}</p>
+                )}
+                <button
+                  className="planner-primary"
+                  disabled={memberTodayCount(selectedTodayMember.id) === 0}
+                  onClick={beginMissions}
+                >
+                  {c.startMissions}
+                  <ChevronRight />
+                </button>
+              </>
+            )}
+
+            {childTab === 'routines' && (
+              <>
+                {data.routines.filter((routine) =>
+                  routine.memberIds.includes(selectedTodayMember.id),
+                ).length === 0 && <p className="planner-empty-copy">{c.noRoutines}</p>}
+                {data.routines
+                  .filter((routine) => routine.memberIds.includes(selectedTodayMember.id))
+                  .map((routine) => (
+                    <div key={routine.id} className="planner-routine-row">
+                      <span>{routine.icon}</span>
+                      <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
+                      <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
+                      <span className="planner-routine-time">
+                        {routine.timeBlock === 'morning'
+                          ? c.morning
+                          : routine.timeBlock === 'evening'
+                            ? c.evening
+                            : c.afternoon}
+                      </span>
+                    </div>
+                  ))}
+              </>
+            )}
+
+            {childTab === 'free' && (
+              <>
+                {section(
+                  c.free,
+                  /* Only "anyone can take it" chores — a chore for the whole
+                     household is already on every child's list. */
+                  data.tasks.filter(
+                    (task) => !task.memberId && task.audience === 'anyone' && taskStatus(task) !== 'completed',
+                  ),
+                )}
+                {data.tasks.filter(
+                  (task) => !task.memberId && task.audience === 'anyone' && taskStatus(task) !== 'completed',
+                ).length === 0 && <p className="planner-empty-copy">{c.nothing}</p>}
+              </>
+            )}
+          </div>
         </main>
       )}
       {screen === 'missions' && selectedTodayMember && (
@@ -2061,56 +2202,63 @@ export function ChorePlanner({
                             />
                           </i>
                         </div>
-                        {reserved ? (
-                          <>
-                            <button
-                              className="planner-ghost planner-reward-action"
-                              onClick={() => undoRewardChoice(reward)}
-                            >
-                              {c.undoShort}
-                            </button>
+                        <div className="planner-reward-actions">
+                          {reserved ? (
+                            <>
+                              <button
+                                className="planner-ghost planner-reward-action"
+                                onClick={() => undoRewardChoice(reward)}
+                              >
+                                {c.undoShort}
+                              </button>
+                              <button
+                                className="planner-primary planner-reward-action"
+                                disabled={saving}
+                                onClick={() => confirmReward(reward)}
+                              >
+                                {c.confirm}
+                              </button>
+                            </>
+                          ) : pending && approveId ? (
                             <button
                               className="planner-primary planner-reward-action"
-                              disabled={saving}
-                              onClick={() => confirmReward(reward)}
+                              onClick={() =>
+                                requestPin(
+                                  c.rewards,
+                                  reward.name,
+                                  () =>
+                                    void runLiveAction(
+                                      reward.id,
+                                      approveId,
+                                      reward.name,
+                                      c.approved,
+                                    ),
+                                )
+                              }
                             >
                               {c.confirm}
                             </button>
-                          </>
-                        ) : pending && approveId ? (
+                          ) : (
+                            <button
+                              className="planner-ghost planner-reward-action"
+                              disabled={!available || !affordable}
+                              onClick={() => assignReward(reward)}
+                            >
+                              {c.assign}
+                            </button>
+                          )}
                           <button
-                            className="planner-primary planner-reward-action"
-                            onClick={() =>
-                              requestPin(
-                                c.rewards,
-                                reward.name,
-                                () =>
-                                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
-                              )
-                            }
+                            type="button"
+                            className="planner-task-more"
+                            aria-label={`${c.action}: ${reward.name}`}
+                            onClick={() => {
+                              setSelectedReward(reward);
+                              setModal('reward-actions');
+                            }}
                           >
-                            {c.confirm}
+                            {'\u22ef'}
                           </button>
-                        ) : (
-                          <button
-                            className="planner-ghost planner-reward-action"
-                            disabled={!available || !affordable}
-                            onClick={() => assignReward(reward)}
-                          >
-                            {c.assign}
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          className="planner-task-more"
-                          aria-label={`${c.action}: ${reward.name}`}
-                          onClick={() => {
-                            setSelectedReward(reward);
-                            setModal('reward-actions');
-                          }}
-                        >
-                          {'\u22ef'}
-                        </button>
+                        </div>
                       </div>
                     );
                   })}

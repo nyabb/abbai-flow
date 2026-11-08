@@ -717,6 +717,14 @@ export const nl: Record<TranslationKey, string> = {
   'planner.minutesShort': 'm',
 
   // frequency option labels
+  'planner.tab.goals': 'Doelen',
+  'planner.tab.chores': 'Taakjes',
+  'planner.tab.routines': 'Routines',
+  'planner.tab.free': 'Vrije taakjes',
+  'planner.setGoal': 'Stel een doel in',
+  'planner.prevChild': 'Vorig kind',
+  'planner.nextChild': 'Volgend kind',
+  'planner.noRoutines': 'Nog geen routines.',
   'planner.freq.none': 'Eenmalig',
   'planner.freq.daily': 'Dagelijks',
   'planner.freq.daily_multi': 'Meerdere keren per dag',

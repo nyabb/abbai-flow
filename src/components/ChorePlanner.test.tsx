@@ -481,3 +481,104 @@ describe('ChorePlanner completion confirmation', () => {
     }
   });
 });
+
+/**
+ * The child's page is organised the way the family thinks about it: goals
+ * (rewards), chores, routines, and chores anyone may pick up. The header is
+ * where you switch child, so a parent can hand the phone to the next kid
+ * without walking back through the lobby.
+ */
+describe('ChorePlanner child page tabs', () => {
+  const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
+
+  function twoChildren(): ChoreOpsState {
+    const base = choreOpsState();
+    return {
+      ...base,
+      users: [
+        { ...base.users[0], name: 'Maya', slug: 'maya', points: 10 },
+        { ...base.users[0], name: 'Zara', slug: 'zara', points: 25 },
+      ],
+    };
+  }
+
+  /** Lobby → welcome → the child's overview page. */
+  function openChildPage(container: HTMLElement, name = 'Zara') {
+    fireEvent.click(container.querySelectorAll('.planner-bottom-nav button')[1]);
+    const card = [...container.querySelectorAll<HTMLButtonElement>('.planner-lobby-member')].find(
+      (element) => element.textContent?.includes(name),
+    );
+    fireEvent.click(card!);
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-today-step .planner-primary')!);
+  }
+
+  beforeEach(() => {
+    mocks.state.current = twoChildren();
+    mocks.createReward.mockClear();
+  });
+
+  it('offers the four tabs with chores open first', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChildPage(container);
+
+    const tabs = [...container.querySelectorAll('.planner-tab')].map((tab) =>
+      tab.textContent?.replace(/[^\p{L} ]/gu, '').trim(),
+    );
+    expect(tabs).toEqual(['Doelen', 'Taakjes', 'Routines', 'Vrije taakjes']);
+    expect(container.querySelector('.planner-tab.is-active')?.textContent).toContain('Taakjes');
+  });
+
+  it('shows rewards on the goals tab and chores on the chores tab', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChildPage(container);
+
+    // Chores tab is open: Zara's reward is nowhere to be seen yet.
+    expect(container.querySelector('.planner-reward')).toBeNull();
+    expect(container.textContent).toContain('Afwassen');
+
+    const goals = [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find(
+      (tab) => tab.textContent?.includes('Doelen'),
+    )!;
+    fireEvent.click(goals);
+
+    expect(container.querySelector('.planner-tab.is-active')?.textContent).toContain('Doelen');
+    expect(container.querySelector('.planner-reward')?.textContent).toContain('Schermtijd');
+    expect(container.querySelector('.planner-child-points')?.textContent).toContain('25');
+  });
+
+  it('switches to the next child from the header', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChildPage(container);
+
+    const name = () => container.querySelector('.planner-child-switch-name')?.textContent;
+    expect(name()).toBe('Zara');
+
+    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-btn')[1]);
+    expect(name()).toBe('Maya');
+
+    // Wraps around in both directions.
+    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-btn')[1]);
+    expect(name()).toBe('Zara');
+    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-btn')[0]);
+    expect(name()).toBe('Maya');
+  });
+
+  it('pre-selects the shown child when you set a goal', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    openChildPage(container);
+
+    fireEvent.click(container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-btn')[1]);
+    fireEvent.click(
+      [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((tab) =>
+        tab.textContent?.includes('Doelen'),
+      )!,
+    );
+
+    const setGoal = [...container.querySelectorAll<HTMLButtonElement>('.planner-reward-new')].pop();
+    fireEvent.click(setGoal!);
+
+    const selected = [...container.querySelectorAll('.planner-member-picker button.is-selected')];
+    expect(selected).toHaveLength(1);
+    expect(selected[0].textContent).toContain('Maya');
+  });
+});
