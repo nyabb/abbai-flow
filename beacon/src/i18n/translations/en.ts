@@ -727,6 +727,7 @@ export const en = {
   'planner.tab.routines': 'Routines',
   'planner.tab.free': 'Free chores',
   'planner.setGoal': 'Set a goal',
+  'planner.claimWho': 'Who is taking this?',
   'planner.prevChild': 'Previous child',
   'planner.nextChild': 'Next child',
   'planner.noRoutines': 'No routines yet.',

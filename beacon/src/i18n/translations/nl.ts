@@ -722,6 +722,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.tab.routines': 'Routines',
   'planner.tab.free': 'Vrije taakjes',
   'planner.setGoal': 'Stel een doel in',
+  'planner.claimWho': 'Wie pakt dit op?',
   'planner.prevChild': 'Vorig kind',
   'planner.nextChild': 'Volgend kind',
   'planner.noRoutines': 'Nog geen routines.',

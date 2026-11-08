@@ -689,11 +689,6 @@ export function App() {
                 members={members}
                 locale={settings.locale}
                 onLocaleChange={(locale) => updateSettings({ locale })}
-                nextAppointment={
-                  visibleEvents
-                    .filter((event) => new Date(event.end).getTime() >= Date.now())
-                    .sort((left, right) => left.start.localeCompare(right.start))[0] ?? null
-                }
               />
             ) : (
               <div className="chores-empty" style={{ padding: 48 }}>

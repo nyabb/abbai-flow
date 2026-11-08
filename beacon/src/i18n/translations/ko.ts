@@ -714,6 +714,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.tab.routines': '루틴',
   'planner.tab.free': '자유 할 일',
   'planner.setGoal': '목표 설정',
+  'planner.claimWho': '누가 할까요?',
   'planner.prevChild': '이전 아이',
   'planner.nextChild': '다음 아이',
   'planner.noRoutines': '아직 루틴이 없습니다.',

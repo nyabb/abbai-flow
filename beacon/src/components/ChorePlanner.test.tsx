@@ -112,41 +112,29 @@ function renderPlanner(members: FamilyMember[]) {
   );
 }
 
-/**
- * The planner opens on the children's avatars; everything below the lobby lives
- * on one child's page, so tests start by picking that child.
- */
-function openChild(container: HTMLElement, name = 'Zara') {
-  const card = [...container.querySelectorAll<HTMLButtonElement>('.planner-lobby-member')].find(
-    (element) => element.textContent?.includes(name),
+/** The column for one child, or the free-to-claim column. */
+function column(container: HTMLElement, name: string): HTMLElement {
+  const found = [...container.querySelectorAll<HTMLElement>('.planner-col')].find((element) =>
+    element.querySelector('.planner-col-head strong')?.textContent?.includes(name),
   );
-  fireEvent.click(card!);
+  return found!;
 }
 
-/** Open the actions sheet of the first chore card. */
+const freeColumn = (container: HTMLElement) => column(container, 'Vrij te pakken');
+
+/** Open the actions sheet of the first chore row. */
 function openFirstTaskActions(container: HTMLElement): boolean {
-  const more = container.querySelector<HTMLButtonElement>('.planner-task-more');
+  const more = container.querySelector<HTMLButtonElement>('.planner-row-more');
   if (!more) return false;
   fireEvent.click(more);
   return Boolean(container.querySelector('.planner-destination.planner-danger'));
 }
 
-/** Switch to one of the child page's tabs by its label. */
-function openTab(container: HTMLElement, label: string) {
-  const tab = [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((element) =>
-    element.textContent?.includes(label),
+/** The goals sheet of one child opens from their points badge. */
+function openRewards(container: HTMLElement, name = 'Zara') {
+  fireEvent.click(
+    column(container, name).querySelector<HTMLButtonElement>('.planner-col-points')!,
   );
-  fireEvent.click(tab!);
-}
-
-/** Free-for-all chores have their own tab on the child's page. */
-function openFreeTab(container: HTMLElement) {
-  openTab(container, 'Vrije taakjes');
-}
-
-/** Rewards are per child and live on the child page's Goals tab. */
-function openRewards(container: HTMLElement) {
-  openTab(container, 'Doelen');
 }
 
 describe('ChorePlanner parent PIN gate', () => {
@@ -158,7 +146,6 @@ describe('ChorePlanner parent PIN gate', () => {
 
   it('asks for a parent PIN before deleting a chore', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     expect(openFirstTaskActions(container)).toBe(true);
 
     expect(container.querySelector('.planner-pin-input')).toBeNull();
@@ -170,7 +157,6 @@ describe('ChorePlanner parent PIN gate', () => {
 
   it('rejects a wrong PIN and only then deletes', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     openFirstTaskActions(container);
     fireEvent.click(container.querySelector('.planner-destination.planner-danger')!);
 
@@ -193,6 +179,11 @@ describe('ChorePlanner parent PIN gate', () => {
  * in the chip and offers a hand to grab it. Once claimed it must read exactly
  * like a chore assigned to the child who took it, and it must be gone from the
  * other children's boards.
+ */
+/**
+ * A chore anybody may take sits in its own column on the board. Once a child
+ * claims it ChoreOps hands the row to that child, so it moves into their column
+ * and nobody sees it twice.
  */
 describe('ChorePlanner anyone chores', () => {
   const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
@@ -232,99 +223,40 @@ describe('ChorePlanner anyone chores', () => {
   it('labels an unclaimed chore as anyone and offers a hand to take it', () => {
     mocks.state.current = anyoneState('pending', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container, 'Zara');
-    openFreeTab(container);
+    const free = freeColumn(container);
 
-    // Only this child's card is on screen; the sibling's lives on their page.
-    const cards = container.querySelectorAll('.planner-task');
-    expect(cards).toHaveLength(1);
-    expect(container.querySelectorAll('.planner-task--anyone')).toHaveLength(1);
-    expect(container.textContent).toContain('Wie het eerst is');
-    // The pill's accessible name is "<action>: <chore>", so match on the verb.
-    expect(screen.getAllByRole('button', { name: /^Pakken: / })).toHaveLength(1);
-    expect(container.querySelector('.planner-check-hand')).not.toBeNull();
+    expect(free.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(free.querySelector('.planner-row--anyone')).not.toBeNull();
+    expect(free.textContent).toContain('Tafel dekken');
+    // The row's accessible name is "<action>: <chore>", so match on the verb.
+    expect(within(free).getByRole('button', { name: /^Pakken: / })).toBeTruthy();
+    // The children's own columns stay empty: nobody owns it yet.
+    expect(column(container, 'Zara').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
   it('says "Bevestigen" (approve) once a free chore is claimed, never "Afgerond"', () => {
     mocks.state.current = anyoneState('claimed', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
-    openFreeTab(container);
-
-    const labels = [...container.querySelectorAll('.planner-check')].map(
-      (pill) => pill.textContent ?? '',
+    const labels = [...container.querySelectorAll('.planner-row-check')].map(
+      (button) => button.getAttribute('aria-label') ?? '',
     );
-    // Zara claimed hers, so her pill offers the parent sign-off; Maya's is still
-    // up for grabs. Neither may claim the chore is finished.
-    expect(labels.some((text) => text.includes('Bevestigen'))).toBe(true);
-    expect(labels.some((text) => text.includes('Afgerond'))).toBe(false);
+
+    // Zara claimed it, so her row offers the parent sign-off; the free column
+    // still shows it for Maya. Neither may claim the chore is finished.
+    expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(true);
+    expect(labels.some((text) => text.startsWith('Afgerond'))).toBe(false);
   });
 
-  it('looks like an ordinary assignment once a child claimed it', () => {
+  it('moves the chore into the claimer’s column, out of the free column', () => {
     mocks.state.current = anyoneState('claimed', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
-    openFreeTab(container);
 
-    // The other child's card is gone; only Zara's remains.
-    const cards = container.querySelectorAll('.planner-task');
-    expect(cards).toHaveLength(1);
-    expect(container.querySelector('.planner-task--anyone')).toBeNull();
-    expect(container.textContent).not.toContain('Wie het eerst is');
-    expect(cards[0].querySelector('.planner-member-chip')?.textContent).toContain('Zara');
-    expect(container.querySelector('.planner-check-hand')).toBeNull();
-  });
-
-  /*
-   * A chore anybody may take does not leave the free tab when it is claimed: it
-   * becomes that child's chore and stays on their page, right where they took
-   * it, while the sibling no longer sees it at all.
-   */
-  it('keeps a claimed free chore in the claimer’s free tab and out of the sibling’s', () => {
-    mocks.state.current = anyoneState('claimed', 'completed_by_other');
-
-    const mine = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(mine.container, 'Zara');
-    openFreeTab(mine.container);
-    expect(mine.container.querySelectorAll('.planner-task')).toHaveLength(1);
-    expect(mine.container.textContent).toContain('Tafel dekken');
-    mine.unmount();
-
-    const theirs = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(theirs.container, 'Maya');
-    openFreeTab(theirs.container);
-    expect(theirs.container.querySelectorAll('.planner-task')).toHaveLength(0);
-    expect(theirs.container.textContent).not.toContain('Tafel dekken');
-  });
-
-  /*
-   * Finished free chores are not history yet: they stay in the tab until the day
-   * rolls over, and only there — the Chores tab's done list must not repeat them.
-   */
-  it('keeps a finished free chore in the free tab, once', () => {
-    mocks.state.current = anyoneState('completed', 'completed_by_other');
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
-
-    // Chores tab: not in the open list and not repeated in the done list.
-    expect(container.textContent).not.toContain('Tafel dekken');
-
-    openFreeTab(container);
-    const cards = container.querySelectorAll('.planner-task');
-    expect(cards).toHaveLength(1);
-    expect(cards[0].textContent).toContain('Tafel dekken');
-    expect(cards[0].textContent).toContain('Afgerond');
-  });
-
-  it('does not list a free chore twice: it leaves the chores tab for the free tab', () => {
-    mocks.state.current = anyoneState('claimed', 'completed_by_other');
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
-
-    // Chores tab is open by default and only shows owned chores.
-    expect(container.textContent).not.toContain('Tafel dekken');
-    openFreeTab(container);
-    expect(container.textContent).toContain('Tafel dekken');
+    const zara = column(container, 'Zara');
+    expect(zara.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(zara.textContent).toContain('Tafel dekken');
+    // Maya is relieved of it, and it is no longer up for grabs.
+    expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
+    expect(freeColumn(container).querySelectorAll('.planner-row')).toHaveLength(0);
   });
 });
 
@@ -338,7 +270,6 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   it('lists the rewards ChoreOps publishes with their cost', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     openRewards(container);
 
     expect(container.textContent).toContain('Schermtijd');
@@ -356,7 +287,6 @@ describe('ChorePlanner rewards from ChoreOps', () => {
    */
   it('sets points aside on assign and frees them on undo', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
@@ -378,7 +308,6 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   it('confirms a reserved reward through ChoreOps once, without a second deduction', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
@@ -397,7 +326,6 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   it('creates a per-child reward in ChoreOps', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: /Stel een doel in/ }));
@@ -443,9 +371,8 @@ describe('ChorePlanner completion confirmation', () => {
 
   it('asks before finishing the child’s own chore and does nothing on cancel', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
 
     // The chore is already Zara's, so this is finishing it, not claiming it.
     expect(container.textContent).toContain('Taakje afronden?');
@@ -459,9 +386,8 @@ describe('ChorePlanner completion confirmation', () => {
 
   it('finishes the chore once the child confirms', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
     await waitFor(() =>
@@ -484,9 +410,8 @@ describe('ChorePlanner completion confirmation', () => {
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
+    fireEvent.click(container.querySelector('.planner-row-check')!);
 
     expect(container.textContent).toContain('Taakje afronden?');
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
@@ -507,13 +432,11 @@ describe('ChorePlanner completion confirmation', () => {
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
-    openFreeTab(container);
 
-    fireEvent.click(container.querySelector('.planner-check')!);
-
-    expect(container.textContent).toContain('Taakje claimen?');
-    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+    // A free chore asks who is taking it — that picker is the confirmation.
+    fireEvent.click(freeColumn(container).querySelector('.planner-row-check')!);
+    expect(container.textContent).toContain('Wie pakt dit op?');
+    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: 'Zara' }));
 
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
@@ -541,16 +464,15 @@ describe('ChorePlanner completion confirmation', () => {
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
-    openChild(container);
 
     for (const [label, entityId] of [
       ['Afwassen', 'button.zara_claim_afwassen'],
       ['Afdrogen', 'button.zara_claim_afdrogen'],
     ] as const) {
-      const card = [...container.querySelectorAll('.planner-task')].find((element) =>
+      const row = [...container.querySelectorAll<HTMLElement>('.planner-row')].find((element) =>
         element.textContent?.includes(label),
       );
-      fireEvent.click(card!.querySelector('.planner-check')!);
+      fireEvent.click(row!.querySelector('.planner-row-check')!);
       fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
       await waitFor(() => expect(mocks.pressButton).toHaveBeenCalledWith(entityId));
     }
@@ -560,12 +482,10 @@ describe('ChorePlanner completion confirmation', () => {
 });
 
 /**
- * The child's page is organised the way the family thinks about it: goals
- * (rewards), chores, routines, and chores anyone may pick up. The header is
- * where you switch child, so a parent can hand the phone to the next kid
- * without walking back through the lobby.
+ * The board shows every child as a column of their own chores and routines, plus
+ * the chores anyone may take. Rows act in place: nothing opens a separate page.
  */
-describe('ChorePlanner child page tabs', () => {
+describe('ChorePlanner board', () => {
   const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
 
   function twoChildren(): ChoreOpsState {
@@ -584,88 +504,70 @@ describe('ChorePlanner child page tabs', () => {
     mocks.createReward.mockClear();
   });
 
-  it('offers the add button on the lobby too, and no rewards button in the header', () => {
+  it('shows a column per child plus the free-chore column, and no header rewards button', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
-    // Lobby: adding a chore must not require picking a child first.
-    expect(container.querySelector('.planner-lobby-member')).not.toBeNull();
+    const names = [...container.querySelectorAll('.planner-col-head strong')].map(
+      (element) => element.textContent,
+    );
+    expect(names).toEqual(['Maya', 'Zara', 'Vrij te pakken']);
+    // Adding a chore never requires picking a child first.
     expect(container.querySelector('.planner-add')).not.toBeNull();
-
-    openChild(container);
-    expect(container.querySelector('.planner-add')).not.toBeNull();
-    // Rewards are per child, so the header no longer opens a rewards sheet.
+    // Rewards are per child: they live behind each column's points badge.
     expect(container.querySelector('button[aria-label="Beloningen"]')).toBeNull();
   });
 
-  it('offers the four tabs with chores open first', () => {
+  it('puts each chore in the column of the child it belongs to', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
 
-    const tabs = [...container.querySelectorAll('.planner-tab')].map((tab) =>
-      tab.textContent?.replace(/[^\p{L} ]/gu, '').trim(),
-    );
-    expect(tabs).toEqual(['Doelen', 'Taakjes', 'Routines', 'Vrije taakjes']);
-    expect(container.querySelector('.planner-tab.is-active')?.textContent).toContain('Taakjes');
+    const zara = column(container, 'Zara');
+    expect(zara.querySelectorAll('.planner-row')).toHaveLength(1);
+    expect(zara.textContent).toContain('Afwassen');
+    expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('shows rewards on the goals tab and chores on the chores tab', () => {
+  it('shows a child’s routines under their chores', () => {
+    // ChoreOps groups daily chores into routines by their label.
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        ...base.chores,
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+          actions: { claim: 'button.zara_claim_kamer_opruimen' },
+        },
+      ],
+    };
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
 
-    // Chores tab is open: Zara's reward is nowhere to be seen yet.
-    expect(container.querySelector('.planner-reward')).toBeNull();
-    expect(container.textContent).toContain('Afwassen');
-
-    const goals = [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((tab) =>
-      tab.textContent?.includes('Doelen'),
-    )!;
-    fireEvent.click(goals);
-
-    expect(container.querySelector('.planner-tab.is-active')?.textContent).toContain('Doelen');
-    expect(container.querySelector('.planner-reward')?.textContent).toContain('Schermtijd');
-    expect(container.querySelector('.planner-child-points')?.textContent).toContain('25');
+    const zara = column(container, 'Zara');
+    expect(zara.textContent).toContain('Ochtendroutine');
+    expect(zara.querySelector('.planner-row--routine')).not.toBeNull();
+    expect(column(container, 'Maya').querySelector('.planner-row--routine')).toBeNull();
   });
 
-  it('switches to the next child from the header', () => {
+  it('opens one child’s goals from their points badge', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
+    openRewards(container, 'Zara');
 
-    const name = () => container.querySelector('.planner-child-switch-name')?.textContent;
-    expect(name()).toBe('Zara');
-
-    fireEvent.click(
-      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
-    );
-    expect(name()).toBe('Maya');
-
-    // Wraps around in both directions.
-    fireEvent.click(
-      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
-    );
-    expect(name()).toBe('Zara');
-    fireEvent.click(
-      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[0],
-    );
-    expect(name()).toBe('Maya');
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    expect(sheet.textContent).toContain('Doelen');
+    expect(sheet.textContent).toContain('Schermtijd');
+    expect(sheet.textContent).toContain('25');
   });
 
-  it('pre-selects the shown child when you set a goal', () => {
+  it('pre-selects the child whose goals you opened when you set a new goal', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    openChild(container);
+    openRewards(container, 'Maya');
+    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: /Stel een doel in/ }));
 
-    fireEvent.click(
-      container.querySelectorAll<HTMLButtonElement>('.planner-child-switch-arrow')[1],
-    );
-    fireEvent.click(
-      [...container.querySelectorAll<HTMLButtonElement>('.planner-tab')].find((tab) =>
-        tab.textContent?.includes('Doelen'),
-      )!,
-    );
-
-    const setGoal = [...container.querySelectorAll<HTMLButtonElement>('.planner-reward-new')].pop();
-    fireEvent.click(setGoal!);
-
-    const selected = [...container.querySelectorAll('.planner-member-picker button.is-selected')];
+    const selected = container.querySelectorAll('.planner-member-picker button.is-selected');
     expect(selected).toHaveLength(1);
     expect(selected[0].textContent).toContain('Maya');
   });

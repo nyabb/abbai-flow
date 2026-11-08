@@ -2421,162 +2421,60 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
 }
 
 /* ---------------------------------------------------------------------------
-   Child page: switcher bar + tab strip (goals / chores / routines / free)
+   The board: one column per family member plus the free-chore column
    --------------------------------------------------------------------------- */
-.planner-child {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-}
-
-/* Child switcher: one pill split into three cells — arrow, the child's name,
-   arrow — on its own row between the header and the tabs. The pill clips its
-   children, so the arrows sit flush against the name box. */
-.planner-child-bar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 10px clamp(12px, 2vw, 28px) 0;
-}
-
-.planner-child-switch {
-  display: inline-flex;
-  align-items: stretch;
-  overflow: hidden;
-  max-width: 100%;
-  border: 1px solid var(--planner-line);
-  border-radius: 999px;
-  background: var(--planner-surface);
-  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.1);
-}
-
-.planner-child-switch-arrow {
+.planner-board {
   display: grid;
-  flex: 0 0 auto;
-  width: 34px;
-  min-height: 34px;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  color: var(--planner-accent);
-  background: transparent;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.planner-child-switch-arrow:hover {
-  background: var(--planner-accent-soft);
-}
-
-.planner-child-switch-arrow svg {
-  width: 17px;
-  height: 17px;
-}
-
-.planner-child-switch-name {
-  display: flex;
-  align-items: center;
-  max-width: 56vw;
-  min-height: 34px;
-  overflow: hidden;
-  padding: 0 14px;
-  color: var(--planner-accent);
-  font-family: var(--font-display, 'Trebuchet MS', sans-serif);
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.1;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-/* Tab strip with the amber underline for the current tab, plus the one action
-   that belongs beside it: adding a chore for this child. */
-.planner-tabs-row {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-  padding: 8px clamp(12px, 2vw, 28px) 0;
-}
-
-.planner-tabs {
-  display: flex;
   flex: 1 1 auto;
-  gap: 2px;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.planner-tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.planner-tab {
-  position: relative;
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px 9px;
-  border: 0;
-  background: transparent;
-  color: var(--planner-muted);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 700;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.planner-tab.is-active {
-  color: var(--planner-amber-ink);
-}
-
-.planner-tab.is-active::after {
-  content: '';
-  position: absolute;
-  right: 10px;
-  bottom: 2px;
-  left: 10px;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--planner-amber);
-}
-
-.planner-child-body {
-  flex: 1 1 auto;
+  grid-template-columns: repeat(auto-fit, minmax(232px, 1fr));
+  gap: 12px;
   min-height: 0;
+  padding: 10px clamp(12px, 2vw, 28px) 20px;
   overflow-y: auto;
-  padding: 6px clamp(12px, 2vw, 28px) 104px;
   overscroll-behavior: contain;
 }
 
-/* Goals tab: who the page belongs to, with their spendable points. */
-.planner-child-summary {
+.planner-col {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-  padding: 10px 12px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px dashed color-mix(in srgb, var(--planner-ink) 22%, transparent);
   border-radius: 18px;
-  background: var(--planner-surface);
-  box-shadow: 0 6px 18px rgba(63, 58, 68, 0.07);
+  background: color-mix(in srgb, var(--planner-surface) 72%, transparent);
 }
 
-.planner-child-avatar {
+.planner-col--free {
+  border-color: color-mix(in srgb, var(--planner-accent) 45%, transparent);
+  background: color-mix(in srgb, var(--planner-accent) 6%, var(--planner-surface));
+}
+
+.planner-col-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planner-col-avatar {
   display: grid;
-  width: 44px;
-  height: 44px;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
   background: var(--planner-soft);
-  font-size: 22px;
+  font-size: 15px;
 }
 
-.planner-child-summary strong {
+.planner-col-avatar--free {
+  color: var(--planner-accent);
+  background: var(--planner-accent-soft);
+}
+
+.planner-col-head strong {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
@@ -2587,25 +2485,248 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   text-overflow: ellipsis;
 }
 
-.planner-child-points {
+/* The points badge doubles as the way into that child's goals. */
+.planner-col-points {
+  display: inline-flex;
   flex: 0 0 auto;
-  padding: 5px 12px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px;
+  border: 0;
   border-radius: 999px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 13px;
+  font: inherit;
+  font-size: 12px;
   font-weight: 800;
-  white-space: nowrap;
+  cursor: pointer;
 }
 
+.planner-col-points:hover {
+  background: color-mix(in srgb, var(--planner-amber) 26%, var(--planner-surface));
+}
+
+.planner-col-play {
+  display: grid;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 14%, var(--planner-surface));
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.planner-col-play:hover {
+  background: color-mix(in srgb, var(--planner-accent) 24%, var(--planner-surface));
+}
+
+.planner-col-play:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
+.planner-col-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 0;
+}
+
+.planner-col-body h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0 2px;
+  color: var(--planner-muted);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.planner-col-body h2 > span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--planner-soft);
+  color: var(--planner-muted);
+  font-size: 11px;
+}
+
+.planner-col-empty {
+  margin: 2px 0 6px;
+  padding: 10px 12px;
+  border: 1px dashed color-mix(in srgb, var(--planner-ink) 14%, transparent);
+  border-radius: 12px;
+  color: var(--planner-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* One chore (or routine) inside a column. Chores are tinted green, routines
+   blue, free chores in the accent and late ones amber — the reference's colour
+   language for "what kind of thing is this". */
+.planner-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--planner-green) 8%, var(--planner-surface));
+  box-shadow: 0 1px 2px rgba(63, 58, 68, 0.06);
+}
+
+.planner-row--late,
+.planner-row--retry {
+  background: color-mix(in srgb, var(--planner-amber) 18%, var(--planner-surface));
+}
+
+.planner-row--anyone {
+  background: color-mix(in srgb, var(--planner-accent) 12%, var(--planner-surface));
+}
+
+.planner-row--routine {
+  background: color-mix(in srgb, var(--planner-blue) 14%, var(--planner-surface));
+}
+
+/* Small time bar on a routine row, showing how far through its window we are. */
+.planner-row-progress {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--planner-blue) 24%, transparent);
+}
+
+.planner-row-progress > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--planner-blue);
+}
+
+.planner-row-check {
+  display: grid;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--planner-ink) 24%, transparent);
+  border-radius: 50%;
+  color: var(--planner-accent);
+  background: transparent;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.planner-row-check.is-done {
+  border-color: var(--planner-green);
+  color: var(--planner-on-accent);
+  background: var(--planner-green);
+}
+
+.planner-row-check svg {
+  width: 13px;
+  height: 13px;
+}
+
+.planner-row-icon {
+  flex: 0 0 auto;
+  font-size: 14px;
+}
+
+.planner-row-name {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--planner-ink);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.planner-row-name small {
+  color: var(--planner-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.planner-row-points {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  color: var(--planner-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.planner-row-more {
+  flex: 0 0 auto;
+  padding: 0 3px;
+  border: 0;
+  color: var(--planner-muted);
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planner-row-more:hover {
+  color: var(--planner-ink);
+}
+
+.planner-col-start {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--planner-on-accent);
+  background: var(--planner-accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.planner-col-start--ghost {
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 12%, var(--planner-surface));
+}
+
+.planner-col-start--ghost:hover {
+  background: color-mix(in srgb, var(--planner-accent) 20%, var(--planner-surface));
+}
+
+.planner-col-start:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
+.planner-col-start svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Phones: one column per row, so the board reads as a vertical list. */
 @media (max-width: 640px) {
-  /* Keep enough room for a full first name next to both arrow boxes. */
-  .planner-header .planner-child-switch .planner-child-switch-name {
-    max-width: 46vw;
-    padding: 0 10px;
+  .planner-board {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .planner-tab {
-    padding: 8px 9px;
-    font-size: 12px;
-  }
+}
 }

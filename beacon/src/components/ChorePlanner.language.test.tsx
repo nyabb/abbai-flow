@@ -43,7 +43,7 @@ function renderPlanner(locale: string, onLocaleChange: (locale: string) => void)
   );
 }
 
-/** The planner opens on the children's avatars, so that is the page title. */
+/** The board titles itself with the section name. */
 function pageTitle(container: HTMLElement): string {
   return container.querySelector('.planner-header h1 .planner-title-full')?.textContent ?? '';
 }
@@ -74,10 +74,10 @@ describe('ChorePlanner language picker', () => {
 
   it('renders its copy in whatever language the app is set to', () => {
     const german = renderPlanner('de', () => {});
-    expect(pageTitle(german.container)).toBe('Heute');
+    expect(pageTitle(german.container)).toBe('Aufgaben & Routinen');
     german.unmount();
 
     const dutch = renderPlanner('nl', () => {});
-    expect(pageTitle(dutch.container)).toBe('Vandaag');
+    expect(pageTitle(dutch.container)).toBe('Taakjes & Routines');
   });
 });

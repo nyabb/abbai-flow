@@ -722,6 +722,7 @@ export const pt: Record<TranslationKey, string> = {
   'planner.tab.routines': 'Rotinas',
   'planner.tab.free': 'Tarefas livres',
   'planner.setGoal': 'Definir uma meta',
+  'planner.claimWho': 'Quem vai fazer?',
   'planner.prevChild': 'Criança anterior',
   'planner.nextChild': 'Próxima criança',
   'planner.noRoutines': 'Ainda não há rotinas.',

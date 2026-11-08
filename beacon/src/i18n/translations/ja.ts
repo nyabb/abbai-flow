@@ -717,6 +717,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.tab.routines': 'ルーティン',
   'planner.tab.free': 'フリータスク',
   'planner.setGoal': '目標を設定',
+  'planner.claimWho': 'だれがやりますか？',
   'planner.prevChild': '前の子ども',
   'planner.nextChild': '次の子ども',
   'planner.noRoutines': 'ルーティンはまだありません。',
