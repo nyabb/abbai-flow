@@ -19,26 +19,32 @@
 }
 
 .chore-planner {
-  --planner-bg: #fbf4ef;
-  --planner-surface: #fff;
-  --planner-ink: #3f3a44;
-  --planner-muted: #8a8389;
-  --planner-line: #f0e3da;
-  --planner-accent: #e0785e;
-  --planner-accent-soft: #fbe8e1;
-  --planner-green: #4f9a72;
-  --planner-green-soft: #e6f4ec;
-  --planner-amber: #e59f3c;
-  --planner-amber-soft: #fdf0da;
-  --planner-blue: #6f8fca;
-  --planner-blue-soft: #eceff9;
-  /* Reusable soft fill and warm-amber ink for the light palette. */
-  --planner-soft: #f7efe8;
-  --planner-amber-ink: #a86b15;
-  /* Hero band gradient (header) — a soft peach wash like the Qudoo screens. */
-  --planner-band-1: #f3b39c;
-  --planner-band-2: #e0785e;
-  --planner-band-ink: #fff;
+  /* Every planner colour is derived from the Beacon theme tokens, so changing
+     the colour scheme in Settings re-themes the whole chores flow along with
+     the dashboard, calendar and lists. Nothing here is a literal colour. */
+  --planner-bg: var(--bg-primary);
+  --planner-surface: var(--bg-surface);
+  --planner-ink: var(--text-primary);
+  --planner-muted: var(--text-secondary);
+  --planner-line: var(--border, var(--grid-lines));
+  --planner-accent: var(--accent);
+  --planner-accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-surface));
+  /* Text/icons that sit on top of the accent fill. */
+  --planner-on-accent: #fff;
+  --planner-green: var(--color-success);
+  --planner-green-soft: color-mix(in srgb, var(--color-success) 16%, var(--bg-surface));
+  --planner-amber: var(--color-brand);
+  --planner-amber-soft: color-mix(in srgb, var(--color-brand) 20%, var(--bg-surface));
+  --planner-blue: var(--color-accent);
+  --planner-blue-soft: color-mix(in srgb, var(--color-accent) 14%, var(--bg-surface));
+  /* Reusable soft fill and readable brand ink for text on a tint. */
+  --planner-soft: color-mix(in srgb, var(--text-primary) 7%, var(--bg-surface));
+  --planner-amber-ink: color-mix(in srgb, var(--color-brand) 55%, var(--text-primary));
+  /* Header band: the theme accent laid over the page surface, so the hero
+     follows the colour scheme instead of a fixed peach wash. */
+  --planner-band-1: color-mix(in srgb, var(--accent) 18%, var(--bg-surface));
+  --planner-band-2: color-mix(in srgb, var(--accent) 34%, var(--bg-surface));
+  --planner-band-ink: var(--text-primary);
   position: relative;
   height: 100%;
   /* dvh keeps the board + its bottom tabs inside the visible area on phones,
@@ -51,55 +57,8 @@
   flex-direction: column;
   overflow: hidden;
   color: var(--planner-ink);
-  background:
-    radial-gradient(ellipse at 88% -8%, rgba(255, 214, 190, 0.55), transparent 42%),
-    var(--planner-bg);
+  background: var(--planner-bg);
   font-family: var(--font-body, 'Trebuchet MS', sans-serif);
-}
-
-/* Dark theme: the planner keeps its own palette, so mirror it here instead of
-   inheriting the app tokens (the warm paper look was designed light-first). */
-[data-theme='dark'] .chore-planner {
-  --planner-bg: #161320;
-  --planner-surface: #221d2d;
-  --planner-ink: #f6f1f7;
-  --planner-muted: #b0a6b6;
-  --planner-line: #362d43;
-  --planner-accent: #e8896f;
-  --planner-accent-soft: #3c2723;
-  --planner-green: #5aa88b;
-  --planner-green-soft: #1b3a30;
-  --planner-amber: #e9b25a;
-  --planner-amber-soft: #3a2f1b;
-  --planner-blue: #8aa5d8;
-  --planner-blue-soft: #232a3f;
-  --planner-soft: #2d2739;
-  --planner-amber-ink: #f0c684;
-  --planner-band-1: #5a3a3a;
-  --planner-band-2: #3a2530;
-  --planner-band-ink: #fdf6f2;
-}
-
-[data-theme='dark'] .chore-planner {
-  background:
-    radial-gradient(ellipse at 88% -8%, rgba(224, 120, 94, 0.22), transparent 42%),
-    var(--planner-bg);
-}
-
-/* Surfaces that used to be literal white get an explicit dark declaration so no
-   stale light rule can outrank the palette above. */
-[data-theme='dark'] .chore-planner .planner-task,
-[data-theme='dark'] .chore-planner .planner-sheet,
-[data-theme='dark'] .chore-planner .planner-add,
-[data-theme='dark'] .chore-planner .planner-icon-button,
-[data-theme='dark'] .chore-planner .planner-member-picker button,
-[data-theme='dark'] .chore-planner .planner-stepper button {
-  background: var(--planner-surface);
-  color: var(--planner-ink);
-}
-
-[data-theme='dark'] .chore-planner .planner-task {
-  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* Hide scrollbars inside the planner — the board and the sheets still scroll by
@@ -241,7 +200,7 @@
   height: 48px;
   min-height: 48px;
   border-radius: 50%;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   box-shadow: 0 5px 13px rgba(151, 71, 54, 0.2);
 }
@@ -260,16 +219,16 @@
    buttons on the Qudoo screen headers. */
 .planner-header .planner-icon-button {
   color: color-mix(in srgb, var(--planner-band-ink) 92%, transparent);
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
 }
 
 .planner-header .planner-icon-button:hover {
-  background: color-mix(in srgb, #fff 34%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 26%, transparent);
 }
 
 .planner-header .planner-add {
   color: var(--planner-accent);
-  background: #fff;
+  background: var(--planner-surface);
   box-shadow: 0 6px 16px rgba(63, 58, 68, 0.14);
 }
 
@@ -297,7 +256,7 @@
   border: 0;
   border-radius: 14px;
   color: var(--planner-band-ink);
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
   font: inherit;
   font-size: 15px;
   font-weight: 700;
@@ -310,7 +269,7 @@
 }
 
 .planner-language-select:hover {
-  background: color-mix(in srgb, #fff 32%, transparent);
+  background: color-mix(in srgb, var(--planner-band-ink) 24%, transparent);
 }
 
 .planner-language svg {
@@ -416,11 +375,11 @@
   font-size: 16px;
 }
 .planner-filter-group button.is-selected {
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-ink);
 }
 .planner-status-filters button.is-selected {
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 
@@ -539,7 +498,7 @@
   gap: 10px;
   min-height: 0;
   padding: 16px 16px 14px;
-  border: 1.5px solid color-mix(in srgb, var(--planner-amber) 45%, transparent);
+  border: 1px solid var(--planner-line);
   border-radius: 26px;
   background: var(--planner-surface);
   box-shadow: 0 10px 26px rgba(63, 58, 68, 0.06);
@@ -609,7 +568,7 @@
   min-height: 42px;
   padding: 0 16px;
   border-radius: 999px;
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-amber);
   font-size: 16px;
   font-weight: 800;
@@ -633,7 +592,7 @@
 
 .planner-check.is-checked .planner-check-icon,
 .planner-check.is-checked .planner-check-points {
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-green);
 }
 
@@ -817,7 +776,7 @@
 .planner-claim {
   min-width: 86px;
   padding: 0 16px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 .planner-claim:hover {
@@ -966,7 +925,7 @@
   padding: 0 24px;
   border: 0;
   border-radius: 14px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   font: inherit;
   font-size: 18px;
@@ -1029,7 +988,7 @@
   padding: 0 4px;
   place-items: center;
   border-radius: 999px;
-  color: #fff;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
   font-size: 10px;
   font-weight: 800;
@@ -1074,7 +1033,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(31, 43, 38, 0.36);
+  background: color-mix(in srgb, var(--planner-ink) 42%, transparent);
   backdrop-filter: blur(3px);
 }
 .planner-sheet {
@@ -1312,7 +1271,7 @@
   background: var(--planner-soft);
 }
 .planner-weekdays button.is-selected {
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
 }
 .planner-validation {
@@ -1707,7 +1666,7 @@
   max-width: min(92vw, 560px);
   padding: 16px 21px;
   border-radius: 13px;
-  color: white;
+  color: var(--planner-on-accent);
   background: var(--planner-ink);
   font-size: 16px;
   font-weight: 700;
@@ -1720,12 +1679,12 @@
 
 /* Green when the request went through, red when ChoreOps refused it. */
 .planner-toast--success {
-  background: #2f9163;
+  background: var(--color-success);
 }
 
 .planner-toast--error {
-  background: #c0392b;
-  box-shadow: 0 8px 26px rgba(150, 40, 30, 0.32);
+  background: var(--color-error);
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--color-error) 32%, transparent);
 }
 .planner-confetti {
   position: fixed;
@@ -2158,8 +2117,8 @@
   border-radius: 50%;
   background: radial-gradient(
     circle at 50% 45%,
-    rgba(252, 211, 77, 0.45),
-    rgba(252, 211, 77, 0.12) 60%,
+    color-mix(in srgb, var(--color-brand) 45%, transparent),
+    color-mix(in srgb, var(--color-brand) 12%, transparent) 60%,
     transparent 72%
   );
   font-size: clamp(56px, 7vw, 76px);
@@ -2471,85 +2430,96 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   min-height: 0;
 }
 
-.planner-child-bar {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 8px clamp(12px, 2vw, 28px) 0;
-}
-
-.planner-child-switch {
+/* Child switcher: three white rounded boxes on the band — arrow, the child's
+   name, arrow — with a small gap between them, like the reference app. */
+.planner-header .planner-child-switch {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 3px;
-  border-radius: 999px;
-  background: var(--planner-surface);
-  box-shadow: 0 4px 14px rgba(63, 58, 68, 0.08);
+  justify-self: start;
+  align-items: stretch;
+  gap: 6px;
+  max-width: 100%;
 }
 
-.planner-child-switch-btn {
+.planner-header .planner-child-switch-arrow {
   display: grid;
-  width: 30px;
-  height: 30px;
+  flex: 0 0 auto;
+  width: 34px;
+  min-height: 34px;
   place-items: center;
+  padding: 0;
   border: 0;
-  border-radius: 50%;
-  color: var(--planner-muted);
-  background: transparent;
+  border-radius: 10px;
+  color: var(--planner-accent);
+  background: var(--planner-surface);
+  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.14);
   cursor: pointer;
 }
 
-.planner-child-switch-btn:hover {
-  color: var(--planner-ink);
-  background: var(--planner-soft);
+.planner-header .planner-child-switch-arrow:hover {
+  background: var(--planner-accent-soft);
 }
 
-.planner-child-switch-btn svg {
+.planner-header .planner-child-switch-arrow svg {
   width: 17px;
   height: 17px;
 }
 
-.planner-child-switch-name {
-  max-width: 34vw;
+/* The name keeps the header-title typography inside its own white box. */
+.planner-header .planner-child-switch .planner-child-switch-name {
+  display: flex;
+  align-items: center;
+  max-width: 44vw;
+  min-height: 34px;
   overflow: hidden;
-  padding: 0 6px;
-  color: var(--planner-ink);
-  font-size: 15px;
-  font-weight: 800;
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 10px;
+  color: var(--planner-accent);
+  background: var(--planner-surface);
+  box-shadow: 0 3px 10px rgba(63, 58, 68, 0.14);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.1;
   white-space: nowrap;
   text-overflow: ellipsis;
+}
+
+/* Tab strip with the amber underline for the current tab, plus the one action
+   that belongs beside it: adding a chore for this child. */
+.planner-tabs-row {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px clamp(12px, 2vw, 28px) 0;
+}
+
+.planner-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .planner-child-add {
   display: grid;
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   place-items: center;
   border: 0;
-  border-radius: 12px;
-  color: #fff;
+  border-radius: 11px;
+  color: var(--planner-on-accent);
   background: var(--planner-accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--planner-accent) 32%, transparent);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--planner-accent) 30%, transparent);
   cursor: pointer;
 }
 
 .planner-child-add svg {
-  width: 18px;
-  height: 18px;
-}
-
-/* Tab strip with the amber underline for the current tab. */
-.planner-tabs {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 2px;
-  padding: 8px clamp(12px, 2vw, 28px) 0;
-  overflow-x: auto;
-  scrollbar-width: none;
+  width: 17px;
+  height: 17px;
 }
 
 .planner-tabs::-webkit-scrollbar {
@@ -2642,13 +2612,13 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
 }
 
 @media (max-width: 640px) {
-  .planner-child-switch-name {
-    max-width: 28vw;
-    font-size: 14px;
+  /* Keep enough room for a full first name next to both arrow boxes. */
+  .planner-header .planner-child-switch .planner-child-switch-name {
+    max-width: 46vw;
+    padding: 0 10px;
   }
   .planner-tab {
     padding: 8px 9px;
     font-size: 12px;
   }
 }
-

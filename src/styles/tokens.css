@@ -32,13 +32,6 @@
                                 identical to the Beacon brand mark */
   --color-error: #ef4444;
 
-  /* ── Screen band gradients and warm paper ──────────────────────────────
-     Family-planner look: every view gets a soft gradient band at the top
-     (agenda = blue, lists = coral, chores = sand) on a warm off-white page,
-     with white rounded cards underneath. Consumed in
-     qudoo.css. */
-  --color-band-blue: #7d95dd;
-  --color-band-coral: #ef8a72;
-  --color-band-sand: #f0b357;
-  --color-paper-warm: #fdf7f2;
-  --color-ink-soft: #3f3a44;
+  /* Screen bands and card ink are derived from the active theme in
+     qudoo.css (accent over surface), so there are no per-section band
+     colours to keep in sync here. */

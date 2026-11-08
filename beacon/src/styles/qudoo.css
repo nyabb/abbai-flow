@@ -26,20 +26,20 @@
   --qs-band-radius: 26px;
   --qs-card-shadow: 0 8px 24px rgba(63, 58, 68, 0.08);
   --qs-card-shadow-hover: 0 12px 30px rgba(63, 58, 68, 0.13);
-  --qs-hairline: color-mix(in srgb, var(--color-ink-soft) 8%, transparent);
+  --qs-hairline: color-mix(in srgb, var(--text-primary) 10%, transparent);
+  /* Bands are the theme accent laid over the page surface, so every screen
+     follows the colour scheme picked in Settings. */
+  --qs-band-a: color-mix(in srgb, var(--accent) 18%, var(--bg-surface));
+  --qs-band-b: color-mix(in srgb, var(--accent) 36%, var(--bg-surface));
+  --qs-band-ink: var(--text-primary);
 
-  background: var(--color-paper-warm);
-  color: var(--color-ink-soft);
-}
-
-[data-theme='dark'] .beacon {
   background: var(--bg-primary);
   color: var(--text-primary);
 }
 
 /* The page behind the app (kiosk/standalone) matches the app. */
 body {
-  background: var(--color-paper-warm);
+  background: var(--bg-primary);
 }
 
 [data-theme='dark'] body {
@@ -57,9 +57,9 @@ body {
 .grocery-view-header {
   border-bottom: 0;
   border-radius: 0 0 var(--qs-band-radius) var(--qs-band-radius);
-  color: #fff;
-  background: linear-gradient(140deg, var(--color-band-blue), var(--color-accent));
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-band-blue) 26%, transparent);
+  color: var(--qs-band-ink);
+  background: linear-gradient(140deg, var(--qs-band-a), var(--qs-band-b));
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .dash-topbar {
@@ -76,8 +76,6 @@ body {
 
 .grocery-view-header {
   padding: 14px clamp(14px, 2vw, 28px) 18px;
-  background: linear-gradient(140deg, var(--color-band-coral), var(--color-band-sand));
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-band-coral) 26%, transparent);
 }
 
 /* Text and controls inside a band go white/translucent. */
@@ -98,7 +96,7 @@ body {
 
 .dash-topbar-date,
 .header-date {
-  color: color-mix(in srgb, #fff 80%, transparent);
+  color: color-mix(in srgb, var(--qs-band-ink) 72%, transparent);
   font-size: 0.85rem;
   font-weight: 600;
 }
@@ -107,7 +105,7 @@ body {
 .beacon-header .icon-btn,
 .beacon-header .header-action {
   color: inherit;
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--qs-band-ink) 12%, transparent);
   border: 0;
   border-radius: var(--qs-pill, 999px);
 }
@@ -115,19 +113,19 @@ body {
 .dash-day-nav-btn:hover,
 .beacon-header .icon-btn:hover,
 .beacon-header .header-action:hover {
-  background: color-mix(in srgb, #fff 34%, transparent);
+  background: color-mix(in srgb, var(--qs-band-ink) 22%, transparent);
 }
 
 .dash-topbar-weather {
-  background: color-mix(in srgb, #fff 20%, transparent);
+  background: color-mix(in srgb, var(--qs-band-ink) 12%, transparent);
   border-radius: var(--qs-control-radius);
   padding: 8px 14px;
 }
 
 /* The list selector keeps its white card look on the coral band. */
 .grocery-view-select {
-  background: #fff;
-  color: var(--color-ink-soft);
+  background: var(--bg-surface);
+  color: var(--text-primary);
   border-color: transparent;
   box-shadow: 0 6px 16px rgba(63, 58, 68, 0.12);
 }
@@ -146,10 +144,6 @@ body {
 }
 
 .grocery-view {
-  background: var(--color-paper-warm);
-}
-
-[data-theme='dark'] .grocery-view {
   background: var(--bg-primary);
 }
 
@@ -176,7 +170,7 @@ body {
 }
 
 .grocery-view-item:hover {
-  background: color-mix(in srgb, var(--color-ink-soft) 4%, transparent);
+  background: color-mix(in srgb, var(--text-primary) 5%, transparent);
 }
 
 /* Rounded-square checkbox instead of the old circle. */
@@ -184,7 +178,7 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 9px;
-  border: 2px solid color-mix(in srgb, var(--color-ink-soft) 22%, transparent);
+  border: 2px solid color-mix(in srgb, var(--text-primary) 22%, transparent);
 }
 
 .grocery-view-checkbox--checked {
@@ -215,7 +209,7 @@ body {
 
 /* Visible, soft focus ring everywhere. */
 :where(button, [role='button'], select, input, textarea):focus-visible {
-  outline: 2px solid var(--color-band-blue);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 

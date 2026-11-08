@@ -689,7 +689,6 @@ export function App() {
                 members={members}
                 locale={settings.locale}
                 onLocaleChange={(locale) => updateSettings({ locale })}
-                weather={weather}
                 nextAppointment={
                   visibleEvents
                     .filter((event) => new Date(event.end).getTime() >= Date.now())

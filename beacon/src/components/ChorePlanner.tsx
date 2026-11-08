@@ -43,16 +43,9 @@ import { useTranslation, type TranslationKey } from '../i18n';
 import { LOCALE_OPTIONS } from '../i18n/locales';
 import { normalizePin, type FamilyMember } from '../types/family';
 import { MemberAvatar } from './MemberAvatar';
-import type { CalendarEvent, WeatherData } from '../types';
+import type { CalendarEvent } from '../types';
 
-type Screen =
-  | 'tasks'
-  | 'lobby'
-  | 'welcome'
-  | 'overview'
-  | 'missions'
-  | 'mission'
-  | 'closing';
+type Screen = 'lobby' | 'overview' | 'missions' | 'mission' | 'closing';
 
 /** Tabs on a child's own page, mirroring the family-planner app. */
 type ChildTab = 'goals' | 'chores' | 'routines' | 'free';
@@ -144,7 +137,6 @@ type FormValue = {
 };
 
 interface ChorePlannerProps {
-  weather: WeatherData | null;
   nextAppointment: CalendarEvent | null;
   /** Beacon family members supply photos, colours, and display names. */
   members: FamilyMember[];
@@ -381,7 +373,6 @@ function emptyForm(now: Date): FormValue {
 }
 
 export function ChorePlanner({
-  weather,
   nextAppointment,
   members,
   locale,
@@ -410,10 +401,7 @@ export function ChorePlanner({
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
-  const [screen, setScreen] = useState<Screen>('tasks');
-  const [memberFilter, setMemberFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'late' | 'completed'>('all');
-  const [completedExpanded, setCompletedExpanded] = useState(false);
+  const [screen, setScreen] = useState<Screen>('lobby');
   const [modal, setModal] = useState<
     'form' | 'actions' | 'rewards' | 'reward-form' | 'reward-actions' | null
   >(null);
@@ -587,87 +575,10 @@ export function ChorePlanner({
     return spendablePoints(member.savings, reservations, rewards, userName);
   };
 
-  const filteredTasks = useMemo(
-    () =>
-      data.tasks.filter((task) => {
-        const status = getPlannerTaskStatus(task, now);
-        const matchesMember =
-          memberFilter === 'all' ||
-          task.memberId === memberFilter ||
-          (!task.memberId && memberFilter === 'all');
-        const matchesStatus =
-          statusFilter === 'all' ||
-          (statusFilter === 'open' && status !== 'completed') ||
-          (statusFilter === 'late' && (status === 'late' || status === 'retry')) ||
-          (statusFilter === 'completed' && status === 'completed');
-        return matchesMember && matchesStatus;
-      }),
-    [data.tasks, memberFilter, now, statusFilter],
-  );
-
-  /**
-   * What is still on the child's plate in the current view: chores nobody has
-   * claimed yet and that are not finished. A claimed chore already counts as
-   * done — the parent's approval is a real-life confirmation, not a task the
-   * child still owes — so once everything is claimed the badge disappears
-   * instead of nagging.
-   */
-  const openCount = filteredTasks.filter((task) => {
-    if (task.awaitingReview) return false;
-    const status = taskStatus(task);
-    return status !== 'completed' && status !== 'expired';
-  }).length;
-
-  const freeTasks = filteredTasks.filter(
-    (task) => !task.memberId && taskStatus(task) !== 'completed',
-  );
-  const completedTasks = filteredTasks.filter((task) => taskStatus(task) === 'completed');
-  const lateTasks = filteredTasks.filter(
-    (task) => task.memberId && ['late', 'retry'].includes(taskStatus(task)),
-  );
-  const todayTasks = filteredTasks.filter(
-    (task) => task.memberId && ['active', 'upcoming'].includes(taskStatus(task)),
-  );
+  /** Calendar order for a list of chores. */
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
-
-  /** Chores that need attention first, then by deadline. */
-  const byUrgency = (a: PlannerTask, b: PlannerTask) => {
-    const rank = (task: PlannerTask) =>
-      ['late', 'retry', 'expired'].includes(taskStatus(task)) ? 0 : 1;
-    return rank(a) - rank(b) || byDeadline(a, b);
-  };
-
-  /**
-   * The "everyone" board is grouped by child rather than by status: with the
-   * whole family on screen a parent wants to see who still has work left, not
-   * one long mixed list. Completed chores are grouped the same way so the
-   * history stays attributable at a glance.
-   */
-  const byMember = data.members.map((member) => {
-    const mine = filteredTasks.filter((task) => task.memberId === member.id);
-    return {
-      member,
-      open: mine.filter((task) => taskStatus(task) !== 'completed').sort(byUrgency),
-      done: mine
-        .filter((task) => taskStatus(task) === 'completed')
-        .sort((a, b) => byDeadline(b, a)),
-    };
-  });
-  const memberGroups = byMember.filter((group) => group.open.length > 0);
-  const completedGroups = byMember.filter((group) => group.done.length > 0);
-
-  /** Avatar + name + count heading, shared by the open and completed groups. */
-  const memberHeading = (member: PlannerMember, count: number) => (
-    <h2>
-      <span className="planner-member-heading-avatar">
-        <MemberAvatar member={member} />
-      </span>
-      {member.name}
-      <span className="planner-member-heading-count">{count}</span>
-    </h2>
-  );
 
   const showToast = (message: string, kind: ToastKind = 'success') => setToast({ message, kind });
   const playCompletionSound = () => {
@@ -1240,35 +1151,26 @@ export function ChorePlanner({
   const activeMissionStatus = missionTask ? taskStatus(missionTask) : 'completed';
 
   const heading =
-    screen === 'tasks'
-      ? c.title
-      : screen === 'lobby'
-        ? c.today
-        : screen === 'missions' || screen === 'mission'
-          ? c.missions
-          : screen === 'closing'
-            ? c.todayEarned
-            : (selectedTodayMember?.name ?? c.title);
+    screen === 'lobby'
+      ? c.today
+      : screen === 'missions' || screen === 'mission'
+        ? c.missions
+        : screen === 'closing'
+          ? c.todayEarned
+          : (selectedTodayMember?.name ?? c.title);
 
   return (
     <div className={`chore-planner ${privacy ? 'chore-planner--private' : ''}`}>
       <header className="planner-header">
-        {screen !== 'tasks' &&
-          screen !== 'lobby' &&
-          screen !== 'mission' &&
-          screen !== 'closing' && (
-            <button
-              className="planner-icon-button"
-              onClick={() =>
-                setScreen(
-                  screen === 'welcome' ? 'lobby' : screen === 'overview' ? 'welcome' : 'overview',
-                )
-              }
-              aria-label={c.back}
-            >
-              <ArrowLeft />
-            </button>
-          )}
+        {(screen === 'overview' || screen === 'missions') && (
+          <button
+            className="planner-icon-button"
+            onClick={() => setScreen('lobby')}
+            aria-label={c.back}
+          >
+            <ArrowLeft />
+          </button>
+        )}
         {screen === 'mission' && (
           <button
             className="planner-icon-button"
@@ -1284,20 +1186,38 @@ export function ChorePlanner({
           <span className="planner-eyebrow">
             {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
-          <h1>
-            {/* Phones get the short name so the header can stay on one row. */}
-            <span className="planner-title-full">{heading}</span>
-            <span className="planner-title-short">
-              {screen === 'tasks' ? c.shortTitle : heading}
-            </span>
-          </h1>
+          {screen === 'overview' && selectedTodayMember ? (
+            /* Three joined segments: an arrow, the child's name set exactly like
+               any other page title, and the arrow back. Only the two outside
+               edges are rounded, so the bar reads as one control. */
+            <div className="planner-child-switch">
+              <button
+                type="button"
+                className="planner-child-switch-arrow"
+                onClick={() => switchChild(-1)}
+                aria-label={c.prevChild}
+              >
+                <ChevronLeft />
+              </button>
+              <h1 className="planner-child-switch-name">{selectedTodayMember.name}</h1>
+              <button
+                type="button"
+                className="planner-child-switch-arrow"
+                onClick={() => switchChild(1)}
+                aria-label={c.nextChild}
+              >
+                <ChevronRight />
+              </button>
+            </div>
+          ) : (
+            <h1>
+              {/* Phones get the short name so the header can stay on one row. */}
+              <span className="planner-title-full">{heading}</span>
+              <span className="planner-title-short">{heading}</span>
+            </h1>
+          )}
         </div>
         <div className="planner-header-actions">
-          {screen === 'tasks' && (
-            <button className="planner-add" onClick={openNewForm} aria-label={c.add}>
-              <Plus />
-            </button>
-          )}
           <span className="planner-language">
             <select
               className="planner-language-select"
@@ -1338,144 +1258,10 @@ export function ChorePlanner({
         </div>
       </header>
 
-      {screen === 'tasks' && (
-        <>
-          {privacy && <div className="planner-private-clock">{clockTime(now, timeLocale)}</div>}
-          {!online && (
-            <div className="planner-offline-banner" role="alert">
-              {c.offline}
-            </div>
-          )}
-          <div className="planner-filters">
-            <div className="planner-filter-group">
-              <button
-                className={memberFilter === 'all' ? 'is-selected' : ''}
-                onClick={() => setMemberFilter('all')}
-              >
-                {c.everyone}
-              </button>
-              {data.members.map((member) => (
-                <button
-                  key={member.id}
-                  className={memberFilter === member.id ? 'is-selected' : ''}
-                  onClick={() => setMemberFilter(member.id)}
-                >
-                  <span>
-                    <MemberAvatar member={member} />
-                  </span>
-                  {member.name}
-                </button>
-              ))}
-            </div>
-            <div className="planner-filter-group planner-status-filters">
-              {(['open', 'late', 'completed'] as const).map((filter) => (
-                <button
-                  key={filter}
-                  className={statusFilter === filter ? 'is-selected' : ''}
-                  onClick={() => setStatusFilter(statusFilter === filter ? 'all' : filter)}
-                >
-                  {filter === 'open' ? c.open : filter === 'late' ? c.late : c.done}
-                </button>
-              ))}
-            </div>
-          </div>
-          <main className="planner-content">
-            {freeTasks.length > 0 && (
-              <section className="planner-section planner-free-section">
-                <h2>
-                  {c.free}
-                  <span>{freeTasks.length}</span>
-                </h2>
-                <div className="planner-task-list">
-                  {freeTasks.sort(byDeadline).map((task) => renderTask(task))}
-                </div>
-              </section>
-            )}
-            {memberFilter === 'all'
-              ? memberGroups.map(({ member, open }) => (
-                  <section
-                    className="planner-section planner-section--member"
-                    key={member.id}
-                    style={{ '--member-color': member.color } as React.CSSProperties}
-                  >
-                    {memberHeading(member, open.length)}
-                    <div className="planner-task-list">{open.map((task) => renderTask(task))}</div>
-                  </section>
-                ))
-              : [section(c.today, todayTasks), section(c.late, lateTasks, 'planner-section--late')]}
-            <section className="planner-section planner-section--completed">
-              <button
-                className="planner-collapse"
-                onClick={() => setCompletedExpanded((value) => !value)}
-              >
-                <span>
-                  {c.done} ({completedTasks.length})
-                </span>
-                {completedExpanded ? <ChevronDown /> : <ChevronRight />}
-              </button>
-              {completedExpanded &&
-                (memberFilter === 'all' ? (
-                  <div className="planner-completed-groups">
-                    {completedGroups.map(({ member, done }) => (
-                      <section
-                        className="planner-section planner-section--member planner-section--member-done"
-                        key={member.id}
-                        style={{ '--member-color': member.color } as React.CSSProperties}
-                      >
-                        {memberHeading(member, done.length)}
-                        <div className="planner-task-list">
-                          {done.map((task) => renderTask(task))}
-                        </div>
-                      </section>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="planner-task-list">
-                    {completedTasks.sort(byDeadline).map((task) => renderTask(task))}
-                  </div>
-                ))}
-            </section>
-            {freeTasks.length + todayTasks.length + lateTasks.length + completedTasks.length ===
-              0 && (
-              <div className="planner-empty">
-                <Sparkles />
-                <strong>{c.nothing}</strong>
-                <button className="planner-primary" onClick={openNewForm}>
-                  {c.add}
-                </button>
-              </div>
-            )}
-            {data.routines.length > 0 && (
-              <section className="planner-routines">
-                <h2>{c.routines}</h2>
-                <div>
-                  {data.routines.map((routine) => (
-                    <div key={routine.id} className="planner-routine-row">
-                      <span>{routine.icon}</span>
-                      <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                      <small>{routine.frequency === 'daily' ? c.daily : routine.frequency}</small>
-                      <span className="planner-routine-time">
-                        {routine.timeBlock === 'morning'
-                          ? c.morning
-                          : routine.timeBlock === 'evening'
-                            ? c.evening
-                            : c.afternoon}
-                      </span>
-                      {routine.memberIds.length > 0 && (
-                        <span className="planner-routine-members">
-                          {routine.memberIds.map((memberId) => {
-                            const member = memberFor(memberId);
-                            return member ? <MemberAvatar key={memberId} member={member} /> : null;
-                          })}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-          </main>
-        </>
+      {!online && (
+        <div className="planner-offline-banner" role="alert">
+          {c.offline}
+        </div>
       )}
 
       {screen === 'lobby' && (
@@ -1487,7 +1273,7 @@ export function ChorePlanner({
               style={{ '--member-color': member.color } as React.CSSProperties}
               onClick={() => {
                 setTodayMemberId(member.id);
-                setScreen('welcome');
+                setScreen('overview');
               }}
             >
               <span className="planner-lobby-avatar">
@@ -1502,61 +1288,22 @@ export function ChorePlanner({
           ))}
         </main>
       )}
-      {screen === 'welcome' && selectedTodayMember && (
-        <main className="planner-today-step">
-          <span
-            className="planner-hero-avatar"
-            style={{ background: selectedTodayMember.color + '24' }}
-          >
-            <MemberAvatar member={selectedTodayMember} />
-          </span>
-          <h2>{t('planner.greeting', { name: selectedTodayMember.name })}</h2>
-          <p>
-            {memberTodayCount(selectedTodayMember.id)} {c.score}
-          </p>
-          <div className="planner-today-info">
-            <span>
-              <strong>{c.weather}</strong>
-              {weather
-                ? `${Math.round(weather.temperature)}${weather.temperatureUnit} · ${weather.condition}`
-                : '—'}
-            </span>
-            <span>
-              <strong>{c.nextAppointment}</strong>
-              {nextAppointment
-                ? `${nextAppointment.title} · ${clockTime(nextAppointment.start, timeLocale)}`
-                : c.noAppointment}
-            </span>
-          </div>
-          <button className="planner-primary" onClick={() => setScreen('overview')}>
-            {c.continue}
-            <ChevronRight />
-          </button>
-        </main>
-      )}
       {screen === 'overview' && selectedTodayMember && (
         <main className="planner-child">
-          {/* Top bar: switch child on the left, add on the right. */}
-          <div className="planner-child-bar">
-            <div className="planner-child-switch">
-              <button
-                type="button"
-                className="planner-child-switch-btn"
-                onClick={() => switchChild(-1)}
-                aria-label={c.prevChild}
-              >
-                <ChevronLeft />
-              </button>
-              <span className="planner-child-switch-name">{selectedTodayMember.name}</span>
-              <button
-                type="button"
-                className="planner-child-switch-btn"
-                onClick={() => switchChild(1)}
-                aria-label={c.nextChild}
-              >
-                <ChevronRight />
-              </button>
-            </div>
+          <div className="planner-tabs-row">
+            <nav className="planner-tabs" aria-label={c.title}>
+              {(['goals', 'chores', 'routines', 'free'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  className={`planner-tab ${childTab === tab ? 'is-active' : ''}`}
+                  onClick={() => setChildTab(tab)}
+                >
+                  <span aria-hidden="true">{CHILD_TAB_ICON[tab]}</span>
+                  {t(CHILD_TAB_LABEL[tab])}
+                </button>
+              ))}
+            </nav>
             <button
               type="button"
               className="planner-child-add"
@@ -1566,20 +1313,6 @@ export function ChorePlanner({
               <Plus />
             </button>
           </div>
-
-          <nav className="planner-tabs" aria-label={c.title}>
-            {(['goals', 'chores', 'routines', 'free'] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                className={`planner-tab ${childTab === tab ? 'is-active' : ''}`}
-                onClick={() => setChildTab(tab)}
-              >
-                <span aria-hidden="true">{CHILD_TAB_ICON[tab]}</span>
-                {t(CHILD_TAB_LABEL[tab])}
-              </button>
-            ))}
-          </nav>
 
           <div className="planner-child-body">
             {childTab === 'goals' && (
@@ -1706,14 +1439,6 @@ export function ChorePlanner({
                 {memberTodayCount(selectedTodayMember.id) === 0 && (
                   <p className="planner-empty-copy">{c.noMissions}</p>
                 )}
-                <button
-                  className="planner-primary"
-                  disabled={memberTodayCount(selectedTodayMember.id) === 0}
-                  onClick={beginMissions}
-                >
-                  {c.startMissions}
-                  <ChevronRight />
-                </button>
               </>
             )}
 
@@ -1738,6 +1463,16 @@ export function ChorePlanner({
                       </span>
                     </div>
                   ))}
+                {/* The guided run through today's chores lives with the
+                    routines: both walk the child through the same list. */}
+                <button
+                  className="planner-primary planner-start-missions"
+                  disabled={memberTodayCount(selectedTodayMember.id) === 0}
+                  onClick={beginMissions}
+                >
+                  {c.startMissions}
+                  <ChevronRight />
+                </button>
               </>
             )}
 
@@ -1748,11 +1483,17 @@ export function ChorePlanner({
                   /* Only "anyone can take it" chores — a chore for the whole
                      household is already on every child's list. */
                   data.tasks.filter(
-                    (task) => !task.memberId && task.audience === 'anyone' && taskStatus(task) !== 'completed',
+                    (task) =>
+                      !task.memberId &&
+                      task.audience === 'anyone' &&
+                      taskStatus(task) !== 'completed',
                   ),
                 )}
                 {data.tasks.filter(
-                  (task) => !task.memberId && task.audience === 'anyone' && taskStatus(task) !== 'completed',
+                  (task) =>
+                    !task.memberId &&
+                    task.audience === 'anyone' &&
+                    taskStatus(task) !== 'completed',
                 ).length === 0 && <p className="planner-empty-copy">{c.nothing}</p>}
               </>
             )}
@@ -1845,30 +1586,6 @@ export function ChorePlanner({
           </button>
         </main>
       )}
-
-      <nav className="planner-bottom-nav" aria-label="Chore planner">
-        <button
-          className={screen === 'tasks' ? 'is-active' : ''}
-          aria-label={openCount > 0 ? `${openCount} ${c.openTodo}` : c.shortTitle}
-          onClick={() => setScreen('tasks')}
-        >
-          <span>✓</span>
-          <strong>{c.shortTitle}</strong>
-          {/* Chores still to do. Claimed or finished ones no longer count. */}
-          {openCount > 0 && (
-            <span className="planner-nav-badge" aria-hidden="true">
-              {openCount}
-            </span>
-          )}
-        </button>
-        <button
-          className={screen !== 'tasks' ? 'is-active' : ''}
-          onClick={() => setScreen('lobby')}
-        >
-          <span>☀</span>
-          <strong>{c.today}</strong>
-        </button>
-      </nav>
 
       {modal && (
         <div className="planner-backdrop" onClick={() => setModal(null)}>
