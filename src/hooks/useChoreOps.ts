@@ -230,10 +230,29 @@ function startClient(activeClient: HomeAssistantClient): () => void {
 /** Proxy-mode transport: no WebSocket, so poll the REST API instead. */
 function startRestPolling(): () => void {
   void loadViaRest();
+
   const interval = setInterval(() => {
+    // A wall display that is asleep (or a tab in the background) has no reason
+    // to keep hitting Home Assistant.
+    if (typeof document !== 'undefined' && document.hidden) return;
     void loadViaRest();
   }, REST_POLL_MS);
-  return () => clearInterval(interval);
+
+  // Coming back into view should show current data immediately rather than
+  // waiting out the rest of the interval.
+  const onVisibilityChange = () => {
+    if (!document.hidden) void loadViaRest();
+  };
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', onVisibilityChange);
+  }
+
+  return () => {
+    clearInterval(interval);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    }
+  };
 }
 
 /**

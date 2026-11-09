@@ -38,23 +38,6 @@ export function MusicView({
   onSetVolume,
 }: MusicViewProps) {
   const { t } = useTranslation();
-  // Empty state when no media players found
-  if (players.length === 0) {
-    return (
-      <div
-        className="music-view"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
-          <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: 8 }}>
-            {t('music.noPlayers')}
-          </h2>
-          <p style={{ fontSize: '0.9rem' }}>{t('music.noPlayersDesc')}</p>
-        </div>
-      </div>
-    );
-  }
 
   const player =
     activePlayer || players.find((p) => p.entity_id === selectedPlayerId) || players[0] || null;
@@ -88,6 +71,28 @@ export function MusicView({
   const artSrc = player?.entity_picture ? getHaResourceUrl(player.entity_picture) : null;
 
   const [showPlayerDropdown, setShowPlayerDropdown] = useState(false);
+
+  // Empty state when no media players found.
+  //
+  // This *must* stay below every hook: `players` is populated asynchronously,
+  // so returning early above them changed the hook count between renders and
+  // made React throw "Rendered more hooks than during the previous render".
+  if (players.length === 0) {
+    return (
+      <div
+        className="music-view"
+        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
+          <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: 8 }}>
+            {t('music.noPlayers')}
+          </h2>
+          <p style={{ fontSize: '0.9rem' }}>{t('music.noPlayersDesc')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="music-view">

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { startOfWeek, startOfDay, addDays, format } from 'date-fns';
 import { useHomeAssistant } from './hooks/useHomeAssistant';
-import { useCalendarEvents, CalendarNotSupportedError } from './hooks/useCalendarEvents';
+import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
+import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
 import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
@@ -29,12 +30,11 @@ import { WeatherView } from './components/WeatherView';
 import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
-import { useLocalCalendar } from './hooks/useLocalCalendar';
 import { useDashboardTasks } from './hooks/useDashboardTasks';
 import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
 import { getFocusMemberId, clearFocusMode, setDeviceFocusMember } from './focus';
-import { CalendarEvent, resolveCalendarColor } from './types';
+import { CalendarEvent } from './types';
 import { getConfig, patchConfig } from './config';
 import { I18nContext, createI18n } from './i18n';
 
@@ -58,77 +58,14 @@ export function App() {
 
   const { members, addMember, updateMember, removeMember, syncChoreOpsMembers } = useFamily();
 
-  const {
-    calendars: haCalendars,
-    events: haEvents,
-    fetchCalendars,
-    fetchEvents,
-    createEvent: createHaEvent,
-    updateEvent: updateHaEvent,
-    deleteEvent: deleteHaEvent,
-  } = useCalendarEvents(
+  const mergedCalendars = useMergedCalendars({
     connected,
-    {
-      calendarColors: settings.calendarColors,
-      members,
-    },
-    client,
-  );
-
-  const localCal = useLocalCalendar();
-
-  // Resolve the local calendar's color the same way everywhere (user override or indigo default).
-  const localCalendarColor = resolveCalendarColor(localCal.calendar.id, 0, {
+    getClient: client,
     calendarColors: settings.calendarColors,
-    defaultColor: localCal.calendar.color,
+    members,
   });
-
-  // Merge HA + local calendars and events
-  const calendars = useMemo(
-    () => [{ ...localCal.calendar, color: localCalendarColor }, ...haCalendars],
-    [localCal.calendar, localCalendarColor, haCalendars],
-  );
-  const events = useMemo(
-    () =>
-      [...localCal.events.map((ev) => ({ ...ev, color: localCalendarColor })), ...haEvents].sort(
-        (a, b) => a.start.localeCompare(b.start),
-      ),
-    [localCal.events, localCalendarColor, haEvents],
-  );
-
-  // Route create/update/delete to local or HA based on calendar ID
-  const createEvent = useCallback(
-    async (calendarId: string, eventData: Parameters<typeof createHaEvent>[1]) => {
-      if (calendarId === localCal.calendar.id) {
-        localCal.createEvent(eventData);
-      } else {
-        await createHaEvent(calendarId, eventData);
-      }
-    },
-    [localCal, createHaEvent],
-  );
-
-  const updateEvent = useCallback(
-    async (calendarId: string, uid: string, eventData: Parameters<typeof updateHaEvent>[2]) => {
-      if (calendarId === localCal.calendar.id) {
-        localCal.updateEvent(uid, eventData);
-      } else {
-        await updateHaEvent(calendarId, uid, eventData);
-      }
-    },
-    [localCal, updateHaEvent],
-  );
-
-  const deleteEvent = useCallback(
-    async (calendarId: string, uid: string) => {
-      if (calendarId === localCal.calendar.id) {
-        localCal.deleteEvent(uid);
-      } else {
-        await deleteHaEvent(calendarId, uid);
-      }
-    },
-    [localCal, deleteHaEvent],
-  );
+  const { calendars, events, fetchCalendars, fetchEvents, createEvent, updateEvent, deleteEvent } =
+    mergedCalendars;
 
   const { weather } = useWeather(client);
   const music = useMusic(client, connected);
