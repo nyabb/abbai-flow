@@ -1226,6 +1226,21 @@
   object-fit: cover;
   object-position: center;
 }
+
+/* Some pickers drop the avatar straight into the button (no wrapper span).
+   Without this the photo inherits width/height 100% and fills the whole
+   button at its original size, so pin every picker photo to the chip size. */
+.planner-member-picker button .member-photo {
+  flex: 0 0 auto;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
 .planner-member-picker button.is-selected {
   outline: 2px solid var(--planner-accent);
   background: var(--planner-accent-soft);
