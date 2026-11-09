@@ -583,16 +583,16 @@ describe('ChorePlanner board', () => {
   });
 
   /*
-   * Qudoo asks where the earned Qudoos should go once a chore is ticked off, so
+   * The award sheet asks where the earned points should go once a chore is ticked off, so
    * the child can push them towards a savings goal instead of a blind balance.
    */
-  it('asks where the Qudoos go after a chore is confirmed', async () => {
+  it('asks where the points go after a chore is confirmed', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 
     fireEvent.click(column(container, 'Zara').querySelector('.planner-row-check')!);
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
-    await waitFor(() => expect(container.textContent).toContain('Waar wil je de Qudoos aan koppelen?'));
+    await waitFor(() => expect(container.textContent).toContain('Waar wil je de punten aan koppelen?'));
     expect(container.textContent).toContain('Spaarpot');
     expect(container.textContent).toContain('Schermtijd');
     expect(container.textContent).toContain('Stel een doel in');

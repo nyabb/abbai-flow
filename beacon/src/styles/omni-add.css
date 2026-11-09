@@ -42,13 +42,17 @@
   to   { opacity: 1; }
 }
 
-/* ---- Action buttons container ---- */
+/* ---- Action buttons container ----
+   Closed = invisible AND inert. It used to be only `opacity: 0`, so the
+   transparent buttons kept taking hits: the More sheet's close X opened the
+   Timer, and Save buttons in the bottom-right of sheets did nothing. */
 .omni-add-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transform: translateY(20px);
   transition: opacity 200ms ease, transform 200ms ease;
@@ -56,6 +60,7 @@
 
 .omni-add--expanded .omni-add-actions {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
 }
@@ -75,12 +80,13 @@
   transform: translateY(16px) scale(0.8);
   transition: opacity 200ms ease, transform 200ms ease;
   transition-delay: var(--omni-delay, 0ms);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .omni-add--expanded .omni-add-action {
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .omni-add-action-icon {

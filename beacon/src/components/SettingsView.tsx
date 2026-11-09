@@ -506,7 +506,6 @@ export function SettingsView({
             <option value="dashboard">{t('nav.dashboard')}</option>
             <option value="calendar">{t('nav.calendar')}</option>
             <option value="grocery">{t('nav.grocery')}</option>
-            <option value="tasks">{t('nav.tasks')}</option>
             <option value="music">{t('nav.music')}</option>
             <option value="photos">{t('nav.photos')}</option>
           </select>

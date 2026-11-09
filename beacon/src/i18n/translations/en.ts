@@ -575,6 +575,9 @@ export const en = {
   'grocery.completed': 'Completed ({count})',
   'grocery.deleteItem': 'Delete item',
   'grocery.haList': '{name} (HA)',
+  'grocery.tabsLabel': 'List type',
+  'grocery.tab.grocery': 'Groceries',
+  'grocery.tab.tasks': 'Tasks',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Add Card',
@@ -732,7 +735,7 @@ export const en = {
   'planner.openChild': 'Open',
   'planner.filter': 'Filter',
   'planner.filterTitle': 'What do you want to see?',
-  'planner.awardTitle': 'Where should these Qudoos go?',
+  'planner.awardTitle': 'Where should these points go?',
   'planner.stillNeeded': 'still {points} to go',
   'planner.savingsPot': 'Savings pot',
   'planner.pausedRoutines': 'Paused routines',

@@ -564,6 +564,9 @@ export const ko: Record<TranslationKey, string> = {
   'grocery.completed': '완료 ({count})',
   'grocery.deleteItem': '항목 삭제',
   'grocery.haList': '{name} (HA)',
+  'grocery.tabsLabel': '목록 유형',
+  'grocery.tab.grocery': '장보기',
+  'grocery.tab.tasks': '할 일',
 
   // ---- card picker modal ----
   'cardPicker.title': '카드 추가',
@@ -719,8 +722,8 @@ export const ko: Record<TranslationKey, string> = {
   'planner.openChild': '열기',
   'planner.filter': '필터',
   'planner.filterTitle': '무엇을 볼까요?',
-  'planner.awardTitle': '이 Qudoo는 어디로 갈까요?',
-  'planner.stillNeeded': '{points} Qudoo 남음',
+  'planner.awardTitle': '이 포인트는 어디로 갈까요?',
+  'planner.stillNeeded': '{points} 포인트 남음',
   'planner.savingsPot': '저금통',
   'planner.pausedRoutines': '일시정지된 루틴',
   'planner.resumeRoutine': '재개',

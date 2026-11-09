@@ -112,8 +112,10 @@ export function OmniAdd({
       {/* Backdrop blur overlay */}
       {expanded && <div className="omni-add-backdrop" onClick={() => setExpanded(false)} />}
 
-      {/* Action buttons (fan upward) */}
-      <div className="omni-add-actions" aria-hidden={!expanded}>
+      {/* Action buttons (fan upward). While collapsed they are invisible *and*
+          inert: a transparent button that still takes taps steals them from
+          whatever sits underneath (the More sheet's X, a form's Save button). */}
+      <div className="omni-add-actions" aria-hidden={!expanded} inert={!expanded}>
         {actions.map((action, i) => (
           <button
             key={action.id}

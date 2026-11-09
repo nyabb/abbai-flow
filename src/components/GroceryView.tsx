@@ -21,26 +21,31 @@ interface UnifiedList {
 
 /** Keywords that identify a list as grocery/shopping (vs tasks) */
 const GROCERY_KEYWORDS = [
-  'grocer', 'shopping', 'costco', 'walmart', 'target', 'store',
-  'pantry', 'fridge', 'freezer', 'inventory', 'meal',
+  'grocer',
+  'shopping',
+  'costco',
+  'walmart',
+  'target',
+  'store',
+  'pantry',
+  'fridge',
+  'freezer',
+  'inventory',
+  'meal',
 ];
 
 function isGroceryList(name: string): boolean {
   const lower = name.toLowerCase();
-  return GROCERY_KEYWORDS.some(kw => lower.includes(kw));
+  return GROCERY_KEYWORDS.some((kw) => lower.includes(kw));
 }
-
-export type ListViewMode = 'grocery' | 'tasks';
 
 interface GroceryViewProps {
   defaultListId?: string;
-  /** Which lists to show: 'grocery' for shopping lists, 'tasks' for everything else */
-  mode?: ListViewMode;
   /** Explicit list of HA todo entity IDs that are grocery/shopping lists */
   groceryListIds?: string[];
 }
 
-export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = [] }: GroceryViewProps) {
+export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewProps) {
   const { t } = useTranslation();
   const [haLists, setHaLists] = useState<GroceryList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string>(defaultListId || '');
@@ -49,15 +54,27 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
   const [inputValue, setInputValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = useState(false);
+  /** One page, two tabs: the shopping list on top, the adult to-do list below. */
+  const [tab, setTab] = useState<'grocery' | 'tasks'>('grocery');
   const inputRef = useRef<HTMLInputElement>(null);
   const anylistRef = useRef(new AnyListClient());
 
   const localTasks = useLocalTasks();
 
-  // Merge HA lists + local lists, then filter by mode
-  const allLists = useMemo<UnifiedList[]>(() => {
-    const ha: UnifiedList[] = haLists.map(l => ({ id: l.id, name: l.name, source: 'ha' }));
-    const local: UnifiedList[] = localTasks.lists.map(l => ({ id: l.id, name: l.name, source: 'local' }));
+  // Split every known list into the two tabs. Shopping lists (HA todo entities
+  // marked as grocery, plus the built-in one) live under "Boodschappen";
+  // everything else — the adult to-dos, nobody assigned, no due date — under
+  // "Taken".
+  const { groceryLists, taskLists } = useMemo<{
+    groceryLists: UnifiedList[];
+    taskLists: UnifiedList[];
+  }>(() => {
+    const ha: UnifiedList[] = haLists.map((l) => ({ id: l.id, name: l.name, source: 'ha' }));
+    const local: UnifiedList[] = localTasks.lists.map((l) => ({
+      id: l.id,
+      name: l.name,
+      source: 'local',
+    }));
     const merged = [...local, ...ha];
 
     // Determine if an HA list is a grocery list:
@@ -70,27 +87,22 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
       return isGroceryList(name);
     };
 
-    // Filter by mode: grocery lists vs task lists
-    if (mode === 'grocery') {
-      return merged.filter(l =>
-        l.id === 'beacon-shopping' ||
-        (defaultListId != null && defaultListId !== '' && l.id === defaultListId) ||
-        (l.source === 'ha' && isGroceryHA(l.id, l.name))
-      );
-    }
-    // tasks mode: local To-Do + all HA lists that aren't grocery
-    return merged.filter(l =>
-      l.id === 'beacon-todo' || (l.source === 'ha' && !isGroceryHA(l.id, l.name))
+    const grocery = merged.filter(
+      (l) => l.id === 'beacon-shopping' || (l.source === 'ha' && isGroceryHA(l.id, l.name)),
     );
-  }, [haLists, localTasks.lists, mode, defaultListId, groceryListIds]);
+    const tasks = merged.filter((l) => !grocery.includes(l));
+    return { groceryLists: grocery, taskLists: tasks };
+  }, [haLists, localTasks.lists, groceryListIds]);
 
-  const selectedList = allLists.find(l => l.id === selectedListId);
+  const allLists = tab === 'grocery' ? groceryLists : taskLists;
+
+  const selectedList = allLists.find((l) => l.id === selectedListId);
   const isLocal = selectedList?.source === 'local';
 
   // Items for current list
   const items = useMemo<TodoItem[]>(() => {
     if (isLocal) {
-      return localTasks.getTasksForList(selectedListId).map(t => ({
+      return localTasks.getTasksForList(selectedListId).map((t) => ({
         uid: t.id,
         summary: t.summary,
         status: t.status,
@@ -121,16 +133,21 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
     }
 
     discover();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  // Auto-select first list when lists are available
+  // Auto-select first list when lists are available. The selection follows the
+  // tab: switching to Taken must not leave a shopping list selected.
   useEffect(() => {
-    if (selectedListId && allLists.some(l => l.id === selectedListId)) return;
-    if (defaultListId && allLists.some(l => l.id === defaultListId)) {
+    if (selectedListId && allLists.some((l) => l.id === selectedListId)) return;
+    if (defaultListId && allLists.some((l) => l.id === defaultListId)) {
       setSelectedListId(defaultListId);
     } else if (allLists.length > 0) {
       setSelectedListId(allLists[0].id);
+    } else {
+      setSelectedListId('');
     }
   }, [allLists, selectedListId, defaultListId]);
 
@@ -140,9 +157,14 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
     setLoading(true);
 
     try {
-      const result = await callHaService('todo', 'get_items', {
-        entity_id: entityId,
-      }, true) as {
+      const result = (await callHaService(
+        'todo',
+        'get_items',
+        {
+          entity_id: entityId,
+        },
+        true,
+      )) as {
         service_response?: Record<string, { items?: TodoItem[] }>;
       };
 
@@ -173,87 +195,109 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
   }, [selectedListId, isLocal, loadHaItems]);
 
   // Split items
-  const uncheckedItems = useMemo(
-    () => items.filter(i => i.status === 'needs_action'),
-    [items],
-  );
-  const checkedItems = useMemo(
-    () => items.filter(i => i.status === 'completed'),
-    [items],
-  );
+  const uncheckedItems = useMemo(() => items.filter((i) => i.status === 'needs_action'), [items]);
+  const checkedItems = useMemo(() => items.filter((i) => i.status === 'completed'), [items]);
 
   // Add item
-  const handleAdd = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = inputValue.trim();
-    if (!trimmed || submitting || !selectedListId) return;
+  const handleAdd = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const trimmed = inputValue.trim();
+      if (!trimmed || submitting || !selectedListId) return;
 
-    setSubmitting(true);
-    try {
-      if (isLocal) {
-        localTasks.addTask(selectedListId, trimmed);
-      } else {
-        await anylistRef.current.addItem(selectedListId, trimmed);
-        setHaItems(prev => [...prev, { uid: `temp-${Date.now()}`, summary: trimmed, status: 'needs_action' }]);
-        setTimeout(() => loadHaItems(selectedListId), 500);
+      setSubmitting(true);
+      try {
+        if (isLocal) {
+          localTasks.addTask(selectedListId, trimmed);
+        } else {
+          await anylistRef.current.addItem(selectedListId, trimmed);
+          setHaItems((prev) => [
+            ...prev,
+            { uid: `temp-${Date.now()}`, summary: trimmed, status: 'needs_action' },
+          ]);
+          setTimeout(() => loadHaItems(selectedListId), 500);
+        }
+        setInputValue('');
+      } catch (err) {
+        console.warn('GroceryView: Failed to add item', err);
+      } finally {
+        setSubmitting(false);
+        inputRef.current?.focus();
       }
-      setInputValue('');
-    } catch (err) {
-      console.warn('GroceryView: Failed to add item', err);
-    } finally {
-      setSubmitting(false);
-      inputRef.current?.focus();
-    }
-  }, [inputValue, submitting, selectedListId, isLocal, localTasks, loadHaItems]);
+    },
+    [inputValue, submitting, selectedListId, isLocal, localTasks, loadHaItems],
+  );
 
   // Toggle item
-  const handleToggle = useCallback(async (item: TodoItem) => {
-    if (isLocal) {
-      localTasks.toggleTask(item.uid);
-      return;
-    }
-
-    const newStatus = item.status === 'needs_action' ? 'completed' : 'needs_action';
-    setHaItems(prev => prev.map(i =>
-      i.uid === item.uid ? { ...i, status: newStatus } : i
-    ));
-
-    try {
-      if (newStatus === 'completed') {
-        await anylistRef.current.checkItem(selectedListId, item.summary);
-      } else {
-        await anylistRef.current.uncheckItem(selectedListId, item.summary);
+  const handleToggle = useCallback(
+    async (item: TodoItem) => {
+      if (isLocal) {
+        localTasks.toggleTask(item.uid);
+        return;
       }
-      setTimeout(() => loadHaItems(selectedListId), 500);
-    } catch (err) {
-      console.warn('GroceryView: Failed to toggle item', err);
-      setHaItems(prev => prev.map(i =>
-        i.uid === item.uid ? { ...i, status: item.status } : i
-      ));
-    }
-  }, [isLocal, selectedListId, localTasks, loadHaItems]);
+
+      const newStatus = item.status === 'needs_action' ? 'completed' : 'needs_action';
+      setHaItems((prev) => prev.map((i) => (i.uid === item.uid ? { ...i, status: newStatus } : i)));
+
+      try {
+        if (newStatus === 'completed') {
+          await anylistRef.current.checkItem(selectedListId, item.summary);
+        } else {
+          await anylistRef.current.uncheckItem(selectedListId, item.summary);
+        }
+        setTimeout(() => loadHaItems(selectedListId), 500);
+      } catch (err) {
+        console.warn('GroceryView: Failed to toggle item', err);
+        setHaItems((prev) =>
+          prev.map((i) => (i.uid === item.uid ? { ...i, status: item.status } : i)),
+        );
+      }
+    },
+    [isLocal, selectedListId, localTasks, loadHaItems],
+  );
 
   // Delete local item (long-press or swipe equivalent)
-  const handleDelete = useCallback((item: TodoItem) => {
-    if (isLocal) {
-      localTasks.removeTask(item.uid);
-    }
-  }, [isLocal, localTasks]);
+  const handleDelete = useCallback(
+    (item: TodoItem) => {
+      if (isLocal) {
+        localTasks.removeTask(item.uid);
+      }
+    },
+    [isLocal, localTasks],
+  );
 
   return (
     <div className="grocery-view" data-grocery-view>
-      {/* List selector */}
+      {/* Tabs + list selector */}
       <div className="grocery-view-header">
+        <div className="grocery-view-tabs" role="tablist" aria-label={t('grocery.tabsLabel')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'grocery'}
+            className={`grocery-view-tab ${tab === 'grocery' ? 'is-active' : ''}`}
+            onClick={() => setTab('grocery')}
+          >
+            {t('grocery.tab.grocery')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'tasks'}
+            className={`grocery-view-tab ${tab === 'tasks' ? 'is-active' : ''}`}
+            onClick={() => setTab('tasks')}
+          >
+            {t('grocery.tab.tasks')}
+          </button>
+        </div>
         <div className="grocery-view-selector">
           <select
             className="grocery-view-select"
             value={selectedListId}
             onChange={(e) => setSelectedListId(e.target.value)}
           >
-            {allLists.length === 0 && (
-              <option value="">{t('grocery.noListsAvailable')}</option>
-            )}
-            {allLists.map(list => (
+            {allLists.length === 0 && <option value="">{t('grocery.noListsAvailable')}</option>}
+            {allLists.map((list) => (
               <option key={list.id} value={list.id}>
                 {list.source === 'ha' ? t('grocery.haList', { name: list.name }) : list.name}
               </option>
@@ -292,8 +336,22 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
           <div className="grocery-view-empty">
             <div className="grocery-view-empty-icon">
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <rect x="12" y="16" width="40" height="40" rx="8" stroke="var(--border)" strokeWidth="2" fill="none" />
-                <path d="M24 32h16M24 40h10" stroke="var(--border)" strokeWidth="2" strokeLinecap="round" />
+                <rect
+                  x="12"
+                  y="16"
+                  width="40"
+                  height="40"
+                  rx="8"
+                  stroke="var(--border)"
+                  strokeWidth="2"
+                  fill="none"
+                />
+                <path
+                  d="M24 32h16M24 40h10"
+                  stroke="var(--border)"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
                 <circle cx="20" cy="32" r="2" fill="var(--border)" />
                 <circle cx="20" cy="40" r="2" fill="var(--border)" />
               </svg>
@@ -308,7 +366,7 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
                 <div className="grocery-view-section-header">
                   {t('grocery.items', { count: uncheckedItems.length })}
                 </div>
-                {uncheckedItems.map(item => (
+                {uncheckedItems.map((item) => (
                   <div key={item.uid} className="grocery-view-item-row">
                     <button
                       type="button"
@@ -339,43 +397,44 @@ export function GroceryView({ defaultListId, mode = 'grocery', groceryListIds = 
                 <button
                   type="button"
                   className="grocery-view-section-header grocery-view-section-header--toggle"
-                  onClick={() => setCompletedCollapsed(prev => !prev)}
+                  onClick={() => setCompletedCollapsed((prev) => !prev)}
                 >
                   {completedCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   {t('grocery.completed', { count: checkedItems.length })}
                 </button>
-                {!completedCollapsed && checkedItems.map(item => (
-                  <div key={item.uid} className="grocery-view-item-row">
-                    <button
-                      type="button"
-                      className="grocery-view-item grocery-view-item--checked"
-                      onClick={() => handleToggle(item)}
-                    >
-                      <span className="grocery-view-checkbox grocery-view-checkbox--checked">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M2.5 7L5.5 10L11.5 4"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </span>
-                      <span className="grocery-view-item-name">{item.summary}</span>
-                    </button>
-                    {isLocal && (
+                {!completedCollapsed &&
+                  checkedItems.map((item) => (
+                    <div key={item.uid} className="grocery-view-item-row">
                       <button
                         type="button"
-                        className="grocery-view-delete"
-                        onClick={() => handleDelete(item)}
-                        aria-label={t('grocery.deleteItem')}
+                        className="grocery-view-item grocery-view-item--checked"
+                        onClick={() => handleToggle(item)}
                       >
-                        <Trash2 size={14} />
+                        <span className="grocery-view-checkbox grocery-view-checkbox--checked">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path
+                              d="M2.5 7L5.5 10L11.5 4"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </span>
+                        <span className="grocery-view-item-name">{item.summary}</span>
                       </button>
-                    )}
-                  </div>
-                ))}
+                      {isLocal && (
+                        <button
+                          type="button"
+                          className="grocery-view-delete"
+                          onClick={() => handleDelete(item)}
+                          aria-label={t('grocery.deleteItem')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
               </div>
             )}
           </>

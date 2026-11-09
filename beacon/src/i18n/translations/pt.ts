@@ -571,6 +571,9 @@ export const pt: Record<TranslationKey, string> = {
   'grocery.completed': 'Concluídos ({count})',
   'grocery.deleteItem': 'Excluir item',
   'grocery.haList': '{name} (HA)',
+  'grocery.tabsLabel': 'Tipo de lista',
+  'grocery.tab.grocery': 'Compras',
+  'grocery.tab.tasks': 'Tarefas',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Adicionar cartão',
@@ -727,8 +730,8 @@ export const pt: Record<TranslationKey, string> = {
   'planner.openChild': 'Abrir',
   'planner.filter': 'Filtrar',
   'planner.filterTitle': 'O que queres ver?',
-  'planner.awardTitle': 'Para onde vão estes Qudoos?',
-  'planner.stillNeeded': 'Faltam {points} Qudoos',
+  'planner.awardTitle': 'Para onde vão estes pontos?',
+  'planner.stillNeeded': 'Faltam {points} pontos',
   'planner.savingsPot': 'Mealheiro',
   'planner.pausedRoutines': 'Rotinas em pausa',
   'planner.resumeRoutine': 'Retomar',

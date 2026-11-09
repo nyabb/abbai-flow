@@ -17,7 +17,7 @@ import './styles/focus.css';
 import './styles/choreops.css';
 import './styles/chore-planner.css';
 // Screen design layer last: it refines the per-view stylesheets app-wide.
-import './styles/qudoo.css';
+import './styles/surface.css';
 import { initNativeBridge } from './native';
 import { applyStoredTheme } from './hooks/useTheme';
 

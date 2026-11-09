@@ -472,7 +472,7 @@ export function ChorePlanner({
   const [claimTaskId, setClaimTaskId] = useState<string | null>(null);
   /** Child whose detail page is open (the board is the overview). */
   const [childMemberId, setChildMemberId] = useState<string | null>(null);
-  /** Chore just ticked: which goal should its Qudoos go to? */
+  /** Chore just ticked: which goal should its points go to? */
   const [awardTaskId, setAwardTaskId] = useState<string | null>(null);
   /** Members hidden from the board, and routines paused for the day. */
   const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
@@ -899,7 +899,7 @@ export function ChorePlanner({
     );
 
   /**
-   * Qudoo asks where the earned Qudoos should go as soon as a chore is ticked.
+   * The award sheet asks where the earned points should go as soon as a chore is ticked.
    * We do the same: complete the chore, then offer this child's goals.
    */
   const awardTask = getTask(awardTaskId);
@@ -1533,7 +1533,7 @@ export function ChorePlanner({
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
         <div className="planner-header-copy">
-          {/* Qudoo-style hero: a small line with the date above the page title. */}
+          {/* Board hero: a small line with the date above the page title. */}
           <span className="planner-eyebrow">
             {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>

@@ -94,7 +94,7 @@
   box-shadow: 0 12px 28px color-mix(in srgb, var(--planner-band-2) 28%, transparent);
 }
 
-/* Small line above the page title (today's date), like the Qudoo hero. */
+/* Small line above the page title (today's date), like a hero. */
 .planner-header-copy {
   display: grid;
   flex: 1 1 auto;
@@ -216,7 +216,7 @@
 }
 
 /* Inside the hero band the controls go translucent white, like the circular
-   buttons on the Qudoo screen headers. */
+   buttons on the screen headers. */
 .planner-header .planner-icon-button {
   color: color-mix(in srgb, var(--planner-band-ink) 92%, transparent);
   background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
@@ -2786,7 +2786,7 @@ The planner runs on fixed-size tiles, so any label that can grow (a chore
   text-decoration-color: color-mix(in srgb, var(--planner-ink) 35%, transparent);
 }
 
-/* Goal picker: "where should these Qudoos go?" */
+/* Goal picker: "where should these points go?" */
 .planner-goal-list {
   display: flex;
   flex-direction: column;
