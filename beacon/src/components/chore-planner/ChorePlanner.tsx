@@ -7,10 +7,8 @@ import {
   Eye,
   EyeOff,
   Filter,
-  Pencil,
   Plus,
   RotateCcw,
-  Trash2,
   Volume2,
   VolumeX,
   X,
@@ -43,6 +41,15 @@ import { RewardRow, RoutineRow, TaskRow } from './rows';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
+import {
+  ActionsSheet,
+  AwardSheet,
+  ClaimSheet,
+  FilterSheet,
+  GoalsSheet,
+  RewardActionsSheet,
+  RewardFormSheet,
+} from './sheets';
 import { ChildView } from './ChildView';
 import { MissionView } from './MissionView';
 import {
@@ -1300,316 +1307,121 @@ export function ChorePlanner({
                 onCancel={() => setModal(null)}
                 onSave={() => void saveForm()}
               />
-            )}
+            )}{' '}
             {modal === 'actions' && selectedTask && (
-              <>
-                <h2>{c.action}</h2>
-                {taskStatus(selectedTask) === 'completed' ? null : (
-                  <button
-                    className="planner-destination"
-                    onClick={() => openEditForm(selectedTask)}
-                  >
-                    <Pencil />
-                    <strong>{c.edit}</strong>
-                  </button>
-                )}
-                <button
-                  className="planner-destination planner-danger"
-                  onClick={() => {
-                    const task = selectedTask;
-                    // With a parent PIN on file, the PIN itself is the confirmation.
-                    if (hasParentPin) {
-                      setModal(null);
-                      requestPin(c.remove, task.name, () => void removeTask(task));
-                      return;
-                    }
-                    if (confirmingDelete) void removeTask(task);
-                    else setConfirmingDelete(true);
-                  }}
-                >
-                  <Trash2 />
-                  <strong>{confirmingDelete ? c.sure : c.remove}</strong>
-                </button>
-              </>
-            )}
+              <ActionsSheet
+                completed={taskStatus(selectedTask) === 'completed'}
+                copy={c}
+                confirmingDelete={confirmingDelete}
+                onEdit={() => openEditForm(selectedTask)}
+                onDelete={() => {
+                  const task = selectedTask;
+                  // With a parent PIN on file, the PIN itself is the confirmation.
+                  if (hasParentPin) {
+                    setModal(null);
+                    requestPin(c.remove, task.name, () => void removeTask(task));
+                    return;
+                  }
+                  if (confirmingDelete) void removeTask(task);
+                  else setConfirmingDelete(true);
+                }}
+              />
+            )}{' '}
             {modal === 'award' && awardTask && (
-              <>
-                <h2>{c.awardTitle}</h2>
-                <p className="planner-hint">
-                  {awardTask.name}
-                  {awardTask.points > 0 && ` \u00b7 ${'\u{1F3C6}'} ${awardTask.points}`}
-                </p>
-                <div className="planner-goal-list">
-                  <button type="button" className="planner-goal" onClick={() => setModal(null)}>
-                    <span className="planner-goal-icon" aria-hidden="true">
-                      {'\u{1F3E6}'}
-                    </span>
-                    <span className="planner-goal-copy">
-                      <strong>{c.savingsPot}</strong>
-                      <small>
-                        {c.pot} \u00b7 {spendableFor(memberFor(awardTask.memberId))}
-                      </small>
-                    </span>
-                  </button>
-                  {rewardsForMember(awardTask.memberId).map((reward) => {
-                    const { saved, affordable } = rewardState(reward);
-                    return (
-                      <button
-                        type="button"
-                        className="planner-goal"
-                        key={reward.id}
-                        disabled={!affordable}
-                        onClick={() => {
-                          assignReward(reward);
-                          setModal(null);
-                        }}
-                      >
-                        <span className="planner-goal-icon" aria-hidden="true">
-                          {'\u{1F381}'}
-                        </span>
-                        <span className="planner-goal-copy">
-                          <strong>{reward.name}</strong>
-                          <small>
-                            {affordable
-                              ? c.assign
-                              : t('planner.stillNeeded', {
-                                  points: String(Math.max(0, reward.cost - saved)),
-                                })}
-                          </small>
-                        </span>
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    className="planner-goal planner-goal--new"
-                    onClick={() => {
-                      if (awardTask.memberId) startRewardForm(awardTask.memberId);
-                      else setModal('reward-form');
-                    }}
-                  >
-                    <span className="planner-goal-icon" aria-hidden="true">
-                      +
-                    </span>
-                    <span className="planner-goal-copy">
-                      <strong>{c.setGoal}</strong>
-                    </span>
-                  </button>
-                </div>
-              </>
-            )}
+              <AwardSheet
+                task={awardTask}
+                copy={c}
+                t={t}
+                spendable={spendableFor(memberFor(awardTask.memberId))}
+                rewards={rewardsForMember(awardTask.memberId)}
+                rewardState={rewardState}
+                onClose={() => setModal(null)}
+                onAssign={(reward) => {
+                  assignReward(reward);
+                  setModal(null);
+                }}
+                onNewGoal={() => {
+                  if (awardTask.memberId) startRewardForm(awardTask.memberId);
+                  else setModal('reward-form');
+                }}
+              />
+            )}{' '}
             {modal === 'filter' && (
-              <>
-                <h2>{c.filterTitle}</h2>
-                <div className="planner-member-picker">
-                  {data.members.map((member) => {
-                    const hidden = hiddenMemberIds.includes(member.id);
-                    return (
-                      <button
-                        type="button"
-                        key={member.id}
-                        className={hidden ? '' : 'is-selected'}
-                        aria-pressed={!hidden}
-                        onClick={() =>
-                          setHiddenMemberIds((ids) =>
-                            ids.includes(member.id)
-                              ? ids.filter((id) => id !== member.id)
-                              : [...ids, member.id],
-                          )
-                        }
-                      >
-                        <MemberAvatar member={member} />
-                        {member.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                {data.routines.length > 0 && (
-                  <>
-                    <h2>{c.pausedRoutines}</h2>
-                    <div className="planner-goal-list">
-                      {data.routines.map((routine) => {
-                        const paused = pausedRoutineIds.includes(routine.id);
-                        return (
-                          <button
-                            type="button"
-                            className="planner-goal"
-                            key={routine.id}
-                            onClick={() => toggleRoutinePaused(routine.id)}
-                          >
-                            <span className="planner-goal-icon" aria-hidden="true">
-                              {routine.icon}
-                            </span>
-                            <span className="planner-goal-copy">
-                              <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                              <small>{paused ? c.paused : c.active}</small>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                </footer>
-              </>
-            )}
+              <FilterSheet
+                members={data.members}
+                routines={data.routines}
+                hiddenMemberIds={hiddenMemberIds}
+                pausedRoutineIds={pausedRoutineIds}
+                copy={c}
+                onToggleMember={(memberId) =>
+                  setHiddenMemberIds((ids) =>
+                    ids.includes(memberId)
+                      ? ids.filter((id) => id !== memberId)
+                      : [...ids, memberId],
+                  )
+                }
+                onToggleRoutine={toggleRoutinePaused}
+                onClose={() => setModal(null)}
+              />
+            )}{' '}
             {modal === 'claim' && claimTask && (
-              <>
-                <h2>{claimTask.name}</h2>
-                <p className="planner-hint">{c.claimWho}</p>
-                <div className="planner-member-picker planner-member-picker--claim">
-                  {claimOptionsFor(claimTask).map((option) => {
-                    const member = memberFor(option.memberId);
-                    if (!member) return null;
-                    return (
-                      <button
-                        key={option.memberId}
-                        type="button"
-                        onClick={() => {
-                          setModal(null);
-                          void runLiveAction(
-                            option.id,
-                            option.actions!.claim!,
-                            option.name,
-                            c.claimedToast,
-                          );
-                        }}
-                      >
-                        <MemberAvatar member={member} />
-                        {member.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                </footer>
-              </>
-            )}
+              <ClaimSheet
+                task={claimTask}
+                options={claimOptionsFor(claimTask)}
+                memberFor={memberFor}
+                copy={c}
+                onClaim={(option) => {
+                  setModal(null);
+                  void runLiveAction(
+                    option.id,
+                    option.actions!.claim!,
+                    option.name,
+                    c.claimedToast,
+                  );
+                }}
+                onClose={() => setModal(null)}
+              />
+            )}{' '}
             {modal === 'goals' && goalsMember && (
-              <>
-                <h2>
-                  {c.goals}
-                  {' \u00b7 '}
-                  {goalsMember.name}
-                </h2>
-                {rewardsForMember(goalsMember.id).length === 0 && <p>{c.noRewards}</p>}
-                {rewardsForMember(goalsMember.id).map((reward) => renderRewardRow(reward))}
-                <button
-                  className="planner-ghost planner-reward-new"
-                  onClick={() => startRewardForm(goalsMember.id)}
-                >
-                  <Plus />
-                  {c.setGoal}
-                </button>
-              </>
-            )}
+              <GoalsSheet
+                member={goalsMember}
+                rewards={rewardsForMember(goalsMember.id)}
+                copy={c}
+                renderRewardRow={renderRewardRow}
+                onNewGoal={startRewardForm}
+              />
+            )}{' '}
             {modal === 'reward-actions' && selectedReward && (
-              <>
-                <h2>{c.action}</h2>
-                <button
-                  className="planner-destination"
-                  onClick={() => {
-                    setEditingReward(selectedReward.name);
-                    setRewardForm({
-                      name: selectedReward.name,
-                      cost: Math.round(selectedReward.cost),
-                      memberIds: [],
-                    });
-                    setModal('reward-form');
-                  }}
-                >
-                  <Pencil />
-                  <strong>{c.cost}</strong>
-                </button>
-                <button
-                  className="planner-destination planner-danger"
-                  onClick={() => void removeReward(selectedReward)}
-                >
-                  <Trash2 />
-                  <strong>{c.remove}</strong>
-                </button>
-              </>
-            )}
+              <RewardActionsSheet
+                copy={c}
+                onEditCost={() => {
+                  setEditingReward(selectedReward.name);
+                  setRewardForm({
+                    name: selectedReward.name,
+                    cost: Math.round(selectedReward.cost),
+                    memberIds: [],
+                  });
+                  setModal('reward-form');
+                }}
+                onDelete={() => void removeReward(selectedReward)}
+              />
+            )}{' '}
             {modal === 'reward-form' && (
-              <>
-                <h2>{editingReward ? c.cost : c.newReward}</h2>
-                <label className="planner-field">
-                  {c.name}
-                  <input
-                    autoFocus
-                    value={rewardForm.name}
-                    disabled={Boolean(editingReward)}
-                    onChange={(event) =>
-                      setRewardForm((value) => ({ ...value, name: event.target.value }))
-                    }
-                  />
-                  {editingReward && <small className="planner-hint">{c.renameLocked}</small>}
-                </label>
-                <label className="planner-field">
-                  {c.cost}
-                  <input
-                    type="number"
-                    min="1"
-                    max="9999"
-                    value={rewardForm.cost}
-                    onChange={(event) =>
-                      setRewardForm((value) => ({ ...value, cost: Number(event.target.value) }))
-                    }
-                  />
-                </label>
-                {!editingReward && (
-                  <fieldset className="planner-field">
-                    <legend>{c.forWho}</legend>
-                    <div className="planner-member-picker">
-                      {data.members.map((member) => (
-                        <button
-                          key={member.id}
-                          className={rewardForm.memberIds.includes(member.id) ? 'is-selected' : ''}
-                          onClick={() =>
-                            setRewardForm((value) => ({
-                              ...value,
-                              memberIds: value.memberIds.includes(member.id)
-                                ? value.memberIds.filter((id) => id !== member.id)
-                                : [...value.memberIds, member.id],
-                            }))
-                          }
-                        >
-                          <MemberAvatar member={member} />
-                          {member.name}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                )}
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                  <button
-                    className="planner-primary"
-                    disabled={
-                      saving ||
-                      rewardForm.cost < 1 ||
-                      (!editingReward &&
-                        (!rewardForm.name.trim() || rewardForm.memberIds.length === 0))
-                    }
-                    onClick={() => void saveReward()}
-                  >
-                    {saving ? '\u2026' : c.save}
-                  </button>
-                </footer>
-              </>
+              <RewardFormSheet
+                rewardForm={rewardForm}
+                setRewardForm={setRewardForm}
+                editingReward={editingReward}
+                members={data.members}
+                saving={saving}
+                copy={c}
+                onCancel={() => setModal(null)}
+                onSave={() => void saveReward()}
+              />
             )}
           </section>
         </div>
-      )}      {confirmAction && (
+      )}
+      {confirmAction && (
         <ConfirmSheet
           action={confirmAction}
           copy={c}
