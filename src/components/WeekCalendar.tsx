@@ -241,7 +241,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
 
       // Find first available lane
       let lane = 0;
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         let conflict = false;
         for (let c = startCol; c < startCol + span; c++) {
