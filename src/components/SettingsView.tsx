@@ -1,6 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
-import { useTheme } from '../hooks/useTheme';
 import {
   Settings as SettingsIcon,
   Palette,
@@ -10,14 +9,10 @@ import {
   Monitor,
   ListChecks,
   Info,
-  Check,
   Pencil,
   Trash2,
   ChevronLeft,
 } from 'lucide-react';
-import { AnyListClient } from '../api/anylist';
-import { GroceryList } from '../types/grocery';
-import { themes } from '../styles/themes';
 import { useChoreOps } from '../hooks/useChoreOps';
 import {
   FamilyMember,
@@ -27,13 +22,15 @@ import {
   normalizePin,
 } from '../types/family';
 import type { BeaconSettings } from '../hooks/useSettings';
-import { Segment, Slider, Toggle } from './settings/controls';
+import { Segment } from './settings/controls';
 import { GeneralSection } from './settings/sections/GeneralSection';
 import { ChoresSection } from './settings/sections/ChoresSection';
 import { AboutSection } from './settings/sections/AboutSection';
-import { buildFocusUrl } from '../focus';
+import { AppearanceSection } from './settings/sections/AppearanceSection';
+import { DisplaySection } from './settings/sections/DisplaySection';
+import { CalendarSection } from './settings/sections/CalendarSection';
+import { IntegrationsSection } from './settings/sections/IntegrationsSection';
 import { useRoutines } from '../hooks/useRoutines';
-import { resolveCalendarColor, CALENDAR_COLOR_PRESETS } from '../types';
 import { useTranslation, type TranslationKey } from '../i18n';
 import { MemberAvatar } from './MemberAvatar';
 import { imageFileToDataUrl, resolveMemberPhoto } from '../utils/member-photo';
@@ -141,7 +138,6 @@ export function SettingsView({
   onEnterFocusMode,
 }: SettingsViewProps) {
   const { t } = useTranslation();
-  const { setTheme: applyTheme } = useTheme();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
@@ -181,9 +177,6 @@ export function SettingsView({
   const [memberFormMode, setMemberFormMode] = useState<'list' | 'add' | 'edit'>('list');
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const [kidDisplayMemberId, setKidDisplayMemberId] = useState('');
-  const [copiedFocusUrl, setCopiedFocusUrl] = useState(false);
-  const [colorEditId, setColorEditId] = useState<string | null>(null);
 
   // ---- Routine editor state ----
   const routinesApi = useRoutines();
@@ -222,17 +215,6 @@ export function SettingsView({
     }
     setRoutineForm(null);
   }, [routineForm, routinesFor, routinesApi]);
-
-  // ---- Fetch todo lists for grocery default dropdown ----
-  const [todoLists, setTodoLists] = useState<GroceryList[]>([]);
-  useEffect(() => {
-    if (!connected) return;
-    const client = new AnyListClient();
-    client
-      .getLists()
-      .then(setTodoLists)
-      .catch(() => {});
-  }, [connected]);
 
   // ---- Family member handlers ----
   const handleStartAdd = useCallback(() => {
@@ -355,19 +337,6 @@ export function SettingsView({
   }, [onImportSettings]);
 
   // ---- Theme entries ----
-  const themeEntries = [
-    {
-      id: 'auto',
-      name: t('settings.appearance.themeAuto'),
-      colors: ['#faf9f6', '#0f172a', '#3b82f6'],
-    },
-    ...themes.map((t) => ({
-      id: t.id,
-      name: t.name,
-      colors: [t.colors.background, t.colors.surface, t.colors.accent],
-    })),
-  ];
-
   // ---- Render sections ----
   const renderSection = () => {
     switch (activeSection) {
@@ -395,134 +364,8 @@ export function SettingsView({
     <GeneralSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />
   );
   const renderAppearance = () => (
-    <>
-      <h2 className="settings-section-title">{t('settings.appearance.title')}</h2>
-      <p className="settings-section-desc">{t('settings.appearance.desc')}</p>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.appearance.themeTitle')}</div>
-        <div className="settings-theme-grid">
-          {themeEntries.map((entry) => {
-            const isActive = entry.id === settings.themeId;
-            return (
-              <button
-                key={entry.id}
-                type="button"
-                className={`settings-theme-card ${isActive ? 'settings-theme-card--active' : ''}`}
-                onClick={() => {
-                  onUpdateSettings({ themeId: entry.id });
-                  applyTheme(entry.id);
-                }}
-              >
-                <div className="settings-theme-preview">
-                  {entry.colors.map((color, i) => (
-                    <div
-                      key={i}
-                      className="settings-theme-swatch"
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                </div>
-                <div className="settings-theme-name">{entry.name}</div>
-                {isActive && (
-                  <div className="settings-theme-check">
-                    <Check size={12} strokeWidth={3} />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.appearance.autoDarkModeLabel')}</div>
-            <div className="settings-row-sublabel">
-              {t('settings.appearance.autoDarkModeSublabel')}
-            </div>
-          </div>
-          <Toggle
-            checked={settings.autoDarkMode}
-            onChange={(v) => onUpdateSettings({ autoDarkMode: v })}
-          />
-        </div>
-        {settings.autoDarkMode && (
-          <>
-            <div className="settings-row">
-              <div className="settings-row-label">
-                {t('settings.appearance.darkModeStartLabel')}
-              </div>
-              <input
-                type="time"
-                className="settings-time-input"
-                value={settings.darkModeStart}
-                onChange={(e) => onUpdateSettings({ darkModeStart: e.target.value })}
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.appearance.darkModeEndLabel')}</div>
-              <input
-                type="time"
-                className="settings-time-input"
-                value={settings.darkModeEnd}
-                onChange={(e) => onUpdateSettings({ darkModeEnd: e.target.value })}
-              />
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.appearance.fontSizeLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.appearance.fontSizeSublabel')}</div>
-          </div>
-          <Segment
-            value={settings.fontScale}
-            options={[
-              { value: 'normal', label: t('settings.appearance.fontNormal') },
-              { value: 'large', label: t('settings.appearance.fontLarge') },
-              { value: 'extra-large', label: t('settings.appearance.fontXL') },
-            ]}
-            onChange={(v) => onUpdateSettings({ fontScale: v })}
-          />
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">{t('settings.appearance.sidebarPositionLabel')}</div>
-          <Segment
-            value={settings.sidebarPosition}
-            options={[
-              { value: 'left', label: t('settings.appearance.left') },
-              { value: 'right', label: t('settings.appearance.right') },
-              { value: 'bottom', label: t('settings.appearance.bottom') },
-            ]}
-            onChange={(v) => onUpdateSettings({ sidebarPosition: v })}
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.appearance.advancedDashboardLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.appearance.advancedDashboardSublabel')}
-            </div>
-          </div>
-          <Toggle
-            checked={settings.advancedDashboard}
-            onChange={(v) => onUpdateSettings({ advancedDashboard: v })}
-          />
-        </div>
-      </div>
-    </>
+    <AppearanceSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />
   );
-
   // ==== FAMILY ====
   const renderFamily = () => {
     // A photo already published on the linked HA person, if any.
@@ -1190,602 +1033,34 @@ export function SettingsView({
 
   // ==== CALENDAR ====
   const renderCalendar = () => (
-    <>
-      <h2 className="settings-section-title">{t('settings.calendar.title')}</h2>
-      <p className="settings-section-desc">{t('settings.calendar.desc')}</p>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.calendar.connectedCalendarsTitle')}</div>
-        {calendars.length === 0 ? (
-          <div className="settings-row">
-            <div className="settings-row-label" style={{ color: 'var(--text-secondary)' }}>
-              {t('settings.calendar.noCalendars')}
-            </div>
-          </div>
-        ) : (
-          calendars.map((cal, index) => {
-            const isHidden = settings.permanentlyHiddenCalendars.includes(cal.id);
-            const customColor = settings.calendarColors[cal.id] || '';
-            const resolvedColor = resolveCalendarColor(cal.id, index, {
-              calendarColors: settings.calendarColors,
-              members,
-              defaultColor: cal.color,
-            });
-            const open = colorEditId === cal.id;
-
-            const setColor = (value: string) => {
-              onUpdateSettings({
-                calendarColors: { ...settings.calendarColors, [cal.id]: value },
-              });
-            };
-            const resetColor = () => {
-              const next = { ...settings.calendarColors };
-              delete next[cal.id];
-              onUpdateSettings({ calendarColors: next });
-            };
-
-            return (
-              <div key={cal.id} className="settings-calendar-row">
-                <div className="settings-row">
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      flex: 1,
-                      minWidth: 0,
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className="settings-calendar-color-swatch"
-                      style={{ backgroundColor: resolvedColor }}
-                      onClick={() => setColorEditId(open ? null : cal.id)}
-                      title={t('settings.calendar.editColor')}
-                      aria-label={t('settings.calendar.editColorFor', { name: cal.name })}
-                      aria-expanded={open}
-                    />
-                    <div style={{ minWidth: 0 }}>
-                      <div className="settings-row-label">{cal.name}</div>
-                      <div className="settings-row-sublabel">{cal.id}</div>
-                    </div>
-                  </div>
-                  <Toggle
-                    checked={!isHidden}
-                    onChange={(visible) => {
-                      const hidden = settings.permanentlyHiddenCalendars.filter(
-                        (id) => id !== cal.id,
-                      );
-                      if (!visible) hidden.push(cal.id);
-                      onUpdateSettings({ permanentlyHiddenCalendars: hidden });
-                    }}
-                  />
-                </div>
-                {open && (
-                  <div className="settings-color-editor">
-                    <div className="settings-color-grid">
-                      {CALENDAR_COLOR_PRESETS.map((preset) => (
-                        <button
-                          key={preset}
-                          type="button"
-                          className={`settings-color-circle ${customColor === preset ? 'settings-color-circle--selected' : ''}`}
-                          style={{ backgroundColor: preset }}
-                          onClick={() => setColor(preset)}
-                          aria-label={t('settings.calendar.setColorTo', {
-                            name: cal.name,
-                            color: preset,
-                          })}
-                        />
-                      ))}
-                    </div>
-                    <div className="settings-color-editor-custom">
-                      <label className="settings-color-custom">
-                        <input
-                          type="color"
-                          value={customColor || resolvedColor}
-                          onChange={(e) => setColor(e.target.value)}
-                          aria-label={t('settings.calendar.chooseCustomColorFor', {
-                            name: cal.name,
-                          })}
-                        />
-                        <span>{t('common.custom')}</span>
-                      </label>
-                      <button
-                        type="button"
-                        className="settings-btn"
-                        onClick={resetColor}
-                        disabled={!customColor}
-                      >
-                        {t('settings.calendar.resetToAuto')}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div className="settings-row-label">{t('settings.calendar.defaultCalendarLabel')}</div>
-          <select
-            className="settings-select"
-            value={settings.defaultCalendar}
-            onChange={(e) => onUpdateSettings({ defaultCalendar: e.target.value })}
-          >
-            <option value="">{t('common.selectEllipsis')}</option>
-            {calendars.map((cal) => (
-              <option key={cal.id} value={cal.id}>
-                {cal.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">
-            {t('settings.calendar.defaultEventDurationLabel')}
-          </div>
-          <Segment
-            value={String(settings.defaultEventDuration)}
-            options={[
-              { value: '30', label: t('settings.calendar.min30') },
-              { value: '60', label: t('settings.calendar.hr1') },
-              { value: '120', label: t('settings.calendar.hr2') },
-            ]}
-            onChange={(v) => onUpdateSettings({ defaultEventDuration: Number(v) as 30 | 60 | 120 })}
-          />
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">{t('settings.calendar.notificationTimingLabel')}</div>
-          <Segment
-            value={String(settings.notificationMinutes)}
-            options={[
-              { value: '5', label: t('settings.calendar.min5') },
-              { value: '10', label: t('settings.calendar.min10') },
-              { value: '15', label: t('settings.calendar.min15') },
-              { value: '30', label: t('settings.calendar.min30') },
-            ]}
-            onChange={(v) =>
-              onUpdateSettings({ notificationMinutes: Number(v) as 5 | 10 | 15 | 30 })
-            }
-          />
-        </div>
-      </div>
-    </>
+    <CalendarSection
+      settings={settings}
+      onUpdateSettings={onUpdateSettings}
+      t={t}
+      calendars={calendars}
+      members={members}
+    />
   );
-
   // ==== INTEGRATIONS ====
   const renderIntegrations = () => (
-    <>
-      <h2 className="settings-section-title">{t('settings.integrations.title')}</h2>
-      <p className="settings-section-desc">{t('settings.integrations.desc')}</p>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.homeAssistantTitle')}</div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${connected ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">
-                {t('settings.integrations.connectionStatusLabel')}
-              </div>
-              <div className="settings-row-sublabel">
-                {connected
-                  ? t('settings.integrations.connected')
-                  : t('settings.integrations.disconnected')}{' '}
-                &middot; {haUrl}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.weatherEntityLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.weatherEntitySublabel')}
-            </div>
-          </div>
-          <input
-            type="text"
-            className="settings-input"
-            value={settings.weatherEntity}
-            onChange={(e) => onUpdateSettings({ weatherEntity: e.target.value })}
-            placeholder="weather.home"
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.grocyTitle')}</div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${settings.grocyEnabled ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">{t('settings.integrations.grocyLabel')}</div>
-              <div className="settings-row-sublabel">
-                {t('settings.integrations.grocySublabel')}
-              </div>
-            </div>
-          </div>
-          <Toggle
-            checked={settings.grocyEnabled}
-            onChange={(v) => onUpdateSettings({ grocyEnabled: v })}
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.anylistTitle')}</div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${settings.anylistEnabled ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">{t('settings.integrations.anylistLabel')}</div>
-              <div className="settings-row-sublabel">
-                {t('settings.integrations.anylistSublabel')}
-              </div>
-            </div>
-          </div>
-          <Toggle
-            checked={settings.anylistEnabled}
-            onChange={(v) => onUpdateSettings({ anylistEnabled: v })}
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.groceryTitle')}</div>
-        <div
-          className="settings-row"
-          style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}
-        >
-          <div>
-            <div className="settings-row-label">{t('settings.integrations.groceryListsLabel')}</div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.groceryListsSublabel')}
-            </div>
-          </div>
-          {todoLists.length === 0 ? (
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.noTodoListsFound')}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {todoLists.map((list) => {
-                const isChecked = settings.groceryListIds.includes(list.id);
-                return (
-                  <label
-                    key={list.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '8px 12px',
-                      borderRadius: 6,
-                      border: '1px solid var(--border)',
-                      background: isChecked ? 'var(--bg-today)' : 'var(--bg-surface)',
-                      cursor: 'pointer',
-                      transition: 'all 150ms ease',
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        const newIds = e.target.checked
-                          ? [...settings.groceryListIds, list.id]
-                          : settings.groceryListIds.filter((id) => id !== list.id);
-                        onUpdateSettings({ groceryListIds: newIds });
-                      }}
-                      style={{ width: 16, height: 16 }}
-                    />
-                    <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      {list.name}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.defaultGroceryListLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.defaultGroceryListSublabel')}
-            </div>
-          </div>
-          <select
-            className="settings-input"
-            value={settings.defaultGroceryList}
-            onChange={(e) => onUpdateSettings({ defaultGroceryList: e.target.value })}
-          >
-            <option value="">{t('settings.integrations.autoFirstAvailable')}</option>
-            {todoLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.shoppingEntityLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.shoppingEntitySublabel')}
-            </div>
-          </div>
-          <select
-            className="settings-input"
-            value={settings.shoppingEntity}
-            onChange={(e) => onUpdateSettings({ shoppingEntity: e.target.value })}
-          >
-            <option value="">{t('common.none')}</option>
-            {todoLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.musicAssistantTitle')}</div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.defaultPlayerLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.defaultPlayerSublabel')}
-            </div>
-          </div>
-          <input
-            type="text"
-            className="settings-input"
-            value={settings.musicDefaultPlayer}
-            onChange={(e) => onUpdateSettings({ musicDefaultPlayer: e.target.value })}
-            placeholder="media_player.living_room"
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.photosTitle')}</div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.sourceDirectoryLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.sourceDirectorySublabel')}
-            </div>
-          </div>
-          <input
-            type="text"
-            className="settings-input settings-input--wide"
-            value={settings.photoDirectory}
-            onChange={(e) => onUpdateSettings({ photoDirectory: e.target.value })}
-            placeholder="/media/beacon/photos"
-          />
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.slideshowIntervalLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.slideshowIntervalSublabel')}
-            </div>
-          </div>
-          <Slider
-            value={settings.photoInterval}
-            min={10}
-            max={120}
-            step={5}
-            unit="s"
-            onChange={(v) => onUpdateSettings({ photoInterval: v })}
-          />
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">
-            {t('settings.integrations.transitionStyleLabel')}
-          </div>
-          <Segment
-            value={settings.photoTransition}
-            options={[
-              { value: 'fade', label: t('settings.integrations.fade') },
-              { value: 'slide', label: t('settings.integrations.slide') },
-            ]}
-            onChange={(v) => onUpdateSettings({ photoTransition: v })}
-          />
-        </div>
-      </div>
-    </>
+    <IntegrationsSection
+      settings={settings}
+      onUpdateSettings={onUpdateSettings}
+      t={t}
+      connected={connected}
+      haUrl={haUrl}
+    />
   );
-
   // ==== DISPLAY ====
   const renderDisplay = () => (
-    <>
-      <h2 className="settings-section-title">{t('settings.display.title')}</h2>
-      <p className="settings-section-desc">{t('settings.display.desc')}</p>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.screenSaverLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.display.screenSaverSublabel')}</div>
-          </div>
-          <Toggle
-            checked={settings.screenSaverEnabled}
-            onChange={(v) => onUpdateSettings({ screenSaverEnabled: v })}
-          />
-        </div>
-        {settings.screenSaverEnabled && (
-          <>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.display.dimAfterLabel')}</div>
-                <div className="settings-row-sublabel">
-                  {t('settings.display.dimAfterSublabel')}
-                </div>
-              </div>
-              <Slider
-                value={settings.dimTimeout}
-                min={1}
-                max={30}
-                unit=" min"
-                onChange={(v) => onUpdateSettings({ dimTimeout: v })}
-              />
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.display.screenSaverAfterLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {t('settings.display.screenSaverAfterSublabel')}
-                </div>
-              </div>
-              <Slider
-                value={settings.screenSaverTimeout}
-                min={5}
-                max={60}
-                step={5}
-                unit=" min"
-                onChange={(v) => onUpdateSettings({ screenSaverTimeout: v })}
-              />
-            </div>
-          </>
-        )}
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.alwaysOnLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.display.alwaysOnSublabel')}</div>
-          </div>
-          <Toggle
-            checked={settings.alwaysOnDisplay}
-            onChange={(v) => onUpdateSettings({ alwaysOnDisplay: v })}
-          />
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.showSecondsLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.display.showSecondsSublabel')}</div>
-          </div>
-          <Toggle
-            checked={settings.showSeconds}
-            onChange={(v) => onUpdateSettings({ showSeconds: v })}
-          />
-        </div>
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.kioskModeLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.display.kioskModeSublabel')}</div>
-          </div>
-          <Toggle
-            checked={settings.kioskMode}
-            onChange={(v) => onUpdateSettings({ kioskMode: v })}
-          />
-        </div>
-      </div>
-
-      <h2 className="settings-section-title" style={{ marginTop: 32 }}>
-        {t('settings.display.kidDisplayTitle')}
-      </h2>
-      <p className="settings-section-desc">{t('settings.display.kidDisplayDesc')}</p>
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.familyMemberLabel')}</div>
-            <div className="settings-row-sublabel">
-              {t('settings.display.familyMemberSublabel')}
-            </div>
-          </div>
-          <select
-            className="settings-select"
-            value={kidDisplayMemberId}
-            onChange={(e) => {
-              setKidDisplayMemberId(e.target.value);
-              setCopiedFocusUrl(false);
-            }}
-          >
-            <option value="">{t('settings.display.chooseAMember')}</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.avatar} {m.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        {kidDisplayMemberId && (
-          <>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.display.useOnDeviceLabel')}</div>
-                <div className="settings-row-sublabel">
-                  {t('settings.display.useOnDeviceSublabel')}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={() => onEnterFocusMode(kidDisplayMemberId)}
-              >
-                {t('common.start')}
-              </button>
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.display.displayUrlLabel')}</div>
-                <div className="settings-row-sublabel">
-                  {t('settings.display.displayUrlSublabel')}
-                </div>
-              </div>
-              <button
-                type="button"
-                className="settings-btn"
-                onClick={() => {
-                  const url = buildFocusUrl(kidDisplayMemberId);
-                  if (!navigator.clipboard) {
-                    window.prompt(t('settings.display.copyUrlPrompt'), url);
-                    return;
-                  }
-                  navigator.clipboard
-                    .writeText(url)
-                    .then(() => setCopiedFocusUrl(true))
-                    .catch(() => {
-                      window.prompt(t('settings.display.copyUrlPrompt'), url);
-                    });
-                }}
-              >
-                {copiedFocusUrl ? t('settings.display.copied') : t('settings.display.copyUrl')}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </>
+    <DisplaySection
+      settings={settings}
+      onUpdateSettings={onUpdateSettings}
+      t={t}
+      members={members}
+      onEnterFocusMode={onEnterFocusMode}
+    />
   );
-
   // ==== CHORES ====
   // Chore data lives in the ChoreOps integration: Beacon has no local chore
   // store, so streaks, values and payouts are configured in Home Assistant.

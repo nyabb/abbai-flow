@@ -97,7 +97,7 @@ Oversized modules (see H for what is still open):
 | --------------------------------- | ------------ | ---------------------------------------------- |
 | `src/api/choreops.ts`             | 990          | 588 (split)                                    |
 | `src/components/ChorePlanner.tsx` | 2481         | 1419 (orchestrator) + 1495 in `chore-planner/` |
-| `src/components/SettingsView.tsx` | 2072         | 1831 (split) + 356 in `settings/`                |
+| `src/components/SettingsView.tsx` | 2072         | 1103 (split) + 1113 in `settings/`           |
 | `src/App.tsx`                     | 826          | 762                                            |
 
 ---
@@ -326,11 +326,12 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Settings sections that are still open** — `general`, `chores` and `about` are now
-   `settings/sections/*.tsx` against a shared `SettingsSectionContext` (settings + update +
-   `t`). What is left in `SettingsView.tsx` (1831 lines) is, measured: family 665,
-   integrations 263, display 169, calendar 168, appearance 130 — each becomes one component
-   with the same context plus its own props.
+1. **Settings sections that are still open** — `general`, `appearance`, `calendar`,
+   `integrations`, `display`, `chores` and `about` are now `settings/sections/*.tsx` against a
+   shared `SettingsSectionContext` (settings + update + `t`). What is left in
+   `SettingsView.tsx` (1103 lines) is the nav shell, export/import and the family section
+   (665 lines), which becomes one component with the same context plus `members` and the
+   member CRUD callbacks.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
    - complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
