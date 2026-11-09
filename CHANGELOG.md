@@ -1,3 +1,11 @@
+# [1.51.0](https://github.com/nyabb/beacon/compare/v1.50.0...v1.51.0) (2026-11-09)
+
+
+### Features
+
+* add surface styles for a consistent visual language across views ([61b933d](https://github.com/nyabb/beacon/commit/61b933d592f308208093aee32303eb0f81ec5d41))
+* **i18n:** update translations for grocery tabs and planner points across multiple languages ([5ae54d1](https://github.com/nyabb/beacon/commit/5ae54d1b3f257ec10874dcd3e4c686dc395955a2))
+
 # [1.50.0](https://github.com/nyabb/beacon/compare/v1.49.0...v1.50.0) (2026-11-08)
 
 
