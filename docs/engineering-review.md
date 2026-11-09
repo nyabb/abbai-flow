@@ -71,34 +71,34 @@ Persistence: UI → saveData() → PUT /beacon-data/:key → /data/<key>.json (a
 
 Severity is about impact on users of the shipped add-on image.
 
-| #   | Sev      | Where                                 | Problem                                                                                                                                             | Status                                        |
-| --- | -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| 1   | Critical | `server.js` upgrade handler           | Transport hard-coded to `http` with port `80`; an `https://` HA URL could never upgrade. Also forwarded browser cookies and had no timeout/cleanup. | Fixed                                         |
-| 2   | Critical | `haRequest()` (voice, service bridge) | Same hard-coded `http`/`80`, so HTTPS Home Assistant installs broke on `/beacon-action/service` and `/beacon-action/voice`.                         | Fixed                                         |
-| 3   | High     | `proxyToHA()`                         | Body buffered without a limit, no upstream timeout, could answer twice after a client abort.                                                        | Fixed                                         |
-| 4   | High     | `handleVoiceAction()`                 | Read the raw body with no size limit (`chunks` unbounded) — trivial memory exhaustion.                                                              | Fixed                                         |
-| 5   | High     | `/beacon-data` PUT                    | `writeFile` in place: a crash mid-write left truncated JSON that then read back as corrupt.                                                         | Fixed (temp file + rename)                    |
-| 6   | High     | `/beacon-data` GET                    | Malformed stored JSON surfaced as a raw error message / inconsistent status.                                                                        | Fixed (typed `CORRUPT_STORE`, stable message) |
-| 7   | High     | All token-bearing endpoints           | No origin check: any web page opened on the wall display could drive `/beacon-action/*` and `/api/*` against HA.                                    | Fixed (same-origin/native-shell guard)        |
-| 8   | Medium   | `/beacon-action/service`              | `domain`/`service` were interpolated into an HA path unvalidated (`../` traversal into other HA endpoints).                                         | Fixed                                         |
-| 9   | Medium   | `server.js` structure                 | 829-line monolith that started listening on `require`, so no automated test could exercise it.                                                      | Fixed (entry + `server/app.cjs`)              |
-| 10  | Medium   | `src/api/beacon-store.ts`             | PUT resolved regardless of `res.ok`, so a rejected write looked successful.                                                                         | Fixed (typed result + error)                  |
-| 11  | Medium   | `src/api/beacon-store.ts`             | Two saves of one key raced; the slower one landed last on the server.                                                                               | Fixed (per-key write queue)                   |
-| 12  | Medium   | `src/hooks/useCalendarEvents.ts`      | Calendars fetched one-by-one; a slow earlier response could overwrite a newer range; no cancellation.                                               | Fixed                                         |
-| 13  | Low      | `src/hooks/useChoreOps.ts`            | REST fallback polled every 30 s even while the tab was hidden.                                                                                      | Fixed                                         |
-| 14  | Low      | `beacon/` mirror                      | Duplicated tree; `beacon/package.json` had drifted (no test tooling). Not used by the published image.                                              | Documented (kept for compatibility)           |
-| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                    | Lint + coverage gates added; E2E open         |
-| 16  | High     | `src/components/MusicView.tsx`        | Five hooks were called after an early return, so the hook count changed when the player list loaded asynchronously (React throws on that).            | Fixed                                         |
-| 17  | Low      | `package.json`                        | `@testing-library/dom` existed only as an auto-installed peer; any install that resolves peers differently (`--legacy-peer-deps`) silently emptied the test run. | Fixed (explicit devDependency)        |
+| #   | Sev      | Where                                 | Problem                                                                                                                                                          | Status                                        |
+| --- | -------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| 1   | Critical | `server.js` upgrade handler           | Transport hard-coded to `http` with port `80`; an `https://` HA URL could never upgrade. Also forwarded browser cookies and had no timeout/cleanup.              | Fixed                                         |
+| 2   | Critical | `haRequest()` (voice, service bridge) | Same hard-coded `http`/`80`, so HTTPS Home Assistant installs broke on `/beacon-action/service` and `/beacon-action/voice`.                                      | Fixed                                         |
+| 3   | High     | `proxyToHA()`                         | Body buffered without a limit, no upstream timeout, could answer twice after a client abort.                                                                     | Fixed                                         |
+| 4   | High     | `handleVoiceAction()`                 | Read the raw body with no size limit (`chunks` unbounded) — trivial memory exhaustion.                                                                           | Fixed                                         |
+| 5   | High     | `/beacon-data` PUT                    | `writeFile` in place: a crash mid-write left truncated JSON that then read back as corrupt.                                                                      | Fixed (temp file + rename)                    |
+| 6   | High     | `/beacon-data` GET                    | Malformed stored JSON surfaced as a raw error message / inconsistent status.                                                                                     | Fixed (typed `CORRUPT_STORE`, stable message) |
+| 7   | High     | All token-bearing endpoints           | No origin check: any web page opened on the wall display could drive `/beacon-action/*` and `/api/*` against HA.                                                 | Fixed (same-origin/native-shell guard)        |
+| 8   | Medium   | `/beacon-action/service`              | `domain`/`service` were interpolated into an HA path unvalidated (`../` traversal into other HA endpoints).                                                      | Fixed                                         |
+| 9   | Medium   | `server.js` structure                 | 829-line monolith that started listening on `require`, so no automated test could exercise it.                                                                   | Fixed (entry + `server/app.cjs`)              |
+| 10  | Medium   | `src/api/beacon-store.ts`             | PUT resolved regardless of `res.ok`, so a rejected write looked successful.                                                                                      | Fixed (typed result + error)                  |
+| 11  | Medium   | `src/api/beacon-store.ts`             | Two saves of one key raced; the slower one landed last on the server.                                                                                            | Fixed (per-key write queue)                   |
+| 12  | Medium   | `src/hooks/useCalendarEvents.ts`      | Calendars fetched one-by-one; a slow earlier response could overwrite a newer range; no cancellation.                                                            | Fixed                                         |
+| 13  | Low      | `src/hooks/useChoreOps.ts`            | REST fallback polled every 30 s even while the tab was hidden.                                                                                                   | Fixed                                         |
+| 14  | Low      | `beacon/` mirror                      | Duplicated tree; `beacon/package.json` had drifted (no test tooling). Not used by the published image.                                                           | Documented (kept for compatibility)           |
+| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                                 | Lint + coverage gates added; E2E open         |
+| 16  | High     | `src/components/MusicView.tsx`        | Five hooks were called after an early return, so the hook count changed when the player list loaded asynchronously (React throws on that).                       | Fixed                                         |
+| 17  | Low      | `package.json`                        | `@testing-library/dom` existed only as an auto-installed peer; any install that resolves peers differently (`--legacy-peer-deps`) silently emptied the test run. | Fixed (explicit devDependency)                |
 
 Oversized modules (see H for what is still open):
 
-| File                              | Lines before | Lines after      |
-| --------------------------------- | ------------ | ---------------- |
-| `src/api/choreops.ts`             | 990          | 588 (split)      |
-| `src/App.tsx`                     | 826          | 762              |
-| `src/components/ChorePlanner.tsx` | 2481         | 2481 (unchanged) |
-| `src/components/SettingsView.tsx` | 2072         | 2072 (unchanged) |
+| File                              | Lines before | Lines after                                    |
+| --------------------------------- | ------------ | ---------------------------------------------- |
+| `src/api/choreops.ts`             | 990          | 588 (split)                                    |
+| `src/components/ChorePlanner.tsx` | 2481         | 1419 (orchestrator) + 1495 in `chore-planner/` |
+| `src/components/SettingsView.tsx` | 2072         | 242 (shell) + 2136 in `settings/`              |
+| `src/App.tsx`                     | 826          | 762                                            |
 
 ---
 
@@ -202,6 +202,60 @@ The empty-state early return sat above five hooks, so the first render after the
 loaded changed the hook count (React throws "Rendered more hooks than during the previous
 render" once players arrive). The return now sits after every hook.
 
+### C10. Planner decomposed (`src/components/chore-planner/`)
+
+```
+ChorePlanner.tsx      orchestration: state, ChoreOps writes, header (1419)
+ChoreBoard.tsx        member + free columns (141)
+ChildView.tsx         one child's goals/chores/history/routines (135)
+MissionView.tsx       missions list, single mission, closing card (118)
+ChoreEditor.tsx       the chore form sheet (265)
+ApprovalDialog.tsx    ConfirmSheet + PinSheet (119)
+sheets.tsx            actions, award, filter, claim, goals, reward sheets (393)
+rows.tsx              TaskRow / RoutineRow / RewardRow (211)
+copy.ts               planner copy via i18n (138)
+form.ts               form value, conversions, formatting, option tables (178)
+```
+
+`src/components/ChorePlanner.tsx` is now a one-line re-export, so the shell and the three
+existing planner test files were untouched by the move. Extracting the rows also removed
+the last inline `render…` helpers, which means the board decides _what_ to show and the
+rows decide _how_ it looks.
+
+### C11. Settings controls extracted (`src/components/settings/`)
+
+`Toggle`, `Segment` and `Slider` moved to `settings/controls.tsx`. Settings had **no tests**
+before this pass, so a smoke suite was added first: the screen renders, all eight sections
+can be opened, and a field change reaches `onUpdateSettings`.
+
+All eight sections are now components behind one shared `SettingsSectionContext`
+(`settings`, `onUpdateSettings`, `t`), and `SettingsView.tsx` is a 242-line nav shell plus
+export/import:
+
+```
+settings/sections/GeneralSection.tsx       170
+settings/sections/AppearanceSection.tsx    155   theme grid, font scale, sidebar, advanced toggles
+settings/sections/CalendarSection.tsx      197   visibility + colour overrides, defaults
+settings/sections/IntegrationsSection.tsx  297   HA status, Grocy, AnyList, lists, photos
+settings/sections/DisplaySection.tsx       192   screen saver, kiosk, kid display
+settings/sections/ChoresSection.tsx         25
+settings/sections/AboutSection.tsx          91   export/import/reset
+settings/sections/FamilySection.tsx        301   state + writes for the family feature
+settings/sections/family/MemberList.tsx    100   the member list
+settings/sections/family/MemberFormView.tsx 380  the add/edit form
+settings/sections/family/RoutineEditor.tsx 245   routine list + routine form
+settings/sections/family/types.ts           50   MemberForm / RoutineFormValue / PersonOption
+settings/controls.tsx                       89   Toggle / Segment / Slider
+settings/sections/context.ts                16   SettingsSectionContext
+```
+
+Each section owns the state that only it uses — the appearance theme list, the calendar
+colour editor id, the display member selection and the integrations todo-list fetch — so the
+screen no longer threads eight unrelated `useState` calls or fetches shared by one section.
+`FamilySection` follows the same rule internally: it keeps the form state, the HA people
+lookup and the routine writes, and the three views under `settings/sections/family/` are
+pure.
+
 ---
 
 ## D. Test report
@@ -210,7 +264,7 @@ Executed on 2026-11-09:
 
 | Suite                     | Command                                    | Result                                                                                 |
 | ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Frontend (Vitest, jsdom)  | `npm test`                                 | **258 passed / 34 files**                                                              |
+| Frontend (Vitest, jsdom)  | `npm test`                                 | **284 passed / 38 files**                                                              |
 | Coverage gate             | `npm run test:coverage`                    | thresholds met                                                                         |
 | Lint                      | `npm run lint`                             | **0 errors / 10 warnings**                                                             |
 | Backend (`node --test`)   | `npm run test:server`                      | **15 passed / 15**                                                                     |
@@ -236,16 +290,27 @@ New tests added:
   `persisted: false` with status, overlapping writes serialised.
 - `src/hooks/useMergedCalendars.test.tsx` (4): local calendar first, events merged by start,
   local events adopt the resolved colour, CRUD routed to the local store vs Home Assistant.
+- `src/components/chore-planner/form.test.ts` (6): task → form value, free chores, prefill
+  from the ChoreOps chore (day keys, window offset, label), empty form, clock/countdown
+  formatting, toast shape.
+- `src/components/SettingsView.test.tsx` (3): first coverage for the settings screen —
+  renders, every section opens, a field change reaches `onUpdateSettings`.
+- `src/components/settings/sections/AppearanceSection.test.tsx` (8): a card per theme plus
+  the automatic entry, exactly one active, a pick updating the setting and the stored theme,
+  the dark-mode window only when enabled, font scale / sidebar / advanced dashboard.
+- `src/components/settings/sections/FamilySection.test.tsx` (9): member list with roles and
+  empty state, add, edit, two-step delete, cancel, the photo-upload error path, a routine
+  saved with its tasks in the arranged order, and routine delete after confirming.
 
 Coverage measured with `npm run test:coverage` (v8):
 
-| Group              | Statements | Branches | Functions | Lines  | Gate |
-| ------------------ | ---------- | -------- | --------- | ------ | ---- |
-| `src/api/**`       | 51.96%     | 52.10%   | 43.96%    | 53.54% | 50 / 50 / 42 / 51 |
-| `src/utils/**`     | 74.35%     | 66.00%   | 69.23%    | 72.91% | 72 / 64 / 67 / 70 |
-| `src/hooks/**`     | 19.20%     | 13.73%   | 18.52%    | 20.38% | not gated |
-| `src/components/**`| 24.46%     | 21.22%   | 20.76%    | 25.84% | not gated |
-| all `src/**`       | 29.70%     | 27.12%   | 23.93%    | 30.74% | not gated |
+| Group               | Statements | Branches | Functions | Lines  | Gate              |
+| ------------------- | ---------- | -------- | --------- | ------ | ----------------- |
+| `src/api/**`        | 51.96%     | 52.10%   | 43.96%    | 53.54% | 50 / 50 / 42 / 51 |
+| `src/utils/**`      | 74.35%     | 66.00%   | 69.23%    | 72.91% | 72 / 64 / 67 / 70 |
+| `src/hooks/**`      | 19.20%     | 13.73%   | 18.52%    | 20.38% | not gated         |
+| `src/components/**` | 24.46%     | 21.22%   | 20.76%    | 25.84% | not gated         |
+| all `src/**`        | 29.70%     | 27.12%   | 23.93%    | 30.74% | not gated         |
 
 The thresholds act as a ratchet on the modules that carry the domain logic; the
 presentational components are reported but not gated yet (see H3).
@@ -295,16 +360,13 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Module splits that are still open** — `ChorePlanner.tsx` (2481) and
-   `SettingsView.tsx` (2072). Both are pure UI moves with no behaviour change, and both are
-   covered by component tests, but they touch the files the product is actively evolving, so
-   they deserve their own PRs:
-   - `ChorePlanner` → `components/chore-planner/{ChoreBoard,MemberColumn,ChoreCard,MissionView,
-     ChoreEditor,RewardPanel,ApprovalDialog}.tsx` + `hooks/` + `utils/`;
-   - `SettingsView` → one component per section (general, appearance, family, calendar,
-     integrations, display, chores, about) sharing one settings context.
+1. **Settings coverage** — the split is finished: `SettingsView.tsx` is a nav shell, every
+   section is its own component, and `FamilySection` is down to state + writes with its three
+   views in `settings/sections/family/`. Appearance and Family now have per-section tests
+   (17 cases); the other six sections still rely on the screen-level smoke suite, so they are
+   the cheapest place to broaden coverage before raising the `src/components/**` gate.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
-   + complete, app reload recovery, against the Docker image with a mocked HA.
+   - complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
    splits land; component tests for the settings and chore flows are the cheapest win.
 4. **Prettier enforcement** — a `format` script exists, but `.prettierrc` was never applied
