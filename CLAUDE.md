@@ -16,10 +16,18 @@ Dockerfile copies **both** `server.js` and `server/`; the runtime image has no
 Commands:
 
 ```bash
-npm test            # Vitest (frontend)
-npm run test:server # node --test server/__tests__/app.test.cjs (backend)
-npm run test:all    # both
+npm test               # Vitest (frontend)
+npm run test:server    # node --test server/__tests__/app.test.cjs (backend)
+npm run test:all       # both
+npm run test:coverage  # v8 coverage + threshold ratchet (src/api, src/utils)
+npm run lint           # ESLint 9 flat config (expect 0 errors)
+npm run format         # Prettier write (not a CI gate yet — see docs/engineering-review.md)
 ```
+
+Dependency note: `@testing-library/dom` is a **peer** dependency of
+`@testing-library/react` and is listed explicitly on purpose. Without it, an install that
+resolves peers differently (e.g. `npm i --legacy-peer-deps`) drops it, every test file
+fails to collect, and the suite reports "no tests" instead of failing loudly.
 
 Backend rules that are easy to break:
 

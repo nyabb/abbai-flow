@@ -87,16 +87,18 @@ Severity is about impact on users of the shipped add-on image.
 | 12  | Medium   | `src/hooks/useCalendarEvents.ts`      | Calendars fetched one-by-one; a slow earlier response could overwrite a newer range; no cancellation.                                               | Fixed                                         |
 | 13  | Low      | `src/hooks/useChoreOps.ts`            | REST fallback polled every 30 s even while the tab was hidden.                                                                                      | Fixed                                         |
 | 14  | Low      | `beacon/` mirror                      | Duplicated tree; `beacon/package.json` had drifted (no test tooling). Not used by the published image.                                              | Documented (kept for compatibility)           |
-| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                    | Open — see H                                  |
+| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                    | Lint + coverage gates added; E2E open         |
+| 16  | High     | `src/components/MusicView.tsx`        | Five hooks were called after an early return, so the hook count changed when the player list loaded asynchronously (React throws on that).            | Fixed                                         |
+| 17  | Low      | `package.json`                        | `@testing-library/dom` existed only as an auto-installed peer; any install that resolves peers differently (`--legacy-peer-deps`) silently emptied the test run. | Fixed (explicit devDependency)        |
 
-Oversized modules (unchanged in this pass, see H for the plan):
+Oversized modules (see H for what is still open):
 
-| File                              | Lines |
-| --------------------------------- | ----- |
-| `src/components/ChorePlanner.tsx` | 2481  |
-| `src/components/SettingsView.tsx` | 2072  |
-| `src/api/choreops.ts`             | 887   |
-| `src/App.tsx`                     | 826   |
+| File                              | Lines before | Lines after      |
+| --------------------------------- | ------------ | ---------------- |
+| `src/api/choreops.ts`             | 990          | 588 (split)      |
+| `src/App.tsx`                     | 826          | 762              |
+| `src/components/ChorePlanner.tsx` | 2481         | 2481 (unchanged) |
+| `src/components/SettingsView.tsx` | 2072         | 2072 (unchanged) |
 
 ---
 
@@ -173,6 +175,33 @@ Oversized modules (unchanged in this pass, see H for the plan):
 - `useChoreOps` REST polling skips ticks while `document.hidden` and refreshes immediately
   on `visibilitychange`.
 
+### C7. Domain layer split (`src/api/choreops.ts`)
+
+The 990-line module is now parsing/normalisation plus two focused modules behind an
+unchanged public API:
+
+```
+src/api/choreops.ts            parsing + normalisation (588 lines)
+src/api/choreops/members.ts    user ⇄ family member resolution
+src/api/choreops/payloads.ts   schedules, create/update payloads, offsets, grouping
+```
+
+`choreops.ts` re-exports both, so every `from '../api/choreops'` import kept working
+unchanged (verified by the existing 79 API tests).
+
+### C8. App shell orchestration (`src/App.tsx`)
+
+Calendar orchestration moved out of the shell into `src/hooks/useMergedCalendars.ts`:
+local calendar + HA calendars are merged in one place and create/update/delete are routed by
+calendar id. The shell now renders instead of orchestrating, and the routing rules gained
+their own tests.
+
+### C9. MusicView hook-order bug (issue 16)
+
+The empty-state early return sat above five hooks, so the first render after the player list
+loaded changed the hook count (React throws "Rendered more hooks than during the previous
+render" once players arrive). The return now sits after every hook.
+
 ---
 
 ## D. Test report
@@ -181,7 +210,9 @@ Executed on 2026-11-09:
 
 | Suite                     | Command                                    | Result                                                                                 |
 | ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Frontend (Vitest, jsdom)  | `npm test`                                 | **254 passed / 33 files**                                                              |
+| Frontend (Vitest, jsdom)  | `npm test`                                 | **258 passed / 34 files**                                                              |
+| Coverage gate             | `npm run test:coverage`                    | thresholds met                                                                         |
+| Lint                      | `npm run lint`                             | **0 errors / 10 warnings**                                                             |
 | Backend (`node --test`)   | `npm run test:server`                      | **15 passed / 15**                                                                     |
 | Type check                | `npx tsc --noEmit`                         | clean                                                                                  |
 | Production build          | `npm run build`                            | success (`dist/`)                                                                      |
@@ -203,9 +234,21 @@ New tests added:
   concurrency (peak ≤ 6), stale-range suppression.
 - `src/api/beacon-store.test.ts` (existing file extended): rejected HTTP write reported as
   `persisted: false` with status, overlapping writes serialised.
+- `src/hooks/useMergedCalendars.test.tsx` (4): local calendar first, events merged by start,
+  local events adopt the resolved colour, CRUD routed to the local store vs Home Assistant.
 
-Coverage reporting (`vitest --coverage`) is available but no threshold is enforced yet
-(see H).
+Coverage measured with `npm run test:coverage` (v8):
+
+| Group              | Statements | Branches | Functions | Lines  | Gate |
+| ------------------ | ---------- | -------- | --------- | ------ | ---- |
+| `src/api/**`       | 51.96%     | 52.10%   | 43.96%    | 53.54% | 50 / 50 / 42 / 51 |
+| `src/utils/**`     | 74.35%     | 66.00%   | 69.23%    | 72.91% | 72 / 64 / 67 / 70 |
+| `src/hooks/**`     | 19.20%     | 13.73%   | 18.52%    | 20.38% | not gated |
+| `src/components/**`| 24.46%     | 21.22%   | 20.76%    | 25.84% | not gated |
+| all `src/**`       | 29.70%     | 27.12%   | 23.93%    | 30.74% | not gated |
+
+The thresholds act as a ratchet on the modules that carry the domain logic; the
+presentational components are reported but not gated yet (see H3).
 
 ---
 
@@ -252,22 +295,29 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Lint + format gate** — add `eslint`, `typescript-eslint`, `eslint-plugin-react-hooks`,
-   `prettier` and a `lint` script, then a CI step. Not added here because it requires new
-   devDependencies and a repo-wide format pass; doing it blindly in the same change would
-   bury the reliability fixes in noise.
-2. **Split the three large modules** (safe order): `ChorePlanner` → board/card/mission/
-   editor/reward + `hooks/`, then `SettingsView` → one component per section, then
-   `choreops.ts` → `parse`/`normalise`/`actions`/`resolve` with an index barrel. Each step
-   is behaviour-preserving and already covered by the existing tests.
-3. **Coverage gate** — `vitest --coverage` with thresholds on `src/api`, `src/hooks`,
-   `src/utils`; backend coverage via `node --test --experimental-test-coverage`.
-4. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore
-   create + complete, app reload recovery, against the Docker image with a mocked HA.
+1. **Module splits that are still open** — `ChorePlanner.tsx` (2481) and
+   `SettingsView.tsx` (2072). Both are pure UI moves with no behaviour change, and both are
+   covered by component tests, but they touch the files the product is actively evolving, so
+   they deserve their own PRs:
+   - `ChorePlanner` → `components/chore-planner/{ChoreBoard,MemberColumn,ChoreCard,MissionView,
+     ChoreEditor,RewardPanel,ApprovalDialog}.tsx` + `hooks/` + `utils/`;
+   - `SettingsView` → one component per section (general, appearance, family, calendar,
+     integrations, display, chores, about) sharing one settings context.
+2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
+   + complete, app reload recovery, against the Docker image with a mocked HA.
+3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
+   splits land; component tests for the settings and chore flows are the cheapest win.
+4. **Prettier enforcement** — a `format` script exists, but `.prettierrc` was never applied
+   repo-wide. Running `prettier --write .` is a mechanical but very large diff; do it as a
+   standalone `chore:` commit, then add `format:check` to CI.
 5. **Standalone auth** — optional `BEACON_API_KEY` (header or cookie) that is off by
    default, so existing installs keep working.
 6. **Reduce the mirror** — `beacon/` is unused by the image build; if no installed add-on
    points at it, delete it and keep one source tree. Until then the sync check stays.
-7. **Persistence conflict resolution** — `saveData` serialises per key in one tab; two
-   tabs still last-write-wins. A version counter in the document would make conflicts
+7. **Persistence conflict resolution** — `saveData` serialises per key within one tab; two
+   tabs are still last-write-wins. A version counter in the document would make conflicts
    detectable.
+8. **Remaining lint warnings (10)** — four `react-hooks/exhaustive-deps` (one is a genuine
+   stale-ref cleanup in `Timer`/`DashboardGridStack`), three `react-refresh` warnings from
+   files that export helpers next to components, one unused `eslint-disable`. They are
+   warnings rather than errors because each needs a behavioural check, not a mechanical fix.

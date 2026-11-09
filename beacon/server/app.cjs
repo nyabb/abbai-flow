@@ -18,16 +18,13 @@
 
 const http = require('http');
 const https = require('https');
-const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
-const crypto = require('crypto');
+const { randomBytes } = require('crypto');
 const WebSocket = require('ws');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
-/** A body over the limit is drained for at most this long before we give up. */
-const BODY_DRAIN_MS = 2000;
 /** Proxied REST requests are abandoned after this long. */
 const PROXY_TIMEOUT_MS = 30000;
 /** A WebSocket upgrade must be established within this window. */
@@ -686,7 +683,7 @@ async function writeDataFile(filePath, contents) {
   const dir = path.dirname(filePath);
   const tmp = path.join(
     dir,
-    `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`,
+    `.${path.basename(filePath)}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`,
   );
   try {
     await fsp.writeFile(tmp, contents, 'utf8');

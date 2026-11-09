@@ -27,3 +27,6 @@ docs/video/raw/
 # Reference recordings are large; keep them out of git.
 docs/video/*.mov
 docs/video/*.mp4
+
+coverage/*
+coverage/
