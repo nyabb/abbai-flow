@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { saveData, loadData } from './beacon-store';
+import { saveData, loadData, PersistenceError } from './beacon-store';
 
 /**
  * Regression guard for a data-loss bug in proxy deployments (add-on and
@@ -49,8 +49,47 @@ describe('saveData', () => {
     );
     (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
 
-    await expect(saveData('beacon_test_members', [{ id: '2' }])).resolves.toBeUndefined();
+    const result = await saveData('beacon_test_members', [{ id: '2' }]);
+    expect(result.cached).toBe(true);
+    expect(result.persisted).toBe(false);
+    expect(result.error).toBeInstanceOf(PersistenceError);
     expect(JSON.parse(localStorage.getItem('beacon_test_members') ?? '[]')).toEqual([{ id: '2' }]);
+  });
+
+  it('reports a rejected server write instead of claiming success', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, status: 500 }) as unknown as Response),
+    );
+    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+
+    const result = await saveData('beacon_test_http', [{ id: '3' }]);
+    expect(result).toMatchObject({ cached: true, persisted: false });
+    expect(result.error?.status).toBe(500);
+  });
+
+  it('serialises overlapping writes so the last save wins on the server', async () => {
+    const bodies: string[] = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        // The second request is slower; without serialisation it would finish
+        // last and leave the older document on the server.
+        const payload = String(init?.body ?? '');
+        await new Promise((resolve) => setTimeout(resolve, payload.includes('second') ? 2 : 8));
+        bodies.push(payload);
+        return { ok: true, status: 200 } as unknown as Response;
+      }),
+    );
+    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+
+    await Promise.all([
+      saveData('beacon_test_order', [{ id: 'first' }]),
+      saveData('beacon_test_order', [{ id: 'second' }]),
+    ]);
+
+    expect(bodies).toHaveLength(2);
+    expect(bodies.at(-1)).toContain('second');
   });
 
   it('falls back to the cached document when the server read fails', async () => {
