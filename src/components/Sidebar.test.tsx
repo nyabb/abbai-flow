@@ -76,7 +76,7 @@ describe('Sidebar overflow menu', () => {
     expect(onChangeView).not.toHaveBeenCalled();
   });
 
-  it('lists every view that left the bar, and closes after choosing one', () => {
+  it('lists only the views that are not on the bar, and closes after choosing one', () => {
     const onChangeView = vi.fn();
     const { container } = render(
       <I18nContext.Provider value={NL}>
@@ -89,11 +89,11 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toContain('Muziek');
-    expect(entries).toContain('Taken');
-    expect(entries).toContain('Timer');
-    expect(entries).toContain('Weer');
-    expect(entries).toContain('Instellingen');
+    expect(entries).toEqual(['Muziek', 'Timer', 'Weer', 'Instellingen']);
+    // Nothing that already has a slot on the bar may be repeated in the menu.
+    expect(entries).not.toContain('Lijsten');
+    expect(entries).not.toContain("Foto's");
+    expect(entries).not.toContain('Taken');
 
     fireEvent.click(within(menu).getByText('Timer'));
     expect(onChangeView).toHaveBeenCalledWith('timer');

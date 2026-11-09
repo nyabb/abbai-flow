@@ -20,6 +20,40 @@
   flex-shrink: 0;
 }
 
+/* One page, two tabs: the shopping list first, then the adult to-do list. */
+.grocery-view-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 12px;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.grocery-view-tab {
+  appearance: none;
+  border: 0;
+  padding: 8px 18px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.grocery-view-tab.is-active {
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
 .grocery-view-selector {
   position: relative;
   display: inline-flex;
@@ -99,7 +133,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 200ms ease, transform 150ms ease;
+  transition:
+    background 200ms ease,
+    transform 150ms ease;
 }
 
 .grocery-view-add-btn:hover {
@@ -205,9 +241,15 @@
 }
 
 @keyframes grocery-check-bounce {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Item text */
@@ -246,7 +288,9 @@
   color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 150ms ease, color 150ms ease;
+  transition:
+    opacity 150ms ease,
+    color 150ms ease;
   flex-shrink: 0;
 }
 

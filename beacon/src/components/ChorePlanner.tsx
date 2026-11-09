@@ -472,13 +472,11 @@ export function ChorePlanner({
   const [claimTaskId, setClaimTaskId] = useState<string | null>(null);
   /** Child whose detail page is open (the board is the overview). */
   const [childMemberId, setChildMemberId] = useState<string | null>(null);
-  /** Chore just ticked: which goal should its Qudoos go to? */
+  /** Chore just ticked: which goal should its points go to? */
   const [awardTaskId, setAwardTaskId] = useState<string | null>(null);
   /** Members hidden from the board, and routines paused for the day. */
   const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
-  const [pausedRoutineIds, setPausedRoutineIds] = useState<string[]>(() =>
-    readPausedRoutines(),
-  );
+  const [pausedRoutineIds, setPausedRoutineIds] = useState<string[]>(() => readPausedRoutines());
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
   const [pinGate, setPinGate] = useState<{
@@ -708,8 +706,10 @@ export function ChorePlanner({
             <button
               className="planner-primary planner-reward-action"
               onClick={() =>
-                requestPin(c.rewards, reward.name, () =>
-                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
+                requestPin(
+                  c.rewards,
+                  reward.name,
+                  () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
                 )
               }
             >
@@ -840,8 +840,7 @@ export function ChorePlanner({
           !['completed', 'expired'].includes(taskStatus(task)),
       )
       .sort((a, b) => {
-        const late = (task: PlannerTask) =>
-          ['late', 'retry'].includes(taskStatus(task)) ? 0 : 1;
+        const late = (task: PlannerTask) => (['late', 'retry'].includes(taskStatus(task)) ? 0 : 1);
         return late(a) - late(b) || byDeadline(a, b);
       });
 
@@ -852,9 +851,7 @@ export function ChorePlanner({
    */
   const freeTasks = [...data.tasks]
     .filter((task) => task.audience === 'anyone' && taskStatus(task) !== 'completed')
-    .filter(
-      (task, index, all) => all.findIndex((other) => other.name === task.name) === index,
-    )
+    .filter((task, index, all) => all.findIndex((other) => other.name === task.name) === index)
     .sort(byDeadline);
 
   /** Every row of one free chore, i.e. one claim button per child. */
@@ -878,9 +875,7 @@ export function ChorePlanner({
 
   /** Completed chores of one child today (the detail page's history). */
   const completedTasksFor = (memberId: string) =>
-    data.tasks.filter(
-      (task) => task.memberId === memberId && taskStatus(task) === 'completed',
-    );
+    data.tasks.filter((task) => task.memberId === memberId && taskStatus(task) === 'completed');
 
   /** Step to the previous/next child from the detail page. */
   const stepChild = (delta: number) => {
@@ -899,7 +894,7 @@ export function ChorePlanner({
     );
 
   /**
-   * Qudoo asks where the earned Qudoos should go as soon as a chore is ticked.
+   * The award sheet asks where the earned points should go as soon as a chore is ticked.
    * We do the same: complete the chore, then offer this child's goals.
    */
   const awardTask = getTask(awardTaskId);
@@ -1533,7 +1528,7 @@ export function ChorePlanner({
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
         <div className="planner-header-copy">
-          {/* Qudoo-style hero: a small line with the date above the page title. */}
+          {/* Board hero: a small line with the date above the page title. */}
           <span className="planner-eyebrow">
             {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
           </span>
@@ -1669,7 +1664,6 @@ export function ChorePlanner({
                     routines.map((routine) => routineRow(routine))
                   )}
                 </div>
-
               </section>
             );
           })}
@@ -1694,7 +1688,11 @@ export function ChorePlanner({
                 freeTasks.map((task) => renderRow(task))
               )}
             </div>
-            <button type="button" className="planner-col-start planner-col-start--ghost" onClick={() => openNewForm()}>
+            <button
+              type="button"
+              className="planner-col-start planner-col-start--ghost"
+              onClick={() => openNewForm()}
+            >
               <Plus />
               {c.add}
             </button>

@@ -162,9 +162,12 @@ export function App() {
   const [showModal, setShowModal] = useState(false);
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
   const [prefillTime, setPrefillTime] = useState<string | null>(null);
-  const [activeView, setActiveView] = useState<SidebarView>(
-    (settings.defaultView as SidebarView) || 'dashboard',
-  );
+  const [activeView, setActiveView] = useState<SidebarView>(() => {
+    const stored = settings.defaultView as string;
+    // "Tasks" merged into the single lists page; keep older installs working.
+    if (stored === 'tasks') return 'grocery';
+    return (stored as SidebarView) || 'dashboard';
+  });
 
   // Kid Display (focus) mode — URL param wins, then device-local storage
   const [focusMemberId, setFocusMemberId] = useState<string | null>(() => getFocusMemberId());
@@ -471,9 +474,10 @@ export function App() {
   /* Quick add lives in the middle of the tab bar; the chores page listens for a
      create request so "chore" and "routine" open its form directly. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>(
-    { kind: 'chore', token: 0 },
-  );
+  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>({
+    kind: 'chore',
+    token: 0,
+  });
   const requestChoreCreate = useCallback((kind: 'chore' | 'routine') => {
     setActiveView('chores');
     setChoreCreate((previous) => ({ kind, token: previous.token + 1 }));
@@ -563,7 +567,6 @@ export function App() {
       '2': 'calendar',
       '3': 'chores',
       '4': 'grocery',
-      '5': 'tasks',
       '7': 'music',
       '8': 'photos',
       '9': 'timer',
@@ -745,11 +748,8 @@ export function App() {
           ) : activeView === 'grocery' ? (
             <GroceryView
               defaultListId={settings.defaultGroceryList || undefined}
-              mode="grocery"
               groceryListIds={settings.groceryListIds}
             />
-          ) : activeView === 'tasks' ? (
-            <GroceryView mode="tasks" groceryListIds={settings.groceryListIds} />
           ) : activeView === 'timer' ? (
             <div
               style={{

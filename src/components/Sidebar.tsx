@@ -4,7 +4,6 @@ import {
   Calendar,
   ListChecks,
   ShoppingCart,
-  ClipboardList,
   Music,
   Image,
   Settings,
@@ -22,7 +21,6 @@ export type SidebarView =
   | 'calendar'
   | 'chores'
   | 'grocery'
-  | 'tasks'
   | 'music'
   | 'photos'
   | 'timer'
@@ -68,11 +66,6 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: 'nav.grocery',
   },
   {
-    id: 'tasks',
-    icon: <ClipboardList size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
-    labelKey: 'nav.tasks',
-  },
-  {
     id: 'music',
     icon: <Music size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.music',
@@ -98,20 +91,21 @@ const NAV_ITEMS: NavItem[] = [
  * The bar is seven elements with quick add dead centre: three views on the left,
  * the add button, three views on the right. Lists replaces Music in the bar and
  * everything else stays one tap away in the overflow menu.
+ *
+ * The overflow menu only ever holds views that are *not* on the phone bar, so
+ * nothing appears twice: Muziek, Timer, Weer (+ Instellingen). Lists and Tasks
+ * are one page, so Tasks is no longer a separate destination.
  */
 const NAV_LEFT_IDS: SidebarView[] = ['dashboard', 'calendar', 'chores'];
 const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'photos', 'music'];
 /** The right side on phones: the last slot is the overflow menu. */
 const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'photos'];
+/** Everything the phone bar already shows. */
+const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
-const NAV_EXTRA_IDS: SidebarView[] = ['tasks', 'timer', 'weather'];
+const NAV_EXTRA_IDS: SidebarView[] = ['timer', 'weather'];
 
-export function Sidebar({
-  activeView,
-  onChangeView,
-  position = 'left',
-  onQuickAdd,
-}: SidebarProps) {
+export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
@@ -120,6 +114,8 @@ export function Sidebar({
   const navRight = NAV_RIGHT_IDS.map(itemFor);
   const mobileRight = MOBILE_RIGHT_IDS.map(itemFor);
   const navExtra = NAV_EXTRA_IDS.map(itemFor);
+  /** Overflow = every nav item the bar does not already show. */
+  const navMore = NAV_ITEMS.filter((item) => item.id !== 'settings' && !BAR_IDS.includes(item.id));
   const quickAddLabel = t('omniAdd.quickAdd');
 
   const handleMobileNav = (view: SidebarView) => {
@@ -278,7 +274,7 @@ export function Sidebar({
                   <X size={20} strokeWidth={2} />
                 </button>
               </div>
-              {[...navRight, ...navExtra].map((item) => (
+              {navMore.map((item) => (
                 <button
                   key={item.id}
                   type="button"

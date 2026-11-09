@@ -566,6 +566,9 @@ export const ja: Record<TranslationKey, string> = {
   'grocery.completed': '完了済み（{count}）',
   'grocery.deleteItem': 'アイテムを削除',
   'grocery.haList': '{name}（HA）',
+  'grocery.tabsLabel': 'リストの種類',
+  'grocery.tab.grocery': '買い物',
+  'grocery.tab.tasks': 'タスク',
 
   // ---- card picker modal ----
   'cardPicker.title': 'カードを追加',
@@ -722,8 +725,8 @@ export const ja: Record<TranslationKey, string> = {
   'planner.openChild': '開く',
   'planner.filter': 'しぼりこむ',
   'planner.filterTitle': 'なにを表示しますか？',
-  'planner.awardTitle': 'このQudooはどこへ？',
-  'planner.stillNeeded': 'あと{points}Qudoo',
+  'planner.awardTitle': 'このポイントはどこへ？',
+  'planner.stillNeeded': 'あと{points}ポイント',
   'planner.savingsPot': '貯金箱',
   'planner.pausedRoutines': '停止中のルーティン',
   'planner.resumeRoutine': '再開',

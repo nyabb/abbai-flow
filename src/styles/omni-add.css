@@ -38,24 +38,35 @@
 }
 
 @keyframes omni-backdrop-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-/* ---- Action buttons container ---- */
+/* ---- Action buttons container ----
+   Closed = invisible AND inert. It used to be only `opacity: 0`, so the
+   transparent buttons kept taking hits: the More sheet's close X opened the
+   Timer, and Save buttons in the bottom-right of sheets did nothing. */
 .omni-add-actions {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transform: translateY(20px);
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
 }
 
 .omni-add--expanded .omni-add-actions {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
 }
@@ -73,14 +84,17 @@
   -webkit-tap-highlight-color: transparent;
   opacity: 0;
   transform: translateY(16px) scale(0.8);
-  transition: opacity 200ms ease, transform 200ms ease;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
   transition-delay: var(--omni-delay, 0ms);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .omni-add--expanded .omni-add-action {
   opacity: 1;
   transform: translateY(0) scale(1);
+  pointer-events: auto;
 }
 
 .omni-add-action-icon {
@@ -92,8 +106,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.06);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.12),
+    0 1px 4px rgba(0, 0, 0, 0.06);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .omni-add-action:hover .omni-add-action-icon {
@@ -126,8 +144,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease;
   pointer-events: auto;
   -webkit-tap-highlight-color: transparent;
   z-index: 1;

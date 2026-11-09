@@ -50,12 +50,34 @@ export function OmniAdd({
 
   const actions: ActionDef[] = [
     { id: 'timer', label: t('nav.timer'), icon: <Timer size={22} />, handler: onNavigateTimer },
-    { id: 'chore', label: t('omniAdd.chore'), icon: <CheckSquare size={22} />, handler: onAddChore },
+    {
+      id: 'chore',
+      label: t('omniAdd.chore'),
+      icon: <CheckSquare size={22} />,
+      handler: onAddChore,
+    },
     ...(onAddRoutine
-      ? [{ id: 'routine', label: t('omniAdd.routine'), icon: <Repeat size={22} />, handler: onAddRoutine }]
+      ? [
+          {
+            id: 'routine',
+            label: t('omniAdd.routine'),
+            icon: <Repeat size={22} />,
+            handler: onAddRoutine,
+          },
+        ]
       : []),
-    { id: 'grocery', label: t('omniAdd.grocery'), icon: <ShoppingCart size={22} />, handler: onAddGroceryItem },
-    { id: 'event', label: t('omniAdd.event'), icon: <CalendarPlus size={22} />, handler: onAddEvent },
+    {
+      id: 'grocery',
+      label: t('omniAdd.grocery'),
+      icon: <ShoppingCart size={22} />,
+      handler: onAddGroceryItem,
+    },
+    {
+      id: 'event',
+      label: t('omniAdd.event'),
+      icon: <CalendarPlus size={22} />,
+      handler: onAddEvent,
+    },
   ];
 
   const toggle = useCallback(() => {
@@ -112,8 +134,10 @@ export function OmniAdd({
       {/* Backdrop blur overlay */}
       {expanded && <div className="omni-add-backdrop" onClick={() => setExpanded(false)} />}
 
-      {/* Action buttons (fan upward) */}
-      <div className="omni-add-actions" aria-hidden={!expanded}>
+      {/* Action buttons (fan upward). While collapsed they are invisible *and*
+          inert: a transparent button that still takes taps steals them from
+          whatever sits underneath (the More sheet's X, a form's Save button). */}
+      <div className="omni-add-actions" aria-hidden={!expanded} inert={!expanded}>
         {actions.map((action, i) => (
           <button
             key={action.id}
@@ -135,11 +159,13 @@ export function OmniAdd({
         <button
           type="button"
           className="omni-add-fab"
-        onClick={toggle}
+          onClick={toggle}
           aria-label={expanded ? t('omniAdd.closeQuickAdd') : t('omniAdd.quickAdd')}
           aria-expanded={expanded}
         >
-          <span className={`omni-add-fab-icon ${expanded ? 'omni-add-fab-icon--open' : ''}`}>+</span>
+          <span className={`omni-add-fab-icon ${expanded ? 'omni-add-fab-icon--open' : ''}`}>
+            +
+          </span>
         </button>
       )}
     </div>

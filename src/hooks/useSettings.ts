@@ -10,7 +10,7 @@ export interface BeaconSettings {
   // General
   familyName: string;
   saveConfigInBrowser: boolean;
-  defaultView: 'dashboard' | 'calendar' | 'grocery' | 'tasks' | 'music' | 'photos';
+  defaultView: 'dashboard' | 'calendar' | 'grocery' | 'music' | 'photos';
   timeFormat: '12h' | '24h';
   weekStartsOn: 0 | 1; // 0 = Sunday, 1 = Monday
   locale: string;
@@ -19,7 +19,7 @@ export interface BeaconSettings {
   themeId: string;
   autoDarkMode: boolean;
   darkModeStart: string; // "HH:mm"
-  darkModeEnd: string;   // "HH:mm"
+  darkModeEnd: string; // "HH:mm"
   fontScale: 'normal' | 'large' | 'extra-large';
   sidebarPosition: 'left' | 'right' | 'bottom';
 
@@ -48,7 +48,7 @@ export interface BeaconSettings {
 
   // Display
   screenSaverEnabled: boolean;
-  dimTimeout: number;       // minutes
+  dimTimeout: number; // minutes
   screenSaverTimeout: number; // minutes
   alwaysOnDisplay: boolean;
   showSeconds: boolean;
@@ -56,7 +56,7 @@ export interface BeaconSettings {
 
   // Chores
   choresEnabled: boolean;
-  choresResetTime: string;  // "HH:mm"
+  choresResetTime: string; // "HH:mm"
   streakDays: number;
   currencySymbol: string;
   payoutSchedule: 'weekly' | 'monthly';
@@ -129,9 +129,9 @@ async function loadSettingsAsync(): Promise<BeaconSettings> {
   const defaults = buildDefaults();
   const configAllowsBrowserStorage = getConfig().save_config_in_browser;
   const serverStored = await loadServerData<Partial<BeaconSettings>>(STORAGE_KEY);
-  const stored = serverStored ?? (configAllowsBrowserStorage
-    ? loadDataSync<Partial<BeaconSettings>>(STORAGE_KEY, {})
-    : {});
+  const stored =
+    serverStored ??
+    (configAllowsBrowserStorage ? loadDataSync<Partial<BeaconSettings>>(STORAGE_KEY, {}) : {});
   return {
     ...defaults,
     ...stored,
@@ -144,7 +144,11 @@ async function loadSettingsAsync(): Promise<BeaconSettings> {
 function persistSettings(settings: BeaconSettings): void {
   const browserStorage = getConfig().save_config_in_browser && settings.saveConfigInBrowser;
   if (!browserStorage) {
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
   saveData(STORAGE_KEY, settings, { browserStorage });
 }
@@ -188,12 +192,9 @@ export function useSettings() {
   }, [settings, loaded]);
 
   /** Update one or more settings fields. Changes apply immediately. */
-  const updateSettings = useCallback(
-    (patch: Partial<BeaconSettings>) => {
-      setSettingsState((prev) => ({ ...prev, ...patch }));
-    },
-    [],
-  );
+  const updateSettings = useCallback((patch: Partial<BeaconSettings>) => {
+    setSettingsState((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   /** Reset all settings to defaults (merged with config.yaml values). */
   const resetSettings = useCallback(() => {

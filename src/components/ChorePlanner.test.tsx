@@ -135,9 +135,7 @@ function openFirstTaskActions(container: HTMLElement): boolean {
 
 /** The goals sheet of one child opens from their points badge. */
 function openRewards(container: HTMLElement, name = 'Zara') {
-  fireEvent.click(
-    column(container, name).querySelector<HTMLButtonElement>('.planner-col-points')!,
-  );
+  fireEvent.click(column(container, name).querySelector<HTMLButtonElement>('.planner-col-points')!);
 }
 
 describe('ChorePlanner parent PIN gate', () => {
@@ -439,7 +437,11 @@ describe('ChorePlanner completion confirmation', () => {
     // A free chore asks who is taking it — that picker is the confirmation.
     fireEvent.click(freeColumn(container).querySelector('.planner-row-check')!);
     expect(container.textContent).toContain('Wie pakt dit op?');
-    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: 'Zara' }));
+    fireEvent.click(
+      within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', {
+        name: 'Zara',
+      }),
+    );
 
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
@@ -583,16 +585,18 @@ describe('ChorePlanner board', () => {
   });
 
   /*
-   * Qudoo asks where the earned Qudoos should go once a chore is ticked off, so
+   * The award sheet asks where the earned points should go once a chore is ticked off, so
    * the child can push them towards a savings goal instead of a blind balance.
    */
-  it('asks where the Qudoos go after a chore is confirmed', async () => {
+  it('asks where the points go after a chore is confirmed', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 
     fireEvent.click(column(container, 'Zara').querySelector('.planner-row-check')!);
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
-    await waitFor(() => expect(container.textContent).toContain('Waar wil je de Qudoos aan koppelen?'));
+    await waitFor(() =>
+      expect(container.textContent).toContain('Waar wil je de punten aan koppelen?'),
+    );
     expect(container.textContent).toContain('Spaarpot');
     expect(container.textContent).toContain('Schermtijd');
     expect(container.textContent).toContain('Stel een doel in');
@@ -634,7 +638,9 @@ describe('ChorePlanner board', () => {
 
     const row = container.querySelector('.planner-row--routine')!;
     expect(row.className).toContain('is-paused');
-    expect(container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]')).not.toBeNull();
+    expect(
+      container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]'),
+    ).not.toBeNull();
   });
 
   it('opens one child’s goals from their points badge', () => {
@@ -650,7 +656,11 @@ describe('ChorePlanner board', () => {
   it('pre-selects the child whose goals you opened when you set a new goal', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openRewards(container, 'Maya');
-    fireEvent.click(within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', { name: /Stel een doel in/ }));
+    fireEvent.click(
+      within(container.querySelector<HTMLElement>('.planner-sheet')!).getByRole('button', {
+        name: /Stel een doel in/,
+      }),
+    );
 
     const selected = container.querySelectorAll('.planner-member-picker button.is-selected');
     expect(selected).toHaveLength(1);
