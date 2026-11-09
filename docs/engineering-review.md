@@ -97,7 +97,7 @@ Oversized modules (see H for what is still open):
 | --------------------------------- | ------------ | ---------------------------------------------- |
 | `src/api/choreops.ts`             | 990          | 588 (split)                                    |
 | `src/components/ChorePlanner.tsx` | 2481         | 1419 (orchestrator) + 1495 in `chore-planner/` |
-| `src/components/SettingsView.tsx` | 2072         | 1103 (split) + 1113 in `settings/`           |
+| `src/components/SettingsView.tsx` | 2072         | 242 (shell) + 2136 in `settings/`              |
 | `src/App.tsx`                     | 826          | 762                                            |
 
 ---
@@ -228,6 +228,27 @@ rows decide _how_ it looks.
 before this pass, so a smoke suite was added first: the screen renders, all eight sections
 can be opened, and a field change reaches `onUpdateSettings`.
 
+All eight sections are now components behind one shared `SettingsSectionContext`
+(`settings`, `onUpdateSettings`, `t`), and `SettingsView.tsx` is a 242-line nav shell plus
+export/import:
+
+```
+settings/sections/GeneralSection.tsx       170
+settings/sections/AppearanceSection.tsx    155   theme grid, font scale, sidebar, advanced toggles
+settings/sections/FamilySection.tsx        904   member list, member form, routine editor
+settings/sections/CalendarSection.tsx      197   visibility + colour overrides, defaults
+settings/sections/IntegrationsSection.tsx  297   HA status, Grocy, AnyList, lists, photos
+settings/sections/DisplaySection.tsx       192   screen saver, kiosk, kid display
+settings/sections/ChoresSection.tsx         25
+settings/sections/AboutSection.tsx          91   export/import/reset
+settings/controls.tsx                       89   Toggle / Segment / Slider
+settings/sections/context.ts                16   SettingsSectionContext
+```
+
+Each section owns the state that only it uses — the appearance theme list, the calendar
+colour editor id, the display member selection and the integrations todo-list fetch — so the
+screen no longer threads eight unrelated `useState` calls or fetches shared by one section.
+
 ---
 
 ## D. Test report
@@ -326,12 +347,11 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Settings sections that are still open** — `general`, `appearance`, `calendar`,
-   `integrations`, `display`, `chores` and `about` are now `settings/sections/*.tsx` against a
-   shared `SettingsSectionContext` (settings + update + `t`). What is left in
-   `SettingsView.tsx` (1103 lines) is the nav shell, export/import and the family section
-   (665 lines), which becomes one component with the same context plus `members` and the
-   member CRUD callbacks.
+1. **Settings tests** — the split is finished (`SettingsView.tsx` is a nav shell; every
+   section is its own component), but only the screen-level smoke suite covers it. Next win:
+   per-section tests for `FamilySection` (member CRUD, routine ordering, photo error) and
+   `AppearanceSection` (theme pick, auto-dark times), then `FamilySection` can be split into
+   list / member form / routine editor — it is the last oversized component at 904 lines.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
    - complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
