@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
+    "test:server": "node --test server/__tests__/app.test.cjs",
+    "test:all": "npm run test && npm run test:server",
     "test:coverage": "vitest run --coverage",
     "serve": "vite build && npx serve dist -l 3000",
     "cap:sync": "npm run build && npx cap sync",
