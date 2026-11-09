@@ -96,7 +96,7 @@ Oversized modules (see H for what is still open):
 | File                              | Lines before | Lines after |
 | --------------------------------- | ------------ | ----------- |
 | `src/api/choreops.ts`             | 990          | 588 (split) |
-| `src/components/ChorePlanner.tsx` | 2481         | 2109 (split) + 527 in `chore-planner/` |
+| `src/components/ChorePlanner.tsx` | 2481         | 1607 (orchestrator) + 1305 in `chore-planner/` |
 | `src/components/SettingsView.tsx` | 2072         | 1994 (split) + 106 in `settings/` |
 | `src/App.tsx`                     | 826          | 762         |
 
@@ -205,10 +205,15 @@ render" once players arrive). The return now sits after every hook.
 ### C10. Planner decomposed (`src/components/chore-planner/`)
 
 ```
-ChorePlanner.tsx      orchestration: state, ChoreOps writes, screens (2109)
-copy.ts               planner copy via i18n (138)
-form.ts               form value, conversions, time formatting, option tables (178)
+ChorePlanner.tsx      orchestration: state, ChoreOps writes, sheets container (1607)
+ChoreBoard.tsx        member + free columns (141)
+ChildView.tsx         one child's goals/chores/history/routines (135)
+MissionView.tsx       missions list, single mission, closing card (118)
+ChoreEditor.tsx       the chore form sheet (265)
+ApprovalDialog.tsx    ConfirmSheet + PinSheet (119)
 rows.tsx              TaskRow / RoutineRow / RewardRow (211)
+copy.ts               planner copy via i18n (138)
+form.ts               form value, conversions, formatting, option tables (178)
 ```
 
 `src/components/ChorePlanner.tsx` is now a one-line re-export, so the shell and the three
@@ -320,12 +325,12 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Module splits that are still open** — the planner and settings screens are now folded
-   into per-concern modules, but both files are still large. Next, in this order:
-   - `ChoreBoard.tsx` (the member/free columns) + `ChildView.tsx` + the sheets
-     (`ChoreEditor`, `RewardSheet`, `ClaimSheet`, `FilterSheet`, `ApprovalDialog`);
-   - `settings/sections/*.tsx`, one component per section, sharing a `SettingsSection`
-     context so the props list stops growing.
+1. **Module splits that are still open** — the planner now has board, screens, editor, dialogs,
+   rows, copy and form as separate modules; what is left of its 1607-line orchestrator is the
+   sheet container (`actions`, `award`, `filter`, `claim`, `goals`, `reward-form`,
+   `reward-actions`, ~370 lines) and the header. Measured section sizes in
+   `SettingsView.tsx` for the next pass: family 665, integrations 263, display 169, calendar
+   168, general 159, appearance 130, about 70, chores 21.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
    + complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
