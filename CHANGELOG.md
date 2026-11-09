@@ -1,3 +1,19 @@
+## [1.51.2](https://github.com/nyabb/beacon/compare/v1.51.1...v1.51.2) (2026-11-09)
+
+
+### Bug Fixes
+
+* **deps:** make npm ci install cleanly on CI again ([a6f7aec](https://github.com/nyabb/beacon/commit/a6f7aec20918a200446d4931d2c7a13d6b58b4e7))
+* **music:** call every hook before the empty-state return ([dedc428](https://github.com/nyabb/beacon/commit/dedc4286ac0afab7f5a9d2e7511ef165bbcc055e))
+* **server:** proxy Home Assistant over the configured protocol ([52fd962](https://github.com/nyabb/beacon/commit/52fd96239baa4e491604bfdff20eee121d51f740))
+* **store:** report rejected server writes instead of claiming success ([268d603](https://github.com/nyabb/beacon/commit/268d603397b32fd699bb84540c3eb33a705ac13d))
+
+
+### Performance Improvements
+
+* **calendar:** fetch calendars with bounded concurrency ([f12ca2b](https://github.com/nyabb/beacon/commit/f12ca2ba96bb29337ac875f2d781f333988be9da))
+* **chores:** stop polling while the tab is hidden ([86161bf](https://github.com/nyabb/beacon/commit/86161bf8b2f8a76b88a6d9f144cb7b4e3597121f))
+
 ## [1.51.1](https://github.com/nyabb/beacon/compare/v1.51.0...v1.51.1) (2026-11-09)
 
 
