@@ -1,0 +1,217 @@
+/**
+ * Presentational rows for the planner board.
+ *
+ * These were inline `render…` helpers inside the planner component. They only
+ * need the data they display and the callbacks for their buttons, so they live
+ * separately: the board decides *what* to show, these decide *how* it looks.
+ */
+import { Check } from 'lucide-react';
+import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import type { ChoreOpsReward } from '../../types/choreops';
+import type { PlannerCopy } from './copy';
+
+export interface TaskRowProps {
+  task: PlannerTask;
+  status: string;
+  /** A tap on this row is already in flight. */
+  busy: boolean;
+  online: boolean;
+  copy: PlannerCopy;
+  /** Secondary line under the name, or `null` for a quiet one-line row. */
+  hint: string | null;
+  /** Accessible name for the round button: the action the tap performs. */
+  actionLabel: string;
+  onPrimary: () => void;
+  onMore: () => void;
+}
+
+/** One chore on the board: status button, name, points, actions. */
+export function TaskRow({
+  task,
+  status,
+  busy,
+  online,
+  copy,
+  hint,
+  actionLabel,
+  onPrimary,
+  onMore,
+}: TaskRowProps) {
+  return (
+    <div
+      className={`planner-row planner-row--${status}${
+        task.audience === 'anyone' ? ' planner-row--anyone' : ''
+      }`}
+    >
+      <button
+        type="button"
+        className={`planner-row-check ${status === 'completed' ? 'is-done' : ''}`}
+        aria-label={`${actionLabel}: ${task.name}`}
+        disabled={!online || status === 'upcoming' || busy}
+        onClick={onPrimary}
+      >
+        {busy ? (
+          <span className="planner-spinner" />
+        ) : status === 'completed' ? (
+          <Check />
+        ) : task.audience === 'anyone' ? (
+          <span aria-hidden="true">{'\u270B'}</span>
+        ) : null}
+      </button>
+      <span className="planner-row-name">
+        {task.name}
+        {hint && <small>{hint}</small>}
+      </span>
+      {task.points > 0 && (
+        <span className="planner-row-points">
+          <span aria-hidden="true">{'\u{1F3C6}'}</span>
+          {task.points}
+        </span>
+      )}
+      <button
+        type="button"
+        className="planner-row-more"
+        aria-label={`${copy.action}: ${task.name}`}
+        onClick={onMore}
+      >
+        {'\u22ef'}
+      </button>
+    </div>
+  );
+}
+
+export interface RoutineRowProps {
+  routine: PlannerRoutine;
+  paused: boolean;
+  /** "Ochtend · dagelijks". */
+  label: string;
+  /** How far through its part of the day the routine is, 0–100. */
+  progress: number;
+  copy: PlannerCopy;
+  onToggle: () => void;
+}
+
+/**
+ * A routine row: name, its part of the day, progress, and a pause/resume tap.
+ * A paused routine stays visible but greyed out, so a parent can see it is off
+ * and bring it back with one tap.
+ */
+export function RoutineRow({ routine, paused, label, progress, copy, onToggle }: RoutineRowProps) {
+  return (
+    <div className={`planner-row planner-row--routine ${paused ? 'is-paused' : ''}`}>
+      <span className="planner-row-icon" aria-hidden="true">
+        {routine.icon}
+      </span>
+      <span className="planner-row-name">
+        {routine.fallback ? copy.otherDaily : routine.name}
+        <small>{paused ? copy.paused : label}</small>
+      </span>
+      {!paused && (
+        <span className="planner-row-progress" aria-hidden="true">
+          <i style={{ width: `${progress}%` }} />
+        </span>
+      )}
+      <button
+        type="button"
+        className="planner-row-more"
+        aria-label={`${paused ? copy.resumeRoutine : copy.pauseRoutine}: ${routine.name}`}
+        onClick={onToggle}
+      >
+        {paused ? '\u25B6' : '\u23F8'}
+      </button>
+    </div>
+  );
+}
+
+export interface RewardRowProps {
+  reward: ChoreOpsReward;
+  /** Points set aside for this reward in Beacon. */
+  reserved: boolean;
+  saved: number;
+  available: boolean;
+  pending: boolean;
+  affordable: boolean;
+  saving: boolean;
+  copy: PlannerCopy;
+  onUndo: () => void;
+  onConfirm: () => void;
+  onApprove: () => void;
+  onAssign: () => void;
+  onMore: () => void;
+}
+
+/** A reward row: progress towards the goal plus its actions. */
+export function RewardRow({
+  reward,
+  reserved,
+  saved,
+  available,
+  pending,
+  affordable,
+  saving,
+  copy,
+  onUndo,
+  onConfirm,
+  onApprove,
+  onAssign,
+  onMore,
+}: RewardRowProps) {
+  return (
+    <div className="planner-reward">
+      <span aria-hidden="true">{'\u{1F381}'}</span>
+      <div className="planner-reward-copy">
+        <strong>{reward.name}</strong>
+        <small>
+          {reserved
+            ? copy.assigned
+            : `${saved} / ${reward.cost} ${copy.pointsUnit}${
+                pending ? ` \u00b7 ${copy.claimed}` : available ? '' : ` \u00b7 ${copy.locked}`
+              }`}
+        </small>
+        <i>
+          <b
+            style={{
+              width: `${reserved ? 100 : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
+            }}
+          />
+        </i>
+      </div>
+      <div className="planner-reward-actions">
+        {reserved ? (
+          <>
+            <button className="planner-ghost planner-reward-action" onClick={onUndo}>
+              {copy.undoShort}
+            </button>
+            <button
+              className="planner-primary planner-reward-action"
+              disabled={saving}
+              onClick={onConfirm}
+            >
+              {copy.confirm}
+            </button>
+          </>
+        ) : pending ? (
+          <button className="planner-primary planner-reward-action" onClick={onApprove}>
+            {copy.confirm}
+          </button>
+        ) : (
+          <button
+            className="planner-ghost planner-reward-action"
+            disabled={!available || !affordable}
+            onClick={onAssign}
+          >
+            {copy.assign}
+          </button>
+        )}
+        <button
+          type="button"
+          className="planner-task-more"
+          aria-label={`${copy.action}: ${reward.name}`}
+          onClick={onMore}
+        >
+          {'\u22ef'}
+        </button>
+      </div>
+    </div>
+  );
+}

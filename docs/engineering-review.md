@@ -93,12 +93,12 @@ Severity is about impact on users of the shipped add-on image.
 
 Oversized modules (see H for what is still open):
 
-| File                              | Lines before | Lines after      |
-| --------------------------------- | ------------ | ---------------- |
-| `src/api/choreops.ts`             | 990          | 588 (split)      |
-| `src/App.tsx`                     | 826          | 762              |
-| `src/components/ChorePlanner.tsx` | 2481         | 2481 (unchanged) |
-| `src/components/SettingsView.tsx` | 2072         | 2072 (unchanged) |
+| File                              | Lines before | Lines after |
+| --------------------------------- | ------------ | ----------- |
+| `src/api/choreops.ts`             | 990          | 588 (split) |
+| `src/components/ChorePlanner.tsx` | 2481         | 2109 (split) + 527 in `chore-planner/` |
+| `src/components/SettingsView.tsx` | 2072         | 1994 (split) + 106 in `settings/` |
+| `src/App.tsx`                     | 826          | 762         |
 
 ---
 
@@ -202,6 +202,26 @@ The empty-state early return sat above five hooks, so the first render after the
 loaded changed the hook count (React throws "Rendered more hooks than during the previous
 render" once players arrive). The return now sits after every hook.
 
+### C10. Planner decomposed (`src/components/chore-planner/`)
+
+```
+ChorePlanner.tsx      orchestration: state, ChoreOps writes, screens (2109)
+copy.ts               planner copy via i18n (138)
+form.ts               form value, conversions, time formatting, option tables (178)
+rows.tsx              TaskRow / RoutineRow / RewardRow (211)
+```
+
+`src/components/ChorePlanner.tsx` is now a one-line re-export, so the shell and the three
+existing planner test files were untouched by the move. Extracting the rows also removed
+the last inline `render…` helpers, which means the board decides *what* to show and the
+rows decide *how* it looks.
+
+### C11. Settings controls extracted (`src/components/settings/`)
+
+`Toggle`, `Segment` and `Slider` moved to `settings/controls.tsx`. Settings had **no tests**
+before this pass, so a smoke suite was added first: the screen renders, all eight sections
+can be opened, and a field change reaches `onUpdateSettings`.
+
 ---
 
 ## D. Test report
@@ -210,7 +230,7 @@ Executed on 2026-11-09:
 
 | Suite                     | Command                                    | Result                                                                                 |
 | ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Frontend (Vitest, jsdom)  | `npm test`                                 | **258 passed / 34 files**                                                              |
+| Frontend (Vitest, jsdom)  | `npm test`                                 | **267 passed / 36 files**                                                              |
 | Coverage gate             | `npm run test:coverage`                    | thresholds met                                                                         |
 | Lint                      | `npm run lint`                             | **0 errors / 10 warnings**                                                             |
 | Backend (`node --test`)   | `npm run test:server`                      | **15 passed / 15**                                                                     |
@@ -236,6 +256,11 @@ New tests added:
   `persisted: false` with status, overlapping writes serialised.
 - `src/hooks/useMergedCalendars.test.tsx` (4): local calendar first, events merged by start,
   local events adopt the resolved colour, CRUD routed to the local store vs Home Assistant.
+- `src/components/chore-planner/form.test.ts` (6): task → form value, free chores, prefill
+  from the ChoreOps chore (day keys, window offset, label), empty form, clock/countdown
+  formatting, toast shape.
+- `src/components/SettingsView.test.tsx` (3): first coverage for the settings screen —
+  renders, every section opens, a field change reaches `onUpdateSettings`.
 
 Coverage measured with `npm run test:coverage` (v8):
 
@@ -295,14 +320,12 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Module splits that are still open** — `ChorePlanner.tsx` (2481) and
-   `SettingsView.tsx` (2072). Both are pure UI moves with no behaviour change, and both are
-   covered by component tests, but they touch the files the product is actively evolving, so
-   they deserve their own PRs:
-   - `ChorePlanner` → `components/chore-planner/{ChoreBoard,MemberColumn,ChoreCard,MissionView,
-     ChoreEditor,RewardPanel,ApprovalDialog}.tsx` + `hooks/` + `utils/`;
-   - `SettingsView` → one component per section (general, appearance, family, calendar,
-     integrations, display, chores, about) sharing one settings context.
+1. **Module splits that are still open** — the planner and settings screens are now folded
+   into per-concern modules, but both files are still large. Next, in this order:
+   - `ChoreBoard.tsx` (the member/free columns) + `ChildView.tsx` + the sheets
+     (`ChoreEditor`, `RewardSheet`, `ClaimSheet`, `FilterSheet`, `ApprovalDialog`);
+   - `settings/sections/*.tsx`, one component per section, sharing a `SettingsSection`
+     context so the props list stops growing.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
    + complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
