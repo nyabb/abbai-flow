@@ -185,13 +185,19 @@ describe('FamilySection', () => {
       target: { value: 'Ochtend' },
     });
     // The form starts with one task row; add a second one.
-    fireEvent.change(screen.getByPlaceholderText(t.t('settings.family.taskPlaceholder', { n: 1 })), {
-      target: { value: 'Tanden poetsen' },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText(t.t('settings.family.taskPlaceholder', { n: 1 })),
+      {
+        target: { value: 'Tanden poetsen' },
+      },
+    );
     fireEvent.click(screen.getByText(t.t('settings.family.addTask')));
-    fireEvent.change(screen.getByPlaceholderText(t.t('settings.family.taskPlaceholder', { n: 2 })), {
-      target: { value: 'Aankleden' },
-    });
+    fireEvent.change(
+      screen.getByPlaceholderText(t.t('settings.family.taskPlaceholder', { n: 2 })),
+      {
+        target: { value: 'Aankleden' },
+      },
+    );
     // Move the second task above the first.
     fireEvent.click(screen.getAllByLabelText(t.t('settings.family.moveUp'))[1]);
     fireEvent.click(screen.getByText(t.t('settings.family.saveRoutine')));

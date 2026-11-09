@@ -2,24 +2,25 @@
  * Family settings: the member list, the add/edit form (avatar, photo, colour,
  * PIN, linked HA person and calendars) and the per-member routine editor.
  *
- * All of the form state lives here; the screen only passes the member list and
- * the CRUD callbacks down.
+ * This file owns the state and the writes; the three views live in `./family/`
+ * and are pure — they render props and call back.
  */
 import { useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
-import { ChevronLeft, ListChecks, Pencil, Trash2 } from 'lucide-react';
 import { useChoreOps } from '../../../hooks/useChoreOps';
 import { useRoutines } from '../../../hooks/useRoutines';
+import { normalizePin, type FamilyMember, type Routine } from '../../../types/family';
+import { imageFileToDataUrl } from '../../../utils/member-photo';
+import { MemberFormView } from './family/MemberFormView';
+import { MemberList } from './family/MemberList';
+import { RoutineEditor } from './family/RoutineEditor';
 import {
-  AVATAR_CATEGORIES,
-  MEMBER_COLORS,
-  normalizePin,
-  type FamilyMember,
-  type Routine,
-} from '../../../types/family';
-import { imageFileToDataUrl, resolveMemberPhoto } from '../../../utils/member-photo';
-import { MemberAvatar } from '../../MemberAvatar';
-import { Segment } from '../controls';
+  EMPTY_FORM,
+  type MemberForm,
+  type MemberFormMode,
+  type PersonOption,
+  type RoutineFormValue,
+} from './family/types';
 import type { SettingsSectionContext } from './context';
 
 export interface FamilyCalendarSummary {
@@ -35,30 +36,6 @@ export interface FamilySectionProps extends SettingsSectionContext {
   onRemoveMember: (id: string) => void;
   calendars: FamilyCalendarSummary[];
 }
-
-interface MemberForm {
-  name: string;
-  avatar: string;
-  photo: string;
-  color: string;
-  role: 'parent' | 'child';
-  pin: string;
-  calendar_entity: string;
-  additional_calendar_entities: string[];
-  choreops_user: string;
-}
-
-const EMPTY_FORM: MemberForm = {
-  name: '',
-  avatar: '🧑',
-  photo: '',
-  color: MEMBER_COLORS[0],
-  role: 'child',
-  pin: '',
-  calendar_entity: '',
-  additional_calendar_entities: [],
-  choreops_user: '',
-};
 
 export function FamilySection({
   t,
@@ -81,7 +58,7 @@ export function FamilySection({
     )?.picture ?? null;
 
   /** HA people (incl. non-ChoreOps members such as parents) + ChoreOps users. */
-  const peopleOptions: Array<{ name: string; hasChoreOps: boolean; picture: string | null }> = [
+  const peopleOptions: PersonOption[] = [
     ...choreOpsUsers.map((u) => ({
       name: u.name,
       hasChoreOps: true,
@@ -102,20 +79,16 @@ export function FamilySection({
           m.name.trim().toLowerCase() === target),
     );
   };
+
   const [memberForm, setMemberForm] = useState<MemberForm>(EMPTY_FORM);
-  const [memberFormMode, setMemberFormMode] = useState<'list' | 'add' | 'edit'>('list');
+  const [memberFormMode, setMemberFormMode] = useState<MemberFormMode>('list');
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // ---- Routine editor state ----
   const routinesApi = useRoutines();
   const [routinesFor, setRoutinesFor] = useState<FamilyMember | null>(null);
-  const [routineForm, setRoutineForm] = useState<{
-    id: string | null;
-    name: string;
-    time_of_day: Routine['time_of_day'];
-    tasks: { id: string | null; name: string }[];
-  } | null>(null);
+  const [routineForm, setRoutineForm] = useState<RoutineFormValue | null>(null);
   const [confirmDeleteRoutine, setConfirmDeleteRoutine] = useState<string | null>(null);
 
   const genTaskId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -124,9 +97,9 @@ export function FamilySection({
     if (!routineForm || !routinesFor) return;
     const name = routineForm.name.trim();
     const tasks = routineForm.tasks
-      .map((t) => ({ ...t, name: t.name.trim() }))
-      .filter((t) => t.name.length > 0)
-      .map((t, i) => ({ id: t.id ?? genTaskId(), name: t.name, order: i }));
+      .map((task) => ({ ...task, name: task.name.trim() }))
+      .filter((task) => task.name.length > 0)
+      .map((task, i) => ({ id: task.id ?? genTaskId(), name: task.name, order: i }));
     if (!name || tasks.length === 0) return;
     if (routineForm.id) {
       await routinesApi.updateRoutine(routineForm.id, {
@@ -144,6 +117,45 @@ export function FamilySection({
     }
     setRoutineForm(null);
   }, [routineForm, routinesFor, routinesApi]);
+
+  const handleStartCreateRoutine = useCallback(() => {
+    setRoutineForm({
+      id: null,
+      name: '',
+      time_of_day: 'morning',
+      tasks: [{ id: null, name: '' }],
+    });
+  }, []);
+
+  const handleStartEditRoutine = useCallback((routine: Routine) => {
+    setRoutineForm({
+      id: routine.id,
+      name: routine.name,
+      time_of_day: routine.time_of_day,
+      tasks: [...routine.tasks]
+        .sort((a, b) => a.order - b.order)
+        .map((task) => ({ id: task.id, name: task.name })),
+    });
+  }, []);
+
+  /** Two-step delete: the first click arms the button, the second removes. */
+  const handleDeleteRoutine = useCallback(
+    (id: string) => {
+      if (confirmDeleteRoutine === id) {
+        routinesApi.removeRoutine(id);
+        setConfirmDeleteRoutine(null);
+      } else {
+        setConfirmDeleteRoutine(id);
+        setTimeout(() => setConfirmDeleteRoutine(null), 3000);
+      }
+    },
+    [confirmDeleteRoutine, routinesApi],
+  );
+
+  const handleBackFromRoutines = useCallback(() => {
+    setRoutinesFor(null);
+    setRoutineForm(null);
+  }, []);
 
   // ---- Family member handlers ----
   const handleStartAdd = useCallback(() => {
@@ -235,670 +247,55 @@ export function FamilySection({
     setEditingMember(null);
   }, []);
 
-  /** Member list, routine list or the member form, depending on local state. */
-  const renderFamily = () => {
-    // A photo already published on the linked HA person, if any.
-    const linkedPhoto = personPicture(memberForm.choreops_user);
-
-    if (routinesFor) {
-      const memberRoutines = routinesApi.routines.filter((r) => r.member_id === routinesFor.id);
-      return (
-        <>
-          <h2 className="settings-section-title">
-            <MemberAvatar member={routinesFor} size={24} /> {routinesFor.name}{' '}
-            {t('settings.family.routinesTitleSuffix')}
-          </h2>
-          <p className="settings-section-desc">{t('settings.family.routinesDesc')}</p>
-          <div className="settings-group">
-            <div style={{ padding: '12px 20px 4px' }}>
-              <button
-                type="button"
-                className="settings-btn"
-                onClick={() => {
-                  setRoutinesFor(null);
-                  setRoutineForm(null);
-                }}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 12 }}
-              >
-                <ChevronLeft size={16} /> {t('common.back')}
-              </button>
-            </div>
-            {routineForm === null ? (
-              <>
-                <div className="settings-fm-list">
-                  {memberRoutines.length === 0 && (
-                    <div className="settings-fm-empty">{t('settings.family.routinesEmpty')}</div>
-                  )}
-                  {memberRoutines.map((routine) => (
-                    <div key={routine.id} className="settings-fm-card">
-                      <div className="settings-fm-info">
-                        <div className="settings-fm-name">{routine.name}</div>
-                        <div className="settings-fm-role">
-                          {routine.time_of_day} ·{' '}
-                          {t(
-                            routine.tasks.length === 1
-                              ? 'settings.family.routineTaskCountSingular'
-                              : 'settings.family.routineTaskCountPlural',
-                            { n: routine.tasks.length },
-                          )}
-                        </div>
-                      </div>
-                      <div className="settings-fm-actions">
-                        <button
-                          type="button"
-                          className="settings-fm-btn"
-                          onClick={() =>
-                            setRoutineForm({
-                              id: routine.id,
-                              name: routine.name,
-                              time_of_day: routine.time_of_day,
-                              tasks: [...routine.tasks]
-                                .sort((a, b) => a.order - b.order)
-                                .map((t) => ({ id: t.id, name: t.name })),
-                            })
-                          }
-                          aria-label={t('settings.family.editRoutine', { name: routine.name })}
-                        >
-                          <Pencil size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          className="settings-fm-btn settings-fm-btn--danger"
-                          onClick={() => {
-                            if (confirmDeleteRoutine === routine.id) {
-                              routinesApi.removeRoutine(routine.id);
-                              setConfirmDeleteRoutine(null);
-                            } else {
-                              setConfirmDeleteRoutine(routine.id);
-                              setTimeout(() => setConfirmDeleteRoutine(null), 3000);
-                            }
-                          }}
-                          aria-label={t('settings.family.deleteRoutine', { name: routine.name })}
-                        >
-                          {confirmDeleteRoutine === routine.id ? (
-                            <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#ef4444' }}>
-                              {t('common.sure')}
-                            </span>
-                          ) : (
-                            <Trash2 size={16} />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ padding: '8px 20px 16px' }}>
-                  <button
-                    type="button"
-                    className="settings-btn settings-btn--primary"
-                    onClick={() =>
-                      setRoutineForm({
-                        id: null,
-                        name: '',
-                        time_of_day: 'morning',
-                        tasks: [{ id: null, name: '' }],
-                      })
-                    }
-                  >
-                    {t('settings.family.addRoutine')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="settings-row">
-                  <div className="settings-row-label">{t('settings.family.routineNameLabel')}</div>
-                  <input
-                    type="text"
-                    className="settings-input"
-                    value={routineForm.name}
-                    onChange={(e) => setRoutineForm((f) => f && { ...f, name: e.target.value })}
-                    placeholder={t('settings.family.routineNamePlaceholder')}
-                    autoFocus
-                  />
-                </div>
-                <div className="settings-row">
-                  <div className="settings-row-label">{t('settings.family.timeOfDayLabel')}</div>
-                  <Segment
-                    value={routineForm.time_of_day}
-                    options={[
-                      { value: 'morning', label: t('settings.family.morning') },
-                      { value: 'afternoon', label: t('settings.family.afternoon') },
-                      { value: 'evening', label: t('settings.family.evening') },
-                    ]}
-                    onChange={(v) => setRoutineForm((f) => f && { ...f, time_of_day: v })}
-                  />
-                </div>
-                <div className="settings-row" style={{ alignItems: 'flex-start' }}>
-                  <div className="settings-row-label" style={{ paddingTop: 4 }}>
-                    {t('settings.family.tasksLabel')}
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                      flex: 1,
-                      maxWidth: 340,
-                    }}
-                  >
-                    {routineForm.tasks.map((task, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          className="settings-input"
-                          value={task.name}
-                          placeholder={t('settings.family.taskPlaceholder', { n: i + 1 })}
-                          onChange={(e) =>
-                            setRoutineForm((f) => {
-                              if (!f) return f;
-                              const tasks = [...f.tasks];
-                              tasks[i] = { ...tasks[i], name: e.target.value };
-                              return { ...f, tasks };
-                            })
-                          }
-                        />
-                        <button
-                          type="button"
-                          className="settings-fm-btn"
-                          disabled={i === 0}
-                          aria-label={t('settings.family.moveUp')}
-                          onClick={() =>
-                            setRoutineForm((f) => {
-                              if (!f || i === 0) return f;
-                              const tasks = [...f.tasks];
-                              [tasks[i - 1], tasks[i]] = [tasks[i], tasks[i - 1]];
-                              return { ...f, tasks };
-                            })
-                          }
-                        >
-                          ↑
-                        </button>
-                        <button
-                          type="button"
-                          className="settings-fm-btn"
-                          disabled={i === routineForm.tasks.length - 1}
-                          aria-label={t('settings.family.moveDown')}
-                          onClick={() =>
-                            setRoutineForm((f) => {
-                              if (!f || i === f.tasks.length - 1) return f;
-                              const tasks = [...f.tasks];
-                              [tasks[i], tasks[i + 1]] = [tasks[i + 1], tasks[i]];
-                              return { ...f, tasks };
-                            })
-                          }
-                        >
-                          ↓
-                        </button>
-                        <button
-                          type="button"
-                          className="settings-fm-btn settings-fm-btn--danger"
-                          aria-label={t('settings.family.removeTask')}
-                          onClick={() =>
-                            setRoutineForm((f) => {
-                              if (!f) return f;
-                              return { ...f, tasks: f.tasks.filter((_, j) => j !== i) };
-                            })
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="settings-btn"
-                      style={{ alignSelf: 'flex-start' }}
-                      onClick={() =>
-                        setRoutineForm(
-                          (f) => f && { ...f, tasks: [...f.tasks, { id: null, name: '' }] },
-                        )
-                      }
-                    >
-                      {t('settings.family.addTask')}
-                    </button>
-                  </div>
-                </div>
-                <div style={{ padding: '12px 20px 16px', display: 'flex', gap: 8 }}>
-                  <button
-                    type="button"
-                    className="settings-btn settings-btn--primary"
-                    onClick={handleSaveRoutine}
-                  >
-                    {t('settings.family.saveRoutine')}
-                  </button>
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() => setRoutineForm(null)}
-                  >
-                    {t('common.cancel')}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </>
-      );
-    }
-
+  if (routinesFor) {
     return (
-      <>
-        <h2 className="settings-section-title">{t('settings.family.title')}</h2>
-        <p className="settings-section-desc">{t('settings.family.desc')}</p>
-
-        {memberFormMode === 'list' ? (
-          <div className="settings-group">
-            <div className="settings-fm-list">
-              {members.length === 0 && (
-                <div className="settings-fm-empty">{t('settings.family.empty')}</div>
-              )}
-              {members.map((member) => (
-                <div key={member.id} className="settings-fm-card">
-                  <div
-                    className="settings-fm-avatar"
-                    style={{
-                      backgroundColor: member.color + '22',
-                      border: `2px solid ${member.color}`,
-                    }}
-                  >
-                    <MemberAvatar member={member} />
-                  </div>
-                  <div className="settings-fm-info">
-                    <div className="settings-fm-name">{member.name}</div>
-                    <div className="settings-fm-role">
-                      {member.role === 'parent'
-                        ? t('settings.family.parent')
-                        : t('settings.family.child')}
-                    </div>
-                  </div>
-                  <div className="settings-fm-actions">
-                    <button
-                      type="button"
-                      className="settings-fm-btn"
-                      onClick={() => setRoutinesFor(member)}
-                      aria-label={t('settings.family.routinesFor', { name: member.name })}
-                    >
-                      <ListChecks size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-fm-btn"
-                      onClick={() => handleStartEdit(member)}
-                      aria-label={t('settings.family.editMember', { name: member.name })}
-                    >
-                      <Pencil size={16} />
-                    </button>
-                    <button
-                      type="button"
-                      className={`settings-fm-btn settings-fm-btn--danger`}
-                      onClick={() => handleDeleteMember(member.id)}
-                      aria-label={t('settings.family.deleteMember', { name: member.name })}
-                    >
-                      {confirmDelete === member.id ? (
-                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: '#ef4444' }}>
-                          {t('common.sure')}
-                        </span>
-                      ) : (
-                        <Trash2 size={16} />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ padding: '8px 20px 16px' }}>
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={handleStartAdd}
-              >
-                {t('settings.family.addMember')}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="settings-group">
-            <div style={{ padding: '12px 20px 4px' }}>
-              <button
-                type="button"
-                className="settings-btn"
-                onClick={handleCancelMemberForm}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 12 }}
-              >
-                <ChevronLeft size={16} /> {t('common.back')}
-              </button>
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.family.nameLabel')}</div>
-              <input
-                type="text"
-                className="settings-input"
-                value={memberForm.name}
-                onChange={(e) => setMemberForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder={t('settings.family.namePlaceholder')}
-                autoFocus
-              />
-            </div>
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.family.roleLabel')}</div>
-              <Segment
-                value={memberForm.role}
-                options={[
-                  { value: 'parent', label: t('settings.family.parent') },
-                  { value: 'child', label: t('settings.family.child') },
-                ]}
-                onChange={(v) => setMemberForm((f) => ({ ...f, role: v }))}
-              />
-            </div>
-            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
-              <div className="settings-row-label" style={{ paddingTop: 4 }}>
-                {t('settings.family.avatarLabel')}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 6,
-                  maxWidth: 300,
-                  maxHeight: 220,
-                  overflowY: 'auto',
-                }}
-              >
-                {AVATAR_CATEGORIES.map((cat) => (
-                  <div key={cat.labelKey} style={{ width: '100%' }}>
-                    <div
-                      style={{
-                        fontSize: '0.7rem',
-                        fontWeight: 600,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.03em',
-                        color: 'var(--text-muted)',
-                        margin: '4px 0 2px',
-                      }}
-                    >
-                      {t(cat.labelKey)}
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {cat.emojis.map((emoji) => (
-                        <button
-                          key={emoji}
-                          type="button"
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 8,
-                            border:
-                              memberForm.avatar === emoji
-                                ? '2px solid var(--accent)'
-                                : '1px solid var(--border)',
-                            background: memberForm.avatar === emoji ? 'var(--bg-today)' : 'none',
-                            fontSize: '1.2rem',
-                            cursor: 'pointer',
-                            transition: 'all 150ms ease',
-                          }}
-                          onClick={() => setMemberForm((f) => ({ ...f, avatar: emoji }))}
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
-              <div>
-                <div className="settings-row-label">{t('settings.family.photoLabel')}</div>
-                <div className="settings-row-sublabel">{t('settings.family.photoHint')}</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                {memberForm.photo && (
-                  <img
-                    className="member-photo"
-                    src={resolveMemberPhoto(memberForm.photo)}
-                    alt=""
-                    style={{
-                      width: 48,
-                      height: 48,
-                      border: `2px solid ${memberForm.color}`,
-                      background: memberForm.color + '22',
-                    }}
-                  />
-                )}
-                <label className="settings-btn" style={{ cursor: 'pointer', margin: 0 }}>
-                  {t('settings.family.photoUpload')}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handlePhotoUpload}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-                {linkedPhoto && memberForm.photo !== linkedPhoto && (
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() => setMemberForm((form) => ({ ...form, photo: linkedPhoto }))}
-                  >
-                    {t('settings.family.photoFromHa')}
-                  </button>
-                )}
-                {memberForm.photo && (
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() => setMemberForm((form) => ({ ...form, photo: '' }))}
-                  >
-                    {t('settings.family.photoRemove')}
-                  </button>
-                )}
-              </div>
-            </div>
-            {photoError && (
-              <div className="settings-row">
-                <span style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>
-                  {photoError}
-                </span>
-              </div>
-            )}
-            {/* Always rendered: when the picker vanished entirely it looked
-                like the feature was missing rather than "HA returned nobody". */}
-            <div className="settings-row">
-              <div className="settings-row-label">{t('settings.family.haMembersLabel')}</div>
-              {peopleOptions.length > 0 ? (
-                <select
-                  value={memberForm.choreops_user}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setMemberForm((f) => {
-                      // Keep a hand-written name; adopt the HA name when the
-                      // field is blank or was auto-filled from a previous pick.
-                      const autoNamed = !f.name.trim() || f.name === f.choreops_user;
-                      return {
-                        ...f,
-                        choreops_user: value,
-                        name: value && autoNamed ? value : f.name,
-                      };
-                    });
-                  }}
-                  className="settings-select"
-                >
-                  <option value="">Not linked</option>
-                  {peopleOptions.map((person) => {
-                    const added = isLinkedElsewhere(person.name);
-                    return (
-                      <option key={person.name} value={person.name} disabled={added}>
-                        {person.name}
-                        {person.hasChoreOps ? ' · ChoreOps' : ''}
-                        {added ? ' (already added)' : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-              ) : (
-                <span className="settings-row-sublabel" style={{ maxWidth: 320 }}>
-                  {t('settings.family.haMembersEmpty')}
-                </span>
-              )}
-            </div>
-            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
-              <div className="settings-row-label" style={{ paddingTop: 4 }}>
-                {t('settings.family.colorLabel')}
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {MEMBER_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`settings-color-circle ${memberForm.color === color ? 'settings-color-circle--selected' : ''}`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setMemberForm((f) => ({ ...f, color }))}
-                    aria-label={t('settings.family.selectColor', { color })}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.family.pinLabel')}</div>
-                <div className="settings-row-sublabel">{t('settings.family.pinSublabel')}</div>
-              </div>
-              <input
-                type="password"
-                className="settings-input"
-                style={{ width: 120 }}
-                value={memberForm.pin}
-                onChange={(e) => {
-                  const val = normalizePin(e.target.value);
-                  setMemberForm((f) => ({ ...f, pin: val }));
-                }}
-                placeholder="****"
-                inputMode="numeric"
-                maxLength={6}
-              />
-            </div>
-            <div className="settings-row">
-              <div>
-                <div className="settings-row-label">{t('settings.family.calendarLabel')}</div>
-                <div className="settings-row-sublabel">{t('settings.family.calendarSublabel')}</div>
-              </div>
-              <select
-                className="settings-select"
-                value={memberForm.calendar_entity}
-                onChange={(e) => setMemberForm((f) => ({ ...f, calendar_entity: e.target.value }))}
-              >
-                <option value="">{t('common.none')}</option>
-                {calendars.map((cal) => (
-                  <option key={cal.id} value={cal.id}>
-                    {cal.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div
-              className="settings-row"
-              style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
-            >
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.family.additionalCalendarsLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {t('settings.family.additionalCalendarsSublabel')}
-                </div>
-              </div>
-              {memberForm.additional_calendar_entities.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {memberForm.additional_calendar_entities.map((entityId) => {
-                    const cal = calendars.find((c) => c.id === entityId);
-                    return (
-                      <div
-                        key={entityId}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 8,
-                        }}
-                      >
-                        <span className="settings-row-sublabel">{cal?.name ?? entityId}</span>
-                        <button
-                          type="button"
-                          className="settings-btn"
-                          onClick={() =>
-                            setMemberForm((f) => ({
-                              ...f,
-                              additional_calendar_entities: f.additional_calendar_entities.filter(
-                                (id) => id !== entityId,
-                              ),
-                            }))
-                          }
-                        >
-                          {t('common.remove')}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              <select
-                className="settings-select"
-                value=""
-                onChange={(e) => {
-                  const id = e.target.value;
-                  if (!id) return;
-                  setMemberForm((f) =>
-                    f.additional_calendar_entities.includes(id)
-                      ? f
-                      : {
-                          ...f,
-                          additional_calendar_entities: [...f.additional_calendar_entities, id],
-                        },
-                  );
-                }}
-              >
-                <option value="">{t('settings.family.addAnotherCalendar')}</option>
-                {calendars
-                  .filter(
-                    (cal) =>
-                      cal.id !== memberForm.calendar_entity &&
-                      !memberForm.additional_calendar_entities.includes(cal.id),
-                  )
-                  .map((cal) => (
-                    <option key={cal.id} value={cal.id}>
-                      {cal.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            <div
-              style={{
-                padding: '12px 20px 16px',
-                display: 'flex',
-                gap: 8,
-                justifyContent: 'flex-end',
-              }}
-            >
-              <button type="button" className="settings-btn" onClick={handleCancelMemberForm}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={handleSaveMember}
-                disabled={!memberForm.name.trim()}
-              >
-                {memberFormMode === 'edit'
-                  ? t('settings.family.saveChanges')
-                  : t('settings.family.addMemberBtn')}
-              </button>
-            </div>
-          </div>
-        )}
-      </>
+      <RoutineEditor
+        member={routinesFor}
+        routines={routinesApi.routines.filter((routine) => routine.member_id === routinesFor.id)}
+        form={routineForm}
+        confirmDelete={confirmDeleteRoutine}
+        t={t}
+        onBack={handleBackFromRoutines}
+        onStartCreate={handleStartCreateRoutine}
+        onStartEdit={handleStartEditRoutine}
+        onDelete={handleDeleteRoutine}
+        onChangeForm={setRoutineForm}
+        onSave={handleSaveRoutine}
+      />
     );
-  };
+  }
 
-  return renderFamily();
+  return (
+    <>
+      <h2 className="settings-section-title">{t('settings.family.title')}</h2>
+      <p className="settings-section-desc">{t('settings.family.desc')}</p>
+
+      {memberFormMode === 'list' ? (
+        <MemberList
+          members={members}
+          confirmDelete={confirmDelete}
+          t={t}
+          onOpenRoutines={setRoutinesFor}
+          onEdit={handleStartEdit}
+          onDelete={handleDeleteMember}
+          onAdd={handleStartAdd}
+        />
+      ) : (
+        <MemberFormView
+          form={memberForm}
+          mode={memberFormMode === 'edit' ? 'edit' : 'add'}
+          photoError={photoError}
+          linkedPhoto={personPicture(memberForm.choreops_user)}
+          peopleOptions={peopleOptions}
+          isLinkedElsewhere={isLinkedElsewhere}
+          calendars={calendars}
+          t={t}
+          onChange={setMemberForm}
+          onPhotoUpload={handlePhotoUpload}
+          onCancel={handleCancelMemberForm}
+          onSave={handleSaveMember}
+        />
+      )}
+    </>
+  );
 }

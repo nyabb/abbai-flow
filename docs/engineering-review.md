@@ -235,12 +235,16 @@ export/import:
 ```
 settings/sections/GeneralSection.tsx       170
 settings/sections/AppearanceSection.tsx    155   theme grid, font scale, sidebar, advanced toggles
-settings/sections/FamilySection.tsx        904   member list, member form, routine editor
 settings/sections/CalendarSection.tsx      197   visibility + colour overrides, defaults
 settings/sections/IntegrationsSection.tsx  297   HA status, Grocy, AnyList, lists, photos
 settings/sections/DisplaySection.tsx       192   screen saver, kiosk, kid display
 settings/sections/ChoresSection.tsx         25
 settings/sections/AboutSection.tsx          91   export/import/reset
+settings/sections/FamilySection.tsx        301   state + writes for the family feature
+settings/sections/family/MemberList.tsx    100   the member list
+settings/sections/family/MemberFormView.tsx 380  the add/edit form
+settings/sections/family/RoutineEditor.tsx 245   routine list + routine form
+settings/sections/family/types.ts           50   MemberForm / RoutineFormValue / PersonOption
 settings/controls.tsx                       89   Toggle / Segment / Slider
 settings/sections/context.ts                16   SettingsSectionContext
 ```
@@ -248,6 +252,9 @@ settings/sections/context.ts                16   SettingsSectionContext
 Each section owns the state that only it uses — the appearance theme list, the calendar
 colour editor id, the display member selection and the integrations todo-list fetch — so the
 screen no longer threads eight unrelated `useState` calls or fetches shared by one section.
+`FamilySection` follows the same rule internally: it keeps the form state, the HA people
+lookup and the routine writes, and the three views under `settings/sections/family/` are
+pure.
 
 ---
 
@@ -257,7 +264,7 @@ Executed on 2026-11-09:
 
 | Suite                     | Command                                    | Result                                                                                 |
 | ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Frontend (Vitest, jsdom)  | `npm test`                                 | **267 passed / 36 files**                                                              |
+| Frontend (Vitest, jsdom)  | `npm test`                                 | **284 passed / 38 files**                                                              |
 | Coverage gate             | `npm run test:coverage`                    | thresholds met                                                                         |
 | Lint                      | `npm run lint`                             | **0 errors / 10 warnings**                                                             |
 | Backend (`node --test`)   | `npm run test:server`                      | **15 passed / 15**                                                                     |
@@ -288,6 +295,12 @@ New tests added:
   formatting, toast shape.
 - `src/components/SettingsView.test.tsx` (3): first coverage for the settings screen —
   renders, every section opens, a field change reaches `onUpdateSettings`.
+- `src/components/settings/sections/AppearanceSection.test.tsx` (8): a card per theme plus
+  the automatic entry, exactly one active, a pick updating the setting and the stored theme,
+  the dark-mode window only when enabled, font scale / sidebar / advanced dashboard.
+- `src/components/settings/sections/FamilySection.test.tsx` (9): member list with roles and
+  empty state, add, edit, two-step delete, cancel, the photo-upload error path, a routine
+  saved with its tasks in the arranged order, and routine delete after confirming.
 
 Coverage measured with `npm run test:coverage` (v8):
 
@@ -347,11 +360,11 @@ Remaining assumptions (documented, not changed):
 
 ## H. Remaining recommendations (prioritised)
 
-1. **Settings tests** — the split is finished (`SettingsView.tsx` is a nav shell; every
-   section is its own component), but only the screen-level smoke suite covers it. Next win:
-   per-section tests for `FamilySection` (member CRUD, routine ordering, photo error) and
-   `AppearanceSection` (theme pick, auto-dark times), then `FamilySection` can be split into
-   list / member form / routine editor — it is the last oversized component at 904 lines.
+1. **Settings coverage** — the split is finished: `SettingsView.tsx` is a nav shell, every
+   section is its own component, and `FamilySection` is down to state + writes with its three
+   views in `settings/sections/family/`. Appearance and Family now have per-section tests
+   (17 cases); the other six sections still rely on the screen-level smoke suite, so they are
+   the cheapest place to broaden coverage before raising the `src/components/**` gate.
 2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
    - complete, app reload recovery, against the Docker image with a mocked HA.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the

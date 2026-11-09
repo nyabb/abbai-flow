@@ -32,7 +32,11 @@ function renderSection(overrides: Partial<BeaconSettings> = {}) {
   const t = createI18n('nl');
   const utils = render(
     <I18nContext.Provider value={t}>
-      <AppearanceSection settings={makeSettings(overrides)} onUpdateSettings={onUpdateSettings} t={t.t} />
+      <AppearanceSection
+        settings={makeSettings(overrides)}
+        onUpdateSettings={onUpdateSettings}
+        t={t.t}
+      />
     </I18nContext.Provider>,
   );
   return { ...utils, onUpdateSettings, t };
