@@ -1,7 +1,74 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { CalendarEvent, CalendarInfo, CalendarColorMember, resolveCalendarColor } from '../types';
 import { haFetch, hasToken, callBeaconAction, BeaconActionError } from '../api/ha-rest';
 import { HomeAssistantClient, toWsEventPayload } from '../api/homeassistant';
+import { mapWithConcurrency, isAbortError } from '../utils/bounded-map';
+
+/** How many calendars are queried at the same time. */
+const CALENDAR_CONCURRENCY = 6;
+
+/** Shape of a raw HA calendar event, before normalisation. */
+interface RawCalendarEvent {
+  uid?: string;
+  summary: string;
+  start: string | { dateTime?: string; date?: string };
+  end: string | { dateTime?: string; date?: string };
+  description?: string;
+  location?: string;
+  recurrence_id?: string;
+}
+
+/**
+ * Load one calendar's events and normalise them.
+ *
+ * A failing (or aborted) calendar yields `[]` so the other calendars still
+ * populate the view — one unreadable provider must not blank the dashboard.
+ */
+async function loadCalendarEvents(
+  cal: CalendarInfo,
+  start: string,
+  end: string,
+  signal: AbortSignal,
+): Promise<CalendarEvent[]> {
+  const params = new URLSearchParams({ start, end });
+  try {
+    const result = (await haFetch(`/api/calendars/${cal.id}?${params}`, { signal })) as
+      | RawCalendarEvent[]
+      | null;
+
+    return (result || []).map((ev, index) => {
+      const startStr =
+        typeof ev.start === 'string' ? ev.start : ev.start.dateTime || ev.start.date || '';
+      const endStr = typeof ev.end === 'string' ? ev.end : ev.end.dateTime || ev.end.date || '';
+      const allDay =
+        typeof ev.start === 'string'
+          ? ev.start.length === 10
+          : Boolean(ev.start.date) && !ev.start.dateTime;
+
+      // Prefer a real provider uid. Some calendar integrations don't return
+      // one — fall back to a composite id for keys, but flag it as unstable so
+      // edit/delete (which need a real uid) can be blocked with a clear error.
+      const realUid = ev.uid || ev.recurrence_id;
+
+      return {
+        id: realUid || `${cal.id}-${index}`,
+        title: ev.summary,
+        start: startStr,
+        end: endStr,
+        allDay,
+        description: ev.description,
+        location: ev.location,
+        calendarId: cal.id,
+        calendarName: cal.name,
+        color: cal.color,
+        hasStableId: Boolean(realUid),
+      };
+    });
+  } catch (err) {
+    if (!isAbortError(err)) console.error(`Failed to fetch events for ${cal.name}:`, err);
+    return [];
+  }
+}
 
 /**
  * Re-thrown by createEvent/updateEvent/deleteEvent when HA reports the calendar
@@ -12,14 +79,17 @@ import { HomeAssistantClient, toWsEventPayload } from '../api/homeassistant';
  */
 export class CalendarNotSupportedError extends Error {
   constructor(op: 'create' | 'update' | 'delete') {
-    super(`This calendar does not support event ${op === 'create' ? 'creation' : op === 'update' ? 'editing' : 'deletion'}.`);
+    super(
+      `This calendar does not support event ${op === 'create' ? 'creation' : op === 'update' ? 'editing' : 'deletion'}.`,
+    );
     this.name = 'CalendarNotSupportedError';
   }
 }
 
 function isNotSupported(err: unknown): boolean {
   if (err instanceof BeaconActionError) return err.code === 'not_supported';
-  if (err && typeof err === 'object' && 'code' in err) return (err as { code?: string }).code === 'not_supported';
+  if (err && typeof err === 'object' && 'code' in err)
+    return (err as { code?: string }).code === 'not_supported';
   return false;
 }
 
@@ -47,12 +117,19 @@ export function useCalendarEvents(
   const calendarsRef = useRef<CalendarInfo[]>([]);
   const colorOptionsRef = useRef(colorOptions);
   colorOptionsRef.current = colorOptions;
+  /** Identifies the most recent `fetchEvents` call, so stale responses lose. */
+  const requestIdRef = useRef(0);
+  /** Aborts the previous fan-out when a new range is requested. */
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Drop any in-flight fan-out when the consumer unmounts.
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   const fetchCalendars = useCallback(async () => {
     if (!connected && !hasToken()) return [];
 
     try {
-      const data = await haFetch('/api/calendars') as Array<{ entity_id: string; name: string }>;
+      const data = (await haFetch('/api/calendars')) as Array<{ entity_id: string; name: string }>;
       const cals = data.map((cal, index) => ({
         id: cal.entity_id,
         name: cal.name,
@@ -67,70 +144,47 @@ export function useCalendarEvents(
     }
   }, [connected]);
 
-  const fetchEvents = useCallback(async (start: string, end: string) => {
-    if (!connected && !hasToken()) return;
+  const fetchEvents = useCallback(
+    async (start: string, end: string) => {
+      if (!connected && !hasToken()) return;
 
-    setLoading(true);
-    try {
-      let cals = calendarsRef.current;
-      if (cals.length === 0) {
-        cals = (await fetchCalendars()) || [];
-      }
-      if (cals.length === 0) return;
+      // A new range supersedes the previous fan-out: abort it and tag the results
+      // so a slow calendar can never overwrite a newer fetch.
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      const requestId = requestIdRef.current + 1;
+      requestIdRef.current = requestId;
 
-      const allEvents: CalendarEvent[] = [];
-      for (const cal of cals) {
-        try {
-          const params = new URLSearchParams({ start, end });
-          const result = await haFetch(`/api/calendars/${cal.id}?${params}`) as Array<{
-            uid?: string;
-            summary: string;
-            start: string | { dateTime: string; date: string };
-            end: string | { dateTime: string; date: string };
-            description?: string;
-            location?: string;
-            recurrence_id?: string;
-          }>;
-
-          for (const ev of (result || [])) {
-            const startStr = typeof ev.start === 'string' ? ev.start : (ev.start.dateTime || ev.start.date);
-            const endStr = typeof ev.end === 'string' ? ev.end : (ev.end.dateTime || ev.end.date);
-            const allDay = typeof ev.start === 'string'
-              ? ev.start.length === 10
-              : !!ev.start.date && !ev.start.dateTime;
-
-            // Prefer a real provider uid. Some calendar integrations don't
-            // return one — in that case fall back to a synthetic composite
-            // id for React keys/UI purposes, but flag it as unstable so
-            // edit/delete against HA's calendar services (which require a
-            // real uid) can be blocked with a clear error instead of
-            // silently no-op'ing server-side.
-            const realUid = ev.uid || ev.recurrence_id;
-            allEvents.push({
-              id: realUid || `${cal.id}-${allEvents.length}`,
-              title: ev.summary,
-              start: startStr,
-              end: endStr,
-              allDay,
-              description: ev.description,
-              location: ev.location,
-              calendarId: cal.id,
-              calendarName: cal.name,
-              color: cal.color,
-              hasStableId: !!realUid,
-            });
-          }
-        } catch (err) {
-          console.error(`Failed to fetch events for ${cal.name}:`, err);
+      setLoading(true);
+      try {
+        let cals = calendarsRef.current;
+        if (cals.length === 0) {
+          cals = (await fetchCalendars()) || [];
         }
-      }
+        if (cals.length === 0) return;
 
-      allEvents.sort((a, b) => a.start.localeCompare(b.start));
-      setEvents(allEvents);
-    } finally {
-      setLoading(false);
-    }
-  }, [connected, fetchCalendars]);
+        // Fetch every calendar with bounded concurrency: a household with many
+        // calendars should not serialise N round-trips, and should not flood HA
+        // with N parallel ones either. One failing calendar keeps the rest.
+        const perCalendar = await mapWithConcurrency(
+          cals,
+          CALENDAR_CONCURRENCY,
+          (cal) => loadCalendarEvents(cal, start, end, controller.signal),
+          () => [] as CalendarEvent[],
+        );
+
+        if (requestIdRef.current !== requestId) return;
+
+        const allEvents = perCalendar.flat();
+        allEvents.sort((a, b) => a.start.localeCompare(b.start));
+        setEvents(allEvents);
+      } finally {
+        if (requestIdRef.current === requestId) setLoading(false);
+      }
+    },
+    [connected, fetchCalendars],
+  );
 
   /**
    * Create a new calendar event. HA requires the calendar/event/create WS
@@ -148,35 +202,38 @@ export function useCalendarEvents(
    * CalendarNotSupportedError so callers can detect it and show a clear
    * message instead of a raw error.
    */
-  const createEvent = useCallback(async (
-    calendarId: string,
-    event: {
-      summary: string;
-      start_date_time?: string;
-      end_date_time?: string;
-      start_date?: string;
-      end_date?: string;
-      description?: string;
-      location?: string;
-      rrule?: string;
-    }
-  ) => {
-    try {
-      const client = getClient?.();
-      if (client?.isConnected) {
-        await client.createEvent(calendarId, event);
-      } else {
-        await callBeaconAction('/beacon-action/calendar-event', {
-          op: 'create',
-          entity_id: calendarId,
-          event: toWsEventPayload(event),
-        });
+  const createEvent = useCallback(
+    async (
+      calendarId: string,
+      event: {
+        summary: string;
+        start_date_time?: string;
+        end_date_time?: string;
+        start_date?: string;
+        end_date?: string;
+        description?: string;
+        location?: string;
+        rrule?: string;
+      },
+    ) => {
+      try {
+        const client = getClient?.();
+        if (client?.isConnected) {
+          await client.createEvent(calendarId, event);
+        } else {
+          await callBeaconAction('/beacon-action/calendar-event', {
+            op: 'create',
+            entity_id: calendarId,
+            event: toWsEventPayload(event),
+          });
+        }
+      } catch (err) {
+        if (isNotSupported(err)) throw new CalendarNotSupportedError('create');
+        throw err;
       }
-    } catch (err) {
-      if (isNotSupported(err)) throw new CalendarNotSupportedError('create');
-      throw err;
-    }
-  }, [getClient]);
+    },
+    [getClient],
+  );
 
   /**
    * Update an existing event. HA moved this off the `calendar.update_event`
@@ -196,57 +253,63 @@ export function useCalendarEvents(
    * CalendarNotSupportedError so callers can detect it and offer a
    * delete+recreate fallback instead of showing a raw error.
    */
-  const updateEvent = useCallback(async (
-    calendarId: string,
-    uid: string,
-    event: {
-      summary?: string;
-      start_date_time?: string;
-      end_date_time?: string;
-      start_date?: string;
-      end_date?: string;
-      description?: string;
-    }
-  ) => {
-    try {
-      const client = getClient?.();
-      if (client?.isConnected) {
-        await client.updateEvent(calendarId, uid, event);
-      } else {
-        await callBeaconAction('/beacon-action/calendar-event', {
-          op: 'update',
-          entity_id: calendarId,
-          uid,
-          event: toWsEventPayload(event),
-        });
+  const updateEvent = useCallback(
+    async (
+      calendarId: string,
+      uid: string,
+      event: {
+        summary?: string;
+        start_date_time?: string;
+        end_date_time?: string;
+        start_date?: string;
+        end_date?: string;
+        description?: string;
+      },
+    ) => {
+      try {
+        const client = getClient?.();
+        if (client?.isConnected) {
+          await client.updateEvent(calendarId, uid, event);
+        } else {
+          await callBeaconAction('/beacon-action/calendar-event', {
+            op: 'update',
+            entity_id: calendarId,
+            uid,
+            event: toWsEventPayload(event),
+          });
+        }
+      } catch (err) {
+        if (isNotSupported(err)) throw new CalendarNotSupportedError('update');
+        throw err;
       }
-    } catch (err) {
-      if (isNotSupported(err)) throw new CalendarNotSupportedError('update');
-      throw err;
-    }
-  }, [getClient]);
+    },
+    [getClient],
+  );
 
   /**
    * Delete an event. Same WS-only migration and not-supported handling as
    * updateEvent above — see that doc comment for the full explanation.
    */
-  const deleteEvent = useCallback(async (calendarId: string, uid: string) => {
-    try {
-      const client = getClient?.();
-      if (client?.isConnected) {
-        await client.deleteEvent(calendarId, uid);
-      } else {
-        await callBeaconAction('/beacon-action/calendar-event', {
-          op: 'delete',
-          entity_id: calendarId,
-          uid,
-        });
+  const deleteEvent = useCallback(
+    async (calendarId: string, uid: string) => {
+      try {
+        const client = getClient?.();
+        if (client?.isConnected) {
+          await client.deleteEvent(calendarId, uid);
+        } else {
+          await callBeaconAction('/beacon-action/calendar-event', {
+            op: 'delete',
+            entity_id: calendarId,
+            uid,
+          });
+        }
+      } catch (err) {
+        if (isNotSupported(err)) throw new CalendarNotSupportedError('delete');
+        throw err;
       }
-    } catch (err) {
-      if (isNotSupported(err)) throw new CalendarNotSupportedError('delete');
-      throw err;
-    }
-  }, [getClient]);
+    },
+    [getClient],
+  );
 
   return {
     calendars,
