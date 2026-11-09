@@ -133,7 +133,9 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 200ms ease, transform 150ms ease;
+  transition:
+    background 200ms ease,
+    transform 150ms ease;
 }
 
 .grocery-view-add-btn:hover {
@@ -239,9 +241,15 @@
 }
 
 @keyframes grocery-check-bounce {
-  0%   { transform: scale(1); }
-  40%  { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Item text */
@@ -280,7 +288,9 @@
   color: var(--text-muted);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 150ms ease, color 150ms ease;
+  transition:
+    opacity 150ms ease,
+    color 150ms ease;
   flex-shrink: 0;
 }
 

@@ -476,9 +476,7 @@ export function ChorePlanner({
   const [awardTaskId, setAwardTaskId] = useState<string | null>(null);
   /** Members hidden from the board, and routines paused for the day. */
   const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
-  const [pausedRoutineIds, setPausedRoutineIds] = useState<string[]>(() =>
-    readPausedRoutines(),
-  );
+  const [pausedRoutineIds, setPausedRoutineIds] = useState<string[]>(() => readPausedRoutines());
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
   const [pinGate, setPinGate] = useState<{
@@ -708,8 +706,10 @@ export function ChorePlanner({
             <button
               className="planner-primary planner-reward-action"
               onClick={() =>
-                requestPin(c.rewards, reward.name, () =>
-                  void runLiveAction(reward.id, approveId, reward.name, c.approved),
+                requestPin(
+                  c.rewards,
+                  reward.name,
+                  () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
                 )
               }
             >
@@ -840,8 +840,7 @@ export function ChorePlanner({
           !['completed', 'expired'].includes(taskStatus(task)),
       )
       .sort((a, b) => {
-        const late = (task: PlannerTask) =>
-          ['late', 'retry'].includes(taskStatus(task)) ? 0 : 1;
+        const late = (task: PlannerTask) => (['late', 'retry'].includes(taskStatus(task)) ? 0 : 1);
         return late(a) - late(b) || byDeadline(a, b);
       });
 
@@ -852,9 +851,7 @@ export function ChorePlanner({
    */
   const freeTasks = [...data.tasks]
     .filter((task) => task.audience === 'anyone' && taskStatus(task) !== 'completed')
-    .filter(
-      (task, index, all) => all.findIndex((other) => other.name === task.name) === index,
-    )
+    .filter((task, index, all) => all.findIndex((other) => other.name === task.name) === index)
     .sort(byDeadline);
 
   /** Every row of one free chore, i.e. one claim button per child. */
@@ -878,9 +875,7 @@ export function ChorePlanner({
 
   /** Completed chores of one child today (the detail page's history). */
   const completedTasksFor = (memberId: string) =>
-    data.tasks.filter(
-      (task) => task.memberId === memberId && taskStatus(task) === 'completed',
-    );
+    data.tasks.filter((task) => task.memberId === memberId && taskStatus(task) === 'completed');
 
   /** Step to the previous/next child from the detail page. */
   const stepChild = (delta: number) => {
@@ -1669,7 +1664,6 @@ export function ChorePlanner({
                     routines.map((routine) => routineRow(routine))
                   )}
                 </div>
-
               </section>
             );
           })}
@@ -1694,7 +1688,11 @@ export function ChorePlanner({
                 freeTasks.map((task) => renderRow(task))
               )}
             </div>
-            <button type="button" className="planner-col-start planner-col-start--ghost" onClick={() => openNewForm()}>
+            <button
+              type="button"
+              className="planner-col-start planner-col-start--ghost"
+              onClick={() => openNewForm()}
+            >
               <Plus />
               {c.add}
             </button>
