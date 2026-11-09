@@ -1,3 +1,10 @@
+## [1.51.1](https://github.com/nyabb/beacon/compare/v1.51.0...v1.51.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **chores:** keep member picker avatars at chip size ([c58e7ff](https://github.com/nyabb/beacon/commit/c58e7ffeac2944505bd51622a9361b8ca07fee01))
+
 # [1.51.0](https://github.com/nyabb/beacon/compare/v1.50.0...v1.51.0) (2026-11-09)
 
 
