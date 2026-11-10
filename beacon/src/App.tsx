@@ -27,6 +27,7 @@ import { OmniAdd } from './components/OmniAdd';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { Timer } from './components/Timer';
 import { WeatherView } from './components/WeatherView';
+import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
@@ -688,33 +689,38 @@ export function App() {
               groceryListIds={settings.groceryListIds}
             />
           ) : activeView === 'timer' ? (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                padding: 24,
-              }}
-            >
-              <Timer />
+            <div className="view-page">
+              <PageHeader
+                title={t('nav.timer')}
+                subtitle={format(new Date(), 'EEEE d MMMM', { locale: i18n.dateLocale })}
+                actions={<Clock />}
+              />
+              <div className="view-page-body">
+                <Timer />
+              </div>
             </div>
           ) : activeView === 'weather' ? (
             <WeatherView />
           ) : activeView === 'photos' ? (
-            <PhotoFrame
-              musicPlayer={music.activePlayer}
-              onMusicPlay={() => music.activePlayer && music.play(music.activePlayer.entity_id)}
-              onMusicPause={() => music.activePlayer && music.pause(music.activePlayer.entity_id)}
-              onMusicNext={() => music.activePlayer && music.next(music.activePlayer.entity_id)}
-              onMusicPrevious={() =>
-                music.activePlayer && music.previous(music.activePlayer.entity_id)
-              }
-              onMusicSetVolume={(v) =>
-                music.activePlayer && music.setVolume(v, music.activePlayer.entity_id)
-              }
-              onBack={() => setActiveView('dashboard')}
-            />
+            <div className="view-page">
+              <PageHeader
+                title={t('nav.photos')}
+                subtitle={format(new Date(), 'EEEE d MMMM', { locale: i18n.dateLocale })}
+                onBack={() => setActiveView('dashboard')}
+              />
+              <PhotoFrame
+                musicPlayer={music.activePlayer}
+                onMusicPlay={() => music.activePlayer && music.play(music.activePlayer.entity_id)}
+                onMusicPause={() => music.activePlayer && music.pause(music.activePlayer.entity_id)}
+                onMusicNext={() => music.activePlayer && music.next(music.activePlayer.entity_id)}
+                onMusicPrevious={() =>
+                  music.activePlayer && music.previous(music.activePlayer.entity_id)
+                }
+                onMusicSetVolume={(v) =>
+                  music.activePlayer && music.setVolume(v, music.activePlayer.entity_id)
+                }
+              />
+            </div>
           ) : (
             <>
               {/* Header */}

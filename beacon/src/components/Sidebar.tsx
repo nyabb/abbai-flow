@@ -89,21 +89,22 @@ const NAV_ITEMS: NavItem[] = [
 
 /**
  * The bar is seven elements with quick add dead centre: three views on the left,
- * the add button, three views on the right. Lists replaces Music in the bar and
- * everything else stays one tap away in the overflow menu.
+ * the add button, three views on the right. Timer sits in the bar because it is
+ * reached constantly; Photos moved one tap away into the overflow menu.
  *
  * The overflow menu only ever holds views that are *not* on the phone bar, so
- * nothing appears twice: Muziek, Timer, Weer (+ Instellingen). Lists and Tasks
- * are one page, so Tasks is no longer a separate destination.
+ * nothing appears twice: Muziek, Foto's, Weer (+ Instellingen).
+ * Desktop has no overflow menu, so Photos takes the slot Timer left in the
+ * bottom group, next to Weather and Settings.
  */
 const NAV_LEFT_IDS: SidebarView[] = ['dashboard', 'calendar', 'chores'];
-const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'photos', 'music'];
+const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'timer', 'music'];
 /** The right side on phones: the last slot is the overflow menu. */
-const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'photos'];
+const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'timer'];
 /** Everything the phone bar already shows. */
 const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
-const NAV_EXTRA_IDS: SidebarView[] = ['timer', 'weather'];
+const NAV_EXTRA_IDS: SidebarView[] = ['photos', 'weather'];
 
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();

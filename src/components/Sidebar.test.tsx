@@ -28,19 +28,19 @@ describe('Sidebar bottom bar', () => {
       'Klusjes',
       'Snel toevoegen',
       'Lijsten',
-      "Foto's",
+      'Timer',
       'Meer',
     ]);
   });
 
-  it('offers lists where music used to sit', () => {
+  it('offers the timer in the bar and keeps photos one tap away', () => {
     const { container } = renderSidebar(() => {});
     const labels = [...container.querySelectorAll('.mobile-tab')].map((item) =>
       item.getAttribute('aria-label'),
     );
 
-    expect(labels).toContain('Lijsten');
-    expect(labels).not.toContain('Muziek');
+    expect(labels).toContain('Timer');
+    expect(labels).not.toContain("Foto's");
   });
 
   it('calls quick add from the middle button', () => {
@@ -89,14 +89,35 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(['Muziek', 'Timer', 'Weer', 'Instellingen']);
+    expect(entries).toEqual(['Muziek', "Foto's", 'Weer', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
     expect(entries).not.toContain('Lijsten');
-    expect(entries).not.toContain("Foto's");
+    expect(entries).not.toContain('Timer');
     expect(entries).not.toContain('Taken');
 
-    fireEvent.click(within(menu).getByText('Timer'));
-    expect(onChangeView).toHaveBeenCalledWith('timer');
+    fireEvent.click(within(menu).getByText("Foto's"));
+    expect(onChangeView).toHaveBeenCalledWith('photos');
     expect(container.querySelector('.mobile-more-menu')).toBeNull();
+  });
+});
+
+/**
+ * Desktop has no overflow sheet, so a view that leaves the main group has to
+ * appear somewhere else or it becomes unreachable.
+ */
+describe('Sidebar desktop', () => {
+  it('keeps photos in the bottom group and the timer in the main group', () => {
+    const { container } = renderSidebar(() => {});
+    const main = container.querySelector(
+      '.sidebar--desktop .sidebar-nav-group:not(.sidebar-nav-group--bottom)',
+    )!;
+    const bottom = container.querySelector('.sidebar--desktop .sidebar-nav-group--bottom')!;
+    const labels = (group: Element) =>
+      [...group.querySelectorAll('button')].map((button) => button.getAttribute('aria-label'));
+
+    expect(labels(main)).toContain('Timer');
+    expect(labels(main)).not.toContain("Foto's");
+    expect(labels(bottom)).toContain("Foto's");
+    expect(labels(bottom)).toContain('Instellingen');
   });
 });

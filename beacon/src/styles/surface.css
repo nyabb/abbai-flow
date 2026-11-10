@@ -146,6 +146,71 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+   Page header — the shared band for views that have no topbar of their own
+   (Timer, Photos). Reuses `.beacon-header` so it picks up the skin gradient.
+   --------------------------------------------------------------------------- */
+.page-header {
+  gap: 12px;
+}
+
+.page-header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.page-header-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: inherit;
+}
+
+.page-header-subtitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--skin-band-ink) 72%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+}
+
+/* A page that carries its own header: the band stays put and the view takes
+   whatever height is left, instead of `.beacon-main > *` each being 100%. */
+.beacon-main > .view-page {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-page > .view-page-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* PhotoFrame sets height:100%; inside the column it must flex instead. */
+.view-page > .photo-frame {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+}
+
+/* ---------------------------------------------------------------------------
    Cards: lists, panels, sections
    --------------------------------------------------------------------------- */
 .grocery-view-section,
