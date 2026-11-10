@@ -683,6 +683,8 @@ export const de: Record<TranslationKey, string> = {
   'planner.routineHint':
     'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
   'planner.taskOnceHint': 'Eine Aufgabe passiert einmal. Für Wiederkehrendes eine Routine anlegen.',
+  'planner.onHold': 'Zurückgelegt',
+  'planner.useAgain': 'Erneut nutzen',
   'planner.otherDaily': 'Weitere tägliche Aufgaben',
   'planner.name': 'Name',
   'planner.points': 'Punkte',

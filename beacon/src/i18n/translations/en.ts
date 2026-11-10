@@ -681,6 +681,8 @@ export const en = {
   'planner.routinePlaceholder': 'e.g. Morning routine',
   'planner.routineHint': 'Daily chores with the same routine name are grouped under Routines.',
   'planner.taskOnceHint': 'A task happens once. Use a routine for anything that repeats.',
+  'planner.onHold': 'On hold',
+  'planner.useAgain': 'Use again',
   'planner.otherDaily': 'Other daily tasks',
   'planner.name': 'Name',
   'planner.points': 'Points',

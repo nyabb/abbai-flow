@@ -364,15 +364,14 @@ export function ChorePlanner({
       <RewardRow
         key={reward.id}
         reward={reward}
-        reserved={state.reserved !== null}
-        saved={state.saved}
-        available={state.available}
+        allocated={state.allocated}
+        remaining={state.remaining}
+        done={state.done}
+        canAdd={state.canAdd}
         pending={state.pending}
-        affordable={state.affordable}
         saving={saving}
         copy={c}
         onUndo={() => undoRewardChoice(reward)}
-        onConfirm={() => confirmReward(reward)}
         onApprove={() =>
           requestPin(
             c.rewards,
@@ -885,13 +884,15 @@ export function ChorePlanner({
   };
 
   /**
-   * Set points aside for a reward.
+   * Put points aside for a reward.
    *
-   * This is deliberately Beacon-only: the balance drops the moment the child
-   * picks the reward, and nothing is written to ChoreOps until a parent
-   * confirms it, so the child can still change their mind.
+   * Approval-free and Beacon-only: the balance drops the moment the child
+   * allocates, and nothing is written to ChoreOps, so they can still change
+   * their mind. Points accumulate towards the cost instead of being reserved in
+   * one go -- that is what makes "on hold" (partway) and "reached the goal"
+   * (fully covered) two different states.
    */
-  const assignReward = (reward: ChoreOpsReward) => {
+  const assignReward = (reward: ChoreOpsReward, amount?: number) => {
     const userName =
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
@@ -899,59 +900,48 @@ export function ChorePlanner({
       showToast(c.assignToClaim, 'error');
       return;
     }
+
+    const owner = memberByName(userName);
+    const already = reservationFor(reservations, userName, reward.name)?.points ?? 0;
+    const stillNeeded = Math.max(0, reward.cost - already);
+    // Never invent points: the amount is capped by what the child can still
+    // spend and by what the goal still needs.
+    const give = Math.min(amount ?? stillNeeded, stillNeeded, owner ? spendableFor(owner) : 0);
+    if (give <= 0) return;
+
     setReservations((list) =>
-      reservePoints(list, { user: userName, reward: reward.name, points: reward.cost }),
+      reservePoints(list, { user: userName, reward: reward.name, points: already + give }),
     );
     showToast(toastWith(c.assignedToast, reward.name));
   };
 
-  /** Give the points back — the child changed their mind about this reward. */
+  /** Give the points back -- the child changed their mind, or wants it again. */
   const undoRewardChoice = (reward: ChoreOpsReward) => {
     setReservations((list) => releasePoints(list, reward.assignee, reward.name));
     showToast(toastWith(c.undoneToast, reward.name));
   };
 
   /**
-   * Parent confirmation in real life: ChoreOps deducts the cost once and the
-   * child's allocation is released, so their visible balance does not move.
-   */
-  const confirmReward = (reward: ChoreOpsReward) => {
-    if (!reward.assignee) {
-      showToast(c.assignToClaim, 'error');
-      return;
-    }
-    requestPin(c.rewards, reward.name, (approverName) => {
-      void (async () => {
-        try {
-          setSaving(true);
-          await choreOps.approveReward(reward.assignee as string, reward.name, approverName);
-          setReservations((list) => releasePoints(list, reward.assignee, reward.name));
-          playCompletionSound();
-          showToast(toastWith(c.approved, reward.name));
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail, 'error');
-        } finally {
-          setSaving(false);
-        }
-      })();
-    });
-  };
-
-  /**
    * Reward card state shared by the child screen and the rewards sheet:
-   * what is set aside, whether ChoreOps has a claim pending, and what is left.
+   * how much is set aside, what is still missing, and whether the goal is met.
    */
   const rewardState = (reward: ChoreOpsReward) => {
     const owner = memberByName(reward.assignee);
     const reserved = reservationFor(reservations, reward.assignee, reward.name);
     const saved = owner ? spendableFor(owner) : 0;
+    const allocated = reserved?.points ?? 0;
+    const remaining = Math.max(0, reward.cost - allocated);
     return {
       owner,
       reserved,
       saved,
+      allocated,
+      remaining,
+      /** Fully covered: on hold, and listed under Done. */
+      done: allocated > 0 && remaining === 0,
       available: reward.status === 'available',
       pending: reward.pendingClaims > 0,
-      affordable: saved >= reward.cost,
+      canAdd: reward.status === 'available' && saved > 0 && remaining > 0,
     };
   };
 
@@ -1400,6 +1390,7 @@ export function ChorePlanner({
                 copy={c}
                 renderRewardRow={renderRewardRow}
                 onNewGoal={startRewardForm}
+                isDone={(reward) => rewardState(reward).done}
               />
             )}{' '}
             {modal === 'reward-actions' && selectedReward && (

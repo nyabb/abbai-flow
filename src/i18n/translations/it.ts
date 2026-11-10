@@ -683,6 +683,8 @@ export const it: Record<TranslationKey, string> = {
   'planner.routineHint':
     'Le attività giornaliere con lo stesso nome di routine sono raggruppate in Routine.',
   'planner.taskOnceHint': 'Un compito si fa una volta. Usa una routine per ciò che si ripete.',
+  'planner.onHold': 'Messo da parte',
+  'planner.useAgain': 'Usa di nuovo',
   'planner.otherDaily': 'Altre attività giornaliere',
   'planner.name': 'Nome',
   'planner.points': 'Punti',

@@ -125,16 +125,19 @@ export function RoutineRow({ routine, paused, label, progress, copy, onToggle }:
 
 export interface RewardRowProps {
   reward: ChoreOpsReward;
-  /** Points set aside for this reward in Beacon. */
-  reserved: boolean;
-  saved: number;
-  available: boolean;
+  /** Points put aside towards this reward so far. */
+  allocated: number;
+  /** What is still missing before the cost is covered. */
+  remaining: number;
+  /** The full cost is set aside: the reward is on hold and belongs under Done. */
+  done: boolean;
+  /** The child can put something towards it right now. */
+  canAdd: boolean;
+  /** A claim made outside Beacon, which a parent settles in ChoreOps. */
   pending: boolean;
-  affordable: boolean;
   saving: boolean;
   copy: PlannerCopy;
   onUndo: () => void;
-  onConfirm: () => void;
   onApprove: () => void;
   onAssign: () => void;
   onMore: () => void;
@@ -143,61 +146,51 @@ export interface RewardRowProps {
 /** A reward row: progress towards the goal plus its actions. */
 export function RewardRow({
   reward,
-  reserved,
-  saved,
-  available,
+  allocated,
+  remaining,
+  done,
+  canAdd,
   pending,
-  affordable,
   saving,
   copy,
   onUndo,
-  onConfirm,
   onApprove,
   onAssign,
   onMore,
 }: RewardRowProps) {
+  /* The bar tracks what has been set aside for this reward, not the child's
+     whole balance -- the old reading made every goal look nearly reachable. */
+  const progress = done ? 100 : Math.min(100, (allocated / Math.max(1, reward.cost)) * 100);
+
   return (
-    <div className="planner-reward">
+    <div className={`planner-reward${done ? ' planner-reward--done' : ''}`}>
       <span aria-hidden="true">{'\u{1F381}'}</span>
       <div className="planner-reward-copy">
         <strong>{reward.name}</strong>
         <small>
-          {reserved
-            ? copy.assigned
-            : `${saved} / ${reward.cost} ${copy.pointsUnit}${
-                pending ? ` \u00b7 ${copy.claimed}` : available ? '' : ` \u00b7 ${copy.locked}`
-              }`}
+          {`${allocated} / ${reward.cost} ${copy.pointsUnit}`}
+          {done
+            ? ` \u00b7 ${copy.onHold}`
+            : ` \u00b7 ${copy.stillNeeded.replace('{points}', String(remaining))}`}
+          {pending ? ` \u00b7 ${copy.claimed}` : ''}
         </small>
         <i>
-          <b
-            style={{
-              width: `${reserved ? 100 : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)}%`,
-            }}
-          />
+          <b style={{ width: `${progress}%` }} />
         </i>
       </div>
       <div className="planner-reward-actions">
-        {reserved ? (
-          <>
-            <button className="planner-ghost planner-reward-action" onClick={onUndo}>
-              {copy.undoShort}
-            </button>
-            <button
-              className="planner-primary planner-reward-action"
-              disabled={saving}
-              onClick={onConfirm}
-            >
-              {copy.confirm}
-            </button>
-          </>
-        ) : pending ? (
+        {pending ? (
           <button className="planner-primary planner-reward-action" onClick={onApprove}>
             {copy.confirm}
+          </button>
+        ) : done ? (
+          <button className="planner-ghost planner-reward-action" onClick={onUndo}>
+            {copy.useAgain}
           </button>
         ) : (
           <button
             className="planner-ghost planner-reward-action"
-            disabled={!available || !affordable}
+            disabled={!canAdd || saving}
             onClick={onAssign}
           >
             {copy.assign}

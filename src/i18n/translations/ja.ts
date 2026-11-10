@@ -670,6 +670,8 @@ export const ja: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': '例：朝のルーティン',
   'planner.routineHint': '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
   'planner.taskOnceHint': 'タスクは1回だけです。繰り返すものはルーティンにしてください。',
+  'planner.onHold': '保留中',
+  'planner.useAgain': 'もう一度使う',
   'planner.otherDaily': 'その他の毎日のタスク',
   'planner.name': '名前',
   'planner.points': 'ポイント',

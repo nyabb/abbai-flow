@@ -281,48 +281,55 @@ describe('ChorePlanner rewards from ChoreOps', () => {
   });
 
   /*
-   * Points must leave the child's balance the moment they pick a reward, not
-   * when a parent confirms it. The allocation is Beacon-local so the child can
-   * take it back; approving later only writes the (single) deduction to
-   * ChoreOps and must not move the visible balance again.
+   * Points leave the child's balance the moment they allocate, and the hold is
+   * Beacon-local: no parent confirmation, nothing written to ChoreOps, so the
+   * child can take it back whenever they like.
    */
-  it('sets points aside on assign and frees them on undo', async () => {
+  it('puts points on hold on assign and frees them again', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
 
-    await waitFor(() =>
-      expect(container.textContent).toContain('Toegewezen · wacht op bevestiging'),
-    );
+    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+    expect(container.textContent).toContain('20 / 20');
     expect(localStorage.getItem('beacon_reward_reservations')).toContain('schermtijd');
 
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
       element.textContent?.includes('Schermtijd'),
     )!;
-    fireEvent.click(within(row).getByRole('button', { name: 'Terug' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Opnieuw gebruiken' }));
 
-    await waitFor(() => expect(container.textContent).toContain('20 punten'));
-    expect(localStorage.getItem('beacon_reward_reservations')).toBeNull();
+    await waitFor(() => expect(localStorage.getItem('beacon_reward_reservations')).toBeNull());
+    expect(container.textContent).not.toContain('Gereserveerd');
+    // Nothing was ever written to ChoreOps: only the child decided.
     expect(mocks.approveReward).not.toHaveBeenCalled();
   });
 
-  it('confirms a reserved reward through ChoreOps once, without a second deduction', async () => {
+  /* Allocation never needs a parent: no PIN sheet and no ChoreOps write. */
+  it('never asks a parent to approve an allocation', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
-    fireEvent.click(await screen.findByRole('button', { name: 'Bevestigen' }));
 
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+    expect(container.querySelector('.planner-pin-input')).toBeNull();
+    expect(mocks.approveReward).not.toHaveBeenCalled();
+  });
 
-    await waitFor(() => expect(mocks.approveReward).toHaveBeenCalledTimes(1));
-    // The PIN identifies the approving parent for ChoreOps' audit trail.
-    expect(mocks.approveReward).toHaveBeenCalledWith('Zara', 'Schermtijd', 'Papa');
-    // ChoreOps now owns the deduction, so Beacon releases its hold.
-    await waitFor(() => expect(localStorage.getItem('beacon_reward_reservations')).toBeNull());
+  /* Points accumulate: a goal bigger than the balance stays open, partway. */
+  it('accumulates points towards a goal instead of reserving the whole cost', async () => {
+    const base = choreOpsState();
+    mocks.state.current = { ...base, rewards: [{ ...base.rewards[0], cost: 40 }] };
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+
+    // Zara has 25 and the goal wants 40, so all 25 go towards it and it stays open.
+    await waitFor(() => expect(container.textContent).toContain('25 / 40'));
+    expect(container.textContent).not.toContain('Gereserveerd');
   });
 
   it('creates a per-child reward in ChoreOps', async () => {
@@ -677,7 +684,8 @@ describe('ChorePlanner board', () => {
     const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
     expect(sheet.textContent).toContain('Doelen');
     expect(sheet.textContent).toContain('Schermtijd');
-    expect(sheet.textContent).toContain('25');
+    // Nothing set aside yet: the row reports progress, not the balance.
+    expect(sheet.textContent).toContain('0 / 20');
   });
 
   it('pre-selects the child whose goals you opened when you set a new goal', () => {

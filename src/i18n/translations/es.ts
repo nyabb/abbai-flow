@@ -679,6 +679,8 @@ export const es: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'p. ej. Rutina de la mañana',
   'planner.routineHint': 'Las tareas diarias con el mismo nombre de rutina se agrupan en Rutinas.',
   'planner.taskOnceHint': 'Una tarea se hace una vez. Usa una rutina para lo que se repite.',
+  'planner.onHold': 'Apartado',
+  'planner.useAgain': 'Usar de nuevo',
   'planner.otherDaily': 'Otras tareas diarias',
   'planner.name': 'Nombre',
   'planner.points': 'Puntos',

@@ -1965,6 +1965,27 @@
 
 /* --- Rewards (ChoreOps reward entities) --- */
 
+/* Rewards whose full cost is set aside are "on hold": grouped under a Done
+   heading the way finished chores are, and dimmed so the open goals stay the
+   thing you read first. */
+.planner-reward-group {
+  margin: 14px 0 4px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--planner-muted);
+}
+
+.planner-reward--done .planner-reward-copy strong {
+  color: var(--planner-muted);
+}
+
+.planner-reward--done .planner-reward-copy i b {
+  background: var(--planner-muted);
+}
+
+
 .planner-reward {
   display: grid;
   /* Icon + text on the first row, actions on their own full-width row so a

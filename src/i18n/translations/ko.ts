@@ -667,6 +667,8 @@ export const ko: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': '예: 아침 루틴',
   'planner.routineHint': '같은 루틴 이름의 매일 집안일은 루틴으로 묶입니다.',
   'planner.taskOnceHint': '할 일은 한 번만 합니다. 반복되는 일은 루틴을 사용하세요.',
+  'planner.onHold': '보류 중',
+  'planner.useAgain': '다시 사용',
   'planner.otherDaily': '기타 매일 할 일',
   'planner.name': '이름',
   'planner.points': '포인트',
