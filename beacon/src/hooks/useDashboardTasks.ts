@@ -62,8 +62,21 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
     }
 
     fetchTasks();
-    const interval = setInterval(fetchTasks, 60_000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      // Nothing to do while the page is hidden; the listener catches up.
+      if (document.visibilityState === 'hidden') return;
+      void fetchTasks();
+    }, 60_000);
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'hidden') void fetchTasks();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [connected, groceryListIds]);
 
   const items: DashboardTodoItem[] = useMemo(() => {

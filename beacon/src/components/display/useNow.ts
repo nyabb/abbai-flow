@@ -1,9 +1,8 @@
 /**
- * Re-render on a clock tick.
+ * Re-render on a clock tick — but only while the page is visible.
  *
- * `Clock` keeps its own second-by-second state, but the display view has several
- * panels that all show "now". This gives them one ticker and lets the caller
- * choose the cadence: a second for the big clock, a minute for the agenda.
+ * A wall display is on for weeks; ticking while hidden is pure waste, and the
+ * tick that matters is the first one after the screen comes back.
  */
 import { useEffect, useState } from 'react';
 
@@ -11,8 +10,22 @@ export function useNow(intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), intervalMs);
-    return () => clearInterval(id);
+    const tick = () => setNow(new Date());
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      tick();
+    }, intervalMs);
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'hidden') tick();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [intervalMs]);
 
   return now;

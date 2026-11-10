@@ -11,10 +11,10 @@
  * Wake Lock, fullscreen and the inactivity timeout are layered on top by
  * `useDisplayMode`, not here.
  */
-import { format } from 'date-fns';
 import { CalendarDays, CheckSquare, LayoutDashboard, Maximize2, Minimize2, ShoppingCart } from 'lucide-react';
 import { useTranslation, type TranslationKey } from '../../i18n';
 import { DisplayAgenda } from './DisplayAgenda';
+import { DisplayClock } from './DisplayClock';
 import { DisplayChores } from './DisplayChores';
 import { DisplayFamily } from './DisplayFamily';
 import { useNow } from './useNow';
@@ -74,25 +74,16 @@ export function DisplayView({
   fullscreen,
   onNavigate,
 }: DisplayViewProps) {
-  const { t, dateLocale } = useTranslation();
-  // A wall clock only needs the minute; the seconds are noise at 3 m.
-  const now = useNow(1000);
+  const { t } = useTranslation();
+  // The panels only care about the minute (times, "is this event over yet"), so
+  // they tick once a minute while the clock above ticks on its own.
+  const now = useNow(60_000);
   const show = { ...DEFAULT_DISPLAY_PANELS, ...panels };
-
-  const time = format(now, timeFormat === '12h' ? 'h:mm' : 'HH:mm');
-  const meridiem = timeFormat === '12h' ? format(now, 'a') : '';
-  const dateLine = format(now, 'EEEE d MMMM', { locale: dateLocale });
 
   return (
     <div className="display-view">
       <header className="display-band">
-        <div className="display-clock">
-          <span className="display-clock-time">
-            {time}
-            {meridiem && <span className="display-clock-meridiem">{meridiem}</span>}
-          </span>
-          <span className="display-clock-date">{dateLine}</span>
-        </div>
+        <DisplayClock timeFormat={timeFormat} />
 
         <div className="display-band-right">
           {show.weather && weather && (

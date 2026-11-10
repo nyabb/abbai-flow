@@ -75,8 +75,22 @@ export function useWeather(getClient: () => HomeAssistantClient | null) {
 
   useEffect(() => {
     fetchWeather();
-    const interval = setInterval(fetchWeather, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      // A hidden page (kiosk screensaver, switched input, sleeping screen) does
+      // not need a new forecast; the visibility listener below catches up.
+      if (document.visibilityState === 'hidden') return;
+      void fetchWeather();
+    }, REFRESH_INTERVAL);
+
+    const onVisible = () => {
+      if (document.visibilityState !== 'hidden') void fetchWeather();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [fetchWeather]);
 
   return { weather, error, refresh: fetchWeather };
