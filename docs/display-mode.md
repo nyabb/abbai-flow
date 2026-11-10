@@ -91,7 +91,7 @@ npm run build       # tsc + vite build
 The display suites specifically:
 
 ```bash
-npx vitest run src/components/display src/hooks/useDisplayMode.test.ts \
+npx vitest run src/components/test src/hooks/useDisplayMode.test.ts \
   src/hooks/useConnectionStatus.test.ts src/hooks/usePageVisibility.test.ts \
   src/styles/responsive.test.ts src/web-only.test.ts
 ```
