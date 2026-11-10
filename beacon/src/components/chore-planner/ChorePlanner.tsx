@@ -22,17 +22,19 @@ import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-mode
 import { buildChorePlannerView } from '../../api/chore-planner-view';
 import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
 import {
-  readRewardReservations,
-  releasePoints,
-  reservationFor,
-  reservePoints,
-  spendablePoints,
-  writeRewardReservations,
-} from '../../api/reward-reservations';
-import type { RewardReservation } from '../../api/reward-reservations';
+  activeRedemption,
+  activeRedemptions,
+  addPoints,
+  fulfilRedemption,
+  fulfilledRedemptions,
+  releaseRedemption,
+  spendableWithRedemptions,
+} from '../../api/reward-redemptions';
+import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
+import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
 import {
   addRoutineTask,
   adoptLabels,
@@ -232,19 +234,13 @@ export function ChorePlanner({
   const [selectedReward, setSelectedReward] = useState<ChoreOpsReward | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   /**
-   * Points a child has set aside for rewards. Kept in Beacon because ChoreOps
-   * only deducts on approval, while the family wants the balance to drop as
-   * soon as a reward is picked — and to be able to undo that choice.
+   * Reward progress (saving → achieved → given). Shared through beacon-store:
+   * ChoreOps owns the definition and the deduction, not the pursuit.
    */
-  const [reservations, setReservations] = useState<RewardReservation[]>(() =>
-    readRewardReservations(),
-  );
+  const rewardsState = useRewardRedemptions();
+  const redemptions = rewardsState.redemptions;
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
-
-  useEffect(() => {
-    writeRewardReservations(reservations);
-  }, [reservations]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
@@ -401,7 +397,7 @@ export function ChorePlanner({
     if (!member) return 0;
     const userName = userNameByMemberId.get(member.id);
     if (!userName) return member.savings;
-    return spendablePoints(member.savings, reservations, rewards, userName);
+    return spendableWithRedemptions(member.savings, redemptions, rewards, userName);
   };
 
   /**
@@ -1023,15 +1019,12 @@ export function ChorePlanner({
       }
     };
     /*
-     * A reward the child has fully set points aside for is theirs to clear: they
-     * reached the goal, so removing it needs no parent. Anything else deletes the
-     * reward for every child it is assigned to, which is a shared decision and
-     * stays behind the PIN when one is configured.
+     * Deleting a reward removes the definition for every child it is assigned
+     * to, and a goal that was already reached is waiting to be handed over.
+     * Both are parent decisions, so this is always PIN-gated — it used to be
+     * free for a fully funded goal, which let a child delete a reward they were
+     * about to receive.
      */
-    if (rewardState(reward).done) {
-      await remove();
-      return;
-    }
     requestPin(c.remove, reward.name, () => void remove());
   };
 
@@ -1044,6 +1037,7 @@ export function ChorePlanner({
    * one go -- that is what makes "on hold" (partway) and "reached the goal"
    * (fully covered) two different states.
    */
+  /** Put points towards a reward. */
   const assignReward = (reward: ChoreOpsReward, amount?: number) => {
     const userName =
       reward.assignee ??
@@ -1054,43 +1048,88 @@ export function ChorePlanner({
     }
 
     const owner = memberByName(userName);
-    const already = reservationFor(reservations, userName, reward.name)?.points ?? 0;
+    const already = activeRedemption(redemptions, userName, reward.name)?.points ?? 0;
     const stillNeeded = Math.max(0, reward.cost - already);
     // Never invent points: the amount is capped by what the child can still
     // spend and by what the goal still needs.
     const give = Math.min(amount ?? stillNeeded, stillNeeded, owner ? spendableFor(owner) : 0);
     if (give <= 0) return;
 
-    setReservations((list) =>
-      reservePoints(list, { user: userName, reward: reward.name, points: already + give }),
+    rewardsState.update(
+      (list) =>
+        addPoints(list, {
+          user: userName,
+          reward: reward.name,
+          cost: reward.cost,
+          amount: give,
+        }).redemptions,
     );
     showToast(toastWith(c.assignedToast, reward.name));
   };
 
   /** Give the points back -- the child changed their mind, or wants it again. */
   const undoRewardChoice = (reward: ChoreOpsReward) => {
-    setReservations((list) => releasePoints(list, reward.assignee, reward.name));
+    const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
+    if (pursuit) {
+      rewardsState.update((list) => releaseRedemption(list, pursuit.id));
+    }
     showToast(toastWith(c.undoneToast, reward.name));
+  };
+
+  /**
+   * Parent hands a reached reward over.
+   *
+   * ChoreOps deducts the cost through `approve_reward` and Beacon records who
+   * gave what and when. A child can never reach this: it is behind the PIN, and
+   * the redemption only exists once the goal is actually achieved.
+   */
+  const giveReward = (redemption: Redemption) => {
+    const member = memberByName(redemption.user);
+    const userName = member ? userNameByMemberId.get(member.id) : null;
+    if (!userName) {
+      showToast(c.assignToClaim, 'error');
+      return;
+    }
+    requestPin(c.markGiven, redemption.rewardLabel, (approverName) => {
+      void (async () => {
+        try {
+          setSaving(true);
+          await choreOps.approveReward(userName, redemption.rewardLabel, approverName);
+          rewardsState.update((list) =>
+            fulfilRedemption(list, redemption.id, approverName).redemptions,
+          );
+          showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
+          setConfetti(true);
+        } catch (err) {
+          showToast(err instanceof Error ? err.message : c.noFail, 'error');
+        } finally {
+          setSaving(false);
+        }
+      })();
+    });
   };
 
   /**
    * Reward card state shared by the child screen and the rewards sheet:
    * how much is set aside, what is still missing, and whether the goal is met.
+   *
+   * `done` means *the goal is achieved* — not that the child has the reward.
+   * The reward is still waiting for a parent at that point.
    */
   const rewardState = (reward: ChoreOpsReward) => {
     const owner = memberByName(reward.assignee);
-    const reserved = reservationFor(reservations, reward.assignee, reward.name);
+    const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
     const saved = owner ? spendableFor(owner) : 0;
-    const allocated = reserved?.points ?? 0;
+    const allocated = pursuit?.points ?? 0;
     const remaining = Math.max(0, reward.cost - allocated);
     return {
       owner,
-      reserved,
+      pursuit,
       saved,
       allocated,
       remaining,
-      /** Fully covered: on hold, and listed under Done. */
-      done: allocated > 0 && remaining === 0,
+      /** Reached the cost: waiting for a parent to hand it over. */
+      done: pursuit?.state === 'awaiting_fulfilment',
       available: reward.status === 'available',
       pending: reward.pendingClaims > 0,
       canAdd: reward.status === 'available' && saved > 0 && remaining > 0,
@@ -1577,6 +1616,24 @@ export function ChorePlanner({
                 renderRewardRow={renderRewardRow}
                 onNewGoal={startRewardForm}
                 isDone={(reward) => rewardState(reward).done}
+                awaiting={activeRedemptions(
+                  redemptions,
+                  userNameByMemberId.get(goalsMember.id) ?? null,
+                ).filter((item) => item.state === 'awaiting_fulfilment')}
+                given={fulfilledRedemptions(
+                  redemptions,
+                  userNameByMemberId.get(goalsMember.id) ?? null,
+                )}
+                onGive={(id) => {
+                  const redemption = redemptions.find((item) => item.id === id);
+                  if (redemption) giveReward(redemption);
+                }}
+                formatDate={(value) =>
+                  new Date(value).toLocaleDateString(timeLocale, {
+                    day: 'numeric',
+                    month: 'short',
+                  })
+                }
               />
             )}{' '}
             {modal === 'reward-actions' && selectedReward && (

@@ -170,7 +170,7 @@ export function RewardRow({
         <small>
           {`${allocated} / ${reward.cost} ${copy.pointsUnit}`}
           {done
-            ? ` \u00b7 ${copy.onHold}`
+            ? ` \u00b7 ${copy.waitingForReward}`
             : ` \u00b7 ${copy.stillNeeded.replace('{points}', String(remaining))}`}
           {pending ? ` \u00b7 ${copy.claimed}` : ''}
         </small>
@@ -184,17 +184,24 @@ export function RewardRow({
             {copy.confirm}
           </button>
         ) : done ? (
-          <button className="planner-ghost planner-reward-action" onClick={onUndo}>
-            {copy.useAgain}
-          </button>
+          /* Goal reached: the child cannot add more, and only a parent can hand
+             the reward over — so there is no button here, just the state. */
+          <span className="planner-hint">{copy.waitingForReward}</span>
         ) : (
-          <button
-            className="planner-ghost planner-reward-action"
-            disabled={!canAdd || saving}
-            onClick={onAssign}
-          >
-            {copy.assign}
-          </button>
+          <>
+            <button
+              className="planner-ghost planner-reward-action"
+              disabled={!canAdd || saving}
+              onClick={onAssign}
+            >
+              {copy.assign}
+            </button>
+            {allocated > 0 && (
+              <button className="planner-ghost planner-reward-action" onClick={onUndo}>
+                {copy.useAgain}
+              </button>
+            )}
+          </>
         )}
         <button
           type="button"
