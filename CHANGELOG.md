@@ -1,3 +1,10 @@
+## [1.53.2](https://github.com/nyabb/beacon/compare/v1.53.1...v1.53.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* **build:** build the frontend once, not once per architecture ([f6f4cf2](https://github.com/nyabb/beacon/commit/f6f4cf2f5f7cdd8fde537728e22869c54f556611)), closes [#21](https://github.com/nyabb/beacon/issues/21) [#22](https://github.com/nyabb/beacon/issues/22)
+
 ## [1.53.1](https://github.com/nyabb/beacon/compare/v1.53.0...v1.53.1) (2026-11-10)
 
 
