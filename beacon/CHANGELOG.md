@@ -1,3 +1,10 @@
+# [1.60.0](https://github.com/nyabb/beacon/compare/v1.59.0...v1.60.0) (2026-11-10)
+
+
+### Features
+
+* **chores:** say who has to act, and never pretend a save succeeded ([04452b4](https://github.com/nyabb/beacon/commit/04452b4180eef124417af0ff2e61780766d3f9d0))
+
 # [1.59.0](https://github.com/nyabb/beacon/compare/v1.58.0...v1.59.0) (2026-11-10)
 
 
