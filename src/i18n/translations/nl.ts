@@ -766,6 +766,16 @@ export const nl: Record<TranslationKey, string> = {
   'planner.of': 'van',
   'planner.hoursShort': 'u',
   'planner.minutesShort': 'm',
+  'planner.awaitingApproval': 'Wacht op goedkeuring van een ouder',
+  'planner.approveCompletion': 'Voltooiing goedkeuren',
+  'planner.goalAchieved': 'Doel bereikt',
+  'planner.waitingForReward': 'Wacht op beloning',
+  'planner.markGiven': 'Beloning als gegeven markeren',
+  'planner.rewardsToGive': 'Beloningen om te geven',
+  'planner.givenRewards': 'Gegeven beloningen',
+  'planner.rewardGiven': 'Beloning gegeven',
+  'planner.routinePicker': 'Bestaande routine',
+  'planner.routineNew': 'Nieuwe routine',
 
   // frequency option labels
   'planner.tab.goals': 'Doelen',

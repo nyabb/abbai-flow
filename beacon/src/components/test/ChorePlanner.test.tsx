@@ -237,17 +237,19 @@ describe('ChorePlanner anyone chores', () => {
     expect(column(container, 'Zara').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('says "Bevestigen" (approve) once a free chore is claimed, never "Afgerond"', () => {
+  it('tells the child it waits for a parent once a free chore is claimed', () => {
     mocks.state.current = anyoneState('claimed', 'pending');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     const labels = [...container.querySelectorAll('.planner-row-check')].map(
       (button) => button.getAttribute('aria-label') ?? '',
     );
 
-    // Zara claimed it, so her row offers the parent sign-off; the free column
-    // still shows it for Maya. Neither may claim the chore is finished.
-    expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(true);
+    // Zara claimed it, so her row says a parent still has to sign off; the free
+    // column still shows it for Maya. Nobody may claim it is finished, and the
+    // child is never offered the approval itself.
+    expect(labels.some((text) => text.startsWith('Wacht op goedkeuring'))).toBe(true);
     expect(labels.some((text) => text.startsWith('Afgerond'))).toBe(false);
+    expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(false);
   });
 
   it('moves the chore into the claimer’s column, out of the free column', () => {
@@ -430,7 +432,8 @@ describe('ChorePlanner completion confirmation', () => {
     );
   });
 
-  it('asks a different question when a parent signs the chore off', async () => {
+  it('lets a parent sign the chore off, behind the PIN — never the child', async () => {
+    mocks.pressButton.mockClear();
     mocks.state.current = choreOpsState({
       chores: [
         {
@@ -442,10 +445,18 @@ describe('ChorePlanner completion confirmation', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
+    // The child's own tap is not an approval: nothing is sent to ChoreOps.
     fireEvent.click(container.querySelector('.planner-row-check')!);
+    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(container.querySelector('.planner-sheet--confirm')).toBeNull();
 
-    expect(container.textContent).toContain('Taakje afronden?');
-    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+    // Signing off lives in the row's actions, and asks for the parent PIN.
+    fireEvent.click(container.querySelector('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Voltooiing goedkeuren' }));
+
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
 
     await waitFor(() =>
       expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_afwassen'),

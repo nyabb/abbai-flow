@@ -24,6 +24,8 @@ export interface ChoreEditorProps {
   saving: boolean;
   copy: PlannerCopy;
   t: I18nValue['t'];
+  /** Existing routine names, so the field is a picker instead of free text. */
+  routineNames?: string[];
   onCancel: () => void;
   onSave: () => void;
 }
@@ -36,6 +38,7 @@ export function ChoreEditor({
   saving,
   copy: c,
   t,
+  routineNames = [],
   onCancel,
   onSave,
 }: ChoreEditorProps) {
@@ -152,10 +155,17 @@ export function ChoreEditor({
         <label className="planner-field">
           {c.routineLabel}
           <input
+            list="planner-routine-names"
             value={form.liveLabel}
             placeholder={c.routinePlaceholder}
             onChange={(event) => setForm((value) => ({ ...value, liveLabel: event.target.value }))}
           />
+          {/* Pick an existing routine, or type a new name to create one. */}
+          <datalist id="planner-routine-names">
+            {routineNames.map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
           <small className="planner-hint">{c.routineHint}</small>
         </label>
       )}

@@ -10,6 +10,14 @@
  * (photo, avatar, colour, display name) joined by `choreops_user` or name.
  */
 import { resolveMemberForUser } from './choreops';
+import {
+  emptyMeta,
+  findRoutine,
+  normaliseName,
+  routineIdForTask,
+  routineTaskOrder,
+  type PlannerMeta,
+} from './planner-meta';
 import type {
   PlannerGoal,
   PlannerMember,
@@ -159,6 +167,12 @@ export function buildChorePlannerView(
   state: ChoreOpsState | null,
   family: FamilyMember[],
   now: Date = new Date(),
+  /**
+   * Beacon-owned routine registry. ChoreOps has no routine entity and no
+   * ordering, so routine identity and step order come from here; its ChoreOps
+   * label remains the fallback for groups that were never adopted.
+   */
+  meta: PlannerMeta = emptyMeta(),
 ): ChorePlannerView {
   const users = state?.users ?? [];
 
@@ -193,9 +207,15 @@ export function buildChorePlannerView(
       const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
       const status = choreOpsTaskStatus(chore.status);
       const awaitingReview = AWAITING_REVIEW.test(chore.status);
-      // Only daily chores make a routine, matching how the routine rows are
-      // grouped; a weekly chore keeps its label but belongs to no routine.
-      const routineName = DAILY_FREQUENCY.test(chore.frequency ?? '') ? routineLabel(chore) : null;
+      // Only daily chores belong to a routine, matching how the routine rows
+      // are grouped; a weekly chore keeps its ChoreOps label but is a one-off.
+      const label = DAILY_FREQUENCY.test(chore.frequency ?? '') ? routineLabel(chore) : null;
+      const routineId = DAILY_FREQUENCY.test(chore.frequency ?? '')
+        ? routineIdForTask(meta, chore.name, label)
+        : null;
+      const routine = routineId ? findRoutine(meta, routineId) : null;
+      const order = routineId ? routineTaskOrder(meta, routineId) : [];
+      const position = order.findIndex((name) => normaliseName(name) === normaliseName(chore.name));
 
       return {
         id: chore.id,
@@ -217,8 +237,12 @@ export function buildChorePlannerView(
         freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
         awaitingReview,
         actions: chore.actions,
-        routineId: routineName ? `routine:${routineName.trim().toLowerCase()}` : undefined,
-        routineName: routineName ?? undefined,
+        routineId: routineId ?? undefined,
+        routineName: routine?.name ?? label ?? undefined,
+        // A routine step is not an individual chore: the board hides these from
+        // the member column and the missions run is the only way to do them.
+        inRoutine: Boolean(routineId),
+        routineOrder: position >= 0 ? position + 1 : undefined,
       } satisfies PlannerTask;
     });
 
@@ -235,6 +259,8 @@ export function buildChorePlannerView(
       memberIds: Set<string>;
       points: number;
       dueDate: string | null;
+      taskNames: Set<string>;
+      paused: boolean;
     }
   >();
 
@@ -258,10 +284,11 @@ export function buildChorePlannerView(
 
     const member = resolveMemberForUser(chore.assignee, family);
     const memberId = memberIdFor(chore.assignee, member);
-
-    // No label → collected separately; a named routine needs `labels[0]`.
     const label = routineLabel(chore);
-    if (!label) {
+    const routineId = routineIdForTask(meta, chore.name, label);
+
+    // A daily chore that belongs to no routine at all is collected separately.
+    if (!routineId) {
       if (memberIds.has(memberId)) unlabelledBucket.memberIds.add(memberId);
       unlabelledBucket.points += chore.points ?? 0;
       unlabelledBucket.icon ??= plannerIcon(chore.icon);
@@ -274,32 +301,49 @@ export function buildChorePlannerView(
       continue;
     }
 
-    const key = label.trim().toLowerCase();
-    const bucket = routineBuckets.get(key) ?? {
-      name: label,
-      icon: plannerIcon(chore.icon),
+    const definition = findRoutine(meta, routineId);
+    const bucket = routineBuckets.get(routineId) ?? {
+      // The registry owns the display name; a legacy label is only a fallback.
+      name: definition?.name ?? label ?? '',
+      icon: definition?.icon ?? plannerIcon(chore.icon),
       memberIds: new Set<string>(),
       points: 0,
       dueDate: null,
+      taskNames: new Set<string>(),
+      paused: definition?.paused ?? false,
     };
 
     if (memberIds.has(memberId)) bucket.memberIds.add(memberId);
     bucket.points += chore.points ?? 0;
+    bucket.taskNames.add(chore.name);
     if (chore.dueDate && (!bucket.dueDate || chore.dueDate < bucket.dueDate)) {
       bucket.dueDate = chore.dueDate;
     }
-    routineBuckets.set(key, bucket);
+    routineBuckets.set(routineId, bucket);
   }
 
-  const routines: PlannerRoutine[] = Array.from(routineBuckets.entries()).map(([key, bucket]) => ({
-    id: `routine:${key || 'daily'}`,
-    name: bucket.name,
-    icon: bucket.icon ?? '\u23F0',
-    memberIds: Array.from(bucket.memberIds),
-    frequency: 'daily' as const,
-    timeBlock: timeBlockFor(bucket.dueDate),
-    points: bucket.points,
-  }));
+  const routines: PlannerRoutine[] = Array.from(routineBuckets.entries()).map(([key, bucket]) => {
+    const order = routineTaskOrder(meta, key);
+    const known = order.filter((name) =>
+      Array.from(bucket.taskNames).some((live) => normaliseName(live) === normaliseName(name)),
+    );
+    const unordered = Array.from(bucket.taskNames).filter(
+      (live) => !known.some((name) => normaliseName(name) === normaliseName(live)),
+    );
+    return {
+      id: key,
+      name: bucket.name,
+      icon: bucket.icon ?? '\u23F0',
+      memberIds: Array.from(bucket.memberIds),
+      frequency: 'daily' as const,
+      timeBlock: timeBlockFor(bucket.dueDate),
+      points: bucket.points,
+      // Registry order first, then anything ChoreOps has that the registry does
+      // not know yet (a chore added in HA without touching Beacon).
+      taskNames: [...known, ...unordered],
+      paused: bucket.paused,
+    };
+  });
 
   // Only added when a named routine exists, so a household without routines
   // never gets a bar full of plain daily chores.
