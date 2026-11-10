@@ -1264,6 +1264,14 @@ export function ChorePlanner({
           spendableFor={spendableFor}
           renderRow={renderRow}
           routineRow={routineRow}
+          renderGoals={(memberId) => (
+            <>
+              {rewardsForMember(memberId).length === 0 && (
+                <p className="planner-col-empty">{c.noRewards}</p>
+              )}
+              {rewardsForMember(memberId).map((reward) => renderRewardRow(reward))}
+            </>
+          )}
           copy={c}
           onOpenChild={(memberId) => {
             setChildMemberId(memberId);

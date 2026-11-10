@@ -5,8 +5,10 @@
  * It renders only what the planner hands it (already filtered tasks, routines
  * and row renderers), so the board has no ChoreOps knowledge of its own.
  */
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
 
@@ -23,6 +25,8 @@ export interface ChoreBoardProps {
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: PlannerRoutine) => React.ReactNode;
+  /** A member's goals, rendered inline in the phone layout's Doelen tab. */
+  renderGoals: (memberId: string) => React.ReactNode;
   copy: PlannerCopy;
   onOpenChild: (memberId: string) => void;
   onOpenGoals: (memberId: string) => void;
@@ -38,12 +42,94 @@ export function ChoreBoard({
   spendableFor,
   renderRow,
   routineRow,
+  renderGoals,
   copy: c,
   onOpenChild,
   onOpenGoals,
   onStartMissions,
   onNewChore,
 }: ChoreBoardProps) {
+  /*
+   * A phone cannot show four columns side by side -- they become slivers. The
+   * reference app instead shows one member at a time with a tab row
+   * (Doelen / Taakjes / Routines / Vrije taakjes), so the same choice is made
+   * here in JS; CSS alone would mean rendering both layouts at once and
+   * duplicating every row.
+   */
+  const compact = useMediaQuery('(max-width: 600px)');
+  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
+  const [tab, setTab] = useState<'chores' | 'routines' | 'goals' | 'free'>('chores');
+
+  if (compact) {
+    const member = boardMembers.find((item) => item.id === activeMemberId) ?? boardMembers[0];
+    const chores = member ? columnTasks(member.id) : [];
+    const routines = member ? columnRoutines(member.id) : [];
+
+    return (
+      <main className="planner-board planner-board--compact">
+        <div className="planner-mobile-members">
+          {boardMembers.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`planner-mobile-member${item.id === member?.id ? ' is-active' : ''}`}
+              aria-pressed={item.id === member?.id}
+              onClick={() => setActiveMemberId(item.id)}
+            >
+              <MemberAvatar member={item} />
+              <span>{item.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="planner-mobile-tabs" role="tablist" aria-label={c.title}>
+          {(
+            [
+              ['chores', c.choresColumn, chores.length],
+              ['routines', c.routines, routines.length],
+              ['goals', c.goals, null],
+              ['free', c.free, freeTasks.length],
+            ] as const
+          ).map(([id, label, count]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={tab === id}
+              className={`planner-mobile-tab${tab === id ? ' is-active' : ''}`}
+              onClick={() => setTab(id)}
+            >
+              {label}
+              {count !== null && <span>{count}</span>}
+            </button>
+          ))}
+        </div>
+
+        <section className="planner-col-body planner-mobile-panel">
+          {tab === 'chores' &&
+            (chores.length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              chores.map((task) => renderRow(task))
+            ))}
+          {tab === 'routines' &&
+            (routines.length === 0 ? (
+              <p className="planner-col-empty">{c.noRoutines}</p>
+            ) : (
+              routines.map((routine) => routineRow(routine))
+            ))}
+          {tab === 'goals' && member && renderGoals(member.id)}
+          {tab === 'free' &&
+            (freeTasks.length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              freeTasks.map((task) => renderRow(task))
+            ))}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="planner-board">
       {boardMembers.map((member) => {
