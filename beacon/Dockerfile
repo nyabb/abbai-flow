@@ -1,7 +1,16 @@
 ARG BUILD_FROM=ghcr.io/hassio-addons/base:16.3.2
 
 # ---------- Build stage ----------
-FROM node:20-alpine AS builder
+# Pinned to the *build* platform, not the target platform. Its output is
+# architecture-independent -- static JS/CSS from vite plus the pure-JS `ws`
+# package -- so building it once on native amd64 is equivalent to building it
+# per target, except that the per-target builds run under QEMU for arm64 and
+# armv7, where Node/V8 is roughly an order of magnitude slower. Without this
+# flag a three-platform release ran `npm ci` and `tsc && vite build` three
+# times, two of them emulated, which is where the multi-hundred-second
+# `Build and push` times came from. Verified: `tsc` 4.3s and `vite build` 4.0s
+# natively, so 8s per pass rather than 8s x 3 with two QEMU multipliers.
+FROM --platform=$BUILDPLATFORM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json* ./
