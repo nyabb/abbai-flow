@@ -900,7 +900,7 @@ export function ChorePlanner({
     requestPin(c.newReward, rewardForm.name.trim(), () => void create());
   };
 
-  /** Delete a reward from ChoreOps (parent action, so PIN gated). */
+  /** Delete a reward from ChoreOps. */
   const removeReward = async (reward: ChoreOpsReward) => {
     const remove = async () => {
       try {
@@ -914,6 +914,16 @@ export function ChorePlanner({
         setSaving(false);
       }
     };
+    /*
+     * A reward the child has fully set points aside for is theirs to clear: they
+     * reached the goal, so removing it needs no parent. Anything else deletes the
+     * reward for every child it is assigned to, which is a shared decision and
+     * stays behind the PIN when one is configured.
+     */
+    if (rewardState(reward).done) {
+      await remove();
+      return;
+    }
     requestPin(c.remove, reward.name, () => void remove());
   };
 

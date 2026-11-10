@@ -227,7 +227,6 @@ export function SettingsView({
       <div className="view-page-body">
         <div className="settings-view">
           <nav className="settings-nav">
-            <div className="settings-nav-header">{t('settings.title')}</div>
             {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
