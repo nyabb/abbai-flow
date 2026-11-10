@@ -54,6 +54,18 @@ export interface BeaconSettings {
   showSeconds: boolean;
   kioskMode: boolean;
 
+  // Display Mode (/display): the wall-mounted touchscreen
+  /** Keep the screen awake with the Screen Wake Lock API while on /display. */
+  displayWakeLock: boolean;
+  /** Go fullscreen when the display view opens. */
+  displayFullscreen: boolean;
+  /** Return to the dashboard after this many idle minutes; 0 = never. */
+  displayIdleMinutes: number;
+  /** Which panels the display view shows. */
+  displayPanels: { agenda: boolean; chores: boolean; family: boolean; weather: boolean };
+  /** Cut animation and transition durations app-wide. */
+  reducedMotion: boolean;
+
   // Chores
   choresEnabled: boolean;
   choresResetTime: string; // "HH:mm"
@@ -118,6 +130,15 @@ function buildDefaults(): BeaconSettings {
     streakDays: 7,
     currencySymbol: '$',
     payoutSchedule: 'weekly',
+
+    // Display Mode defaults: a wall screen wants the screen kept awake, but
+    // fullscreen and an idle timeout are opt-in — they are intrusive on a
+    // device someone is actively using.
+    displayWakeLock: true,
+    displayFullscreen: false,
+    displayIdleMinutes: 15,
+    displayPanels: { agenda: true, chores: true, family: true, weather: true },
+    reducedMotion: false,
   };
 }
 

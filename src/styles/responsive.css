@@ -197,3 +197,20 @@ input[type='range'] {
     padding-bottom: 10px;
   }
 }
+
+/* --- Reduced motion ------------------------------------------------------
+   A screen that runs 24/7 on a Pi should not spend its life animating, and
+   motion can be genuinely unpleasant for some people. This mirrors the OS
+   preference so it also works where `prefers-reduced-motion` is not reported
+   (some kiosk shells) and can be set per device.
+   Durations collapse to near-zero rather than `none`, because a few views
+   listen for transitionend/animationend to close a sheet or dismiss a toast. */
+.beacon--reduce-motion,
+.beacon--reduce-motion *,
+.beacon--reduce-motion *::before,
+.beacon--reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

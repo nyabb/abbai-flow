@@ -11,6 +11,7 @@ import path from 'node:path';
  * class was renamed (`.dash-grid` was exactly such a phantom).
  */
 const stylesDir = path.dirname(fileURLToPath(import.meta.url));
+const srcDir = path.resolve(stylesDir, '..');
 
 const responsive = readFileSync(path.join(stylesDir, 'responsive.css'), 'utf8');
 
@@ -18,6 +19,20 @@ const otherSheets = readdirSync(stylesDir)
   .filter((file) => file.endsWith('.css') && file !== 'responsive.css')
   .map((file) => readFileSync(path.join(stylesDir, file), 'utf8'))
   .join('\n');
+
+/** Every .tsx in the app, so state classes applied from JS count as "used". */
+function componentSources(dir: string): string {
+  return readdirSync(dir, { withFileTypes: true })
+    .flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return componentSources(full);
+      if (!entry.name.endsWith('.tsx') && !entry.name.endsWith('.ts')) return [];
+      return [readFileSync(full, 'utf8')];
+    })
+    .join('\n');
+}
+
+const sources = componentSources(srcDir);
 
 /** Class selectors used in the responsive layer's rule heads. */
 function responsiveClasses(): string[] {
@@ -50,8 +65,12 @@ describe('responsive layer', () => {
     expect(animations).toHaveLength(0);
   });
 
-  it('only targets classes that exist elsewhere', () => {
-    const missing = responsiveClasses().filter((name) => !otherSheets.includes(`.${name}`));
+  it('only targets classes that exist somewhere', () => {
+    // A class either has styling elsewhere or is applied from JS (state hooks
+    // like `beacon--reduce-motion` live only in this layer).
+    const missing = responsiveClasses().filter(
+      (name) => !otherSheets.includes(`.${name}`) && !sources.includes(name),
+    );
 
     expect(missing).toEqual([]);
   });

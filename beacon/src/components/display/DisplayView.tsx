@@ -12,7 +12,7 @@
  * `useDisplayMode`, not here.
  */
 import { format } from 'date-fns';
-import { CalendarDays, CheckSquare, LayoutDashboard, ShoppingCart } from 'lucide-react';
+import { CalendarDays, CheckSquare, LayoutDashboard, Maximize2, Minimize2, ShoppingCart } from 'lucide-react';
 import { useTranslation, type TranslationKey } from '../../i18n';
 import { DisplayAgenda } from './DisplayAgenda';
 import { DisplayChores } from './DisplayChores';
@@ -26,6 +26,13 @@ import type { SidebarView } from '../Sidebar';
 
 export type { DisplayConnection, DisplayPanelFlags } from './types';
 
+export interface DisplayFullscreenControl {
+  /** False when the browser cannot enter fullscreen programmatically. */
+  supported: boolean;
+  active: boolean;
+  onToggle: () => void;
+}
+
 export interface DisplayViewProps {
   events: CalendarEvent[];
   chores: ChoreOpsChore[];
@@ -36,6 +43,8 @@ export interface DisplayViewProps {
   connection: DisplayConnection;
   /** Panels to render; defaults to all four. */
   panels?: Partial<DisplayPanelFlags>;
+  /** Fullscreen toggle; omitted when the browser has no Fullscreen API. */
+  fullscreen?: DisplayFullscreenControl;
   onNavigate?: (view: SidebarView) => void;
 }
 
@@ -62,6 +71,7 @@ export function DisplayView({
   timeFormat,
   connection,
   panels = DEFAULT_DISPLAY_PANELS,
+  fullscreen,
   onNavigate,
 }: DisplayViewProps) {
   const { t, dateLocale } = useTranslation();
@@ -102,6 +112,23 @@ export function DisplayView({
             <span className="display-connection-dot" aria-hidden="true" />
             {t(CONNECTION_LABEL[connection])}
           </div>
+          {fullscreen?.supported && (
+            <button
+              type="button"
+              className="display-fullscreen"
+              onClick={fullscreen.onToggle}
+              aria-pressed={fullscreen.active}
+              aria-label={t(
+                fullscreen.active ? 'display.exitFullscreen' : 'display.enterFullscreen',
+              )}
+            >
+              {fullscreen.active ? (
+                <Minimize2 size={20} strokeWidth={2} aria-hidden="true" />
+              ) : (
+                <Maximize2 size={20} strokeWidth={2} aria-hidden="true" />
+              )}
+            </button>
+          )}
         </div>
       </header>
 

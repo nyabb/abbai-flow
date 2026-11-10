@@ -29,6 +29,7 @@ import { Timer } from './components/Timer';
 import { DisplayView } from './components/display/DisplayView';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import { isDisplayUrl } from './display-route';
+import { useDisplayMode } from './hooks/useDisplayMode';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
@@ -438,6 +439,14 @@ export function App() {
   // Display Mode shows why it cannot reach anything: no network, Beacon down or
   // Home Assistant down are three different problems for whoever walks past.
   const online = useOnlineStatus();
+  const isDisplayView = activeView === 'display';
+  const displayMode = useDisplayMode({
+    active: isDisplayView,
+    wakeLock: settings.displayWakeLock,
+    fullscreen: settings.displayFullscreen,
+    idleMinutes: settings.displayIdleMinutes,
+    onIdle: () => setActiveView('dashboard'),
+  });
   const displayConnection = !online ? 'offline' : connected ? 'online' : 'ha-down';
 
   useEffect(() => {
@@ -603,7 +612,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''}`}
+        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''} ${settings.reducedMotion ? ' beacon--reduce-motion' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -723,6 +732,15 @@ export function App() {
               weather={weather}
               timeFormat={settings.timeFormat}
               connection={displayConnection}
+              panels={settings.displayPanels}
+              fullscreen={{
+                supported: displayMode.fullscreenSupported,
+                active: displayMode.isFullscreen,
+                onToggle: () => {
+                  if (displayMode.isFullscreen) void displayMode.exitFullscreen();
+                  else void displayMode.enterFullscreen();
+                },
+              }}
               onNavigate={setActiveView}
             />
           ) : activeView === 'photos' ? (

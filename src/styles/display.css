@@ -119,6 +119,28 @@
   background: var(--color-error);
 }
 
+/* Fullscreen toggle: discreet enough not to shout on a wall screen, but a
+   finger-sized target. Only rendered when the browser supports the API. */
+.display-fullscreen {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+}
+
+.display-fullscreen:hover,
+.display-fullscreen:focus-visible {
+  color: var(--text-primary);
+  background: var(--bg-today);
+}
+
 /* --- Panels -------------------------------------------------------------- */
 .display-panels {
   flex: 1;
