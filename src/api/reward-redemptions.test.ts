@@ -146,7 +146,9 @@ describe('migration and parsing', () => {
 
   it('does not duplicate a reservation that already exists', () => {
     const once = migrateReservations([], [{ user: 'zara', reward: 'cinema', points: 40, at: 1 }]);
-    const twice = migrateReservations(once, [{ user: 'Zara', reward: 'Cinema', points: 40, at: 1 }]);
+    const twice = migrateReservations(once, [
+      { user: 'Zara', reward: 'Cinema', points: 40, at: 1 },
+    ]);
     expect(twice).toHaveLength(1);
   });
 
@@ -188,9 +190,7 @@ describe('shared storage round trip', () => {
 
   it('a stale cached copy never inflates the balance', () => {
     const stored = addPoints([], { ...CINEMA, amount: 60 }).redemptions;
-    const stale = sanitizeRedemptions([
-      { ...stored[0], points: 999, cost: 100, state: 'saving' },
-    ]);
+    const stale = sanitizeRedemptions([{ ...stored[0], points: 999, cost: 100, state: 'saving' }]);
     expect(stale[0].points).toBe(100);
     expect(stale[0].state).toBe('awaiting_fulfilment');
   });

@@ -5,17 +5,17 @@ gives. Companion to `docs/chore-reward-review.md`.
 
 ## Two stores, one rule
 
-| Data | Owner | Key | Why |
-| --- | --- | --- | --- |
-| Chore status, points, approvals, reward definitions and costs | **ChoreOps** | its own entities | never duplicated in Beacon |
-| Routine identity, routine step order, pause state, mission progress | Beacon | `beacon-planner-meta` | ChoreOps has no routine entity and no ordering field |
-| Reward pursuits (saving → achieved → given), fulfilment audit | Beacon | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
+| Data                                                                | Owner        | Key                         | Why                                                                            |
+| ------------------------------------------------------------------- | ------------ | --------------------------- | ------------------------------------------------------------------------------ |
+| Chore status, points, approvals, reward definitions and costs       | **ChoreOps** | its own entities            | never duplicated in Beacon                                                     |
+| Routine identity, routine step order, pause state, mission progress | Beacon       | `beacon-planner-meta`       | ChoreOps has no routine entity and no ordering field                           |
+| Reward pursuits (saving → achieved → given), fulfilment audit       | Beacon       | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
 
 Both Beacon documents go through `src/api/beacon-store.ts`:
 
-* **add-on mode** — `PUT /beacon-data/:key` is the store, localStorage is the
+- **add-on mode** — `PUT /beacon-data/:key` is the store, localStorage is the
   offline cache; a failed PUT returns `{ cached: true, persisted: false, error }`;
-* **standalone / dev** — localStorage *is* the store (`persisted === cached`).
+- **standalone / dev** — localStorage _is_ the store (`persisted === cached`).
 
 Neither module swallows the outcome: `usePlannerMeta` and
 `useRewardRedemptions` expose `persisted`/`error`, and the planner raises an
@@ -25,10 +25,10 @@ Writes are serialised per key, so two quick edits cannot land out of order.
 
 ## Identifiers
 
-* Routines: slug id derived from the name once (`routineSlug`), never the display
+- Routines: slug id derived from the name once (`routineSlug`), never the display
   name and never the label string. Renaming keeps the id, so every chore link
   survives.
-* Redemptions: generated id per pursuit. A `(user, reward)` pair repeats over
+- Redemptions: generated id per pursuit. A `(user, reward)` pair repeats over
   time (the same reward can be earned again), so the pair cannot be the key.
 
 ## State machines
@@ -39,7 +39,7 @@ routine      available → in_progress → completed   (paused is orthogonal)
 redemption   saving → awaiting_fulfilment → fulfilled
 ```
 
-Chore and routine states are *derived* (ChoreOps status + Beacon registry), not
+Chore and routine states are _derived_ (ChoreOps status + Beacon registry), not
 stored a second time; only the redemption state and mission progress persist.
 
 ## Invariants enforced in code (each has a unit test)

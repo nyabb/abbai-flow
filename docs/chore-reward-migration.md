@@ -11,11 +11,11 @@ ChoreOps chores are untouched. Beacon only reads them.
 On first load with the new code, `adoptLabels()` turns each existing ChoreOps
 label on a **daily** chore into a routine definition:
 
-| Before (ChoreOps) | After (Beacon metadata) |
-| --- | --- |
+| Before (ChoreOps)                              | After (Beacon metadata)                                             |
+| ---------------------------------------------- | ------------------------------------------------------------------- |
 | `labels: ['Ochtendroutine']` on 3 daily chores | one routine `ochtendroutine`, `taskNames: [chore1, chore2, chore3]` |
-| `labels: ['ochtendroutine']` (different case) | the **same** routine — the slug matches |
-| daily chore without a label | stays a plain daily chore, listed under "other daily tasks" |
+| `labels: ['ochtendroutine']` (different case)  | the **same** routine — the slug matches                             |
+| daily chore without a label                    | stays a plain daily chore, listed under "other daily tasks"         |
 
 Adoption is **idempotent**: it runs on every render pass where an unregistered
 routine is visible, and `upsertRoutine`/`addRoutineTask` reuse the existing
@@ -30,11 +30,11 @@ falls back to the old label grouping — that is the rollback path.
 The old build stored reward allocations in `localStorage` under
 `beacon_reward_reservations`. `migrateReservations()` imports them once:
 
-* each reservation becomes a redemption in state `saving`;
-* a reservation whose cost is known and already covered becomes
+- each reservation becomes a redemption in state `saving`;
+- a reservation whose cost is known and already covered becomes
   `awaiting_fulfilment` (never `fulfilled`);
-* a reservation for a reward that already has a pursuit is skipped;
-* the legacy key is then removed.
+- a reservation for a reward that already has a pursuit is skipped;
+- the legacy key is then removed.
 
 Points are not touched, and no ChoreOps call is made — importing progress cannot
 award or deduct anything.
@@ -52,18 +52,18 @@ wants two routines, the names have to differ beyond case and spacing.
 
 ## 5. Safety and recovery
 
-* The migration only **adds** to `beacon-planner-meta` and
+- The migration only **adds** to `beacon-planner-meta` and
   `beacon-reward-redemptions`; it never removes chores, rewards or points.
-* Both documents are versioned; an unreadable or partial document falls back to
+- Both documents are versioned; an unreadable or partial document falls back to
   an empty model rather than throwing (`sanitizePlannerMeta`,
   `sanitizeRedemptions`), so a corrupted file cannot lock the screen.
-* To undo: clear the two keys (Settings → clear site data, or delete the
+- To undo: clear the two keys (Settings → clear site data, or delete the
   `/beacon-data/` documents). ChoreOps is unaffected and the labels regroup as
   they did before this release.
 
 ## Tested
 
-* `planner-meta.test.ts` — label adoption merges case variants, is idempotent,
+- `planner-meta.test.ts` — label adoption merges case variants, is idempotent,
   prunes chores that no longer exist, and imports the old pause flag once.
-* `reward-redemptions.test.ts` — reservations import as `saving`/`awaiting`
+- `reward-redemptions.test.ts` — reservations import as `saving`/`awaiting`
   (never `fulfilled`), and a second import does not duplicate a pursuit.
