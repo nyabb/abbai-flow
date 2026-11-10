@@ -299,9 +299,9 @@
 }
 
 .timer-btn--play:hover {
-  background: #16a34a;
-}
-
+    /* Derived from the base token rather than a second hardcoded green, so the
+       hover follows whatever --color-green-full resolves to. */
+    background: color-mix(in srgb, var(--color-green-full) 88%, #000);  }
 .timer-btn--pause {
   background: var(--color-orange-full);
   border-color: var(--color-orange-full);
