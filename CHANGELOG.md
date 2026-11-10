@@ -1,3 +1,20 @@
+# [1.57.0](https://github.com/nyabb/beacon/compare/v1.56.0...v1.57.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* **lists:** stop the built-in lists appearing beside the configured ones ([e5818e0](https://github.com/nyabb/beacon/commit/e5818e039cc48f5c15eb58ff247e20f7dd56cea0))
+* **planner:** keep a tall sheet's Create button above the tab bar ([dc2a4b0](https://github.com/nyabb/beacon/commit/dc2a4b07fb5eeb334181ca8ba6086581b38e7a60))
+* **planner:** subtract the tab bar from the rule that actually applies ([46a34b4](https://github.com/nyabb/beacon/commit/46a34b42de1fab7694d59b4f9b0370d42895b13f))
+* **tasks:** stop the todo refetch loop caused by array dependencies ([0005aae](https://github.com/nyabb/beacon/commit/0005aaeca66fd421b1fb2ebd731337ddd27ef467))
+* **ui:** keep a tall modal's Save button above the bottom tab bar ([43f353a](https://github.com/nyabb/beacon/commit/43f353abb51c767bebac12bc4e1f589220da1003))
+* **ui:** reserve the tab bar's height for the right selector ([c1a6657](https://github.com/nyabb/beacon/commit/c1a6657c15fa23aa9df9814b4e18c0a0b919c7b6))
+
+
+### Features
+
+* **tasks:** let task lists be chosen explicitly, and stop at nothing ([e8fb99d](https://github.com/nyabb/beacon/commit/e8fb99df20117cd42e81f989d69eade8db77932a))
+
 # [1.56.0](https://github.com/nyabb/beacon/compare/v1.55.1...v1.56.0) (2026-11-10)
 
 
