@@ -1,3 +1,14 @@
+# [1.54.0](https://github.com/nyabb/beacon/compare/v1.53.2...v1.54.0) (2026-11-10)
+
+
+### Features
+
+* **planner:** make rewards buckets you save into, not a claim to approve ([e612c02](https://github.com/nyabb/beacon/commit/e612c02d542e115aaf6fd6ed5482c314745736dd))
+* **planner:** separate what a task is from what a routine is ([11f4409](https://github.com/nyabb/beacon/commit/11f4409d80ed47288b73c5299a34b020eff64710))
+* **planner:** show the routine inside the mission run, and make pause mean it ([7ee358a](https://github.com/nyabb/beacon/commit/7ee358aaa3e7c3a2cdb612c98769440bdb92caf4))
+* **ui:** carry the dated header onto the remaining pages ([fe2f854](https://github.com/nyabb/beacon/commit/fe2f854e8fd233f569d0d0a4360921d165717d91))
+* **ui:** date the page in the header band instead of only naming it ([327d42e](https://github.com/nyabb/beacon/commit/327d42e72368b09fd2ffa963dea3a052d51e2e2e))
+
 ## [1.53.2](https://github.com/nyabb/beacon/compare/v1.53.1...v1.53.2) (2026-11-10)
 
 
