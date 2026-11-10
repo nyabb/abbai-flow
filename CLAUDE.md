@@ -6,6 +6,15 @@
 - Home Assistant add-on with ingress support
 - Docker for the server; the browser talks to HA directly
 
+## Display Mode (wall touchscreen)
+
+`/display` is a dedicated read-only screen for a permanently running Chromium
+kiosk (Raspberry Pi on the wall). Code: `src/components/display/`,
+`src/display-route.ts`, `src/hooks/useDisplayMode.ts` (wake lock, fullscreen,
+idle timeout), `src/hooks/useConnectionStatus.ts`, `src/styles/display.css`.
+Full documentation, kiosk launch line and connection states: see
+`docs/display-mode.md`.
+
 ## Backend layout (since 2026-11-09)
 
 `server.js` is a thin CommonJS entry (env → `createApp()` → `listen`). All request
