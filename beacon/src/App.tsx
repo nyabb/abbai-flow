@@ -27,7 +27,7 @@ import { OmniAdd } from './components/OmniAdd';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { Timer } from './components/Timer';
 import { DisplayView } from './components/display/DisplayView';
-import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { useConnectionStatus } from './hooks/useConnectionStatus';
 import { isDisplayUrl } from './display-route';
 import { useDisplayMode } from './hooks/useDisplayMode';
 import { WeatherView } from './components/WeatherView';
@@ -436,9 +436,9 @@ export function App() {
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
-  // Display Mode shows why it cannot reach anything: no network, Beacon down or
-  // Home Assistant down are three different problems for whoever walks past.
-  const online = useOnlineStatus();
+  // Why the app cannot reach anything: no network, Beacon down or Home Assistant
+  // down are three different problems, and Display Mode has to say which.
+  const connection = useConnectionStatus({ haConnected: connected });
   const isDisplayView = activeView === 'display';
   const displayMode = useDisplayMode({
     active: isDisplayView,
@@ -447,7 +447,14 @@ export function App() {
     idleMinutes: settings.displayIdleMinutes,
     onIdle: () => setActiveView('dashboard'),
   });
-  const displayConnection = !online ? 'offline' : connected ? 'online' : 'ha-down';
+  const displayConnection = connection.state;
+
+  // One refresh per recovery. Calendars and events are not polled, so nothing
+  // else would notice that the server came back.
+  useEffect(() => {
+    if (!connection.reconnected) return;
+    void fetchCalendars();
+  }, [connection.reconnected, fetchCalendars]);
 
   useEffect(() => {
     if (!choreOpsData?.users.length) return;
