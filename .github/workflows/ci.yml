@@ -28,14 +28,16 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        run: npm test
-
-      - name: Coverage thresholds
-        run: npm run test:coverage
+      # One run, not two: `test:coverage` executes every test *and* asserts the
+      # thresholds, so a separate `npm test` was ~40s of identical work per run.
+      # The reporters are overridden to text for CI - the html report is written
+      # for a human to open and nobody opens it here.
+      - name: Test & coverage
+        run: npm run test:coverage -- --coverage.reporter=text --coverage.reporter=text-summary
 
       - name: Backend tests
         run: npm run test:server
 
+      # `npm run build` is `tsc && vite build`, and `Type check` already ran tsc.
       - name: Build
-        run: npm run build
+        run: npx vite build
