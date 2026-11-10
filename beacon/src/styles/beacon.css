@@ -1362,8 +1362,24 @@ a:focus:not(:focus-visible) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  /* Above the bottom tab bar (90) and the sheet overlay (99): a modal must never
+     share their band. */
+  z-index: 1000;
   animation: fade-in 150ms ease;
+}
+
+/*
+ * With the tab bar pinned to the bottom of the screen, the overlay reserves the
+ * bar's height. The dialog is then centred in the space above it and may use all
+ * of that space, so a taller form -- adding a task, for instance -- keeps its
+ * footer, and therefore its Save button, above the bar instead of underneath it.
+ */
+.beacon--sidebar-bottom .modal-overlay {
+  padding-bottom: var(--mobile-tab-bar-height, 72px);
+}
+
+.beacon--sidebar-bottom .modal-overlay .modal {
+  max-height: 100%;
 }
 
 .modal {
@@ -1373,8 +1389,14 @@ a:focus:not(:focus-visible) {
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
+  /* Scrolling still works; the track is simply not drawn. */
+  scrollbar-width: none;
   box-shadow: var(--shadow-lg);
   animation: slide-up 200ms ease;
+}
+
+.modal::-webkit-scrollbar {
+  display: none;
 }
 
 .modal-header {
