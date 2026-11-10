@@ -11,14 +11,33 @@ export interface DashboardTodoItem {
   userId?: string;
 }
 
-export function useDashboardTasks(connected: boolean, groceryListIds: string[] = []) {
+export function useDashboardTasks(
+  connected: boolean,
+  groceryListIds: string[] = [],
+  taskListIds: string[] = [],
+) {
   const localTasks = useLocalTasks();
   const { users, listByUser, completions } = useTaskmate(connected);
   const [haItems, setHaItems] = useState<Omit<DashboardTodoItem, 'userId'>[]>([]);
 
+  /*
+   * Array *identity*, not contents, is what a dependency array compares. Callers
+   * routinely pass an inline fallback such as `settings.taskListIds ?? []`, which
+   * is a brand new array on every render -- so depending on the array directly
+   * re-ran this effect on every render and refetched /api/states in a loop. A
+   * joined string changes only when the selection actually changes.
+   */
+  const groceryKey = groceryListIds.join('|');
+  const taskKey = taskListIds.join('|');
+
   // Fetch HA todo items for task-type lists
   useEffect(() => {
     if (!connected && !hasToken()) return;
+
+    // Rebuilt from the keys above so the effect body never closes over an array
+    // whose identity changes every render.
+    const groceryIds = groceryKey ? groceryKey.split('|') : [];
+    const taskIds = taskKey ? taskKey.split('|') : [];
 
     async function fetchTasks() {
       try {
@@ -32,16 +51,28 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
         const todoEntities = states.filter((s) => {
           if (!s.entity_id.startsWith('todo.') || s.state === 'unavailable') return false;
           const name = (s.attributes.friendly_name as string) || s.entity_id;
-          // Use groceryListIds if configured, otherwise fall back to keyword classification
-          if (groceryListIds.length > 0) {
-            return !groceryListIds.includes(s.entity_id);
+          /*
+           * Naming the task lists explicitly beats guessing: with a selection,
+           * exactly those entities are read and nothing else, so a list added in
+           * Home Assistant stays invisible until it is chosen here. Without one,
+           * fall back to "any todo entity that is not a grocery list".
+           */
+          if (taskIds.length > 0) {
+            return taskIds.includes(s.entity_id) && !groceryIds.includes(s.entity_id);
+          }
+          if (groceryIds.length > 0) {
+            return !groceryIds.includes(s.entity_id);
           }
           return !isGroceryEntity(name);
         });
 
-        // Fetch items from up to 3 task lists
+        /*
+         * Every selected list is read. This used to stop at three
+         * (`slice(0, 3)`), and because the order comes from /api/states it was
+         * not even a predictable three -- lists beyond that simply never showed.
+         */
         const items: Omit<DashboardTodoItem, 'userId'>[] = [];
-        for (const entity of todoEntities.slice(0, 3)) {
+        for (const entity of todoEntities) {
           try {
             const result = (await callHaService(
               'todo',
@@ -91,7 +122,7 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [connected, groceryListIds]);
+  }, [connected, groceryKey, taskKey]);
 
   const items: DashboardTodoItem[] = useMemo(() => {
     const local: DashboardTodoItem[] = localTasks

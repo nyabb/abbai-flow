@@ -36,6 +36,12 @@ export interface BeaconSettings {
   anylistEnabled: boolean;
   defaultGroceryList: string;
   groceryListIds: string[];
+  /**
+   * HA `todo.*` entities that feed the task lists. Empty means "everything that
+   * is not a grocery list", which is the old guess-based behaviour; naming them
+   * explicitly stops a new list from silently appearing in the wrong place.
+   */
+  taskListIds?: string[];
   shoppingEntity: string;
   musicDefaultPlayer: string;
   photoDirectory: string;

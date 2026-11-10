@@ -72,11 +72,20 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
     taskLists: UnifiedList[];
   }>(() => {
     const ha: UnifiedList[] = haLists.map((l) => ({ id: l.id, name: l.name, source: 'ha' }));
-    const local: UnifiedList[] = localTasks.lists.map((l) => ({
-      id: l.id,
-      name: l.name,
-      source: 'local',
-    }));
+    /*
+     * The built-in "To-Do" and "Shopping List" are a first-run fallback, not
+     * permanent fixtures. They used to be merged in unconditionally, so a
+     * configured setup still showed a phantom Shopping List and To-Do beside the
+     * real lists -- and since the first entry is auto-selected on open, one of
+     * them was often the list you landed on.
+     *
+     * Once any list has been configured, the built-ins are dropped. With nothing
+     * configured the page still works out of the box.
+     */
+    const local: UnifiedList[] =
+      groceryListIds.length > 0
+        ? []
+        : localTasks.lists.map((l) => ({ id: l.id, name: l.name, source: 'local' }));
     const merged = [...local, ...ha];
 
     // Determine if an HA list is a grocery list:

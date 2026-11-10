@@ -2009,12 +2009,18 @@
        and dynamic browser chrome, a bottom sheet ended up half off-screen. */
     align-items: center;
     padding: 12px;
+    /* Room for the tab bar, so a centred sheet never lands underneath it. */
+    padding-bottom: calc(12px + var(--mobile-tab-bar-height, 72px));
   }
   .planner-sheet,
   .planner-sheet--form {
     width: 100%;
-    max-height: calc(100vh - 24px);
-    max-height: calc(100dvh - 24px);
+    /* The tab bar is pinned to the bottom of the viewport, so subtract it: a tall
+       form's footer (Cancel / Create) was drawn beneath the bar and could not be
+       tapped. This rule is the one that wins -- it sits after the earlier
+       `.planner-sheet` block, which is why adding a rule up there did nothing. */
+    max-height: calc(100vh - 24px - var(--mobile-tab-bar-height, 72px));
+    max-height: calc(100dvh - 24px - var(--mobile-tab-bar-height, 72px));
     padding: 22px 17px;
     border-radius: 18px;
   }

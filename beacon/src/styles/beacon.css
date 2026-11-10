@@ -1362,8 +1362,31 @@ a:focus:not(:focus-visible) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
+  /* Above the bottom tab bar (90) and the sheet overlay (99): a modal must never
+     share their band. */
+  z-index: 1000;
   animation: fade-in 150ms ease;
+}
+
+/*
+ * When a bar is pinned to the bottom of the screen, the overlay reserves its
+ * height, so the dialog is centred in the space above it and may use all of that
+ * space -- a taller form (adding a task) keeps its footer, and therefore its Save
+ * button, above the bar instead of underneath it.
+ *
+ * The tab bar is shown by `.beacon--compact` (see the `.beacon--compact
+ * .mobile-tab-bar { display: flex }` rule), not by the sidebar position, so
+ * matching on `beacon--sidebar-bottom` alone never applied. Both are covered:
+ * kiosk mode drops the sidebar class entirely.
+ */
+.beacon--compact .modal-overlay,
+.beacon--sidebar-bottom .modal-overlay {
+  padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
+}
+
+.beacon--compact .modal-overlay .modal,
+.beacon--sidebar-bottom .modal-overlay .modal {
+  max-height: 100%;
 }
 
 .modal {
@@ -1373,8 +1396,14 @@ a:focus:not(:focus-visible) {
   max-width: 480px;
   max-height: 90vh;
   overflow-y: auto;
+  /* Scrolling still works; the track is simply not drawn. */
+  scrollbar-width: none;
   box-shadow: var(--shadow-lg);
   animation: slide-up 200ms ease;
+}
+
+.modal::-webkit-scrollbar {
+  display: none;
 }
 
 .modal-header {

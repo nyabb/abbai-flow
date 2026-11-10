@@ -174,6 +174,65 @@ export function IntegrationsSection({
             </div>
           )}
         </div>
+        {/*
+          Task lists are chosen explicitly, the same way grocery lists are.
+          Leaving this empty keeps the old "everything that is not grocery"
+          behaviour, but a selection means exactly those entities are read.
+        */}
+        <div
+          className="settings-row"
+          style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}
+        >
+          <div>
+            <div className="settings-row-label">{t('nav.tasks')}</div>
+            <div className="settings-row-sublabel">
+              {t('settings.integrations.groceryListsSublabel')}
+            </div>
+          </div>
+          {todoLists.length === 0 ? (
+            <div className="settings-row-sublabel">
+              {t('settings.integrations.noTodoListsFound')}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {todoLists.map((list) => {
+                const selected = settings.taskListIds ?? [];
+                const isChecked = selected.includes(list.id);
+                return (
+                  <label
+                    key={list.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '8px 12px',
+                      borderRadius: 6,
+                      border: '1px solid var(--border)',
+                      background: isChecked ? 'var(--bg-today)' : 'var(--bg-surface)',
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => {
+                        const newIds = e.target.checked
+                          ? [...selected, list.id]
+                          : selected.filter((id) => id !== list.id);
+                        onUpdateSettings({ taskListIds: newIds });
+                      }}
+                      style={{ width: 16, height: 16 }}
+                    />
+                    <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                      {list.name}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
         <div className="settings-row">
           <div>
             <div className="settings-row-label">
