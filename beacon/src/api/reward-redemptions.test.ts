@@ -158,3 +158,40 @@ describe('migration and parsing', () => {
     ).toBe(100);
   });
 });
+
+/**
+ * Phase 5: the document is the shared state. Two devices read the same stored
+ * JSON, so progress must round-trip without drift or double counting.
+ */
+describe('shared storage round trip', () => {
+  it('two devices converge on the same composed state', () => {
+    // Device A saves twice; device B only ever reads.
+    let stored = addPoints([], { ...CINEMA, amount: 40 }).redemptions;
+    stored = addPoints(stored, { ...CINEMA, amount: 30 }).redemptions;
+
+    const deviceB = sanitizeRedemptions(JSON.parse(JSON.stringify(stored)));
+    expect(deviceB).toEqual(stored);
+    expect(activeRedemption(deviceB, 'Zara', 'Cinema')?.points).toBe(70);
+    expect(spendableWithRedemptions(100, deviceB, [], 'Zara')).toBe(30);
+  });
+
+  it('a fulfilment written by one device is respected by the other', () => {
+    const achieved = addPoints([], { ...CINEMA, amount: 100 }).redemptions;
+    const fulfilled = fulfilRedemption(achieved, achieved[0].id, 'Papa').redemptions;
+
+    const otherDevice = sanitizeRedemptions(JSON.parse(JSON.stringify(fulfilled)));
+    expect(activeRedemptions(otherDevice, 'Zara')).toHaveLength(0);
+    expect(fulfilledRedemptions(otherDevice, 'Zara')[0].fulfilledBy).toBe('Papa');
+    // A second device cannot hand the same reward over again.
+    expect(fulfilRedemption(otherDevice, achieved[0].id, 'Papa').redemption).toBeNull();
+  });
+
+  it('a stale cached copy never inflates the balance', () => {
+    const stored = addPoints([], { ...CINEMA, amount: 60 }).redemptions;
+    const stale = sanitizeRedemptions([
+      { ...stored[0], points: 999, cost: 100, state: 'saving' },
+    ]);
+    expect(stale[0].points).toBe(100);
+    expect(stale[0].state).toBe('awaiting_fulfilment');
+  });
+});
