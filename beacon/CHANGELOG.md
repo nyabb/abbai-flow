@@ -1,3 +1,11 @@
+# [1.55.0](https://github.com/nyabb/beacon/compare/v1.54.0...v1.55.0) (2026-11-10)
+
+
+### Features
+
+* **planner:** give the chore board a phone layout with a tab row ([b076a74](https://github.com/nyabb/beacon/commit/b076a74db23caade8d3dc906c80f504634a4c290))
+* **planner:** let a child delete a reward they have fully funded ([e4a2696](https://github.com/nyabb/beacon/commit/e4a269660edf395860ead5974a7d10699675f266))
+
 # [1.54.0](https://github.com/nyabb/beacon/compare/v1.53.2...v1.54.0) (2026-11-10)
 
 
