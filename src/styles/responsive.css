@@ -1,0 +1,108 @@
+/* ============================================================
+   Beacon — Responsive & touch layer
+
+   Loaded last, on top of every per-view sheet, so it only *adds* rules for
+   devices the older sheets did not account for. Nothing here restyles the
+   desktop experience.
+
+   Breakpoint ladder (the values the per-view sheets already use, kept in one
+   place so additions do not invent new ones):
+
+     max-width:  480px   phone portrait
+     max-width:  640px   large phone / small tablet portrait
+     max-width:  768px   tablet portrait
+     max-width: 1024px   tablet landscape / small laptop
+     min-width: 1600px   wall display (Raspberry Pi touchscreen, TV)
+     min-height: 900px  tall landscape (kiosk in portrait-ish window)
+
+   Input capabilities are matched separately from width: a 1024px-wide tablet
+   and a 1024px-wide laptop window need different hit areas, so touch sizing
+   keys off `pointer: coarse`, never off width alone.
+   ============================================================ */
+
+/* --- Touch targets -------------------------------------------------------
+   Apple HIG / Material both land on ~44px. The desktop controls are 34-44px,
+   so this only grows the ones that were below the line. Applied to the control
+   families rather than every button so inline links keep their density. */
+@media (pointer: coarse) {
+  .icon-btn,
+  .settings-btn,
+  .settings-segment-btn,
+  .settings-color-circle,
+  .timer-mode-btn,
+  .timer-preset,
+  .grocery-view-tab,
+  .planner-date-chips button,
+  .dash-edit-toggle {
+    min-height: 44px;
+  }
+
+  .icon-btn,
+  .settings-color-circle {
+    min-width: 44px;
+  }
+
+  /* Toggles are a track + thumb ~36px tall; the label row is the hit area, so
+     pad it instead of scaling the control and changing how it looks. */
+  .settings-toggle {
+    padding: 6px 2px;
+  }
+
+  /* Checkboxes in list rows are tappable anywhere on the row already, but the
+     box itself was 16px. */
+  .settings-row input[type='checkbox'],
+  .settings-row input[type='radio'] {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Range inputs need a thumb you can actually grab. */
+  .settings-slider {
+    height: 32px;
+  }
+}
+
+/* --- Safe areas ----------------------------------------------------------
+   Tablets and phones with rounded corners/notches letterbox the app; the shell
+   is a fixed viewport grid, so the padding has to come from the inset vars. */
+.mobile-tab-bar {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+}
+
+/* --- Wall display --------------------------------------------------------
+   1600px and up is the "on the wall" case: the reading distance is 2-3m, so
+   the whole scale steps up. Only the root font size and the header band move;
+   the layout is already fluid. */
+@media (min-width: 1600px) {
+  :root {
+    font-size: 17px;
+  }
+
+  .beacon-header,
+  .dash-topbar {
+    min-height: calc(var(--header-height) + 8px);
+  }
+}
+
+@media (min-width: 2200px) {
+  :root {
+    font-size: 18px;
+  }
+}
+
+/* Short landscape (tablet on a stand, 16:9 laptop): the header band and the
+   dashboard paddings eat the vertical budget, so trim the padding rather than
+   the content. */
+@media (min-width: 900px) and (max-height: 820px) {
+  .dash-topbar {
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+
+  .beacon-header {
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+}
