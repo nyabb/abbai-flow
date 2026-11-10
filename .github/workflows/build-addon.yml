@@ -124,7 +124,12 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          # linux/arm/v7 dropped: it only serves 32-bit Raspberry Pi OS, and as
+          # the slowest QEMU target it was the most expensive platform to
+          # emulate. A Pi 4/5 running 64-bit Pi OS uses arm64. This list must
+          # stay in sync with the `arch:` list in config.yaml, or Home
+          # Assistant will advertise a build it cannot pull.
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
