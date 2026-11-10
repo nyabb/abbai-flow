@@ -7,6 +7,7 @@ import type { ChoreOpsState } from '../../types/choreops';
 
 const mocks = vi.hoisted(() => ({
   createReward: vi.fn(async () => {}),
+  deleteReward: vi.fn(async () => {}),
   deleteChore: vi.fn(async () => {}),
   approveReward: vi.fn(async () => {}),
   pressButton: vi.fn(async () => {}),
@@ -25,6 +26,7 @@ vi.mock('../../hooks/useChoreOps', () => ({
     createChore: async () => {},
     updateChore: async () => {},
     createReward: mocks.createReward,
+    deleteReward: mocks.deleteReward,
     deleteChore: mocks.deleteChore,
     approveReward: mocks.approveReward,
   }),
@@ -330,6 +332,27 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     // Zara has 25 and the goal wants 40, so all 25 go towards it and it stays open.
     await waitFor(() => expect(container.textContent).toContain('25 / 40'));
     expect(container.textContent).not.toContain('Gereserveerd');
+  });
+
+  /*
+   * A reward the child has fully funded is theirs to clear, so deleting it needs
+   * no parent -- even with a PIN on file, which is what PARENT carries.
+   */
+  it('deletes a fully funded reward without asking for a PIN', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+
+    const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
+      element.textContent?.includes('Schermtijd'),
+    )!;
+    fireEvent.click(row.querySelector('.planner-task-more')!);
+    fireEvent.click(container.querySelector('.planner-sheet .planner-danger')!);
+
+    await waitFor(() => expect(mocks.deleteReward).toHaveBeenCalledWith('Schermtijd'));
+    expect(container.querySelector('.planner-pin-input')).toBeNull();
   });
 
   it('creates a per-child reward in ChoreOps', async () => {
