@@ -1,3 +1,10 @@
+## [1.52.1](https://github.com/nyabb/beacon/compare/v1.52.0...v1.52.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **hooks:** complete dependency arrays and capture refs in cleanups ([2d084fe](https://github.com/nyabb/beacon/commit/2d084fe1eb09c0a9487e28e82d9a54637f3d4fcb))
+
 # [1.52.0](https://github.com/nyabb/beacon/compare/v1.51.2...v1.52.0) (2026-11-10)
 
 
