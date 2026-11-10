@@ -62,6 +62,97 @@
   }
 }
 
+/* --- Touch interaction ---------------------------------------------------
+   `touch-action: manipulation` drops the ~300ms double-tap-zoom wait on every
+   control without disabling pinch-zoom on the page itself, so a kiosk tap feels
+   immediate and a swipe still scrolls.
+
+   It is applied globally rather than per breakpoint: it changes nothing for a
+   mouse, and a touchscreen laptop deserves the same behaviour as a tablet. */
+button,
+[role='button'],
+[role='tab'],
+[role='switch'],
+a,
+label.settings-btn,
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  touch-action: manipulation;
+}
+
+/* Dialogs and sheets: a swipe that reaches the end of their own content must
+   not start scrolling the page behind them (scroll chaining reads as a jump). */
+.modal-body,
+.planner-sheet {
+  overscroll-behavior: contain;
+}
+
+@media (pointer: coarse) {
+  /* Footer actions in dialogs are the "commit" buttons — the ones a finger must
+     hit exactly once, and the ones easiest to fat-finger the neighbour of. */
+  .modal-footer-right,
+  .planner-sheet-footer {
+    gap: 12px;
+  }
+
+  .modal-footer-right button,
+  .planner-sheet-footer button {
+    min-height: 48px;
+    min-width: 96px;
+  }
+
+  /* Bigger row rhythm in long settings lists; the density that suits a mouse
+     is what makes a touch list feel cramped. */
+  .settings-row {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  /* Sticky confirmation feedback. There is no hover on a touchscreen, so the
+     only proof a tap landed is the pressed state. */
+  .settings-btn:active,
+  .icon-btn:active,
+  .display-nav-button:active,
+  .mobile-tab:active,
+  .planner-sheet-footer button:active,
+  .modal-footer-right button:active {
+    transform: scale(0.97);
+  }
+
+  /* Text/select/time inputs at 10px padding are ~40px tall; 16px font also stops
+     iOS Safari from zooming the page when the field takes focus. */
+  .form-input,
+  .form-select,
+  .settings-input,
+  .settings-select,
+  .settings-time-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+}
+
+/* --- Phone landscape -----------------------------------------------------
+   A phone turned sideways has ~380px of height: the header bands and the tab bar
+   would leave almost nothing for content, so the bands shrink and the content
+   area is allowed to scroll instead of being clipped. */
+@media (orientation: landscape) and (max-height: 480px) {
+  .beacon-header,
+  .dash-topbar {
+    min-height: 40px;
+    padding-top: 2px;
+    padding-bottom: 4px;
+  }
+
+  .beacon-main {
+    overflow-y: auto;
+  }
+
+  .mobile-tab-bar {
+    height: 44px;
+  }
+}
+
 /* --- Safe areas ----------------------------------------------------------
    Tablets and phones with rounded corners/notches letterbox the app; the shell
    is a fixed viewport grid, so the padding has to come from the inset vars. */

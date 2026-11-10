@@ -56,3 +56,36 @@ describe('responsive layer', () => {
     expect(missing).toEqual([]);
   });
 });
+
+/**
+ * Touch ergonomics: a kiosk tap must land first time, and the screen must not
+ * start zooming or scroll-chaining when a finger drags.
+ */
+describe('touch interaction layer', () => {
+  it('removes the double-tap-zoom delay on controls', () => {
+    expect(responsive).toContain('touch-action: manipulation');
+  });
+
+  it('stops dialogs from scroll-chaining into the page behind them', () => {
+    expect(responsive).toContain('overscroll-behavior: contain');
+  });
+
+  it('gives footer actions in dialogs a finger-sized target', () => {
+    expect(responsive).toMatch(/\.modal-footer-right button,\s*\.planner-sheet-footer button \{/);
+    expect(responsive).toMatch(/min-height: 48px/);
+  });
+
+  it('keeps a pressed state for devices without hover', () => {
+    expect(responsive).toContain(':active');
+    expect(responsive).toMatch(/transform: scale/);
+  });
+
+  it('sizes form fields for touch and avoids iOS focus zoom', () => {
+    expect(responsive).toMatch(/\.settings-time-input \{[^}]*font-size: 16px/s);
+  });
+
+  it('handles a phone in landscape', () => {
+    expect(responsive).toMatch(/@media \(orientation: landscape\) and \(max-height: 480px\)/);
+  });
+});
+
