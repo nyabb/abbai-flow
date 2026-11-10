@@ -159,9 +159,7 @@ export function DisplaySection({
         <div className="settings-row">
           <div>
             <div className="settings-row-label">{t('settings.display.fullscreenLabel')}</div>
-            <div className="settings-row-sublabel">
-              {t('settings.display.fullscreenSublabel')}
-            </div>
+            <div className="settings-row-sublabel">{t('settings.display.fullscreenSublabel')}</div>
           </div>
           <Toggle
             checked={settings.displayFullscreen}
@@ -171,9 +169,7 @@ export function DisplaySection({
         <div className="settings-row">
           <div>
             <div className="settings-row-label">{t('settings.display.idleTimeoutLabel')}</div>
-            <div className="settings-row-sublabel">
-              {t('settings.display.idleTimeoutSublabel')}
-            </div>
+            <div className="settings-row-sublabel">{t('settings.display.idleTimeoutSublabel')}</div>
           </div>
           <Segment
             value={String(settings.displayIdleMinutes)}
@@ -215,9 +211,7 @@ export function DisplaySection({
       <div className="settings-group">
         <div className="settings-row">
           <div>
-            <div className="settings-row-label">
-              {t('settings.appearance.reducedMotionLabel')}
-            </div>
+            <div className="settings-row-label">{t('settings.appearance.reducedMotionLabel')}</div>
             <div className="settings-row-sublabel">
               {t('settings.appearance.reducedMotionSublabel')}
             </div>

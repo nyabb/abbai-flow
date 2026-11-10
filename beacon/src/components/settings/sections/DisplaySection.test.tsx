@@ -45,8 +45,7 @@ function renderSection(overrides: Partial<BeaconSettings> = {}) {
 }
 
 const row = (label: string) => screen.getByText(label).closest('.settings-row') as HTMLElement;
-const checkboxIn = (label: string) =>
-  within(row(label)).getByRole('checkbox') as HTMLInputElement;
+const checkboxIn = (label: string) => within(row(label)).getByRole('checkbox') as HTMLInputElement;
 
 describe('DisplaySection — display mode', () => {
   it('shows the display-mode group', () => {
@@ -105,7 +104,9 @@ describe('DisplaySection — display mode', () => {
   it('reflects the stored panel selection', () => {
     renderSection({ displayPanels: { agenda: false, chores: true, family: false, weather: true } });
 
-    const panelRow = screen.getByText(NL.t('settings.display.panelsLabel')).closest('.settings-row');
+    const panelRow = screen
+      .getByText(NL.t('settings.display.panelsLabel'))
+      .closest('.settings-row');
     const checks = within(panelRow as HTMLElement).getAllByRole('checkbox') as HTMLInputElement[];
 
     expect(checks.map((check) => check.checked)).toEqual([false, true, false, true]);

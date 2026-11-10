@@ -54,7 +54,8 @@ export const en = {
   'display.enterFullscreen': 'Enter fullscreen',
   'display.exitFullscreen': 'Exit fullscreen',
   'settings.appearance.reducedMotionLabel': 'Reduced animation',
-  'settings.appearance.reducedMotionSublabel': 'Shortens every animation and transition in the app.',
+  'settings.appearance.reducedMotionSublabel':
+    'Shortens every animation and transition in the app.',
   'display.connection.online': 'Connected',
   'display.connection.beaconDown': 'Beacon unreachable',
   'display.connection.haDown': 'Home Assistant unreachable',
@@ -363,11 +364,14 @@ export const en = {
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Display mode',
   'settings.display.wakeLockLabel': 'Keep the screen awake',
-  'settings.display.wakeLockSublabel': 'Ask the browser not to blank the screen while the display view is open.',
+  'settings.display.wakeLockSublabel':
+    'Ask the browser not to blank the screen while the display view is open.',
   'settings.display.fullscreenLabel': 'Start in fullscreen',
-  'settings.display.fullscreenSublabel': 'Browsers only allow this after a tap, so it may need one press.',
+  'settings.display.fullscreenSublabel':
+    'Browsers only allow this after a tap, so it may need one press.',
   'settings.display.idleTimeoutLabel': 'Return to the dashboard after',
-  'settings.display.idleTimeoutSublabel': 'Never interrupts an open dialog or a field you are typing in.',
+  'settings.display.idleTimeoutSublabel':
+    'Never interrupts an open dialog or a field you are typing in.',
   'settings.display.panelsLabel': 'Panels',
   'settings.display.panelsSublabel': 'Which panels the display view shows.',
   'settings.display.panelAgenda': 'Agenda',

@@ -108,10 +108,15 @@ describe('useConnectionStatus', () => {
   });
 
   it('probes with a no-store request so an outage cannot be served from cache', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 200 }));
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response('', { status: 200 }));
     const { result } = renderHook(() => useConnectionStatus({ haConnected: true }));
 
     await waitFor(() => expect(result.current.state).toBe('online'));
-    expect(fetchSpy).toHaveBeenCalledWith('manifest.json', expect.objectContaining({ cache: 'no-store' }));
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'manifest.json',
+      expect.objectContaining({ cache: 'no-store' }),
+    );
   });
 });

@@ -364,11 +364,14 @@ export const nl: Record<TranslationKey, string> = {
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Displaymodus',
   'settings.display.wakeLockLabel': 'Scherm wakker houden',
-  'settings.display.wakeLockSublabel': 'Vraag de browser het scherm niet te doven zolang de displayweergave open is.',
+  'settings.display.wakeLockSublabel':
+    'Vraag de browser het scherm niet te doven zolang de displayweergave open is.',
   'settings.display.fullscreenLabel': 'Starten op volledig scherm',
-  'settings.display.fullscreenSublabel': 'Browsers staan dit pas toe na een tik, dus soms is één keer drukken nodig.',
+  'settings.display.fullscreenSublabel':
+    'Browsers staan dit pas toe na een tik, dus soms is één keer drukken nodig.',
   'settings.display.idleTimeoutLabel': 'Terug naar dashboard na',
-  'settings.display.idleTimeoutSublabel': 'Onderbreekt nooit een open dialoog of een veld waarin je typt.',
+  'settings.display.idleTimeoutSublabel':
+    'Onderbreekt nooit een open dialoog of een veld waarin je typt.',
   'settings.display.panelsLabel': 'Panelen',
   'settings.display.panelsSublabel': 'Welke panelen de displayweergave toont.',
   'settings.display.panelAgenda': 'Agenda',

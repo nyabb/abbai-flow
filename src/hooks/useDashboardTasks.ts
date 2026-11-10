@@ -23,11 +23,15 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
     async function fetchTasks() {
       try {
         // Get the non-grocery HA todo entities
-        const states = await haFetch('/api/states') as Array<{ entity_id: string; state: string; attributes: Record<string, unknown> }>;
+        const states = (await haFetch('/api/states')) as Array<{
+          entity_id: string;
+          state: string;
+          attributes: Record<string, unknown>;
+        }>;
 
-        const todoEntities = states.filter(s => {
+        const todoEntities = states.filter((s) => {
           if (!s.entity_id.startsWith('todo.') || s.state === 'unavailable') return false;
-          const name = s.attributes.friendly_name as string || s.entity_id;
+          const name = (s.attributes.friendly_name as string) || s.entity_id;
           // Use groceryListIds if configured, otherwise fall back to keyword classification
           if (groceryListIds.length > 0) {
             return !groceryListIds.includes(s.entity_id);
@@ -39,10 +43,18 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
         const items: Omit<DashboardTodoItem, 'userId'>[] = [];
         for (const entity of todoEntities.slice(0, 3)) {
           try {
-            const result = await callHaService('todo', 'get_items', {
-              entity_id: entity.entity_id,
-            }, true) as {
-              service_response?: Record<string, { items?: Array<{ uid: string; summary: string; status: string }> }>;
+            const result = (await callHaService(
+              'todo',
+              'get_items',
+              {
+                entity_id: entity.entity_id,
+              },
+              true,
+            )) as {
+              service_response?: Record<
+                string,
+                { items?: Array<{ uid: string; summary: string; status: string }> }
+              >;
             };
             const entityItems = result?.service_response?.[entity.entity_id]?.items ?? [];
             for (const item of entityItems) {
@@ -53,7 +65,9 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
                 listId: entity.entity_id,
               });
             }
-          } catch { /* skip failed lists */ }
+          } catch {
+            /* skip failed lists */
+          }
         }
         setHaItems(items);
       } catch (err) {
@@ -82,8 +96,10 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
   const items: DashboardTodoItem[] = useMemo(() => {
     const local: DashboardTodoItem[] = localTasks
       .getTasksForList('beacon-todo')
-      .filter(t => t.status === 'needs_action' || (t.completedAt ? isToday(t.completedAt) : false))
-      .map(t => ({
+      .filter(
+        (t) => t.status === 'needs_action' || (t.completedAt ? isToday(t.completedAt) : false),
+      )
+      .map((t) => ({
         uid: t.id,
         summary: t.summary,
         status: t.status,
@@ -98,7 +114,7 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
       }
     }
 
-    const done: DashboardTodoItem[] = completions.map(c => ({
+    const done: DashboardTodoItem[] = completions.map((c) => ({
       uid: c.uid,
       summary: c.summary,
       status: 'completed' as const,
@@ -107,7 +123,7 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
     }));
 
     const seen = new Set<string>();
-    return [...local, ...fromHa, ...done].filter(it => {
+    return [...local, ...fromHa, ...done].filter((it) => {
       const key = `${it.userId ?? ''}:${it.uid}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -115,45 +131,60 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
     });
   }, [localTasks, haItems, listByUser, completions]);
 
-  const toggleItem = useCallback(async (uid: string, currentStatus: string, listId?: string) => {
-    // Check if it's a local item
-    const localItem = localTasks.getTasksForList('beacon-todo').find(t => t.id === uid);
-    if (localItem) {
-      localTasks.toggleTask(uid);
-      return;
-    }
+  const toggleItem = useCallback(
+    async (uid: string, currentStatus: string, listId?: string) => {
+      // Check if it's a local item
+      const localItem = localTasks.getTasksForList('beacon-todo').find((t) => t.id === uid);
+      if (localItem) {
+        localTasks.toggleTask(uid);
+        return;
+      }
 
-    const haItem = haItems.find(i => i.uid === uid && (listId == null || i.listId === listId))
-      ?? haItems.find(i => i.uid === uid);
-    if (!haItem) return;
-    const newStatus = currentStatus === 'needs_action' ? 'completed' : 'needs_action';
-    try {
-      await callHaService('todo', 'update_item', {
-        entity_id: haItem.listId,
-        item: haItem.summary,
-        status: newStatus,
-      });
-      setHaItems(prev => prev.map(i =>
-        i.uid === uid && i.listId === haItem.listId
-          ? { ...i, status: newStatus as 'needs_action' | 'completed' }
-          : i
-      ));
-    } catch (err) {
-      console.warn('Failed to toggle todo item:', err);
-    }
-  }, [localTasks, haItems]);
+      const haItem =
+        haItems.find((i) => i.uid === uid && (listId == null || i.listId === listId)) ??
+        haItems.find((i) => i.uid === uid);
+      if (!haItem) return;
+      const newStatus = currentStatus === 'needs_action' ? 'completed' : 'needs_action';
+      try {
+        await callHaService('todo', 'update_item', {
+          entity_id: haItem.listId,
+          item: haItem.summary,
+          status: newStatus,
+        });
+        setHaItems((prev) =>
+          prev.map((i) =>
+            i.uid === uid && i.listId === haItem.listId
+              ? { ...i, status: newStatus as 'needs_action' | 'completed' }
+              : i,
+          ),
+        );
+      } catch (err) {
+        console.warn('Failed to toggle todo item:', err);
+      }
+    },
+    [localTasks, haItems],
+  );
 
   return { items, toggleItem, users };
 }
 
 const GROCERY_KEYWORDS = [
-  'grocer', 'shopping', 'costco', 'walmart', 'target', 'store',
-  'pantry', 'fridge', 'freezer', 'inventory', 'meal',
+  'grocer',
+  'shopping',
+  'costco',
+  'walmart',
+  'target',
+  'store',
+  'pantry',
+  'fridge',
+  'freezer',
+  'inventory',
+  'meal',
 ];
 
 function isGroceryEntity(name: string): boolean {
   const lower = name.toLowerCase();
-  return GROCERY_KEYWORDS.some(kw => lower.includes(kw));
+  return GROCERY_KEYWORDS.some((kw) => lower.includes(kw));
 }
 
 function isToday(iso: string): boolean {

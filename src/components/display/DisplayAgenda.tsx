@@ -24,13 +24,7 @@ function timeLabel(event: CalendarEvent, timeFormat: '12h' | '24h'): string {
   return format(new Date(event.start), timeFormat === '12h' ? 'h:mm a' : 'HH:mm');
 }
 
-export function DisplayAgenda({
-  events,
-  day,
-  timeFormat,
-  limit = 8,
-  now,
-}: DisplayAgendaProps) {
+export function DisplayAgenda({ events, day, timeFormat, limit = 8, now }: DisplayAgendaProps) {
   const { t } = useTranslation();
   const dayKey = format(day, 'yyyy-MM-dd');
   const isToday = format(now, 'yyyy-MM-dd') === dayKey;

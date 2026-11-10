@@ -11,7 +11,14 @@
  * Wake Lock, fullscreen and the inactivity timeout are layered on top by
  * `useDisplayMode`, not here.
  */
-import { CalendarDays, CheckSquare, LayoutDashboard, Maximize2, Minimize2, ShoppingCart } from 'lucide-react';
+import {
+  CalendarDays,
+  CheckSquare,
+  LayoutDashboard,
+  Maximize2,
+  Minimize2,
+  ShoppingCart,
+} from 'lucide-react';
 import { useTranslation, type TranslationKey } from '../../i18n';
 import { DisplayAgenda } from './DisplayAgenda';
 import { DisplayClock } from './DisplayClock';

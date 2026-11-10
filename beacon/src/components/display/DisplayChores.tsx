@@ -86,7 +86,11 @@ export function DisplayChores({ chores, members, perMemberLimit = 4 }: DisplayCh
             const shown = group.chores.slice(0, perMemberLimit);
             const hidden = group.chores.length - shown.length;
             return (
-              <li key={group.id} className="display-chore-group" style={memberColorVars(group.member)}>
+              <li
+                key={group.id}
+                className="display-chore-group"
+                style={memberColorVars(group.member)}
+              >
                 <div className="display-chore-member">
                   {group.member ? (
                     <MemberAvatar member={group.member} size={28} />

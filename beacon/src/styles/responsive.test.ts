@@ -107,4 +107,3 @@ describe('touch interaction layer', () => {
     expect(responsive).toMatch(/@media \(orientation: landscape\) and \(max-height: 480px\)/);
   });
 });
-

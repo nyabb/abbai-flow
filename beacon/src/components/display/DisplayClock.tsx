@@ -27,7 +27,9 @@ export function DisplayClock({ timeFormat }: DisplayClockProps) {
         {time}
         {meridiem && <span className="display-clock-meridiem">{meridiem}</span>}
       </span>
-      <span className="display-clock-date">{format(now, 'EEEE d MMMM', { locale: dateLocale })}</span>
+      <span className="display-clock-date">
+        {format(now, 'EEEE d MMMM', { locale: dateLocale })}
+      </span>
     </div>
   );
 }

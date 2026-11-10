@@ -21,7 +21,8 @@ function stubWakeLock(behaviour: 'grant' | 'reject' = 'grant') {
     const sentinel = {
       release: vi.fn().mockResolvedValue(undefined),
       listeners: [] as WakeLockListener[],
-      addEventListener: (_: string, listener: WakeLockListener) => sentinel.listeners.push(listener),
+      addEventListener: (_: string, listener: WakeLockListener) =>
+        sentinel.listeners.push(listener),
     };
     sentinels.push(sentinel);
     return sentinel;
@@ -103,10 +104,9 @@ describe('useDisplayMode — wake lock', () => {
   it('releases the lock when the display view is left', async () => {
     const { sentinels } = stubWakeLock();
 
-    const { rerender } = renderHook(
-      ({ active }) => useDisplayMode({ active, wakeLock: true }),
-      { initialProps: { active: true } },
-    );
+    const { rerender } = renderHook(({ active }) => useDisplayMode({ active, wakeLock: true }), {
+      initialProps: { active: true },
+    });
     await act(async () => undefined);
     expect(sentinels).toHaveLength(1);
 

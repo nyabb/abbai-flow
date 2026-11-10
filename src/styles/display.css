@@ -132,7 +132,9 @@
   background: var(--bg-surface);
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition);
 }
 
 .display-fullscreen:hover,
@@ -388,7 +390,9 @@
   font-size: clamp(0.95rem, 1.2vw, 1.1rem);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .display-nav-button:hover,
