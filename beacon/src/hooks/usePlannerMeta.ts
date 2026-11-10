@@ -8,18 +8,26 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import {
-  emptyMeta,
   importLegacyPauses,
   loadPlannerMeta,
   loadPlannerMetaSync,
   savePlannerMeta,
   type PlannerMeta,
 } from '../api/planner-meta';
+import { mutateMeta, type PlannerOp } from '../api/planner-service';
 
 export interface UsePlannerMetaResult {
   meta: PlannerMeta;
-  /** Apply a change and persist it. No-op changes are not written. */
+  /** Apply a change locally and persist it (adoption, migration). */
   update: (change: (meta: PlannerMeta) => PlannerMeta) => void;
+  /**
+   * Apply one planner operation.
+   *
+   * In add-on mode the server reduces it (shared rules, serialised, idempotent)
+   * and the state is replaced with what was actually stored; standalone reduces
+   * the same rules locally. Returns whatever the operation produced.
+   */
+  runOp: (op: PlannerOp) => Promise<unknown>;
   /** False when the last save did not reach the server. */
   persisted: boolean;
   /** Human-readable reason for a failed save, if any. */
@@ -61,7 +69,20 @@ export function usePlannerMeta(legacyPausedIds: string[] = []): UsePlannerMetaRe
     });
   }, []);
 
-  return { meta, update, persisted, error };
+  const runOp = useCallback(async (op: PlannerOp) => {
+    try {
+      const result = await mutateMeta(op);
+      setMeta(result.document);
+      setPersisted(result.persisted);
+      setError(result.persisted ? null : (result.error ?? 'Not stored on the server'));
+      return result.result;
+    } catch (err) {
+      setPersisted(false);
+      setError(err instanceof Error ? err.message : 'Planner write failed');
+      return null;
+    }
+  }, []);
+
+  return { meta, update, runOp, persisted, error };
 }
 
-export { emptyMeta };

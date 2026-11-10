@@ -681,7 +681,7 @@ describe('ChorePlanner board', () => {
     expect(container.querySelectorAll('.planner-col')).toHaveLength(2);
   });
 
-  it('pauses and resumes a routine', () => {
+  it('pauses and resumes a routine', async () => {
     const base = twoChildren();
     mocks.state.current = {
       ...base,
@@ -704,8 +704,12 @@ describe('ChorePlanner board', () => {
     )!;
     fireEvent.click(pause);
 
-    const row = container.querySelector('.planner-row--routine')!;
-    expect(row.className).toContain('is-paused');
+    // Pause is a shared planner operation (server-side in add-on mode), so the
+    // row updates once it has been applied.
+    await waitFor(() => {
+      const row = container.querySelector('.planner-row--routine')!;
+      expect(row.className).toContain('is-paused');
+    });
     expect(
       container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]'),
     ).not.toBeNull();

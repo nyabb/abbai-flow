@@ -748,6 +748,152 @@ async function handleDataApi(req, res, config) {
 }
 
 /**
+ * POST /api/planner/mutate
+ * Body: { target: 'meta' | 'redemptions', op: { type, ... }, key: string }
+ *
+ * The planner's middle layer: the browser sends an *operation* instead of a
+ * whole document, the server reduces it with the same rules the client uses
+ * (`shared/planner-rules.mjs`), serialises concurrent mutations per document and
+ * writes the result atomically.
+ *
+ * `key` is an idempotency key: replaying the same operation (a retry, a flaky
+ * network, a double tap) returns the stored document instead of applying the
+ * change twice — which is exactly what must never happen to a points
+ * allocation or a reward fulfilment.
+ */
+const PLANNER_DOCUMENTS = {
+  meta: 'beacon-planner-meta',
+  redemptions: 'beacon-reward-redemptions',
+};
+
+/** Recently applied idempotency keys, persisted so a restart keeps them. */
+const PLANNER_KEY_LOG = 'beacon-planner-ops';
+const PLANNER_KEY_LOG_LIMIT = 500;
+
+/** Per-document queue: read-modify-write must not interleave. */
+const plannerQueues = new Map();
+
+function withPlannerLock(name, run) {
+  const previous = plannerQueues.get(name) || Promise.resolve();
+  const next = previous.then(run, run);
+  plannerQueues.set(
+    name,
+    next.catch(() => undefined),
+  );
+  return next;
+}
+
+async function readPlannerKeyLog(config) {
+  try {
+    const raw = await readDataFile(path.join(config.dataDir, `${PLANNER_KEY_LOG}.json`));
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  } catch {
+    return {};
+  }
+}
+
+async function handlePlannerMutate(req, res, config) {
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method not allowed' });
+    return;
+  }
+  if (!hasJsonContentType(req)) {
+    sendJson(res, 415, { error: 'Expected application/json' });
+    return;
+  }
+
+  const { body, error } = await collectBody(req);
+  if (error) {
+    sendJson(res, error.status, { error: error.message });
+    return;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse((body || Buffer.from('{}')).toString('utf8'));
+  } catch {
+    sendJson(res, 400, { error: 'Body is not valid JSON' });
+    return;
+  }
+
+  const target = payload && payload.target;
+  const op = payload && payload.op;
+  const key = payload && typeof payload.key === 'string' ? payload.key.trim() : '';
+  const documentKey = PLANNER_DOCUMENTS[target];
+
+  if (!documentKey) {
+    sendJson(res, 400, { error: 'Unknown planner target' });
+    return;
+  }
+  if (!op || typeof op !== 'object' || typeof op.type !== 'string') {
+    sendJson(res, 400, { error: 'Missing planner operation' });
+    return;
+  }
+  if (!key) {
+    sendJson(res, 400, { error: 'Missing idempotency key' });
+    return;
+  }
+
+  const rules = await loadPlannerRules();
+
+  try {
+    const outcome = await withPlannerLock(documentKey, async () => {
+      const keyLog = await readPlannerKeyLog(config);
+      if (keyLog[key]) {
+        // Already applied: answer with the stored document, do not reduce again.
+        const current = await readDataFile(
+          path.join(config.dataDir, `${documentKey}.json`),
+        );
+        return { document: current, changed: false, duplicate: true, result: null };
+      }
+
+      const current = await readDataFile(path.join(config.dataDir, `${documentKey}.json`));
+      const reduced = rules.applyPlannerOp(target, current, op);
+
+      if (reduced.changed) {
+        await fsp.mkdir(config.dataDir, { recursive: true });
+        await writeDataFile(
+          path.join(config.dataDir, `${documentKey}.json`),
+          JSON.stringify(reduced.document),
+        );
+      }
+
+      const nextLog = { ...keyLog, [key]: Date.now() };
+      const entries = Object.entries(nextLog).sort((left, right) => right[1] - left[1]);
+      await writeDataFile(
+        path.join(config.dataDir, `${PLANNER_KEY_LOG}.json`),
+        JSON.stringify(Object.fromEntries(entries.slice(0, PLANNER_KEY_LOG_LIMIT))),
+      );
+
+      return {
+        document: reduced.document,
+        changed: reduced.changed,
+        duplicate: false,
+        result: reduced.result === undefined ? null : reduced.result,
+      };
+    });
+
+    sendJson(res, 200, outcome, { 'Cache-Control': 'no-store' });
+  } catch (err) {
+    // A rejected operation must never look like a successful write.
+    sendJson(res, 400, { error: err.message || 'Planner operation rejected' });
+  }
+}
+
+/** The shared rules are ESM; the server is CommonJS, so load them once. */
+let plannerRulesPromise = null;
+function loadPlannerRules() {
+  if (!plannerRulesPromise) {
+    plannerRulesPromise = import(pathToFileUrl(path.join(__dirname, '..', 'shared', 'planner-rules.mjs')));
+  }
+  return plannerRulesPromise;
+}
+
+function pathToFileUrl(filePath) {
+  return require('url').pathToFileURL(filePath).href;
+}
+
+/**
  * POST /beacon-action/voice
  * Body: { "text": "add milk to the grocery list" }
  */
@@ -1194,6 +1340,10 @@ async function route(req, res, config) {
       await handleDataApi(req, res, config);
       return;
     }
+    if (url === '/api/planner/mutate') {
+      await handlePlannerMutate(req, res, config);
+      return;
+    }
     if (url.startsWith('/api/')) {
       if (!config.haToken) {
         sendJson(res, 503, { error: 'No Home Assistant token available' });
@@ -1240,4 +1390,5 @@ module.exports = {
   handleUpgrade,
   writeDataFile,
   readDataFile,
+  handlePlannerMutate,
 };

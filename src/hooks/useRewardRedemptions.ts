@@ -14,11 +14,18 @@ import {
   saveRedemptions,
   type Redemption,
 } from '../api/reward-redemptions';
+import { mutateRedemptions, type PlannerOp } from '../api/planner-service';
 import { readRewardReservations, RESERVATIONS_STORAGE_KEY } from '../api/reward-reservations';
 
 export interface UseRewardRedemptionsResult {
   redemptions: Redemption[];
   update: (change: (current: Redemption[]) => Redemption[]) => void;
+  /**
+   * Apply one reward operation. Reduced by the add-on server when there is one
+   * (so allocations and fulfilments are serialised and idempotent), otherwise by
+   * the same shared rules locally.
+   */
+  runOp: (op: PlannerOp) => Promise<unknown>;
   /** False when the last save did not reach the server. */
   persisted: boolean;
   error: string | null;
@@ -64,5 +71,19 @@ export function useRewardRedemptions(): UseRewardRedemptionsResult {
     });
   }, []);
 
-  return { redemptions, update, persisted, error };
+  const runOp = useCallback(async (op: PlannerOp) => {
+    try {
+      const result = await mutateRedemptions(op);
+      setRedemptions(result.document);
+      setPersisted(result.persisted);
+      setError(result.persisted ? null : (result.error ?? 'Not stored on the server'));
+      return result.result;
+    } catch (err) {
+      setPersisted(false);
+      setError(err instanceof Error ? err.message : 'Planner write failed');
+      return null;
+    }
+  }, []);
+
+  return { redemptions, update, runOp, persisted, error };
 }

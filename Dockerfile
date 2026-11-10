@@ -31,6 +31,9 @@ COPY run.sh /etc/services.d/beacon/run
 COPY server.js /app/server.js
 # Request handling lives in server/app.cjs and is required by server.js.
 COPY server/ /app/server/
+# Planner mutation rules are shared with the browser bundle (server/app.cjs
+# imports them at runtime, so they must exist next to `server/`).
+COPY shared/ /app/shared/
 COPY custom_sentences/ /app/custom_sentences/
 COPY custom_intents/ /app/custom_intents/
 RUN chmod a+x /etc/services.d/beacon/run
