@@ -95,6 +95,11 @@ describe('ChoreBoard', () => {
     expect(container.querySelector('.planner-board--compact')).not.toBeNull();
     expect(container.querySelectorAll('.planner-col')).toHaveLength(0);
     expect(screen.getAllByRole('tab')).toHaveLength(4);
+    // Every avatar sits in the sized chip, so an uploaded photo cannot render at
+    // its original resolution inside the switcher button.
+    expect(
+      container.querySelectorAll('.planner-mobile-member .planner-mobile-avatar'),
+    ).toHaveLength(2);
     // The first member is selected when nothing else has been picked.
     expect(screen.getByRole('button', { name: /Zara/ }).getAttribute('aria-pressed')).toBe('true');
   });

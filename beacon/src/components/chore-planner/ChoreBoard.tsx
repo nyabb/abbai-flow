@@ -76,8 +76,10 @@ export function ChoreBoard({
               aria-pressed={item.id === member?.id}
               onClick={() => setActiveMemberId(item.id)}
             >
-              <MemberAvatar member={item} />
-              <span>{item.name}</span>
+              <span className="planner-mobile-avatar">
+                <MemberAvatar member={item} />
+              </span>
+              <span className="planner-mobile-name">{item.name}</span>
             </button>
           ))}
         </div>
