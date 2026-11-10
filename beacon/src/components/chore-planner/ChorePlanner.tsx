@@ -24,10 +24,7 @@ import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
 import {
   activeRedemption,
   activeRedemptions,
-  addPoints,
-  fulfilRedemption,
   fulfilledRedemptions,
-  releaseRedemption,
   spendableWithRedemptions,
 } from '../../api/reward-redemptions';
 import type { Redemption } from '../../api/reward-redemptions';
@@ -35,19 +32,7 @@ import type { ChoreOpsReward } from '../../types/choreops';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
-import {
-  addRoutineTask,
-  adoptLabels,
-  findRoutine,
-  markMissionTaskDone,
-  missionStep,
-  normaliseName,
-  removeRoutineTask,
-  routineTaskOrder,
-  startMission,
-  toggleRoutinePaused as toggleRoutineMeta,
-  upsertRoutine,
-} from '../../api/planner-meta';
+import { findRoutine, missionStep, normaliseName, routineTaskOrder } from '../../api/planner-meta';
 import { useTranslation } from '../../i18n';
 import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
@@ -276,15 +261,13 @@ export function ChorePlanner({
       (routine) => !routine.fallback && !findRoutine(meta, routine.id),
     );
     if (legacy.length === 0) return;
-    plannerMeta.update((current) =>
-      adoptLabels(
-        current,
-        legacy.map((routine) => ({
-          label: routine.name,
-          taskNames: routine.taskNames ?? [],
-        })),
-      ),
-    );
+    void plannerMeta.runOp({
+      type: 'adoptLabels',
+      groups: legacy.map((routine) => ({
+        label: routine.name,
+        taskNames: routine.taskNames ?? [],
+      })),
+    });
   }, [view.routines, meta, plannerMeta]);
   useEffect(() => {
     if (!toast) return;
@@ -427,7 +410,7 @@ export function ChorePlanner({
         label={routineLabel(routine)}
         progress={blockProgress(routine.timeBlock)}
         copy={c}
-        onToggle={() => toggleRoutinePaused(routine.id)}
+        onToggle={() => toggleRoutinePaused(routine.id, routine.name)}
       />
     );
   };
@@ -624,8 +607,9 @@ export function ChorePlanner({
   };
 
   /** Pause a routine in the shared metadata so every device agrees. */
-  const toggleRoutinePaused = (routineId: string) =>
-    plannerMeta.update((current) => toggleRoutineMeta(current, routineId));
+  const toggleRoutinePaused = (routineId: string, routineName?: string) => {
+    void plannerMeta.runOp({ type: 'toggleRoutinePaused', id: routineId, name: routineName });
+  };
 
   /**
    * The award sheet asks where the earned points should go as soon as a chore is ticked.
@@ -747,9 +731,12 @@ export function ChorePlanner({
         const task = getTask(taskId);
         const userName = task?.memberId ? userNameByMemberId.get(task.memberId) : null;
         if (task?.routineId && userName) {
-          plannerMeta.update((current) =>
-            markMissionTaskDone(current, userName, task.routineId as string, task.name),
-          );
+          void plannerMeta.runOp({
+            type: 'markStep',
+            user: userName,
+            routineId: task.routineId,
+            taskName: task.name,
+          });
         }
         advanceMission();
       }
@@ -933,17 +920,28 @@ export function ChorePlanner({
        */
       const taskName = form.name.trim();
       if (nextLabel) {
-        plannerMeta.update((current) => {
-          const { meta: withRoutine, routine } = upsertRoutine(current, nextLabel);
-          return addRoutineTask(withRoutine, routine.id, taskName);
-        });
+        const routine = (await plannerMeta.runOp({
+          type: 'upsertRoutine',
+          name: nextLabel,
+        })) as { id?: string } | null;
+        if (routine && typeof routine.id === 'string') {
+          await plannerMeta.runOp({
+            type: 'addRoutineTask',
+            id: routine.id,
+            taskName,
+          });
+        }
       } else if (editingId && currentLabel) {
-        plannerMeta.update((current) => {
-          const owner = current.routines.find((routine) =>
-            routine.taskNames.some((name) => normaliseName(name) === normaliseName(taskName)),
-          );
-          return owner ? removeRoutineTask(current, owner.id, taskName) : current;
-        });
+        const owner = meta.routines.find((routine) =>
+          routine.taskNames.some((name) => normaliseName(name) === normaliseName(taskName)),
+        );
+        if (owner) {
+          await plannerMeta.runOp({
+            type: 'removeRoutineTask',
+            id: owner.id,
+            taskName,
+          });
+        }
       }
     } catch (err) {
       // ChoreOps replies with the exact reason (e.g. "The requested changes
@@ -1066,15 +1064,13 @@ export function ChorePlanner({
     const give = Math.min(amount ?? stillNeeded, stillNeeded, owner ? spendableFor(owner) : 0);
     if (give <= 0) return;
 
-    rewardsState.update(
-      (list) =>
-        addPoints(list, {
-          user: userName,
-          reward: reward.name,
-          cost: reward.cost,
-          amount: give,
-        }).redemptions,
-    );
+    void rewardsState.runOp({
+      type: 'addPoints',
+      user: userName,
+      reward: reward.name,
+      cost: reward.cost,
+      amount: give,
+    });
     showToast(toastWith(c.assignedToast, reward.name));
   };
 
@@ -1082,7 +1078,7 @@ export function ChorePlanner({
   const undoRewardChoice = (reward: ChoreOpsReward) => {
     const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
     if (pursuit) {
-      rewardsState.update((list) => releaseRedemption(list, pursuit.id));
+      void rewardsState.runOp({ type: 'release', id: pursuit.id });
     }
     showToast(toastWith(c.undoneToast, reward.name));
   };
@@ -1106,9 +1102,11 @@ export function ChorePlanner({
         try {
           setSaving(true);
           await choreOps.approveReward(userName, redemption.rewardLabel, approverName);
-          rewardsState.update((list) =>
-            fulfilRedemption(list, redemption.id, approverName).redemptions,
-          );
+          await rewardsState.runOp({
+            type: 'fulfil',
+            id: redemption.id,
+            by: approverName,
+          });
           showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
           setConfetti(true);
         } catch (err) {
@@ -1162,7 +1160,7 @@ export function ChorePlanner({
     const first = runs[0];
     const userName = userNameByMemberId.get(memberId);
     if (userName) {
-      plannerMeta.update((current) => startMission(current, userName, first.routine.id));
+      void plannerMeta.runOp({ type: 'startMission', user: userName, routineId: first.routine.id });
     }
     setMissionIds(first.tasks.map((task) => task.id));
     setMissionIndex(0);
