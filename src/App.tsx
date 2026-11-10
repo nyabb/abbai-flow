@@ -660,20 +660,6 @@ export function App() {
                 selectedDate={dashboardDate}
                 onSelectedDateChange={setDashboardDate}
               />
-              {/*
-                The dashboard keeps its add button: it is the only way into
-                "add a chore/routine/event/grocery item" from this screen.
-                The calendar page below does not need it, so only that one was
-                removed.
-              */}
-              <OmniAdd
-                onAddEvent={handleAddEvent}
-                onAddGroceryItem={() => setActiveView('grocery')}
-                onAddChore={() => requestChoreCreate('chore')}
-                onAddRoutine={() => requestChoreCreate('routine')}
-                onNavigateTimer={() => setActiveView('timer')}
-                sidebarPosition={sidebarPos}
-              />
             </>
           ) : activeView === 'chores' ? (
             settings.choresEnabled ? (
