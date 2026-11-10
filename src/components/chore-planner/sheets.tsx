@@ -9,6 +9,7 @@
  */
 import { CheckCheck, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
@@ -276,6 +277,13 @@ export interface GoalsSheetProps {
   onNewGoal: (memberId: string) => void;
   /** True once the full cost is set aside, so the reward moves under Done. */
   isDone: (reward: ChoreOpsReward) => boolean;
+  /** Rewards this child has reached and that are waiting for a parent. */
+  awaiting?: Redemption[];
+  /** Rewards already handed over (newest first). */
+  given?: Redemption[];
+  /** Parent-only action, gated by the PIN in the caller. */
+  onGive?: (id: string) => void;
+  formatDate?: (value: number) => string;
 }
 
 export function GoalsSheet({
@@ -285,6 +293,10 @@ export function GoalsSheet({
   renderRewardRow,
   onNewGoal,
   isDone,
+  awaiting = [],
+  given = [],
+  onGive,
+  formatDate,
 }: GoalsSheetProps) {
   /*
    * A reward whose full cost is set aside is "on hold": the child is no longer
@@ -302,10 +314,59 @@ export function GoalsSheet({
         {' \u00b7 '}
         {member.name}
       </h2>
-      {rewards.length === 0 && <p>{c.noRewards}</p>}
+      {rewards.length === 0 && awaiting.length === 0 && <p>{c.noRewards}</p>}
       {open.map((reward) => renderRewardRow(reward))}
       {done.length > 0 && <h3 className="planner-reward-group">{c.done}</h3>}
       {done.map((reward) => renderRewardRow(reward))}
+      {/* Goal achieved is not the same as handed over: this is the parent's
+          queue, and the only place a reward can be marked as given. */}
+      {awaiting.length > 0 && (
+        <>
+          <h3 className="planner-reward-group">{c.rewardsToGive}</h3>
+          {awaiting.map((redemption) => (
+            <div className="planner-reward planner-reward--done" key={redemption.id}>
+              <span aria-hidden="true">{'\u{1F381}'}</span>
+              <div className="planner-reward-copy">
+                <strong>{redemption.rewardLabel}</strong>
+                <small>
+                  {`${redemption.points} / ${redemption.cost} ${c.pointsUnit}`}
+                  {` \u00b7 ${c.waitingForReward}`}
+                </small>
+              </div>
+              {onGive && (
+                <div className="planner-reward-actions">
+                  <button
+                    className="planner-primary planner-reward-action"
+                    onClick={() => onGive(redemption.id)}
+                  >
+                    {c.markGiven}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </>
+      )}
+      {given.length > 0 && (
+        <>
+          <h3 className="planner-reward-group">{c.givenRewards}</h3>
+          {given.map((redemption) => (
+            <div className="planner-reward planner-reward--done" key={redemption.id}>
+              <span aria-hidden="true">{'\u2705'}</span>
+              <div className="planner-reward-copy">
+                <strong>{redemption.rewardLabel}</strong>
+                <small>
+                  {c.rewardGiven}
+                  {redemption.fulfilledAt && formatDate
+                    ? ` \u00b7 ${formatDate(redemption.fulfilledAt)}`
+                    : ''}
+                  {redemption.fulfilledBy ? ` \u00b7 ${redemption.fulfilledBy}` : ''}
+                </small>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
       <button className="planner-ghost planner-reward-new" onClick={() => onNewGoal(member.id)}>
         <Plus />
         {c.setGoal}

@@ -289,24 +289,24 @@ describe('ChorePlanner rewards from ChoreOps', () => {
    * Beacon-local: no parent confirmation, nothing written to ChoreOps, so the
    * child can take it back whenever they like.
    */
-  it('puts points on hold on assign and frees them again', async () => {
+  /*
+   * Allocating is the child's own action, and reaching the cost only means the
+   * goal is achieved — the reward itself still has to be handed over by a
+   * parent. The pursuit is stored in the shared Beacon document, not in this
+   * device's localStorage reservations.
+   */
+  it('marks the goal achieved on assign, and never writes to ChoreOps yet', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
 
-    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+    await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
-    expect(localStorage.getItem('beacon_reward_reservations')).toContain('schermtijd');
-
-    const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
-      element.textContent?.includes('Schermtijd'),
-    )!;
-    fireEvent.click(within(row).getByRole('button', { name: 'Opnieuw gebruiken' }));
-
-    await waitFor(() => expect(localStorage.getItem('beacon_reward_reservations')).toBeNull());
-    expect(container.textContent).not.toContain('Gereserveerd');
-    // Nothing was ever written to ChoreOps: only the child decided.
+    await waitFor(() =>
+      expect(localStorage.getItem('beacon-reward-redemptions')).toContain('schermtijd'),
+    );
+    // A reached goal is not a given reward: no ChoreOps deduction happened.
     expect(mocks.approveReward).not.toHaveBeenCalled();
   });
 
@@ -317,7 +317,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
 
-    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+    await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.querySelector('.planner-pin-input')).toBeNull();
     expect(mocks.approveReward).not.toHaveBeenCalled();
   });
@@ -337,15 +337,15 @@ describe('ChorePlanner rewards from ChoreOps', () => {
   });
 
   /*
-   * A reward the child has fully funded is theirs to clear, so deleting it needs
-   * no parent -- even with a PIN on file, which is what PARENT carries.
+   * Deleting a reward definition is a parent decision even when a child has
+   * reached it: the reward may be shared, and the goal is waiting to be given.
    */
-  it('deletes a fully funded reward without asking for a PIN', async () => {
+  it('asks for a parent PIN before deleting a fully funded reward', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
     fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
-    await waitFor(() => expect(container.textContent).toContain('Gereserveerd'));
+    await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
 
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
       element.textContent?.includes('Schermtijd'),
@@ -353,8 +353,8 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     fireEvent.click(row.querySelector('.planner-task-more')!);
     fireEvent.click(container.querySelector('.planner-sheet .planner-danger')!);
 
-    await waitFor(() => expect(mocks.deleteReward).toHaveBeenCalledWith('Schermtijd'));
-    expect(container.querySelector('.planner-pin-input')).toBeNull();
+    expect(container.querySelector('.planner-pin-input')).not.toBeNull();
+    expect(mocks.deleteReward).not.toHaveBeenCalled();
   });
 
   it('creates a per-child reward in ChoreOps', async () => {
