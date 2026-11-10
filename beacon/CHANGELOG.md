@@ -1,3 +1,10 @@
+# [1.52.0](https://github.com/nyabb/beacon/compare/v1.51.2...v1.52.0) (2026-11-10)
+
+
+### Features
+
+* **ui:** put the timer on the nav bar and give timer/photos a page header ([aebe4da](https://github.com/nyabb/beacon/commit/aebe4da249de5e78017498a5835bf6ea79d26afe))
+
 ## [1.51.2](https://github.com/nyabb/beacon/compare/v1.51.1...v1.51.2) (2026-11-09)
 
 
