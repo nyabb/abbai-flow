@@ -29,8 +29,7 @@ export function useRewardRedemptions(): UseRewardRedemptionsResult {
     // Import the old localStorage reservations on first paint, so a household
     // that was already saving does not lose its progress.
     const legacy = readRewardReservations();
-    const migrated =
-      legacy.length > 0 ? migrateReservations(loadRedemptionsSync(), legacy) : null;
+    const migrated = legacy.length > 0 ? migrateReservations(loadRedemptionsSync(), legacy) : null;
     return migrated ?? loadRedemptionsSync();
   });
   const [persisted, setPersisted] = useState(true);

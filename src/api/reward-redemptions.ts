@@ -66,8 +66,7 @@ export function activeRedemption(
   if (!userKey || !rewardKey) return null;
   return (
     redemptions.find(
-      (item) =>
-        item.user === userKey && item.reward === rewardKey && item.state !== 'fulfilled',
+      (item) => item.user === userKey && item.reward === rewardKey && item.state !== 'fulfilled',
     ) ?? null
   );
 }
@@ -281,9 +280,7 @@ export function sanitizeRedemptions(raw: unknown): Redemption[] {
       user: normalise(item.user),
       reward: normalise(item.reward),
       rewardLabel:
-        typeof item.rewardLabel === 'string' && item.rewardLabel
-          ? item.rewardLabel
-          : item.reward,
+        typeof item.rewardLabel === 'string' && item.rewardLabel ? item.rewardLabel : item.reward,
       cost,
       points: Math.min(points, cost || points),
       state,

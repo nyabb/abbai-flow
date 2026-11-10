@@ -1106,8 +1106,8 @@ export function ChorePlanner({
         try {
           setSaving(true);
           await choreOps.approveReward(userName, redemption.rewardLabel, approverName);
-          rewardsState.update((list) =>
-            fulfilRedemption(list, redemption.id, approverName).redemptions,
+          rewardsState.update(
+            (list) => fulfilRedemption(list, redemption.id, approverName).redemptions,
           );
           showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
           setConfetti(true);

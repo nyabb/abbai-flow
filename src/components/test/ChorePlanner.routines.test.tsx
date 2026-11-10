@@ -182,7 +182,9 @@ describe('ChorePlanner routines', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!);
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!,
+    );
     await waitFor(() =>
       expect(container.querySelector('.planner-mission-hero h2')?.textContent).toBe('Aankleden'),
     );
@@ -217,7 +219,9 @@ describe('ChorePlanner routines', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!);
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!,
+    );
 
     // Nothing to run: the closing card instead of a mission screen.
     await waitFor(() => expect(container.querySelector('.planner-celebrate')).not.toBeNull());
