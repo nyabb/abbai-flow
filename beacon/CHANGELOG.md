@@ -1,3 +1,19 @@
+# [1.53.0](https://github.com/nyabb/beacon/compare/v1.52.1...v1.53.0) (2026-11-10)
+
+
+### Features
+
+* add a responsive and touch layer with a documented breakpoint ladder ([a80ab23](https://github.com/nyabb/beacon/commit/a80ab23d342982de03858c98eed8f9609ef6f573))
+* add Display Mode, a read-only /display view for wall touchscreens ([143bdad](https://github.com/nyabb/beacon/commit/143bdadfe967d235ea9e0f3d352cbb08ba14a224))
+* document display mode and how to verify a kiosk build ([1ae324b](https://github.com/nyabb/beacon/commit/1ae324bef45dd00cbdf0e32efe312f4617e8235b))
+* drop the Capacitor shell, Beacon is a web-only build ([0ce8b0d](https://github.com/nyabb/beacon/commit/0ce8b0d2866c2d6ab55d2450071a49bf33e7f294))
+* keep the wall display awake, in fullscreen, and out of the way when idle ([f4d9a32](https://github.com/nyabb/beacon/commit/f4d9a32f4e66c8cf2f7ea4e62c44bb990f2a3116))
+* let the planner pause a routine, and repair its module imports ([5e9ffd2](https://github.com/nyabb/beacon/commit/5e9ffd297c154a421691474c87195d97edd7e931))
+* make the interface comfortable to touch, not just to click ([955f13d](https://github.com/nyabb/beacon/commit/955f13da54cf9f54214d771d60c60c4f8b95fa73))
+* put the display-mode options in Settings > Display ([20b53df](https://github.com/nyabb/beacon/commit/20b53df4f5535f2597a705d8346739187efcbe6a))
+* stop burning a Raspberry Pi's CPU on work nobody can see ([afd02c3](https://github.com/nyabb/beacon/commit/afd02c3ff000d3448e9ba2ac3a33f715f97cf30f))
+* tell offline, Beacon-down and Home Assistant-down apart, and recover ([3534000](https://github.com/nyabb/beacon/commit/353400084383969130136c7d96e23563b40090f0))
+
 ## [1.52.1](https://github.com/nyabb/beacon/compare/v1.52.0...v1.52.1) (2026-11-10)
 
 
