@@ -7,7 +7,7 @@
  * callbacks for its buttons, so the planner keeps all state and all ChoreOps
  * writes.
  */
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { CheckCheck, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
@@ -29,6 +29,11 @@ export interface ActionsSheetProps {
   copy: PlannerCopy;
   /** True once the delete button shows its "sure?" label. */
   confirmingDelete: boolean;
+  /**
+   * Parent-only sign-off, shown while the chore waits for approval. The caller
+   * gates it behind the parent PIN; a child never gets this handler.
+   */
+  onApprove?: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }
@@ -37,12 +42,19 @@ export function ActionsSheet({
   completed,
   copy: c,
   confirmingDelete,
+  onApprove,
   onEdit,
   onDelete,
 }: ActionsSheetProps) {
   return (
     <>
       <h2>{c.action}</h2>
+      {onApprove && (
+        <button className="planner-destination" onClick={onApprove}>
+          <CheckCheck />
+          <strong>{c.approveCompletion}</strong>
+        </button>
+      )}
       {!completed && (
         <button className="planner-destination" onClick={onEdit}>
           <Pencil />

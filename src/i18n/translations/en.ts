@@ -771,6 +771,16 @@ export const en = {
   'planner.of': 'of',
   'planner.hoursShort': 'h',
   'planner.minutesShort': 'm',
+  'planner.awaitingApproval': 'Waiting for parent approval',
+  'planner.approveCompletion': 'Approve completion',
+  'planner.goalAchieved': 'Goal achieved',
+  'planner.waitingForReward': 'Waiting for reward',
+  'planner.markGiven': 'Mark reward as given',
+  'planner.rewardsToGive': 'Rewards to give',
+  'planner.givenRewards': 'Given rewards',
+  'planner.rewardGiven': 'Reward given',
+  'planner.routinePicker': 'Existing routine',
+  'planner.routineNew': 'New routine',
 
   // frequency option labels
   'planner.tab.goals': 'Goals',

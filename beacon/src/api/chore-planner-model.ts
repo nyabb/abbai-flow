@@ -54,12 +54,20 @@ export interface PlannerTask {
   /** Live ChoreOps task: the child finished it and a parent must sign off. */
   awaitingReview?: boolean;
   /**
-   * The daily routine this chore belongs to, taken from its first ChoreOps
-   * label. Kept on the task so the mission run can say which routine you are
-   * working through, and so pausing a routine can keep its chores out of it.
+   * The daily routine this chore belongs to. Kept on the task so the mission run
+   * can say which routine you are working through, and so pausing a routine can
+   * keep its chores out of it.
    */
   routineId?: string;
   routineName?: string;
+  /**
+   * True when the chore is a *step of a routine* rather than an individual
+   * chore. Routine steps belong exclusively to their routine: they are not
+   * listed as individual chores and cannot be ticked off from the board.
+   */
+  inRoutine?: boolean;
+  /** 1-based position inside its routine, from the Beacon routine registry. */
+  routineOrder?: number;
 }
 
 export interface PlannerRoutine {
@@ -74,6 +82,10 @@ export interface PlannerRoutine {
   customStart?: string;
   customEnd?: string;
   points: number;
+  /** Chore names in execution order (Beacon metadata: ChoreOps has no ordering). */
+  taskNames?: string[];
+  /** Paused routines are hidden from missions but stay on the board. */
+  paused?: boolean;
   /**
    * "Other daily tasks": daily chores without a ChoreOps label, collected here
    * only once the household has at least one named routine. The UI shows a
