@@ -82,7 +82,11 @@ export function spendableWithRedemptions(
   for (const reward of rewards) {
     if (sharedNormaliseName(reward.assignee) !== userKey) continue;
     if (reward.pendingClaims <= 0) continue;
-    if (activeRedemptions(redemptions, userKey).some((item) => item.reward === sharedNormaliseName(reward.name))) {
+    if (
+      activeRedemptions(redemptions, userKey).some(
+        (item) => item.reward === sharedNormaliseName(reward.name),
+      )
+    ) {
       continue;
     }
     committed += Math.max(0, reward.cost) * reward.pendingClaims;
@@ -104,7 +108,11 @@ export function migrateReservations(
   for (const reservation of reservations) {
     const userKey = sharedNormaliseName(reservation.user);
     const rewardKey = sharedNormaliseName(reservation.reward);
-    if (next.some((item) => item.user === userKey && item.reward === rewardKey && item.state !== 'fulfilled')) {
+    if (
+      next.some(
+        (item) => item.user === userKey && item.reward === rewardKey && item.state !== 'fulfilled',
+      )
+    ) {
       continue;
     }
     const cost = costs[rewardKey] ?? 0;

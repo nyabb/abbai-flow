@@ -14,8 +14,18 @@
  */
 import { applyPlannerOp, type PlannerOp, type PlannerTarget } from '../../shared/planner-rules.mjs';
 import { loadData, saveData } from './beacon-store';
-import { loadPlannerMeta, PLANNER_META_KEY, sanitizePlannerMeta, type PlannerMeta } from './planner-meta';
-import { loadRedemptions, REDEMPTIONS_KEY, sanitizeRedemptions, type Redemption } from './reward-redemptions';
+import {
+  loadPlannerMeta,
+  PLANNER_META_KEY,
+  sanitizePlannerMeta,
+  type PlannerMeta,
+} from './planner-meta';
+import {
+  loadRedemptions,
+  REDEMPTIONS_KEY,
+  sanitizeRedemptions,
+  type Redemption,
+} from './reward-redemptions';
 
 export type { PlannerOp, PlannerTarget } from '../../shared/planner-rules.mjs';
 
@@ -66,7 +76,10 @@ async function postMutation(
   if (!res.ok) {
     throw new Error(payload.error ?? `Planner write failed (${res.status})`);
   }
-  const document = target === 'meta' ? sanitizePlannerMeta(payload.document) : sanitizeRedemptions(payload.document);
+  const document =
+    target === 'meta'
+      ? sanitizePlannerMeta(payload.document)
+      : sanitizeRedemptions(payload.document);
   return {
     document,
     result: payload.result ?? null,
@@ -88,7 +101,10 @@ async function readDocument(target: PlannerTarget): Promise<unknown> {
  * is reported through `persisted: false` so the caller can still update the UI
  * and warn the household.
  */
-export async function mutatePlanner<T>(target: PlannerTarget, op: PlannerOp): Promise<PlannerMutationResult<T>> {
+export async function mutatePlanner<T>(
+  target: PlannerTarget,
+  op: PlannerOp,
+): Promise<PlannerMutationResult<T>> {
   const remote = await postMutation(target, op);
   if (remote) return remote as PlannerMutationResult<T>;
 

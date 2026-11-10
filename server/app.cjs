@@ -841,9 +841,7 @@ async function handlePlannerMutate(req, res, config) {
       const keyLog = await readPlannerKeyLog(config);
       if (keyLog[key]) {
         // Already applied: answer with the stored document, do not reduce again.
-        const current = await readDataFile(
-          path.join(config.dataDir, `${documentKey}.json`),
-        );
+        const current = await readDataFile(path.join(config.dataDir, `${documentKey}.json`));
         return { document: current, changed: false, duplicate: true, result: null };
       }
 
@@ -884,7 +882,9 @@ async function handlePlannerMutate(req, res, config) {
 let plannerRulesPromise = null;
 function loadPlannerRules() {
   if (!plannerRulesPromise) {
-    plannerRulesPromise = import(pathToFileUrl(path.join(__dirname, '..', 'shared', 'planner-rules.mjs')));
+    plannerRulesPromise = import(
+      pathToFileUrl(path.join(__dirname, '..', 'shared', 'planner-rules.mjs'))
+    );
   }
   return plannerRulesPromise;
 }
