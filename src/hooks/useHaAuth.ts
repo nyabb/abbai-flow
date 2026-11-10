@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 import {
   getSecureItem,
   setSecureItem,
@@ -19,13 +18,12 @@ interface HaAuthState {
 }
 
 /**
- * Build the correct redirect URI for the current platform.
- * Native apps use a custom URL scheme; web uses the current origin.
+ * Build the OAuth redirect URI.
+ *
+ * Beacon runs in the browser, so this is always the current origin. HA must
+ * have the same value registered as a trusted redirect URI.
  */
 function getRedirectUri(): string {
-  if (Capacitor.isNativePlatform()) {
-    return 'beacon://auth/callback';
-  }
   return `${window.location.origin}/auth/callback`;
 }
 
@@ -33,9 +31,6 @@ function getRedirectUri(): string {
  * The client_id for HA OAuth2 is the application origin URL.
  */
 function getClientId(): string {
-  if (Capacitor.isNativePlatform()) {
-    return 'beacon://';
-  }
   return window.location.origin;
 }
 

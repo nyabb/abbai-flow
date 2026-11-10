@@ -104,7 +104,7 @@ Additional settings (themes, family members, chores, calendar sources, list prov
 - [TypeScript](https://www.typescriptlang.org/) -- Type safety
 - [Vite](https://vitejs.dev/) -- Build tool
 - [Home Assistant](https://www.home-assistant.io/) -- Smart home platform
-- [Capacitor](https://capacitorjs.com/) -- Native iOS/Android builds
+ - [React 19](https://react.dev/) -- UI framework
 - [Lucide](https://lucide.dev/) -- Icons
 - [date-fns](https://date-fns.org/) -- Date utilities
 

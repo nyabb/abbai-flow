@@ -2,9 +2,9 @@
 
 ## Architecture
 
-- React 19 + TypeScript + Vite SPA
+- React 19 + TypeScript + Vite SPA (web only — no native shell)
 - Home Assistant add-on with ingress support
-- Capacitor for native iOS/Android builds
+- Docker for the server; the browser talks to HA directly
 
 ## Backend layout (since 2026-11-09)
 

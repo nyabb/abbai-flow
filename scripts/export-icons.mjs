@@ -2,8 +2,8 @@
 /**
  * Beacon icon export script.
  *
- * Generates every raster icon size Beacon needs (favicon, PWA manifest icons,
- * Capacitor app icons) from the single source SVG (`src/assets/beacon-app-icon.svg`)
+ * Generates every raster icon size Beacon needs (favicon, PWA manifest icons)
+ * from the single source SVG (`src/assets/beacon-app-icon.svg`)
  * plus a maskable variant (`src/assets/beacon-app-icon-maskable.svg`).
  *
  * This exists so the icon set can never drift out of sync again: change the

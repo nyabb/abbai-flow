@@ -17,23 +17,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
-    "serve": "vite build && npx serve dist -l 3000",
-    "cap:sync": "npm run build && npx cap sync",
-    "cap:ios": "npm run build && npx cap sync ios && npx cap open ios",
-    "cap:android": "npm run build && npx cap sync android && npx cap open android",
-    "cap:run:ios": "npm run build && npx cap sync ios && npx cap run ios",
-    "cap:run:android": "npm run build && npx cap sync android && npx cap run android"
+    "serve": "vite build && npx serve dist -l 3000"
   },
   "dependencies": {
-    "@capacitor/android": "^8.3.0",
-    "@capacitor/app": "^8.1.0",
-    "@capacitor/core": "^8.3.0",
-    "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.3.0",
-    "@capacitor/keyboard": "^8.0.2",
-    "@capacitor/preferences": "^8.0.1",
-    "@capacitor/splash-screen": "^8.0.1",
-    "@capacitor/status-bar": "^8.0.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -45,7 +31,6 @@
     "ws": "^8.21.3"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.3.0",
     "@eslint/js": "^9.39.5",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
