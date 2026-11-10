@@ -1,3 +1,10 @@
+# [1.58.0](https://github.com/nyabb/beacon/compare/v1.57.0...v1.58.0) (2026-11-10)
+
+
+### Features
+
+* **chores:** give routines a real identity, order and shared pause state ([67dd3ae](https://github.com/nyabb/beacon/commit/67dd3ae27243077ab4f805d57968335efabbc8dd))
+
 # [1.57.0](https://github.com/nyabb/beacon/compare/v1.56.0...v1.57.0) (2026-11-10)
 
 
