@@ -11,7 +11,11 @@ export interface DashboardTodoItem {
   userId?: string;
 }
 
-export function useDashboardTasks(connected: boolean, groceryListIds: string[] = []) {
+export function useDashboardTasks(
+  connected: boolean,
+  groceryListIds: string[] = [],
+  taskListIds: string[] = [],
+) {
   const localTasks = useLocalTasks();
   const { users, listByUser, completions } = useTaskmate(connected);
   const [haItems, setHaItems] = useState<Omit<DashboardTodoItem, 'userId'>[]>([]);
@@ -32,16 +36,28 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
         const todoEntities = states.filter((s) => {
           if (!s.entity_id.startsWith('todo.') || s.state === 'unavailable') return false;
           const name = (s.attributes.friendly_name as string) || s.entity_id;
-          // Use groceryListIds if configured, otherwise fall back to keyword classification
+          /*
+           * Naming the task lists explicitly beats guessing: with a selection,
+           * exactly those entities are read and nothing else, so a list added in
+           * Home Assistant stays invisible until it is chosen here. Without one,
+           * fall back to "any todo entity that is not a grocery list".
+           */
+          if (taskListIds.length > 0) {
+            return taskListIds.includes(s.entity_id) && !groceryListIds.includes(s.entity_id);
+          }
           if (groceryListIds.length > 0) {
             return !groceryListIds.includes(s.entity_id);
           }
           return !isGroceryEntity(name);
         });
 
-        // Fetch items from up to 3 task lists
+        /*
+         * Every selected list is read. This used to stop at three
+         * (`slice(0, 3)`), and because the order comes from /api/states it was
+         * not even a predictable three -- lists beyond that simply never showed.
+         */
         const items: Omit<DashboardTodoItem, 'userId'>[] = [];
-        for (const entity of todoEntities.slice(0, 3)) {
+        for (const entity of todoEntities) {
           try {
             const result = (await callHaService(
               'todo',
@@ -91,7 +107,7 @@ export function useDashboardTasks(connected: boolean, groceryListIds: string[] =
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [connected, groceryListIds]);
+  }, [connected, groceryListIds, taskListIds]);
 
   const items: DashboardTodoItem[] = useMemo(() => {
     const local: DashboardTodoItem[] = localTasks

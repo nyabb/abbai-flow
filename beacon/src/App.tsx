@@ -74,7 +74,11 @@ export function App() {
   const { weather } = useWeather(client);
   const music = useMusic(client, connected);
 
-  const dashboardTasks = useDashboardTasks(connected, settings.groceryListIds);
+  const dashboardTasks = useDashboardTasks(
+    connected,
+    settings.groceryListIds,
+    settings.taskListIds ?? [],
+  );
 
   // Apply theme at App level so it stays active regardless of which view is shown
   const { setTheme } = useTheme();
