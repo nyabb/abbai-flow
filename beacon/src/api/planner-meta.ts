@@ -42,7 +42,11 @@ export {
   upsertRoutine,
 } from '../../shared/planner-rules.mjs';
 
-export type { MissionProgress, PlannerMeta, RoutineDefinition } from '../../shared/planner-rules.mjs';
+export type {
+  MissionProgress,
+  PlannerMeta,
+  RoutineDefinition,
+} from '../../shared/planner-rules.mjs';
 
 /** Storage key (also the `/beacon-data/:key` path segment). */
 export const PLANNER_META_KEY = 'beacon-planner-meta';

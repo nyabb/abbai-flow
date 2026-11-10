@@ -437,7 +437,11 @@ export function applyPlannerOp(target, document, op) {
     switch (op.type) {
       case 'addPoints': {
         const next = addPoints(current, op);
-        return { document: next.redemptions, changed: next.redemptions !== current, result: next.redemption };
+        return {
+          document: next.redemptions,
+          changed: next.redemptions !== current,
+          result: next.redemption,
+        };
       }
       case 'release': {
         const next = releaseRedemption(current, op.id);
@@ -445,7 +449,11 @@ export function applyPlannerOp(target, document, op) {
       }
       case 'fulfil': {
         const next = fulfilRedemption(current, op.id, op.by, op.at);
-        return { document: next.redemptions, changed: next.redemptions !== current, result: next.redemption };
+        return {
+          document: next.redemptions,
+          changed: next.redemptions !== current,
+          result: next.redemption,
+        };
       }
       case 'replace':
         return { document: current, changed: false, result: null };

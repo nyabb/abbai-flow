@@ -14,6 +14,8 @@ import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
 import { useSettings } from './hooks/useSettings';
 import { ChorePlanner } from './components/ChorePlanner';
+import { TimerAlarm } from './components/TimerAlarm';
+import { RunningTimerPill } from './components/RunningTimerPill';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { PhotoFrame } from './components/PhotoFrame';
@@ -641,6 +643,11 @@ export function App() {
             onQuickAdd={() => setQuickAddOpen(true)}
           />
         )}
+
+        {/* A countdown belongs to the household, not to the timer page: the
+            alarm rings and the pill shows the time left on every view. */}
+        <TimerAlarm />
+        {activeView !== 'timer' && <RunningTimerPill onOpen={() => setActiveView('timer')} />}
 
         {/* Main content area */}
         <div className="beacon-main">
