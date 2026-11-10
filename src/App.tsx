@@ -683,17 +683,22 @@ export function App() {
               </div>
             )
           ) : activeView === 'music' ? (
-            <MusicView
-              activePlayer={music.activePlayer}
-              players={music.players}
-              selectedPlayerId={music.selectedPlayerId}
-              onPlay={music.play}
-              onPause={music.pause}
-              onNext={music.next}
-              onPrevious={music.previous}
-              onSetVolume={music.setVolume}
-              onSelectPlayer={music.selectPlayer}
-            />
+            <div className="view-page">
+              <PageHeader title={t('nav.music')} />
+              <div className="view-page-body">
+                <MusicView
+                  activePlayer={music.activePlayer}
+                  players={music.players}
+                  selectedPlayerId={music.selectedPlayerId}
+                  onPlay={music.play}
+                  onPause={music.pause}
+                  onNext={music.next}
+                  onPrevious={music.previous}
+                  onSetVolume={music.setVolume}
+                  onSelectPlayer={music.selectPlayer}
+                />
+              </div>
+            </div>
           ) : activeView === 'settings' ? (
             <SettingsView
               settings={settings}

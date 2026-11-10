@@ -102,6 +102,19 @@
   min-width: 0;
 }
 
+/* The shared date block sits above the planner title. It is deliberately smaller
+   here than on the other bands: the planner band is a compact toolbar (60px) and
+   a full-size numeral would double its height. */
+.planner-header .page-header-day {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+}
+
+.planner-header .page-header-weekday,
+.planner-header .page-header-month {
+  font-size: 0.68rem;
+  text-transform: lowercase;
+}
+
 .planner-header-actions {
   display: flex;
   flex: 0 0 auto;

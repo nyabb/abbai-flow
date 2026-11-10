@@ -38,6 +38,7 @@ import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import { usePlannerCopy } from './copy';
 import { RewardRow, RoutineRow, TaskRow } from './rows';
+import { HeaderDate } from '../PageHeader';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
@@ -1161,10 +1162,8 @@ export function ChorePlanner({
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
         <div className="planner-header-copy">
-          {/* Board hero: a small line with the date above the page title. */}
-          <span className="planner-eyebrow">
-            {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
-          </span>
+          {/* Same date treatment as every other page band. */}
+          <HeaderDate date={now} />
           <h1>
             {/* Phones get the short name so the header can stay on one row. */}
             <span className="planner-title-full">{heading}</span>

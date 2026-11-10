@@ -29,24 +29,33 @@ export interface PageHeaderProps {
   hideClock?: boolean;
 }
 
-export function PageHeader({
-  title,
-  subtitle,
-  actions,
-  onBack,
-  date,
-  hideClock,
-}: PageHeaderProps) {
-  const { t, dateLocale } = useTranslation();
+/**
+ * The stacked weekday / day numeral / month block.
+ *
+ * Exported on its own so a band that cannot be a `PageHeader` -- the chore
+ * planner keeps its own sand palette, Lists keeps its tab row -- can still carry
+ * the same date treatment. Colours are inherited rather than fixed to the skin
+ * band ink, so it reads correctly on any band.
+ */
+export function HeaderDate({ date }: { date?: Date }) {
+  const { dateLocale } = useTranslation();
   const day = date ?? new Date();
 
   return (
+    <div className="page-header-date">
+      <span className="page-header-weekday">{format(day, 'EEEE', { locale: dateLocale })}</span>
+      <strong className="page-header-day">{format(day, 'd', { locale: dateLocale })}</strong>
+      <span className="page-header-month">{format(day, 'MMMM', { locale: dateLocale })}</span>
+    </div>
+  );
+}
+
+export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }: PageHeaderProps) {
+  const { t } = useTranslation();
+
+  return (
     <header className="beacon-header page-header page-header--hero">
-      <div className="page-header-date">
-        <span className="page-header-weekday">{format(day, 'EEEE', { locale: dateLocale })}</span>
-        <strong className="page-header-day">{format(day, 'd', { locale: dateLocale })}</strong>
-        <span className="page-header-month">{format(day, 'MMMM', { locale: dateLocale })}</span>
-      </div>
+      <HeaderDate date={date} />
 
       <div className="page-header-main">
         {onBack && (

@@ -213,7 +213,10 @@ body {
   font-weight: 600;
   text-transform: lowercase;
   white-space: nowrap;
-  color: color-mix(in srgb, var(--skin-band-ink) 76%, transparent);
+  /* Inherited, not the skin ink: this block also sits on bands that bring their
+     own palette (the chore planner's sand band, the Lists tab band). */
+  color: inherit;
+  opacity: 0.76;
 }
 
 .page-header-day {
@@ -221,7 +224,7 @@ body {
   font-size: clamp(2.4rem, 4.6vw, 3.6rem);
   font-weight: 700;
   letter-spacing: -0.045em;
-  color: var(--skin-band-ink);
+  color: inherit;
 }
 
 .page-header-copy {
