@@ -20,9 +20,24 @@ export function useDashboardTasks(
   const { users, listByUser, completions } = useTaskmate(connected);
   const [haItems, setHaItems] = useState<Omit<DashboardTodoItem, 'userId'>[]>([]);
 
+  /*
+   * Array *identity*, not contents, is what a dependency array compares. Callers
+   * routinely pass an inline fallback such as `settings.taskListIds ?? []`, which
+   * is a brand new array on every render -- so depending on the array directly
+   * re-ran this effect on every render and refetched /api/states in a loop. A
+   * joined string changes only when the selection actually changes.
+   */
+  const groceryKey = groceryListIds.join('|');
+  const taskKey = taskListIds.join('|');
+
   // Fetch HA todo items for task-type lists
   useEffect(() => {
     if (!connected && !hasToken()) return;
+
+    // Rebuilt from the keys above so the effect body never closes over an array
+    // whose identity changes every render.
+    const groceryIds = groceryKey ? groceryKey.split('|') : [];
+    const taskIds = taskKey ? taskKey.split('|') : [];
 
     async function fetchTasks() {
       try {
@@ -42,11 +57,11 @@ export function useDashboardTasks(
            * Home Assistant stays invisible until it is chosen here. Without one,
            * fall back to "any todo entity that is not a grocery list".
            */
-          if (taskListIds.length > 0) {
-            return taskListIds.includes(s.entity_id) && !groceryListIds.includes(s.entity_id);
+          if (taskIds.length > 0) {
+            return taskIds.includes(s.entity_id) && !groceryIds.includes(s.entity_id);
           }
-          if (groceryListIds.length > 0) {
-            return !groceryListIds.includes(s.entity_id);
+          if (groceryIds.length > 0) {
+            return !groceryIds.includes(s.entity_id);
           }
           return !isGroceryEntity(name);
         });
@@ -107,7 +122,7 @@ export function useDashboardTasks(
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [connected, groceryListIds, taskListIds]);
+  }, [connected, groceryKey, taskKey]);
 
   const items: DashboardTodoItem[] = useMemo(() => {
     const local: DashboardTodoItem[] = localTasks
