@@ -1,3 +1,10 @@
+# [1.59.0](https://github.com/nyabb/beacon/compare/v1.58.0...v1.59.0) (2026-11-10)
+
+
+### Features
+
+* **rewards:** explicit saving -> achieved -> given lifecycle, shared across devices ([dff8525](https://github.com/nyabb/beacon/commit/dff8525ccdfdb34b9fec2b5197a72c8bf9270b8d))
+
 # [1.58.0](https://github.com/nyabb/beacon/compare/v1.57.0...v1.58.0) (2026-11-10)
 
 

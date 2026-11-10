@@ -1,5 +1,5 @@
 name: Beacon
-version: "1.58.0"
+version: "1.59.0"
 slug: beacon
 description: 'Family command center for wall-mounted displays'
 url: 'https://github.com/nyabb/beacon'
