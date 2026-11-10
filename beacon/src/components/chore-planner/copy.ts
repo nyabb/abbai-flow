@@ -85,6 +85,7 @@ export function usePlannerCopy() {
       routineLabel: t('planner.routineLabel'),
       routinePlaceholder: t('planner.routinePlaceholder'),
       routineHint: t('planner.routineHint'),
+      taskOnceHint: t('planner.taskOnceHint'),
       otherDaily: t('planner.otherDaily'),
       noRoutines: t('planner.noRoutines'),
       setGoal: t('planner.setGoal'),

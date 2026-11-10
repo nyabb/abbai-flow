@@ -674,6 +674,8 @@ export const nl: Record<TranslationKey, string> = {
   'planner.routineLabel': 'Routine',
   'planner.routinePlaceholder': 'Bijv. Ochtendroutine',
   'planner.routineHint': 'Dagelijkse taakjes met dezelfde routinenaam staan samen onder Routines.',
+  'planner.taskOnceHint':
+    'Een taakje gebeurt één keer. Gebruik een routine voor iets dat terugkomt.',
   'planner.otherDaily': 'Overige dagelijkse taken',
   'planner.name': 'Naam',
   'planner.points': 'Punten',

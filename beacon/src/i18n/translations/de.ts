@@ -367,11 +367,14 @@ export const de: Record<TranslationKey, string> = {
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Anzeigemodus',
   'settings.display.wakeLockLabel': 'Bildschirm wachhalten',
-  'settings.display.wakeLockSublabel': 'Den Browser bitten, den Bildschirm nicht abzuschalten, solange die Anzeige offen ist.',
+  'settings.display.wakeLockSublabel':
+    'Den Browser bitten, den Bildschirm nicht abzuschalten, solange die Anzeige offen ist.',
   'settings.display.fullscreenLabel': 'Im Vollbild starten',
-  'settings.display.fullscreenSublabel': 'Browser erlauben das erst nach einem Tippen, ein Druck kann nötig sein.',
+  'settings.display.fullscreenSublabel':
+    'Browser erlauben das erst nach einem Tippen, ein Druck kann nötig sein.',
   'settings.display.idleTimeoutLabel': 'Zurück zum Dashboard nach',
-  'settings.display.idleTimeoutSublabel': 'Unterbricht nie einen offenen Dialog oder ein Eingabefeld.',
+  'settings.display.idleTimeoutSublabel':
+    'Unterbricht nie einen offenen Dialog oder ein Eingabefeld.',
   'settings.display.panelsLabel': 'Bereiche',
   'settings.display.panelsSublabel': 'Welche Bereiche die Anzeige zeigt.',
   'settings.display.panelAgenda': 'Agenda',
@@ -679,6 +682,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'z. B. Morgenroutine',
   'planner.routineHint':
     'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
+  'planner.taskOnceHint': 'Eine Aufgabe passiert einmal. Für Wiederkehrendes eine Routine anlegen.',
   'planner.otherDaily': 'Weitere tägliche Aufgaben',
   'planner.name': 'Name',
   'planner.points': 'Punkte',

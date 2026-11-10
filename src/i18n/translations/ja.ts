@@ -364,7 +364,8 @@ export const ja: Record<TranslationKey, string> = {
   'settings.display.wakeLockLabel': '画面をスリープさせない',
   'settings.display.wakeLockSublabel': '表示中は画面を消さないようブラウザに要求します。',
   'settings.display.fullscreenLabel': '全画面で開始',
-  'settings.display.fullscreenSublabel': 'ブラウザはタップ後のみ許可するため、一度押す必要があります。',
+  'settings.display.fullscreenSublabel':
+    'ブラウザはタップ後のみ許可するため、一度押す必要があります。',
   'settings.display.idleTimeoutLabel': 'ダッシュボードに戻る時間',
   'settings.display.idleTimeoutSublabel': '開いているダイアログや入力中の項目は中断しません。',
   'settings.display.panelsLabel': 'パネル',
@@ -668,6 +669,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.routineLabel': 'ルーティン',
   'planner.routinePlaceholder': '例：朝のルーティン',
   'planner.routineHint': '同じルーティン名の毎日タスクは「ルーティン」にまとめられます。',
+  'planner.taskOnceHint': 'タスクは1回だけです。繰り返すものはルーティンにしてください。',
   'planner.otherDaily': 'その他の毎日のタスク',
   'planner.name': '名前',
   'planner.points': 'ポイント',

@@ -363,7 +363,8 @@ export const ko: Record<TranslationKey, string> = {
   'settings.display.wakeLockLabel': '화면 켜 두기',
   'settings.display.wakeLockSublabel': '표시 화면이 열려 있는 동안 화면을 끄지 않도록 요청합니다.',
   'settings.display.fullscreenLabel': '전체 화면으로 시작',
-  'settings.display.fullscreenSublabel': '브라우저는 탭 이후에만 허용하므로 한 번 눌러야 할 수 있습니다.',
+  'settings.display.fullscreenSublabel':
+    '브라우저는 탭 이후에만 허용하므로 한 번 눌러야 할 수 있습니다.',
   'settings.display.idleTimeoutLabel': '다음 시간 후 대시보드로',
   'settings.display.idleTimeoutSublabel': '열린 대화상자나 입력 중인 필드는 중단하지 않습니다.',
   'settings.display.panelsLabel': '패널',
@@ -665,6 +666,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.routineLabel': '루틴',
   'planner.routinePlaceholder': '예: 아침 루틴',
   'planner.routineHint': '같은 루틴 이름의 매일 집안일은 루틴으로 묶입니다.',
+  'planner.taskOnceHint': '할 일은 한 번만 합니다. 반복되는 일은 루틴을 사용하세요.',
   'planner.otherDaily': '기타 매일 할 일',
   'planner.name': '이름',
   'planner.points': '포인트',

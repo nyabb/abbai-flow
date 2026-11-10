@@ -367,11 +367,14 @@ export const es: Record<TranslationKey, string> = {
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Modo pantalla',
   'settings.display.wakeLockLabel': 'Mantener la pantalla encendida',
-  'settings.display.wakeLockSublabel': 'Pedir al navegador que no apague la pantalla mientras la vista está abierta.',
+  'settings.display.wakeLockSublabel':
+    'Pedir al navegador que no apague la pantalla mientras la vista está abierta.',
   'settings.display.fullscreenLabel': 'Iniciar en pantalla completa',
-  'settings.display.fullscreenSublabel': 'Los navegadores solo lo permiten tras un toque, puede hacer falta pulsar.',
+  'settings.display.fullscreenSublabel':
+    'Los navegadores solo lo permiten tras un toque, puede hacer falta pulsar.',
   'settings.display.idleTimeoutLabel': 'Volver al panel tras',
-  'settings.display.idleTimeoutSublabel': 'Nunca interrumpe un diálogo abierto ni un campo que estés editando.',
+  'settings.display.idleTimeoutSublabel':
+    'Nunca interrumpe un diálogo abierto ni un campo que estés editando.',
   'settings.display.panelsLabel': 'Paneles',
   'settings.display.panelsSublabel': 'Qué paneles muestra la vista de pantalla.',
   'settings.display.panelAgenda': 'Agenda',
@@ -675,6 +678,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.routineLabel': 'Rutina',
   'planner.routinePlaceholder': 'p. ej. Rutina de la mañana',
   'planner.routineHint': 'Las tareas diarias con el mismo nombre de rutina se agrupan en Rutinas.',
+  'planner.taskOnceHint': 'Una tarea se hace una vez. Usa una rutina para lo que se repite.',
   'planner.otherDaily': 'Otras tareas diarias',
   'planner.name': 'Nombre',
   'planner.points': 'Puntos',

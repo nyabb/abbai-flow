@@ -566,6 +566,33 @@ describe('ChorePlanner board', () => {
     expect((form.querySelector('select') as HTMLSelectElement | null)?.value).toBe('daily');
   });
 
+  /*
+   * A routine *is* a recurring chore carrying a routine label: ChoreOps only
+   * groups daily chores into routines. Recurrence therefore lives here, and a
+   * new routine starts on daily while staying changeable (weekly adds the
+   * weekday pills) -- pinning it would make weekly routines impossible.
+   */
+  it('starts a new routine on daily and leaves the repeat changeable', () => {
+    const { container } = renderPlanner([PARENT, ZARA], { kind: 'routine', token: 1 });
+
+    const form = container.querySelector('.planner-sheet--form')!;
+    const select = form.querySelector('select') as HTMLSelectElement;
+    expect(select.value).toBe('daily');
+    expect(select.disabled).toBe(false);
+    expect(form.textContent).toContain('Routine');
+  });
+
+  /* A task happens once, so it gets no schedule fields at all and saves as `none`. */
+  it('gives a plain task no schedule at all', () => {
+    const { container } = renderPlanner([PARENT, ZARA], { kind: 'chore', token: 1 });
+
+    const form = container.querySelector('.planner-sheet--form')!;
+    expect(form.querySelector('select')).toBeNull();
+    expect(form.textContent).toContain(
+      'Een taakje gebeurt één keer. Gebruik een routine voor iets dat terugkomt.',
+    );
+  });
+
   it('opens a child’s detail page from their column header', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 

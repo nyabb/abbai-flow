@@ -30,13 +30,13 @@ export const fr: Record<TranslationKey, string> = {
   'nav.timer': 'Minuteur',
   'nav.weather': 'Météo',
   /* ---- Display mode ---- */
-  'display.today': 'Aujourd\'hui',
+  'display.today': "Aujourd'hui",
   'display.allDay': 'Toute la journée',
   'display.nothingScheduled': 'Rien de prévu',
   'display.moreEvents': '+{count} de plus',
   'display.chores': 'Tâches',
   'display.choresDone': '{done}/{total} faites',
-  'display.noChores': 'Aucune tâche aujourd\'hui',
+  'display.noChores': "Aucune tâche aujourd'hui",
   'display.done': 'Fait',
   'display.open': 'À faire',
   'display.unassigned': 'Tout le monde',
@@ -44,11 +44,11 @@ export const fr: Record<TranslationKey, string> = {
   'display.family': 'Famille',
   'display.noMembers': 'Aucun membre pour le moment',
   'display.points': '{points} pts',
-  'display.choresToday': '{done}/{due} aujourd\'hui',
+  'display.choresToday': "{done}/{due} aujourd'hui",
   'display.notLinked': 'Non associé',
   'display.enterFullscreen': 'Plein écran',
   'display.exitFullscreen': 'Quitter le plein écran',
-  'settings.appearance.reducedMotionLabel': 'Moins d\'animation',
+  'settings.appearance.reducedMotionLabel': "Moins d'animation",
   'settings.appearance.reducedMotionSublabel': 'Raccourcit chaque animation et transition.',
   'display.connection.online': 'Connecté',
   'display.connection.beaconDown': 'Beacon inaccessible',
@@ -369,12 +369,15 @@ export const fr: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Mode affichage',
-  'settings.display.wakeLockLabel': 'Garder l\'écran allumé',
-  'settings.display.wakeLockSublabel': 'Demander au navigateur de ne pas éteindre l\'écran tant que la vue est ouverte.',
+  'settings.display.wakeLockLabel': "Garder l'écran allumé",
+  'settings.display.wakeLockSublabel':
+    "Demander au navigateur de ne pas éteindre l'écran tant que la vue est ouverte.",
   'settings.display.fullscreenLabel': 'Démarrer en plein écran',
-  'settings.display.fullscreenSublabel': 'Les navigateurs ne l\'autorisent qu\'après un appui, une pression peut être nécessaire.',
+  'settings.display.fullscreenSublabel':
+    "Les navigateurs ne l'autorisent qu'après un appui, une pression peut être nécessaire.",
   'settings.display.idleTimeoutLabel': 'Revenir au tableau de bord après',
-  'settings.display.idleTimeoutSublabel': 'N\'interrompt jamais une boîte de dialogue ni un champ en cours de saisie.',
+  'settings.display.idleTimeoutSublabel':
+    "N'interrompt jamais une boîte de dialogue ni un champ en cours de saisie.",
   'settings.display.panelsLabel': 'Panneaux',
   'settings.display.panelsSublabel': 'Quels panneaux la vue affiche.',
   'settings.display.panelAgenda': 'Agenda',
@@ -683,6 +686,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'ex. Routine du matin',
   'planner.routineHint':
     'Les tâches quotidiennes portant le même nom de routine sont regroupées sous Routines.',
+  'planner.taskOnceHint': 'Une tâche se fait une fois. Utilisez une routine pour ce qui revient.',
   'planner.otherDaily': 'Autres tâches quotidiennes',
   'planner.name': 'Nom',
   'planner.points': 'Points',

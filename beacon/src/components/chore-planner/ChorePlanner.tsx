@@ -673,7 +673,13 @@ export function ChorePlanner({
     // A routine is a chore that repeats daily and belongs to a named routine.
     setForm(
       kind === 'routine'
-        ? { ...emptyForm(now), frequency: 'daily', liveFrequency: 'daily', timeBlock: 'morning' }
+        ? {
+            ...emptyForm(now),
+            kind: 'routine',
+            frequency: 'daily',
+            liveFrequency: 'daily',
+            timeBlock: 'morning',
+          }
         : emptyForm(now),
     );
     setModal('form');
@@ -727,7 +733,13 @@ export function ChorePlanner({
       return;
     }
 
-    const frequency = form.liveFrequency;
+    /*
+     * Recurrence belongs to routines. A new task is a one-off, so it is created
+     * as `none` rather than carrying whatever the form happened to hold -- the
+     * editor hides the schedule for exactly that case. Edits keep whatever
+     * repeat ChoreOps already has, so nothing is rewritten behind the user.
+     */
+    const frequency = form.kind === 'task' && !editingId ? 'none' : form.liveFrequency;
     /*
      * Labels are the routine name. They are only sent when the field differs
      * from what ChoreOps already has, so editing e.g. the points of a chore
