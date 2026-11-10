@@ -1,3 +1,10 @@
+# [1.61.0](https://github.com/nyabb/beacon/compare/v1.60.0...v1.61.0) (2026-11-10)
+
+
+### Features
+
+* **planner:** add the middle layer — server-reduced, idempotent mutations ([0424678](https://github.com/nyabb/beacon/commit/0424678997c92c44c4c05d45a073b202a3f035b4))
+
 # [1.60.0](https://github.com/nyabb/beacon/compare/v1.59.0...v1.60.0) (2026-11-10)
 
 
