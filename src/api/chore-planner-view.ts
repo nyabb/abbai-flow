@@ -236,6 +236,7 @@ export function buildChorePlannerView(
         // Kept regardless of status: see `freeForAll` on PlannerTask.
         freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
         awaitingReview,
+        autoApprove: chore.autoApprove ?? false,
         actions: chore.actions,
         routineId: routineId ?? undefined,
         routineName: routine?.name ?? label ?? undefined,

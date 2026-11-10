@@ -375,3 +375,69 @@ describe('daily routines', () => {
     expect(view.tasks).toHaveLength(1);
   });
 });
+
+/**
+ * Phase 7: the two rules that were only implied before — a zero-point chore is
+ * still a real chore, and a rejected completion is not an approved one.
+ */
+describe('points and approval edge cases', () => {
+  const choreState = (overrides: Record<string, unknown>) =>
+    normalizeChoreOps([
+      {
+        entity_id: 'sensor.maya_choreops_points',
+        state: '12',
+        attributes: { purpose: 'purpose_points', user_name: 'Maya' },
+      },
+      {
+        entity_id: 'sensor.maya_choreops_chore_status_planten',
+        state: typeof overrides.status === 'string' ? overrides.status : 'pending',
+        attributes: {
+          purpose: 'purpose_chore_status',
+          user_name: 'Maya',
+          chore_name: 'Planten water geven',
+          assigned_user_names: ['Maya'],
+          default_points: 0,
+          completion_criteria: 'independent',
+          auto_approve: false,
+          ...overrides,
+        },
+      },
+    ]);
+
+  it('keeps a zero-point chore, and completes it without points', () => {
+    const active = buildChorePlannerView(choreState({}), family);
+    const task = active.tasks.find((item) => item.name === 'Planten water geven')!;
+    expect(task.points).toBe(0);
+    expect(task.statusOverride).toBe('active');
+
+    const done = buildChorePlannerView(choreState({ status: 'completed' }), family);
+    const finished = done.tasks.find((item) => item.name === 'Planten water geven')!;
+    expect(finished.statusOverride).toBe('completed');
+    expect(finished.points).toBe(0);
+  });
+
+  it('treats a claimed chore as awaiting approval, not as approved', () => {
+    const view = buildChorePlannerView(choreState({ status: 'claimed' }), family);
+    const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
+    expect(task.awaitingReview).toBe(true);
+    expect(task.statusOverride).not.toBe('completed');
+  });
+
+  it('leaves a rejected completion active and out of the completed list', () => {
+    // ChoreOps sends a disapproved chore back to the child; it must not read as
+    // approved, and the points stay with the child's balance.
+    for (const rejected of ['pending', 'overdue', 'missed']) {
+      const view = buildChorePlannerView(choreState({ status: rejected }), family);
+      const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
+      expect(task.statusOverride).not.toBe('completed');
+      expect(task.awaitingReview).toBe(false);
+    }
+    expect(choreOpsTaskStatus('disapproved')).not.toBe('completed');
+  });
+
+  it('exposes auto-approve so the child can finish without a parent', () => {
+    const view = buildChorePlannerView(choreState({ auto_approve: true }), family);
+    const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
+    expect(task.autoApprove).toBe(true);
+  });
+});

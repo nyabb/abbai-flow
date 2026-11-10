@@ -54,6 +54,12 @@ export interface PlannerTask {
   /** Live ChoreOps task: the child finished it and a parent must sign off. */
   awaitingReview?: boolean;
   /**
+   * ChoreOps `auto_approve`: the child's own completion is final for this
+   * chore, so no parent step is expected. It is never assumed — only the chore
+   * configuration can turn approval off.
+   */
+  autoApprove?: boolean;
+  /**
    * The daily routine this chore belongs to. Kept on the task so the mission run
    * can say which routine you are working through, and so pausing a routine can
    * keep its chores out of it.
