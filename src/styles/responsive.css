@@ -128,6 +128,10 @@ input[type='range'] {
   .settings-select,
   .settings-time-input {
     min-height: 44px;
+    /* Stays in px on purpose: iOS decides whether to zoom on focus by comparing
+       the field's CSS pixel size against 16px, so this must not scale with the
+       Font Size setting (rem would drop it below the threshold if that ever went
+       below 1). */
     font-size: 16px;
   }
 }
@@ -168,7 +172,7 @@ input[type='range'] {
    the layout is already fluid. */
 @media (min-width: 1600px) {
   :root {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
 
   .beacon-header,
@@ -179,7 +183,7 @@ input[type='range'] {
 
 @media (min-width: 2200px) {
   :root {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }
 

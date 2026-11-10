@@ -125,7 +125,7 @@
 .planner-header .planner-eyebrow {
   overflow: hidden;
   color: color-mix(in srgb, var(--planner-band-ink) 78%, transparent);
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -192,7 +192,7 @@
   color: var(--planner-ink);
   background: var(--planner-surface);
   box-shadow: 0 2px 9px rgba(38, 51, 47, 0.06);
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 
 .planner-header-action svg,
@@ -271,7 +271,7 @@
   color: var(--planner-band-ink);
   background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
   font: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
   cursor: pointer;
   appearance: none;
@@ -314,7 +314,7 @@
   border-radius: 14px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 19px;
+  font-size: 1.1875rem;
 }
 
 .planner-pause-banner button {
@@ -337,7 +337,7 @@
   border-radius: 12px;
   color: var(--planner-accent);
   background: var(--planner-accent-soft);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   text-align: center;
 }
@@ -374,7 +374,7 @@
   border-radius: 24px;
   color: var(--planner-muted);
   background: color-mix(in srgb, var(--planner-surface) 70%, transparent);
-  font-size: 16px;
+  font-size: 1rem;
   white-space: nowrap;
 }
 
@@ -385,7 +385,7 @@
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-filter-group button.is-selected {
   color: var(--planner-on-accent);
@@ -417,7 +417,7 @@
   gap: 11px;
   margin: 0 0 11px;
   color: var(--planner-muted);
-  font-size: 19px;
+  font-size: 1.1875rem;
   font-weight: 800;
 }
 
@@ -429,7 +429,7 @@
   border-radius: 50%;
   color: var(--planner-muted);
   background: var(--planner-soft);
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .planner-section--late > h2 {
@@ -444,7 +444,7 @@
   align-items: center;
   gap: 10px;
   color: var(--planner-ink);
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 .planner-section--member > h2 .planner-member-heading-avatar {
   display: grid;
@@ -461,7 +461,7 @@
     var(--planner-surface)
   );
   color: var(--planner-ink);
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-section--member > h2 .planner-member-heading-avatar > * {
   display: grid;
@@ -473,7 +473,7 @@
   background: transparent;
   object-fit: cover;
   object-position: center;
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1;
 }
 .planner-section--member > h2 .planner-member-heading-count {
@@ -490,7 +490,7 @@
     var(--member-color, var(--planner-accent)) 16%,
     var(--planner-surface)
   );
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
 }
 .planner-task-list {
@@ -540,7 +540,7 @@
   color: var(--planner-ink);
   background: transparent;
   font: inherit;
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -583,7 +583,7 @@
   border-radius: 999px;
   color: var(--planner-on-accent);
   background: var(--planner-amber);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -623,7 +623,7 @@
   /* Soft pastel disc, like the big emoji bubble on the reference card. */
   border-radius: 50%;
   background: color-mix(in srgb, var(--member-color) 14%, var(--planner-surface));
-  font-size: 30px;
+  font-size: 1.875rem;
 }
 .planner-task-copy {
   grid-area: copy;
@@ -654,7 +654,7 @@
 .planner-task-copy p {
   margin: 6px 0 0;
   color: var(--planner-muted);
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 600;
   line-height: 1.35;
   text-align: center;
@@ -683,7 +683,7 @@
 }
 /* The hand glyph sits inside the pill while the chore is still up for grabs. */
 .planner-check .planner-check-hand {
-  font-size: 20px;
+  font-size: 1.25rem;
   line-height: 1;
 }
 .planner-task--late .planner-status-dot,
@@ -725,7 +725,7 @@
   border-radius: 20px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 17px;
+  font-size: 1.0625rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -734,7 +734,7 @@
   align-items: center;
   gap: 7px;
   color: var(--planner-muted);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -748,7 +748,7 @@
   border: 2px solid var(--member-color);
   border-radius: 50%;
   background: color-mix(in srgb, var(--member-color) 18%, var(--planner-surface));
-  font-size: 22px;
+  font-size: 1.375rem;
   overflow: hidden;
 }
 /* "Anyone" / "Everyone" chips: same shape as a member chip, but the colour
@@ -761,7 +761,7 @@
 .planner-member-chip--everyone > span {
   border-color: color-mix(in srgb, var(--planner-accent) 40%, transparent);
   background: var(--planner-accent-soft);
-  font-size: 19px;
+  font-size: 1.1875rem;
 }
 .planner-member-chip--everyone {
   color: var(--planner-muted);
@@ -778,7 +778,7 @@
   border-radius: 20px;
   color: var(--planner-muted);
   background: var(--planner-soft);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
 }
@@ -804,7 +804,7 @@
   border-radius: 50%;
   color: var(--planner-muted);
   background: var(--planner-soft);
-  font-size: 22px;
+  font-size: 1.375rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -824,7 +824,7 @@
   color: var(--planner-muted);
   background: transparent;
   font: inherit;
-  font-size: 19px;
+  font-size: 1.1875rem;
   font-weight: 800;
   text-align: left;
   cursor: pointer;
@@ -849,13 +849,13 @@
 }
 .planner-section--member-done > h2 {
   color: var(--planner-muted);
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-section--member-done > h2 .planner-member-heading-avatar {
   width: 26px;
   min-width: 26px;
   height: 26px;
-  font-size: 14px;
+  font-size: 0.875rem;
   opacity: 0.85;
 }
 .planner-section--member-done .planner-task {
@@ -880,16 +880,16 @@
   background: color-mix(in srgb, var(--planner-surface) 72%, transparent);
 }
 .planner-routine-row > span:first-child {
-  font-size: 27px;
+  font-size: 1.6875rem;
 }
 .planner-routine-row strong {
   flex: 1;
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-routine-row small,
 .planner-routine-time {
   color: var(--planner-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 /* Who does the routine: small avatar stack, so a shared routine reads at a glance. */
 .planner-routine-members {
@@ -905,7 +905,7 @@
   overflow: hidden;
   border: 2px solid var(--planner-surface);
   border-radius: 50%;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 .planner-routine-members > *:first-child {
   margin-left: 0;
@@ -925,11 +925,11 @@
   color: var(--planner-muted);
 }
 .planner-empty strong {
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 .planner-empty-copy {
   color: var(--planner-muted);
-  font-size: 19px;
+  font-size: 1.1875rem;
 }
 
 .planner-primary,
@@ -941,7 +941,7 @@
   color: var(--planner-on-accent);
   background: var(--planner-accent);
   font: inherit;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -1003,7 +1003,7 @@
   border-radius: 999px;
   color: var(--planner-on-accent);
   background: var(--planner-accent);
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -1015,10 +1015,10 @@
   border-radius: 50%;
   color: var(--planner-ink);
   background: var(--planner-soft);
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 .planner-bottom-nav button strong {
-  font-size: 16px;
+  font-size: 1rem;
   white-space: nowrap;
 }
 .planner-bottom-nav button.is-active {
@@ -1077,17 +1077,17 @@
   border-radius: 12px;
   background: var(--planner-soft);
   color: var(--planner-ink) !important;
-  font-size: 17px !important;
+  font-size: 1.0625rem !important;
   font-weight: 800;
 }
 .planner-sheet h2 {
   margin: 0 40px 5px 0;
-  font-size: 27px;
+  font-size: 1.6875rem;
   line-height: 1.2;
 }
 .planner-sheet p {
   color: var(--planner-muted);
-  font-size: 17px;
+  font-size: 1.0625rem;
   line-height: 1.5;
 }
 .planner-sheet-close {
@@ -1128,7 +1128,7 @@
   border: 0;
   padding: 0;
   color: var(--planner-ink);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
 }
 .planner-field legend {
@@ -1137,7 +1137,7 @@
 /* Secondary line under an input (format hints, "cannot rename" notes). */
 .planner-hint {
   color: var(--planner-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.35;
 }
@@ -1152,7 +1152,7 @@
   color: var(--planner-ink);
   background: var(--planner-surface);
   font: inherit;
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 .planner-pin-input {
   width: 100%;
@@ -1163,7 +1163,7 @@
   color: var(--planner-ink);
   background: var(--planner-surface);
   font: inherit;
-  font-size: 26px;
+  font-size: 1.625rem;
   letter-spacing: 0.4em;
   text-align: center;
 }
@@ -1181,7 +1181,7 @@
   border: 0;
   border-radius: 10px;
   background: var(--planner-soft);
-  font-size: 22px;
+  font-size: 1.375rem;
   cursor: pointer;
 }
 .planner-icon-picker button.is-selected {
@@ -1200,13 +1200,13 @@
   border-radius: 13px;
   color: var(--planner-ink);
   background: var(--planner-soft);
-  font-size: 27px;
+  font-size: 1.6875rem;
   cursor: pointer;
 }
 .planner-stepper strong {
   min-width: 42px;
   text-align: center;
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .planner-member-picker {
   display: flex;
@@ -1218,7 +1218,7 @@
   padding: 0 13px;
   color: var(--planner-ink);
   background: var(--planner-soft);
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 .planner-member-picker button span {
   display: grid;
@@ -1227,7 +1227,7 @@
   place-items: center;
   overflow: hidden;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 /* Photos must never stretch: the wrapper is square, the image covers it. */
@@ -1264,7 +1264,7 @@
   gap: 10px;
   min-height: 48px;
   color: var(--planner-ink);
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-check-label input {
   width: 21px;
@@ -1308,7 +1308,7 @@
   border-radius: 10px;
   color: var(--planner-amber) !important;
   background: var(--planner-amber-soft);
-  font-size: 15px !important;
+  font-size: 0.9375rem !important;
 }
 .planner-sheet-footer {
   display: flex;
@@ -1336,7 +1336,7 @@
   place-items: center;
   border-radius: 11px;
   background: var(--planner-soft);
-  font-size: 23px;
+  font-size: 1.4375rem;
 }
 .planner-destination > small {
   color: var(--planner-muted);
@@ -1384,16 +1384,16 @@
     box-shadow 180ms ease-out;
 }
 .planner-choice-card > span:first-child {
-  font-size: 44px;
+  font-size: 2.75rem;
   line-height: 1;
 }
 .planner-choice-card strong {
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .planner-choice-card small {
   max-width: 15ch;
   color: var(--planner-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   text-align: center;
 }
 .planner-choice-card:not(:disabled):hover {
@@ -1410,10 +1410,10 @@
     padding: 16px 12px;
   }
   .planner-choice-card > span:first-child {
-    font-size: 34px;
+    font-size: 2.125rem;
   }
   .planner-choice-card strong {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }
 
@@ -1431,7 +1431,7 @@
 .planner-points-balance {
   margin: 0;
   color: var(--planner-ink);
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 800;
 }
 
@@ -1457,7 +1457,7 @@
 .planner-today-step > p {
   margin: 0;
   color: var(--planner-muted);
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .planner-today-step .planner-primary {
   margin-top: 18px;
@@ -1466,7 +1466,7 @@
 .planner-eyebrow {
   margin: 0;
   color: var(--planner-muted);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1491,11 +1491,11 @@
   border-radius: 14px;
   color: var(--planner-muted);
   background: color-mix(in srgb, var(--planner-surface) 82%, transparent);
-  font-size: 16px;
+  font-size: 1rem;
 }
 .planner-today-info strong {
   color: var(--planner-ink);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-transform: uppercase;
 }
 .planner-overview-stats span {
@@ -1509,7 +1509,7 @@
 }
 .planner-overview-stats strong {
   color: var(--planner-ink);
-  font-size: 28px;
+  font-size: 1.75rem;
 }
 .planner-missions {
   flex: 1 1 auto;
@@ -1518,7 +1518,7 @@
 }
 .planner-missions h2 {
   margin: 0 0 12px;
-  font-size: 30px;
+  font-size: 1.875rem;
 }
 .planner-missions > .planner-primary {
   align-self: flex-end;
@@ -1613,7 +1613,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: var(--planner-soft);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1;
 }
 
@@ -1670,7 +1670,7 @@
   align-items: center;
   gap: 18px;
   color: var(--planner-muted);
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 800;
 }
 .planner-mission-progress > div {
@@ -1708,17 +1708,17 @@
   border-radius: 30px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 21px;
+  font-size: 1.3125rem;
 }
 .planner-mission-hero p {
   color: var(--planner-muted);
-  font-size: 20px;
+  font-size: 1.25rem;
 }
 .planner-mission-done {
   width: 100%;
   min-height: 86px;
   border-radius: 18px;
-  font-size: 23px;
+  font-size: 1.4375rem;
 }
 .planner-mission-done svg {
   margin-left: 9px;
@@ -1726,7 +1726,7 @@
 }
 .planner-clock {
   color: var(--planner-muted);
-  font-size: 20px;
+  font-size: 1.25rem;
   font-weight: 800;
 }
 
@@ -1742,7 +1742,7 @@
   z-index: 10;
   inset: 45% 0 auto;
   color: var(--planner-ink);
-  font-size: 70px;
+  font-size: 4.375rem;
   font-weight: 800;
   text-align: center;
   pointer-events: none;
@@ -1760,7 +1760,7 @@
   border-radius: 13px;
   color: var(--planner-on-accent);
   background: var(--planner-ink);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
   /* Error messages come straight from ChoreOps and can be long: wrap them
@@ -1871,7 +1871,7 @@
     display: none;
   }
   .planner-header h1 {
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
   .planner-title-full {
     display: none;
@@ -1906,7 +1906,7 @@
     max-width: 96px;
     min-height: 37px;
     padding: 0 26px 0 10px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-language svg {
     right: 9px;
@@ -1924,7 +1924,7 @@
   .planner-filter-group button {
     min-height: 42px;
     padding: 0 12px;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
   .planner-content {
     padding: 2px 12px 112px;
@@ -1933,7 +1933,7 @@
     margin-bottom: 16px;
   }
   .planner-section > h2 {
-    font-size: 16px;
+    font-size: 1rem;
   }
   .planner-task {
     gap: 8px;
@@ -1944,42 +1944,42 @@
   .planner-check {
     min-height: 48px;
     padding: 0 5px 0 16px;
-    font-size: 15px;
+    font-size: 0.9375rem;
   }
   .planner-check-points {
     min-height: 38px;
     padding: 0 13px;
-    font-size: 14px;
+    font-size: 0.875rem;
   }
   .planner-task-icon {
     width: 48px;
     height: 48px;
-    font-size: 26px;
+    font-size: 1.625rem;
   }
   .planner-task-title-row {
     gap: 6px;
   }
   .planner-task-title-row h3 {
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .planner-task-copy p {
     margin-top: 4px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-task-meta {
     gap: 7px;
   }
   .planner-member-chip {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-member-chip > span {
     width: 31px;
     height: 31px;
-    font-size: 17px;
+    font-size: 1.0625rem;
   }
   .planner-time {
     padding: 7px 9px;
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
   .planner-claim {
     min-height: 40px;
@@ -1999,10 +1999,10 @@
   .planner-bottom-nav button span {
     width: 34px;
     height: 34px;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   .planner-bottom-nav button strong {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-backdrop {
     /* Stay centred instead of hugging the bottom edge: with the mobile tab bar
@@ -2019,19 +2019,19 @@
     border-radius: 18px;
   }
   .planner-sheet h2 {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
   .planner-icon-picker {
     grid-template-columns: repeat(8, minmax(0, 1fr));
   }
   .planner-icon-picker button {
     height: 36px;
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
   .planner-member-picker button {
     min-height: 46px;
     padding: 0 9px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-today-lobby {
     gap: 10px;
@@ -2045,20 +2045,20 @@
   .planner-lobby-avatar {
     width: 76px;
     height: 76px;
-    font-size: 43px;
+    font-size: 2.6875rem;
   }
   .planner-lobby-member strong {
-    font-size: 19px;
+    font-size: 1.1875rem;
   }
   .planner-lobby-member > span:last-child {
-    font-size: 12px;
+    font-size: 0.75rem;
   }
   .planner-today-step,
   .planner-missions {
     padding: 16px 12px 90px;
   }
   .planner-today-step h2 {
-    font-size: 31px;
+    font-size: 1.9375rem;
   }
   .planner-overview-stats {
     width: 100%;
@@ -2067,23 +2067,23 @@
     min-width: 0;
     flex: 1;
     padding: 15px 9px;
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
   .planner-overview-stats strong {
-    font-size: 22px;
+    font-size: 1.375rem;
   }
   .planner-mission-screen {
     padding: 15px 15px 90px;
   }
   .planner-mission-hero > span {
-    font-size: 100px;
+    font-size: 6.25rem;
   }
   .planner-mission-hero h2 {
-    font-size: 36px;
+    font-size: 2.25rem;
   }
   .planner-mission-done {
     min-height: 70px;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   .planner-toast {
     right: 12px;
@@ -2138,7 +2138,7 @@
 }
 
 .planner-reward > span {
-  font-size: 26px;
+  font-size: 1.625rem;
   text-align: center;
 }
 
@@ -2150,13 +2150,13 @@
 
 .planner-reward-copy strong {
   color: var(--planner-ink);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 800;
 }
 
 .planner-reward-copy small {
   color: var(--planner-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
@@ -2177,7 +2177,7 @@
   flex: 0 0 auto;
   min-height: 42px;
   padding: 0 18px;
-  font-size: 14px;
+  font-size: 0.875rem;
   white-space: nowrap;
 }
 
@@ -2239,14 +2239,14 @@
   border-radius: 999px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
 }
 
 .planner-celebrate-sub {
   margin: 0;
   color: var(--planner-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 600;
   text-align: center;
 }
@@ -2262,7 +2262,7 @@
   gap: 10px;
   margin: 0 0 10px;
   color: var(--planner-amber-ink);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -2285,7 +2285,7 @@
   place-items: center;
   border-radius: 999px;
   background: var(--planner-amber-soft);
-  font-size: 11px;
+  font-size: 0.6875rem;
   letter-spacing: 0;
 }
 
@@ -2306,7 +2306,7 @@
 }
 
 .planner-header .planner-eyebrow {
-  font-size: 9px;
+  font-size: 0.5625rem;
 }
 
 .planner-today-step h2 {
@@ -2314,7 +2314,7 @@
 }
 
 .planner-mission-hero > span {
-  font-size: 54px;
+  font-size: 3.375rem;
 }
 
 .planner-mission-hero h2 {
@@ -2330,7 +2330,7 @@
 .planner-task-icon {
   width: 42px;
   height: 42px;
-  font-size: 22px;
+  font-size: 1.375rem;
 }
 
 .planner-task-title-row {
@@ -2343,13 +2343,13 @@
 
 .planner-task-copy p {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .planner-check {
   min-height: 40px;
   padding: 0 4px 0 14px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .planner-check-icon {
@@ -2365,13 +2365,13 @@
 .planner-check-points {
   min-height: 32px;
   padding: 0 12px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .planner-primary {
   min-height: 40px;
   padding: 0 16px;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .planner-ghost {
@@ -2381,13 +2381,13 @@
 .planner-member-chip,
 .planner-time {
   padding: 5px 9px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .planner-member-chip > span {
   width: 22px;
   height: 22px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .planner-content {
@@ -2399,12 +2399,12 @@
 }
 
 .planner-routine-row strong {
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .planner-routine-row small,
 .planner-routine-time {
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .planner-celebrate-glow {
@@ -2419,11 +2419,11 @@
 
 .planner-celebrate-pill {
   padding: 6px 14px;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .planner-celebrate-sub {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2499,7 +2499,7 @@
 .planner-header-clock {
   flex: 0 0 auto;
   color: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2552,7 +2552,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: var(--planner-soft);
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .planner-col-avatar--free {
@@ -2565,7 +2565,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--planner-ink);
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 800;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -2583,7 +2583,7 @@
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
   font: inherit;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2602,7 +2602,7 @@
   border-radius: 50%;
   color: var(--planner-accent);
   background: color-mix(in srgb, var(--planner-accent) 14%, var(--planner-surface));
-  font-size: 10px;
+  font-size: 0.625rem;
   cursor: pointer;
 }
 
@@ -2631,7 +2631,7 @@
   margin: 4px 0 0;
   padding: 0 2px;
   color: var(--planner-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2642,7 +2642,7 @@
   border-radius: 999px;
   background: var(--planner-soft);
   color: var(--planner-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 .planner-col-empty {
@@ -2651,7 +2651,7 @@
   border: 1px dashed color-mix(in srgb, var(--planner-ink) 14%, transparent);
   border-radius: 12px;
   color: var(--planner-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   text-align: center;
 }
 
@@ -2709,7 +2709,7 @@
   border-radius: 50%;
   color: var(--planner-accent);
   background: transparent;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -2726,7 +2726,7 @@
 
 .planner-row-icon {
   flex: 0 0 auto;
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 
 .planner-row-name {
@@ -2735,7 +2735,7 @@
   flex-direction: column;
   min-width: 0;
   color: var(--planner-ink);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
@@ -2743,7 +2743,7 @@
 
 .planner-row-name small {
   color: var(--planner-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 500;
 }
 
@@ -2753,7 +2753,7 @@
   align-items: center;
   gap: 2px;
   color: var(--planner-muted);
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 700;
 }
 
@@ -2763,7 +2763,7 @@
   border: 0;
   color: var(--planner-muted);
   background: transparent;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -2784,7 +2784,7 @@
   color: var(--planner-on-accent);
   background: var(--planner-accent);
   font: inherit;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 800;
   cursor: pointer;
 }
@@ -2831,7 +2831,7 @@
 .planner-col-play--big {
   width: 34px;
   height: 34px;
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 /* ---------------------------------------------------------------------------
@@ -2870,7 +2870,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: var(--planner-soft);
-  font-size: 26px;
+  font-size: 1.625rem;
 }
 
 .planner-detail-copy {
@@ -2886,7 +2886,7 @@
   overflow: hidden;
   color: var(--planner-ink);
   font-family: var(--font-display, 'Trebuchet MS', sans-serif);
-  font-size: 22px;
+  font-size: 1.375rem;
   font-weight: 700;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -2901,7 +2901,7 @@
   border-radius: 999px;
   color: var(--planner-amber-ink);
   background: var(--planner-amber-soft);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 800;
 }
 
@@ -2941,7 +2941,7 @@
   gap: 6px;
   margin: 0;
   color: var(--planner-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2951,7 +2951,7 @@
   padding: 1px 7px;
   border-radius: 999px;
   background: var(--planner-soft);
-  font-size: 11px;
+  font-size: 0.6875rem;
 }
 
 /* A paused routine: still visible so it can be resumed, but out of the way. */
@@ -3003,7 +3003,7 @@
   place-items: center;
   border-radius: 10px;
   background: var(--planner-accent-soft);
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .planner-goal-copy {
@@ -3017,7 +3017,7 @@
 .planner-goal-copy strong {
   overflow: hidden;
   color: var(--planner-ink);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -3025,7 +3025,7 @@
 
 .planner-goal-copy small {
   color: var(--planner-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .planner-goal--new {

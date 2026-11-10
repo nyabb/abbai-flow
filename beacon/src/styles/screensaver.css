@@ -42,7 +42,7 @@
 
 .screensaver-time {
   font-family: var(--font-display, 'Poppins', sans-serif);
-  font-size: 120px;
+  font-size: 7.5rem;
   font-weight: 300;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1;
@@ -52,7 +52,7 @@
 
 .screensaver-date {
   font-family: var(--font-display, 'Poppins', sans-serif);
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.4);
   margin-top: 12px;
@@ -66,23 +66,23 @@
 /* Responsive: Tablet < 768px */
 @media (max-width: 768px) {
   .screensaver-time {
-    font-size: 72px;
+    font-size: 4.5rem;
   }
 
   .screensaver-date {
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }
 
 /* Responsive: Phone < 480px */
 @media (max-width: 480px) {
   .screensaver-time {
-    font-size: 56px;
+    font-size: 3.5rem;
     letter-spacing: -2px;
   }
 
   .screensaver-date {
-    font-size: 15px;
+    font-size: 0.9375rem;
     margin-top: 8px;
   }
 }
