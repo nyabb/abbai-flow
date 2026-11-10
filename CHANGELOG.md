@@ -1,3 +1,20 @@
+# [1.56.0](https://github.com/nyabb/beacon/compare/v1.55.1...v1.56.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* **dashboard:** keep the Edit Dashboard toggle out of the page header ([bd9c303](https://github.com/nyabb/beacon/commit/bd9c303f0fd2eb5c3ad52ab7b356765d90f140dc))
+* **planner:** stop the phone member chip stretching down the column ([c86b223](https://github.com/nyabb/beacon/commit/c86b223319834f09fba7d90bc698488e1ac0fa86))
+* **ui:** remove the add button from the calendar page only ([6d3bdb2](https://github.com/nyabb/beacon/commit/6d3bdb2d0351381aade248b9f67521e0ef41096f))
+* **ui:** remove the floating add button from the dashboard as well ([d8a63ac](https://github.com/nyabb/beacon/commit/d8a63ac872faa0cf231432ce95bedf01f90f68bf))
+* **widgets:** derive the timer play-button hover from its token ([f1db9c3](https://github.com/nyabb/beacon/commit/f1db9c32bd58e5517eda67dea15cd58b9214b825))
+
+
+### Features
+
+* **ui:** make the Font Size setting actually work ([4800758](https://github.com/nyabb/beacon/commit/4800758a4b95265a13547911393e7ef5bf23b749))
+* **ui:** use Poppins everywhere instead of a serif/sans mix ([fe54df6](https://github.com/nyabb/beacon/commit/fe54df69ce486f49166d15dc8d02d11c27007f54))
+
 ## [1.55.1](https://github.com/nyabb/beacon/compare/v1.55.0...v1.55.1) (2026-11-10)
 
 
