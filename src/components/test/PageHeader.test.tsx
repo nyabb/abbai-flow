@@ -46,4 +46,30 @@ describe('PageHeader', () => {
 
     expect(screen.getByText('actie')).toBeInTheDocument();
   });
+
+  /*
+   * The band dates the page rather than only naming it: on a wall display the
+   * day numeral is the largest thing on screen. The weekday is locale-derived,
+   * so it is asserted as present rather than pinned to a calendar fact.
+   */
+  it('leads with the date block: weekday, day numeral and month', () => {
+    const { container } = renderHeader({ title: 'Timer', date: new Date(2026, 10, 10) });
+
+    expect(container.querySelector('.page-header-day')?.textContent).toBe('10');
+    expect(container.querySelector('.page-header-month')?.textContent).toBe('november');
+    expect(container.querySelector('.page-header-weekday')?.textContent?.trim()).toBeTruthy();
+  });
+
+  /* Every page carries a live clock, so the band never needs one passed in. */
+  it('shows its own clock unless the view supplies one', () => {
+    const { container, rerender } = renderHeader({ title: 'Timer' });
+    expect(container.querySelector('.clock-mini')).not.toBeNull();
+
+    rerender(
+      <I18nContext.Provider value={NL}>
+        <PageHeader title="Timer" hideClock />
+      </I18nContext.Provider>,
+    );
+    expect(container.querySelector('.clock-mini')).toBeNull();
+  });
 });

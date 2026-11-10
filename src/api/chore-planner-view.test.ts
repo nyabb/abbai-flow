@@ -90,6 +90,35 @@ describe('buildChorePlannerView', () => {
     });
   });
 
+  /*
+   * A labelled daily chore belongs to a routine, and the task carries that so
+   * the mission run can name the routine it is working through -- and so pausing
+   * the routine can keep its chores out of the queue.
+   */
+  it('marks a labelled daily chore with its routine', () => {
+    const labelled = {
+      ...states,
+      chores: [{ ...states!.chores[0], frequency: 'daily', labels: ['Ochtendroutine'] }],
+    } as typeof states;
+
+    const task = buildChorePlannerView(labelled, family).tasks[0];
+
+    expect(task.routineId).toBe('routine:ochtendroutine');
+    expect(task.routineName).toBe('Ochtendroutine');
+  });
+
+  /* A weekly chore keeps its label but is not part of a routine. */
+  it('leaves a non-daily chore out of any routine', () => {
+    const weekly = {
+      ...states,
+      chores: [{ ...states!.chores[0], frequency: 'weekly', labels: ['Ochtendroutine'] }],
+    } as typeof states;
+
+    const task = buildChorePlannerView(weekly, family).tasks[0];
+
+    expect(task.routineId).toBeUndefined();
+  });
+
   it('reports unavailable when ChoreOps published nothing', () => {
     expect(buildChorePlannerView(null, family)).toMatchObject({
       available: false,

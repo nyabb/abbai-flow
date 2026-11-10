@@ -20,6 +20,37 @@
   flex-shrink: 0;
 }
 
+/* The band leads with the date, like every other page: weekday, oversized day
+   numeral, month, then the page name and the clock. The tab row sits below it. */
+.grocery-view-hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(12px, 2vw, 24px);
+  margin-bottom: 14px;
+}
+
+.grocery-view-hero .page-header-title {
+  margin: 0;
+  color: inherit;
+}
+
+.grocery-view-hero .page-header-actions {
+  margin-left: auto;
+}
+
+.grocery-view-hero .clock-mini {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  font-weight: 700;
+  color: inherit;
+}
+
+@media (max-width: 600px) {
+  .grocery-view-hero .page-header-date {
+    display: none;
+  }
+}
+
 /* One page, two tabs: the shopping list first, then the adult to-do list. */
 .grocery-view-tabs {
   display: flex;

@@ -7,7 +7,6 @@ import { useFamily } from './hooks/useFamily';
 import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
 import { resolveMemberForUser } from './api/choreops';
-import { Clock } from './components/Clock';
 import { WeekCalendar } from './components/WeekCalendar';
 import { DashboardView } from './components/DashboardView';
 import { EventModal, EventFormData } from './components/EventModal';
@@ -684,17 +683,22 @@ export function App() {
               </div>
             )
           ) : activeView === 'music' ? (
-            <MusicView
-              activePlayer={music.activePlayer}
-              players={music.players}
-              selectedPlayerId={music.selectedPlayerId}
-              onPlay={music.play}
-              onPause={music.pause}
-              onNext={music.next}
-              onPrevious={music.previous}
-              onSetVolume={music.setVolume}
-              onSelectPlayer={music.selectPlayer}
-            />
+            <div className="view-page">
+              <PageHeader title={t('nav.music')} />
+              <div className="view-page-body">
+                <MusicView
+                  activePlayer={music.activePlayer}
+                  players={music.players}
+                  selectedPlayerId={music.selectedPlayerId}
+                  onPlay={music.play}
+                  onPause={music.pause}
+                  onNext={music.next}
+                  onPrevious={music.previous}
+                  onSetVolume={music.setVolume}
+                  onSelectPlayer={music.selectPlayer}
+                />
+              </div>
+            </div>
           ) : activeView === 'settings' ? (
             <SettingsView
               settings={settings}
@@ -719,17 +723,18 @@ export function App() {
             />
           ) : activeView === 'timer' ? (
             <div className="view-page">
-              <PageHeader
-                title={t('nav.timer')}
-                subtitle={format(new Date(), 'EEEE d MMMM', { locale: i18n.dateLocale })}
-                actions={<Clock />}
-              />
+              <PageHeader title={t('nav.timer')} />
               <div className="view-page-body">
                 <Timer />
               </div>
             </div>
           ) : activeView === 'weather' ? (
-            <WeatherView />
+            <div className="view-page">
+              <PageHeader title={t('nav.weather')} />
+              <div className="view-page-body">
+                <WeatherView />
+              </div>
+            </div>
           ) : activeView === 'display' ? (
             <DisplayView
               events={visibleEvents}
@@ -752,11 +757,7 @@ export function App() {
             />
           ) : activeView === 'photos' ? (
             <div className="view-page">
-              <PageHeader
-                title={t('nav.photos')}
-                subtitle={format(new Date(), 'EEEE d MMMM', { locale: i18n.dateLocale })}
-                onBack={() => setActiveView('dashboard')}
-              />
+              <PageHeader title={t('nav.photos')} onBack={() => setActiveView('dashboard')} />
               <PhotoFrame
                 musicPlayer={music.activePlayer}
                 onMusicPlay={() => music.activePlayer && music.play(music.activePlayer.entity_id)}
@@ -772,25 +773,18 @@ export function App() {
             </div>
           ) : (
             <>
-              {/* Header */}
-              <header className="beacon-header">
-                <div className="header-left">
-                  <span className="header-family-name">{settings.familyName}</span>
-                  <span className="header-separator" />
-                  <span className="header-date">
-                    {format(new Date(), 'EEEE, MMMM d, yyyy', { locale: i18n.dateLocale })}
-                  </span>
-                  {!connected && (
+              {/* Header — the shared hero band: big date, page title, live clock. */}
+              <PageHeader
+                title={settings.familyName}
+                actions={
+                  !connected ? (
                     <div className="connection-status">
                       <span className="connection-dot" />
                       {t('app.connecting')}
                     </div>
-                  )}
-                </div>
-                <div className="header-right">
-                  <Clock />
-                </div>
-              </header>
+                  ) : undefined
+                }
+              />
 
               {/* Family filter pills — above the calendar */}
               <div className="filter-bar">

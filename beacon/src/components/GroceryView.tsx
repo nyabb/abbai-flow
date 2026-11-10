@@ -5,6 +5,8 @@ import { AnyListClient } from '../api/anylist';
 import { callHaService, hasToken } from '../api/ha-rest';
 import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
+import { HeaderDate } from './PageHeader';
+import { Clock } from './Clock';
 
 interface TodoItem {
   uid: string;
@@ -270,6 +272,14 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
     <div className="grocery-view" data-grocery-view>
       {/* Tabs + list selector */}
       <div className="grocery-view-header">
+        {/* Same date treatment as every other page band. */}
+        <div className="grocery-view-hero">
+          <HeaderDate />
+          <h1 className="page-header-title">{t('nav.grocery')}</h1>
+          <div className="page-header-actions">
+            <Clock />
+          </div>
+        </div>
         <div className="grocery-view-tabs" role="tablist" aria-label={t('grocery.tabsLabel')}>
           <button
             type="button"

@@ -38,6 +38,7 @@ import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import { usePlannerCopy } from './copy';
 import { RewardRow, RoutineRow, TaskRow } from './rows';
+import { HeaderDate } from '../PageHeader';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
@@ -317,6 +318,22 @@ export function ChorePlanner({
     return rewards.filter((reward) => (reward.assignee ?? '').trim().toLowerCase() === key);
   };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
+
+  /**
+   * The routine the current mission belongs to, with the position inside it, so
+   * the run can say "Morning routine · 2/3" instead of showing a bare chore and
+   * leaving the child to wonder how it relates to the routine on the board.
+   */
+  const missionRoutineStep = (() => {
+    const routineId = missionTask?.routineId;
+    if (!routineId) return null;
+    const siblings = missionIds.filter((id) => getTask(id)?.routineId === routineId);
+    return {
+      name: missionTask?.routineName ?? '',
+      index: siblings.indexOf(missionTask?.id ?? '') + 1,
+      total: siblings.length,
+    };
+  })();
   const selectedTodayMember = memberFor(todayMemberId);
 
   /**
@@ -363,15 +380,14 @@ export function ChorePlanner({
       <RewardRow
         key={reward.id}
         reward={reward}
-        reserved={state.reserved !== null}
-        saved={state.saved}
-        available={state.available}
+        allocated={state.allocated}
+        remaining={state.remaining}
+        done={state.done}
+        canAdd={state.canAdd}
         pending={state.pending}
-        affordable={state.affordable}
         saving={saving}
         copy={c}
         onUndo={() => undoRewardChoice(reward)}
-        onConfirm={() => confirmReward(reward)}
         onApprove={() =>
           requestPin(
             c.rewards,
@@ -438,8 +454,16 @@ export function ChorePlanner({
     );
   };
   /** Calendar order for a list of chores. */
-  /** A child's open chores, in the order the mission runner uses them. */
-  const openTasksFor = (memberId: string) =>
+  /**
+   * A child's mission queue.
+   *
+   * A paused routine generates nothing, so its chores are kept out of the run --
+   * otherwise Pause would only grey a row on the board and change nothing about
+   * what the child is actually asked to do. Ordered by routine, then by
+   * deadline, so the guided run works through one routine at a time instead of
+   * hopping between them.
+   */
+  const missionQueueFor = (memberId: string) =>
     data.tasks
       .filter(
         (task) =>
@@ -447,7 +471,17 @@ export function ChorePlanner({
           taskStatus(task) !== 'completed' &&
           taskStatus(task) !== 'expired',
       )
-      .sort(byDeadline);
+      .filter((task) => !task.routineId || !pausedRoutineIds.includes(task.routineId))
+      .sort((a, b) => {
+        // Routineless chores sort last rather than mixed into a routine's run.
+        const left = a.routineId ?? '\uFFFF';
+        const right = b.routineId ?? '\uFFFF';
+        if (left !== right) return left < right ? -1 : 1;
+        return byDeadline(a, b);
+      });
+
+  /** The overview list is the queue: what it shows is what will be run. */
+  const openTasksFor = (memberId: string) => missionQueueFor(memberId);
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
@@ -673,7 +707,13 @@ export function ChorePlanner({
     // A routine is a chore that repeats daily and belongs to a named routine.
     setForm(
       kind === 'routine'
-        ? { ...emptyForm(now), frequency: 'daily', liveFrequency: 'daily', timeBlock: 'morning' }
+        ? {
+            ...emptyForm(now),
+            kind: 'routine',
+            frequency: 'daily',
+            liveFrequency: 'daily',
+            timeBlock: 'morning',
+          }
         : emptyForm(now),
     );
     setModal('form');
@@ -727,7 +767,13 @@ export function ChorePlanner({
       return;
     }
 
-    const frequency = form.liveFrequency;
+    /*
+     * Recurrence belongs to routines. A new task is a one-off, so it is created
+     * as `none` rather than carrying whatever the form happened to hold -- the
+     * editor hides the schedule for exactly that case. Edits keep whatever
+     * repeat ChoreOps already has, so nothing is rewritten behind the user.
+     */
+    const frequency = form.kind === 'task' && !editingId ? 'none' : form.liveFrequency;
     /*
      * Labels are the routine name. They are only sent when the field differs
      * from what ChoreOps already has, so editing e.g. the points of a chore
@@ -872,13 +918,15 @@ export function ChorePlanner({
   };
 
   /**
-   * Set points aside for a reward.
+   * Put points aside for a reward.
    *
-   * This is deliberately Beacon-only: the balance drops the moment the child
-   * picks the reward, and nothing is written to ChoreOps until a parent
-   * confirms it, so the child can still change their mind.
+   * Approval-free and Beacon-only: the balance drops the moment the child
+   * allocates, and nothing is written to ChoreOps, so they can still change
+   * their mind. Points accumulate towards the cost instead of being reserved in
+   * one go -- that is what makes "on hold" (partway) and "reached the goal"
+   * (fully covered) two different states.
    */
-  const assignReward = (reward: ChoreOpsReward) => {
+  const assignReward = (reward: ChoreOpsReward, amount?: number) => {
     const userName =
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
@@ -886,72 +934,55 @@ export function ChorePlanner({
       showToast(c.assignToClaim, 'error');
       return;
     }
+
+    const owner = memberByName(userName);
+    const already = reservationFor(reservations, userName, reward.name)?.points ?? 0;
+    const stillNeeded = Math.max(0, reward.cost - already);
+    // Never invent points: the amount is capped by what the child can still
+    // spend and by what the goal still needs.
+    const give = Math.min(amount ?? stillNeeded, stillNeeded, owner ? spendableFor(owner) : 0);
+    if (give <= 0) return;
+
     setReservations((list) =>
-      reservePoints(list, { user: userName, reward: reward.name, points: reward.cost }),
+      reservePoints(list, { user: userName, reward: reward.name, points: already + give }),
     );
     showToast(toastWith(c.assignedToast, reward.name));
   };
 
-  /** Give the points back — the child changed their mind about this reward. */
+  /** Give the points back -- the child changed their mind, or wants it again. */
   const undoRewardChoice = (reward: ChoreOpsReward) => {
     setReservations((list) => releasePoints(list, reward.assignee, reward.name));
     showToast(toastWith(c.undoneToast, reward.name));
   };
 
   /**
-   * Parent confirmation in real life: ChoreOps deducts the cost once and the
-   * child's allocation is released, so their visible balance does not move.
-   */
-  const confirmReward = (reward: ChoreOpsReward) => {
-    if (!reward.assignee) {
-      showToast(c.assignToClaim, 'error');
-      return;
-    }
-    requestPin(c.rewards, reward.name, (approverName) => {
-      void (async () => {
-        try {
-          setSaving(true);
-          await choreOps.approveReward(reward.assignee as string, reward.name, approverName);
-          setReservations((list) => releasePoints(list, reward.assignee, reward.name));
-          playCompletionSound();
-          showToast(toastWith(c.approved, reward.name));
-        } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail, 'error');
-        } finally {
-          setSaving(false);
-        }
-      })();
-    });
-  };
-
-  /**
    * Reward card state shared by the child screen and the rewards sheet:
-   * what is set aside, whether ChoreOps has a claim pending, and what is left.
+   * how much is set aside, what is still missing, and whether the goal is met.
    */
   const rewardState = (reward: ChoreOpsReward) => {
     const owner = memberByName(reward.assignee);
     const reserved = reservationFor(reservations, reward.assignee, reward.name);
     const saved = owner ? spendableFor(owner) : 0;
+    const allocated = reserved?.points ?? 0;
+    const remaining = Math.max(0, reward.cost - allocated);
     return {
       owner,
       reserved,
       saved,
+      allocated,
+      remaining,
+      /** Fully covered: on hold, and listed under Done. */
+      done: allocated > 0 && remaining === 0,
       available: reward.status === 'available',
       pending: reward.pendingClaims > 0,
-      affordable: saved >= reward.cost,
+      canAdd: reward.status === 'available' && saved > 0 && remaining > 0,
     };
   };
 
   /** Start the step-by-step run through one child's chores. */
   const beginMissions = (memberId: string) => {
     setTodayMemberId(memberId);
-    const queue = data.tasks
-      .filter(
-        (task) =>
-          task.memberId === memberId && !['completed', 'expired'].includes(taskStatus(task)),
-      )
-      .sort(byDeadline)
-      .map((task) => task.id);
+    const queue = missionQueueFor(memberId).map((task) => task.id);
     setMissionIds(queue);
     setMissionIndex(0);
     setScreen(queue.length ? 'mission' : 'closing');
@@ -1149,10 +1180,8 @@ export function ChorePlanner({
         )}
         {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
         <div className="planner-header-copy">
-          {/* Board hero: a small line with the date above the page title. */}
-          <span className="planner-eyebrow">
-            {now.toLocaleDateString(timeLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
-          </span>
+          {/* Same date treatment as every other page band. */}
+          <HeaderDate date={now} />
           <h1>
             {/* Phones get the short name so the header can stay on one row. */}
             <span className="planner-title-full">{heading}</span>
@@ -1266,6 +1295,7 @@ export function ChorePlanner({
             currentStatus={activeMissionStatus}
             index={missionIndex}
             total={missionIds.length}
+            routineStep={missionRoutineStep}
             countdown={missionTask ? countdown(missionTask.deadlineAt, now, c) : ''}
             online={online}
             busy={pendingTaskId === missionTask?.id}
@@ -1389,6 +1419,7 @@ export function ChorePlanner({
                 copy={c}
                 renderRewardRow={renderRewardRow}
                 onNewGoal={startRewardForm}
+                isDone={(reward) => rewardState(reward).done}
               />
             )}{' '}
             {modal === 'reward-actions' && selectedReward && (

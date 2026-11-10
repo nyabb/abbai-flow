@@ -53,6 +53,13 @@ export interface PlannerTask {
   actions?: { claim?: string; approve?: string; disapprove?: string };
   /** Live ChoreOps task: the child finished it and a parent must sign off. */
   awaitingReview?: boolean;
+  /**
+   * The daily routine this chore belongs to, taken from its first ChoreOps
+   * label. Kept on the task so the mission run can say which routine you are
+   * working through, and so pausing a routine can keep its chores out of it.
+   */
+  routineId?: string;
+  routineName?: string;
 }
 
 export interface PlannerRoutine {

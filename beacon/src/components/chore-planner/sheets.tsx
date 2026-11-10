@@ -14,10 +14,13 @@ import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
 
-/** Points a reward already has set aside, and whether they cover its cost. */
+/** What is set aside for a reward and what the goal still needs. */
 export interface RewardState {
   saved: number;
-  affordable: boolean;
+  allocated: number;
+  remaining: number;
+  done: boolean;
+  canAdd: boolean;
 }
 
 export interface ActionsSheetProps {
@@ -99,13 +102,13 @@ export function AwardSheet({
           </span>
         </button>
         {rewards.map((reward) => {
-          const { saved, affordable } = rewardState(reward);
+          const { canAdd, remaining } = rewardState(reward);
           return (
             <button
               type="button"
               className="planner-goal"
               key={reward.id}
-              disabled={!affordable}
+              disabled={!canAdd}
               onClick={() => onAssign(reward)}
             >
               <span className="planner-goal-icon" aria-hidden="true">
@@ -114,11 +117,7 @@ export function AwardSheet({
               <span className="planner-goal-copy">
                 <strong>{reward.name}</strong>
                 <small>
-                  {affordable
-                    ? c.assign
-                    : t('planner.stillNeeded', {
-                        points: String(Math.max(0, reward.cost - saved)),
-                      })}
+                  {canAdd ? c.assign : t('planner.stillNeeded', { points: String(remaining) })}
                 </small>
               </span>
             </button>
@@ -263,6 +262,8 @@ export interface GoalsSheetProps {
   copy: PlannerCopy;
   renderRewardRow: (reward: ChoreOpsReward) => React.ReactNode;
   onNewGoal: (memberId: string) => void;
+  /** True once the full cost is set aside, so the reward moves under Done. */
+  isDone: (reward: ChoreOpsReward) => boolean;
 }
 
 export function GoalsSheet({
@@ -271,7 +272,17 @@ export function GoalsSheet({
   copy: c,
   renderRewardRow,
   onNewGoal,
+  isDone,
 }: GoalsSheetProps) {
+  /*
+   * A reward whose full cost is set aside is "on hold": the child is no longer
+   * saving for it, so it belongs under Done the way a finished chore does. It
+   * stays listed so they can use it again or delete it, rather than having to
+   * re-create it.
+   */
+  const done = rewards.filter((reward) => isDone(reward));
+  const open = rewards.filter((reward) => !isDone(reward));
+
   return (
     <>
       <h2>
@@ -280,7 +291,9 @@ export function GoalsSheet({
         {member.name}
       </h2>
       {rewards.length === 0 && <p>{c.noRewards}</p>}
-      {rewards.map((reward) => renderRewardRow(reward))}
+      {open.map((reward) => renderRewardRow(reward))}
+      {done.length > 0 && <h3 className="planner-reward-group">{c.done}</h3>}
+      {done.map((reward) => renderRewardRow(reward))}
       <button className="planner-ghost planner-reward-new" onClick={() => onNewGoal(member.id)}>
         <Plus />
         {c.setGoal}

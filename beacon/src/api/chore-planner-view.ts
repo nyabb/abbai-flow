@@ -193,6 +193,9 @@ export function buildChorePlannerView(
       const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
       const status = choreOpsTaskStatus(chore.status);
       const awaitingReview = AWAITING_REVIEW.test(chore.status);
+      // Only daily chores make a routine, matching how the routine rows are
+      // grouped; a weekly chore keeps its label but belongs to no routine.
+      const routineName = DAILY_FREQUENCY.test(chore.frequency ?? '') ? routineLabel(chore) : null;
 
       return {
         id: chore.id,
@@ -214,6 +217,8 @@ export function buildChorePlannerView(
         freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
         awaitingReview,
         actions: chore.actions,
+        routineId: routineName ? `routine:${routineName.trim().toLowerCase()}` : undefined,
+        routineName: routineName ?? undefined,
       } satisfies PlannerTask;
     });
 

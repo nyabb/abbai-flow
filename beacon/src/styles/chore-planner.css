@@ -102,6 +102,19 @@
   min-width: 0;
 }
 
+/* The shared date block sits above the planner title. It is deliberately smaller
+   here than on the other bands: the planner band is a compact toolbar (60px) and
+   a full-size numeral would double its height. */
+.planner-header .page-header-day {
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+}
+
+.planner-header .page-header-weekday,
+.planner-header .page-header-month {
+  font-size: 0.68rem;
+  text-transform: lowercase;
+}
+
 .planner-header-actions {
   display: flex;
   flex: 0 0 auto;
@@ -1423,9 +1436,7 @@
 }
 
 .planner-lobby-avatar,
-
 .planner-lobby-avatar > img,
-
 .planner-today-step {
   display: flex;
   flex-direction: column;
@@ -1521,6 +1532,15 @@
   min-height: 0;
   overflow-y: auto;
   padding: 18px clamp(20px, 7vw, 120px) 120px;
+}
+/* Which routine the current mission belongs to, and how far into it we are. */
+.planner-mission-routine {
+  margin: 0 0 6px;
+  color: var(--planner-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .planner-mission-progress {
   display: flex;
@@ -1951,6 +1971,26 @@
 }
 
 /* --- Rewards (ChoreOps reward entities) --- */
+
+/* Rewards whose full cost is set aside are "on hold": grouped under a Done
+   heading the way finished chores are, and dimmed so the open goals stay the
+   thing you read first. */
+.planner-reward-group {
+  margin: 14px 0 4px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--planner-muted);
+}
+
+.planner-reward--done .planner-reward-copy strong {
+  color: var(--planner-muted);
+}
+
+.planner-reward--done .planner-reward-copy i b {
+  background: var(--planner-muted);
+}
 
 .planner-reward {
   display: grid;

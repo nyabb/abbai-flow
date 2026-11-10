@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { FamilyMember } from '../types/family';
 import type { BeaconSettings } from '../hooks/useSettings';
+import { PageHeader } from './PageHeader';
 import { GeneralSection } from './settings/sections/GeneralSection';
 import { ChoresSection } from './settings/sections/ChoresSection';
 import { AboutSection } from './settings/sections/AboutSection';
@@ -221,22 +222,27 @@ export function SettingsView({
     />
   );
   return (
-    <div className="settings-view">
-      <nav className="settings-nav">
-        <div className="settings-nav-header">{t('settings.title')}</div>
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`settings-nav-item ${activeSection === item.id ? 'settings-nav-item--active' : ''}`}
-            onClick={() => setActiveSection(item.id)}
-          >
-            {item.icon}
-            {t(item.labelKey)}
-          </button>
-        ))}
-      </nav>
-      <div className="settings-content">{renderSection()}</div>
+    <div className="view-page">
+      <PageHeader title={t('settings.title')} />
+      <div className="view-page-body">
+        <div className="settings-view">
+          <nav className="settings-nav">
+            <div className="settings-nav-header">{t('settings.title')}</div>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={`settings-nav-item ${activeSection === item.id ? 'settings-nav-item--active' : ''}`}
+                onClick={() => setActiveSection(item.id)}
+              >
+                {item.icon}
+                {t(item.labelKey)}
+              </button>
+            ))}
+          </nav>
+          <div className="settings-content">{renderSection()}</div>
+        </div>
+      </div>
     </div>
   );
 }

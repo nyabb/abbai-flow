@@ -39,6 +39,20 @@ export function ChoreEditor({
   onCancel,
   onSave,
 }: ChoreEditorProps) {
+  /*
+   * A routine repeats and carries the routine label; a task happens once. The
+   * reference model puts recurrence on routines only, and ChoreOps agrees --
+   * a chore without a repeat is a one-off. So a NEW task hides the label and
+   * schedule fields entirely and is created as `none`, while a new routine
+   * chooses its repeat explicitly (daily by default, weekly adds the weekday
+   * pills).
+   *
+   * Editing always shows them: an existing chore may already be weekly or use
+   * a custom interval, and hiding that would silently rewrite what ChoreOps has
+   * the moment it is saved.
+   */
+  const showSchedule = form.kind === 'routine' || Boolean(editingId);
+
   return (
     <>
       <h2>{editingId ? c.edit : c.add}</h2>
@@ -133,34 +147,39 @@ export function ChoreEditor({
           }
         />
       </label>
-      <label className="planner-field">
-        {c.routineLabel}
-        <input
-          value={form.liveLabel}
-          placeholder={c.routinePlaceholder}
-          onChange={(event) => setForm((value) => ({ ...value, liveLabel: event.target.value }))}
-        />
-        <small className="planner-hint">{c.routineHint}</small>
-      </label>
-      <label className="planner-field">
-        {c.frequency}
-        <select
-          value={form.liveFrequency}
-          onChange={(event) =>
-            setForm((value) => ({
-              ...value,
-              liveFrequency: event.target.value as ChoreOpsFrequency,
-            }))
-          }
-        >
-          {CHOREOPS_FREQUENCIES.map((frequency) => (
-            <option key={frequency} value={frequency}>
-              {t(FREQUENCY_KEY[frequency])}
-            </option>
-          ))}
-        </select>
-      </label>
-      {form.liveFrequency === 'weekly' && (
+      {!showSchedule && <p className="planner-hint">{c.taskOnceHint}</p>}
+      {showSchedule && (
+        <label className="planner-field">
+          {c.routineLabel}
+          <input
+            value={form.liveLabel}
+            placeholder={c.routinePlaceholder}
+            onChange={(event) => setForm((value) => ({ ...value, liveLabel: event.target.value }))}
+          />
+          <small className="planner-hint">{c.routineHint}</small>
+        </label>
+      )}
+      {showSchedule && (
+        <label className="planner-field">
+          {c.frequency}
+          <select
+            value={form.liveFrequency}
+            onChange={(event) =>
+              setForm((value) => ({
+                ...value,
+                liveFrequency: event.target.value as ChoreOpsFrequency,
+              }))
+            }
+          >
+            {CHOREOPS_FREQUENCIES.map((frequency) => (
+              <option key={frequency} value={frequency}>
+                {t(FREQUENCY_KEY[frequency])}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {showSchedule && form.liveFrequency === 'weekly' && (
         <div className="planner-weekdays">
           {DAY_KEYS.map((day, index) => (
             <button
@@ -180,40 +199,41 @@ export function ChoreEditor({
           ))}
         </div>
       )}
-      {(form.liveFrequency === 'custom' || form.liveFrequency === 'custom_from_complete') && (
-        <>
-          <label className="planner-field">
-            {c.interval}
-            <input
-              type="number"
-              min="1"
-              max="365"
-              value={form.liveInterval}
-              onChange={(event) =>
-                setForm((value) => ({ ...value, liveInterval: Number(event.target.value) }))
-              }
-            />
-          </label>
-          <label className="planner-field">
-            {c.every}
-            <select
-              value={form.liveIntervalUnit}
-              onChange={(event) =>
-                setForm((value) => ({
-                  ...value,
-                  liveIntervalUnit: event.target.value as ChoreOpsIntervalUnit,
-                }))
-              }
-            >
-              {CHOREOPS_INTERVAL_UNITS.map((unit) => (
-                <option key={unit} value={unit}>
-                  {t(UNIT_KEY[unit])}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
-      )}
+      {showSchedule &&
+        (form.liveFrequency === 'custom' || form.liveFrequency === 'custom_from_complete') && (
+          <>
+            <label className="planner-field">
+              {c.interval}
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={form.liveInterval}
+                onChange={(event) =>
+                  setForm((value) => ({ ...value, liveInterval: Number(event.target.value) }))
+                }
+              />
+            </label>
+            <label className="planner-field">
+              {c.every}
+              <select
+                value={form.liveIntervalUnit}
+                onChange={(event) =>
+                  setForm((value) => ({
+                    ...value,
+                    liveIntervalUnit: event.target.value as ChoreOpsIntervalUnit,
+                  }))
+                }
+              >
+                {CHOREOPS_INTERVAL_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {t(UNIT_KEY[unit])}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
       <label className="planner-field">
         {c.dueAt}
         <input
@@ -256,7 +276,13 @@ export function ChoreEditor({
         </button>
         <button
           className="planner-primary"
-          disabled={!form.name.trim() || (!form.memberIds.length && !form.free) || saving}
+          disabled={
+            !form.name.trim() ||
+            (!form.memberIds.length && !form.free) ||
+            // A routine is only a routine once it has a name to group under.
+            (form.kind === 'routine' && !editingId && !form.liveLabel.trim()) ||
+            saving
+          }
           onClick={onSave}
         >
           {saving ? '\u2026' : editingId ? c.save : c.create}

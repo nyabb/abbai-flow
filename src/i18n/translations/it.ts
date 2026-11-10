@@ -369,11 +369,14 @@ export const it: Record<TranslationKey, string> = {
   // ---- settings: display ----
   'settings.display.displayModeTitle': 'Modalità display',
   'settings.display.wakeLockLabel': 'Mantieni lo schermo attivo',
-  'settings.display.wakeLockSublabel': 'Chiedi al browser di non spegnere lo schermo mentre la vista è aperta.',
+  'settings.display.wakeLockSublabel':
+    'Chiedi al browser di non spegnere lo schermo mentre la vista è aperta.',
   'settings.display.fullscreenLabel': 'Avvia a schermo intero',
-  'settings.display.fullscreenSublabel': 'I browser lo consentono solo dopo un tocco, potrebbe servire una pressione.',
+  'settings.display.fullscreenSublabel':
+    'I browser lo consentono solo dopo un tocco, potrebbe servire una pressione.',
   'settings.display.idleTimeoutLabel': 'Torna alla dashboard dopo',
-  'settings.display.idleTimeoutSublabel': 'Non interrompe mai una finestra aperta o un campo in scrittura.',
+  'settings.display.idleTimeoutSublabel':
+    'Non interrompe mai una finestra aperta o un campo in scrittura.',
   'settings.display.panelsLabel': 'Pannelli',
   'settings.display.panelsSublabel': 'Quali pannelli mostra la vista display.',
   'settings.display.panelAgenda': 'Agenda',
@@ -679,6 +682,9 @@ export const it: Record<TranslationKey, string> = {
   'planner.routinePlaceholder': 'es. Routine del mattino',
   'planner.routineHint':
     'Le attività giornaliere con lo stesso nome di routine sono raggruppate in Routine.',
+  'planner.taskOnceHint': 'Un compito si fa una volta. Usa una routine per ciò che si ripete.',
+  'planner.onHold': 'Messo da parte',
+  'planner.useAgain': 'Usa di nuovo',
   'planner.otherDaily': 'Altre attività giornaliere',
   'planner.name': 'Nome',
   'planner.points': 'Punti',
