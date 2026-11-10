@@ -170,7 +170,7 @@ export function RewardRow({
         <small>
           {`${allocated} / ${reward.cost} ${copy.pointsUnit}`}
           {done
-            ? ` \u00b7 ${copy.waitingForReward}`
+            ? ` \u00b7 ${copy.goalAchieved} \u00b7 ${copy.waitingForReward}`
             : ` \u00b7 ${copy.stillNeeded.replace('{points}', String(remaining))}`}
           {pending ? ` \u00b7 ${copy.claimed}` : ''}
         </small>

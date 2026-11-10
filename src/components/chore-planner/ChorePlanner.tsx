@@ -241,6 +241,17 @@ export function ChorePlanner({
   const redemptions = rewardsState.redemptions;
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
+
+  /**
+   * A save that only reached this device must never look like it was stored.
+   * Both stores (routine metadata and reward progress) report whether the
+   * server accepted the write; when either fails, say so.
+   */
+  useEffect(() => {
+    const failure = plannerMeta.error ?? rewardsState.error;
+    if (failure) showToast(`${c.noFail}: ${failure}`, 'error');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only on change
+  }, [plannerMeta.error, rewardsState.error]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
@@ -389,8 +400,8 @@ export function ChorePlanner({
   const selectedTodayMember = memberFor(todayMemberId);
 
   /**
-   * What a child can still spend: ChoreOps' balance minus the points they have
-   * set aside for rewards. `rewards` is passed in so claims made in Home
+   * What a child can still spend: ChoreOps' balance minus the points already
+   * promised to a reward. `rewards` is passed in so claims made in Home
    * Assistant also count as spent (approving one still deducts them later).
    */
   const spendableFor = (member: PlannerMember | null | undefined): number => {
