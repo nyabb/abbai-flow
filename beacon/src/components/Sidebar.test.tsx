@@ -89,7 +89,7 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(['Muziek', "Foto's", 'Weer', 'Instellingen']);
+    expect(entries).toEqual(['Muziek', "Foto's", 'Weer', 'Displaymodus', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
     expect(entries).not.toContain('Lijsten');
     expect(entries).not.toContain('Timer');

@@ -1,10 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  getSecureItem,
-  setSecureItem,
-  removeSecureItem,
-  StorageKeys,
-} from '../api/secure-storage';
+import { getSecureItem, setSecureItem, removeSecureItem, StorageKeys } from '../api/secure-storage';
 
 interface HaAuthState {
   /** Whether the user has completed onboarding */

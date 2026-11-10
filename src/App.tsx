@@ -26,6 +26,9 @@ import { GroceryView } from './components/GroceryView';
 import { OmniAdd } from './components/OmniAdd';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { Timer } from './components/Timer';
+import { DisplayView } from './components/display/DisplayView';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
+import { isDisplayUrl } from './display-route';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
@@ -101,6 +104,11 @@ export function App() {
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
   const [prefillTime, setPrefillTime] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<SidebarView>(() => {
+    // A dedicated display device points its browser at /display (or ?display=1
+    // when the app is served under a Home Assistant ingress path that already
+    // owns the path segment). This is read once on boot and never pushed back
+    // into history, so the ingress base path stays intact.
+    if (isDisplayUrl(window.location)) return 'display';
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';
@@ -427,6 +435,11 @@ export function App() {
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
+  // Display Mode shows why it cannot reach anything: no network, Beacon down or
+  // Home Assistant down are three different problems for whoever walks past.
+  const online = useOnlineStatus();
+  const displayConnection = !online ? 'offline' : connected ? 'online' : 'ha-down';
+
   useEffect(() => {
     if (!choreOpsData?.users.length) return;
     void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
@@ -701,6 +714,17 @@ export function App() {
             </div>
           ) : activeView === 'weather' ? (
             <WeatherView />
+          ) : activeView === 'display' ? (
+            <DisplayView
+              events={visibleEvents}
+              chores={choreOpsData?.chores ?? []}
+              users={choreOpsData?.users ?? []}
+              members={members}
+              weather={weather}
+              timeFormat={settings.timeFormat}
+              connection={displayConnection}
+              onNavigate={setActiveView}
+            />
           ) : activeView === 'photos' ? (
             <div className="view-page">
               <PageHeader

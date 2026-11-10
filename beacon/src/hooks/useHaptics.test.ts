@@ -19,7 +19,11 @@ afterEach(() => {
 
 function stubVibrate() {
   const vibrate = vi.fn().mockReturnValue(true);
-  Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true, writable: true });
+  Object.defineProperty(navigator, 'vibrate', {
+    value: vibrate,
+    configurable: true,
+    writable: true,
+  });
   return vibrate;
 }
 

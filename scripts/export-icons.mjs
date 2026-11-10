@@ -29,10 +29,7 @@ const STANDARD_SIZES = [16, 32, 64, 192, 256, 512];
 
 async function exportSize(svgPath, size, outPath) {
   const svgBuffer = readFileSync(svgPath);
-  await sharp(svgBuffer, { density: 384 })
-    .resize(size, size)
-    .png()
-    .toFile(outPath);
+  await sharp(svgBuffer, { density: 384 }).resize(size, size).png().toFile(outPath);
   console.log(`  wrote ${path.relative(root, outPath)} (${size}x${size})`);
 }
 
