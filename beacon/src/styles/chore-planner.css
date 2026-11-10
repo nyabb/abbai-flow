@@ -1436,9 +1436,7 @@
 }
 
 .planner-lobby-avatar,
-
 .planner-lobby-avatar > img,
-
 .planner-today-step {
   display: flex;
   flex-direction: column;
@@ -1534,6 +1532,15 @@
   min-height: 0;
   overflow-y: auto;
   padding: 18px clamp(20px, 7vw, 120px) 120px;
+}
+/* Which routine the current mission belongs to, and how far into it we are. */
+.planner-mission-routine {
+  margin: 0 0 6px;
+  color: var(--planner-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 .planner-mission-progress {
   display: flex;
@@ -1984,7 +1991,6 @@
 .planner-reward--done .planner-reward-copy i b {
   background: var(--planner-muted);
 }
-
 
 .planner-reward {
   display: grid;

@@ -318,6 +318,22 @@ export function ChorePlanner({
     return rewards.filter((reward) => (reward.assignee ?? '').trim().toLowerCase() === key);
   };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
+
+  /**
+   * The routine the current mission belongs to, with the position inside it, so
+   * the run can say "Morning routine · 2/3" instead of showing a bare chore and
+   * leaving the child to wonder how it relates to the routine on the board.
+   */
+  const missionRoutineStep = (() => {
+    const routineId = missionTask?.routineId;
+    if (!routineId) return null;
+    const siblings = missionIds.filter((id) => getTask(id)?.routineId === routineId);
+    return {
+      name: missionTask?.routineName ?? '',
+      index: siblings.indexOf(missionTask?.id ?? '') + 1,
+      total: siblings.length,
+    };
+  })();
   const selectedTodayMember = memberFor(todayMemberId);
 
   /**
@@ -438,8 +454,16 @@ export function ChorePlanner({
     );
   };
   /** Calendar order for a list of chores. */
-  /** A child's open chores, in the order the mission runner uses them. */
-  const openTasksFor = (memberId: string) =>
+  /**
+   * A child's mission queue.
+   *
+   * A paused routine generates nothing, so its chores are kept out of the run --
+   * otherwise Pause would only grey a row on the board and change nothing about
+   * what the child is actually asked to do. Ordered by routine, then by
+   * deadline, so the guided run works through one routine at a time instead of
+   * hopping between them.
+   */
+  const missionQueueFor = (memberId: string) =>
     data.tasks
       .filter(
         (task) =>
@@ -447,7 +471,17 @@ export function ChorePlanner({
           taskStatus(task) !== 'completed' &&
           taskStatus(task) !== 'expired',
       )
-      .sort(byDeadline);
+      .filter((task) => !task.routineId || !pausedRoutineIds.includes(task.routineId))
+      .sort((a, b) => {
+        // Routineless chores sort last rather than mixed into a routine's run.
+        const left = a.routineId ?? '\uFFFF';
+        const right = b.routineId ?? '\uFFFF';
+        if (left !== right) return left < right ? -1 : 1;
+        return byDeadline(a, b);
+      });
+
+  /** The overview list is the queue: what it shows is what will be run. */
+  const openTasksFor = (memberId: string) => missionQueueFor(memberId);
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
@@ -948,13 +982,7 @@ export function ChorePlanner({
   /** Start the step-by-step run through one child's chores. */
   const beginMissions = (memberId: string) => {
     setTodayMemberId(memberId);
-    const queue = data.tasks
-      .filter(
-        (task) =>
-          task.memberId === memberId && !['completed', 'expired'].includes(taskStatus(task)),
-      )
-      .sort(byDeadline)
-      .map((task) => task.id);
+    const queue = missionQueueFor(memberId).map((task) => task.id);
     setMissionIds(queue);
     setMissionIndex(0);
     setScreen(queue.length ? 'mission' : 'closing');
@@ -1267,6 +1295,7 @@ export function ChorePlanner({
             currentStatus={activeMissionStatus}
             index={missionIndex}
             total={missionIds.length}
+            routineStep={missionRoutineStep}
             countdown={missionTask ? countdown(missionTask.deadlineAt, now, c) : ''}
             online={online}
             busy={pendingTaskId === missionTask?.id}

@@ -24,6 +24,8 @@ export interface MissionViewProps {
   currentStatus: string;
   index: number;
   total: number;
+  /** The routine being worked through, and how far into it this chore is. */
+  routineStep?: { name: string; index: number; total: number } | null;
   /** Seconds/time string for the current mission. */
   countdown: string;
   online: boolean;
@@ -46,6 +48,7 @@ export function MissionView({
   currentStatus,
   index,
   total,
+  routineStep,
   countdown,
   online,
   busy,
@@ -78,6 +81,14 @@ export function MissionView({
           : `${c.active} ${countdown}`;
     return (
       <main className="planner-mission-screen">
+        {/* Which routine this chore belongs to: the board groups by routine, so
+            the run should say the same thing rather than present a bare list. */}
+        {routineStep && (
+          <p className="planner-mission-routine">
+            {routineStep.name}
+            {routineStep.total > 1 && ` \u00b7 ${routineStep.index}/${routineStep.total}`}
+          </p>
+        )}
         <div className="planner-mission-progress">
           <span>
             {index + 1} {t('planner.of')} {total}
