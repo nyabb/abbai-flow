@@ -196,3 +196,43 @@ describe('sanitizePlannerMeta', () => {
     expect(normaliseName(' Nova ')).toBe('nova');
   });
 });
+
+/**
+ * Phase 6: adoption runs on every load that still sees an unregistered label,
+ * so it must be idempotent — otherwise a second device would mint duplicates.
+ */
+describe('migration is idempotent', () => {
+  const groups = [
+    { label: 'Ochtendroutine', taskNames: ['Tanden poetsen', 'Aankleden'] },
+    { label: 'ochtendroutine', taskNames: ['Haar doen'] },
+  ];
+
+  it('adopting the same labels twice changes nothing', () => {
+    const once = adoptLabels(emptyMeta(), groups);
+    const twice = adoptLabels(once, groups);
+
+    expect(twice.routines).toHaveLength(1);
+    expect(routineTaskOrder(twice, twice.routines[0].id)).toEqual([
+      'Tanden poetsen',
+      'Aankleden',
+      'Haar doen',
+    ]);
+    expect(twice).toBe(once);
+  });
+
+  it('keeps the label itself intact, so removing the metadata falls back cleanly', () => {
+    const meta = adoptLabels(emptyMeta(), groups);
+    // The registry only records membership; nothing rewrites the ChoreOps label.
+    expect(meta.routines[0].name).toBe('Ochtendroutine');
+    expect(routineIdForTask(meta, 'Onbekend', 'Ochtendroutine')).toBe(meta.routines[0].id);
+  });
+
+  it('does not create a routine twice when names differ only in spacing', () => {
+    const meta = adoptLabels(emptyMeta(), [
+      { label: 'Bedtijd', taskNames: ['Pyjama aan'] },
+      { label: '  bedtijd  ', taskNames: ['Tanden poetsen'] },
+    ]);
+    expect(meta.routines).toHaveLength(1);
+    expect(meta.routines[0].taskNames).toEqual(['Pyjama aan', 'Tanden poetsen']);
+  });
+});
