@@ -1,3 +1,10 @@
+## [1.53.1](https://github.com/nyabb/beacon/compare/v1.53.0...v1.53.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **styles:** close an unterminated :root and a lost comment opener ([493f554](https://github.com/nyabb/beacon/commit/493f554a6eb7c3c42d145b23950fd8d2ee9c42b6))
+
 # [1.53.0](https://github.com/nyabb/beacon/compare/v1.52.1...v1.53.0) (2026-11-10)
 
 
