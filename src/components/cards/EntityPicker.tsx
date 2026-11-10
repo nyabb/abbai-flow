@@ -1,66 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { getAllEntityStates } from '../../api/ha-rest';
-
-export interface EntityOption {
-  entity_id: string;
-  label: string;
-  domain: string;
-}
-
-/** Shared by every picker instance so the full entity list is fetched once, not per mount. */
-let entityOptionsRequest: Promise<EntityOption[]> | null = null;
-
-function loadEntityOptions(): Promise<EntityOption[]> {
-  if (!entityOptionsRequest) {
-    entityOptionsRequest = getAllEntityStates()
-      .then((states) => states
-        .map((state) => ({
-          entity_id: state.entity_id,
-          label: typeof state.attributes.friendly_name === 'string'
-            ? state.attributes.friendly_name
-            : state.entity_id,
-          domain: state.entity_id.split('.')[0],
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label)))
-      .catch(() => {
-        entityOptionsRequest = null;
-        return [];
-      });
-  }
-  return entityOptionsRequest;
-}
-
-export function invalidateEntityOptions(): void {
-  entityOptionsRequest = null;
-}
-
-export function useEntityOptions(): EntityOption[] {
-  const [options, setOptions] = useState<EntityOption[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    loadEntityOptions().then((loaded) => {
-      if (!cancelled) setOptions(loaded);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return options;
-}
-
-export function filterEntityOptions(options: EntityOption[], search: string, domain: string): EntityOption[] {
-  const term = search.trim().toLowerCase();
-  return options.filter((option) => {
-    if (domain && option.domain !== domain) return false;
-    if (!term) return true;
-    return option.label.toLowerCase().includes(term) || option.entity_id.toLowerCase().includes(term);
-  });
-}
+import { useMemo, useState } from 'react';
+import { filterEntityOptions, useEntityOptions, type EntityOption } from './entity-options';
 
 /** Search + domain filters, so big Home Assistant installs stay navigable. */
-function EntityFilters({ search, domain, domains, onSearch, onDomain }: {
+function EntityFilters({
+  search,
+  domain,
+  domains,
+  onSearch,
+  onDomain,
+}: {
   search: string;
   domain: string;
   domains: string[];
@@ -85,7 +33,9 @@ function EntityFilters({ search, domain, domains, onSearch, onDomain }: {
       >
         <option value="">All domains</option>
         {domains.map((name) => (
-          <option key={name} value={name}>{name}</option>
+          <option key={name} value={name}>
+            {name}
+          </option>
         ))}
       </select>
     </div>
@@ -129,7 +79,12 @@ export function EntityPicker({ value, onChange, id }: EntityPickerProps) {
         onSearch={setSearch}
         onDomain={setDomain}
       />
-      <select id={id} className="form-select" value={value} onChange={(e) => onChange(e.target.value)}>
+      <select
+        id={id}
+        className="form-select"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
         <option value="">Select an entity…</option>
         {visible.map((option) => (
           <option key={option.entity_id} value={option.entity_id}>

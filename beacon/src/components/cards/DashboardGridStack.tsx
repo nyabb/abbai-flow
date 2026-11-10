@@ -125,6 +125,9 @@ export function DashboardGridStack({ region, cards, context, editMode, onChange 
     );
     if (!grid) return;
     gridRef.current = grid;
+    // Capture the registry now: the cleanup runs later, when the ref may point
+    // somewhere else.
+    const madeWidgets = madeWidgetIds.current;
 
     grid.on('change', (_event, nodes) => syncPositions(nodes as GridStackNode[]));
 
@@ -139,7 +142,7 @@ export function DashboardGridStack({ region, cards, context, editMode, onChange 
       resizeObserver?.disconnect();
       grid.destroy(false);
       gridRef.current = null;
-      madeWidgetIds.current.clear();
+      madeWidgets.clear();
     };
     // Only ever set up once — editMode/card changes are handled by the effects below.
     // eslint-disable-next-line react-hooks/exhaustive-deps

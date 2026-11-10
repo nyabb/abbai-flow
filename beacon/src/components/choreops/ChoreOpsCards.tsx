@@ -8,51 +8,14 @@
  * Every action comes from ChoreOps' own `button.*` entities (discovered at
  * runtime), so nothing here assumes entity ids or attribute names.
  */
-import type { CSSProperties } from 'react';
 import { useTranslation } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
 import type { ChoreOpsChore, ChoreOpsReward, ChoreOpsUser } from '../../types/choreops';
-
-const DONE_STATUS = /^(approved|completed|done)/i;
-
-/** ChoreOps states that mean "the child is done, a parent must sign off". */
-const AWAITING_REVIEW_STATUS = /(claim|review|progress|submit)/i;
+import { chorePrimaryAction, isChoreDone, memberColorVars } from './chore-actions';
 
 /** ChoreOps `icon` may be an emoji or an icon key; only emoji are portable. */
 function choreEmoji(icon: string | null): string {
   return icon && !icon.includes(':') ? icon : '\u{2705}';
-}
-
-/** Expose the member colour to CSS without allocating a new object per render. */
-export function memberColorVars(member: FamilyMember | null): CSSProperties {
-  return member ? ({ '--member-color': member.color } as CSSProperties) : ({} as CSSProperties);
-}
-
-interface PrimaryAction {
-  kind: 'claim' | 'approve';
-  entityId: string;
-}
-
-/**
- * Pick the single most useful action for a chore.
- *
- * ChoreOps publishes claim *and* approve buttons for every chore/user pair
- * regardless of state, so the buttons alone say nothing about what is
- * actionable. The status does: a chore waiting for review gets Approve, an
- * untouched one gets Claim. Picking approve just because the button exists
- * would have shown "Approve" to the child who still has to do the chore.
- */
-export function chorePrimaryAction(chore: ChoreOpsChore): PrimaryAction | null {
-  if (DONE_STATUS.test(chore.status)) return null;
-
-  const claim = chore.actions.claim;
-  const approve = chore.actions.approve;
-  const awaitingReview = AWAITING_REVIEW_STATUS.test(chore.status);
-
-  if (awaitingReview && approve) return { kind: 'approve', entityId: approve };
-  if (claim) return { kind: 'claim', entityId: claim };
-  if (approve) return { kind: 'approve', entityId: approve };
-  return null;
 }
 
 export type ChoreActionKind = 'claim' | 'approve' | 'disapprove';
@@ -81,7 +44,7 @@ export function ChoreTaskCard({
   onClaimUnassigned,
 }: ChoreTaskCardProps) {
   const { t } = useTranslation();
-  const done = DONE_STATUS.test(chore.status);
+  const done = isChoreDone(chore.status);
   const primary = chorePrimaryAction(chore);
   const declineEid = chore.actions.disapprove;
   // A child must not be able to sign off their own chore on a shared screen.
