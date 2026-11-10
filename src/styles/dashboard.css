@@ -766,11 +766,20 @@
 }
 
 /* ─── Dashboard edit mode (card add/remove/reorder) ─── */
+/* The dashboard owns the positioning context for its own controls. */
+.dashboard {
+  position: relative;
+}
+
 .dash-edit-toggle {
-  position: fixed;
-  top: 6px;
-  right: 8px;
-  z-index: 50;
+  /* Used to be pinned to the window's top-right corner with `fixed`, which put it
+     inside the page header band once that band grew -- on top of the clock, at
+     the same height as the header's own controls. Anchored to the dashboard
+     content instead, so it can never collide with the header. */
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  z-index: 5;
   padding: 4px 7px;
   border-radius: 10px;
   border: 1px solid var(--border, #e5e5e5);
