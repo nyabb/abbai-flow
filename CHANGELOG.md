@@ -1,3 +1,10 @@
+## [1.55.1](https://github.com/nyabb/beacon/compare/v1.55.0...v1.55.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **planner:** pin the phone member switcher's photo to the 26px chip ([8570f4e](https://github.com/nyabb/beacon/commit/8570f4e89c72b9186e6492673a705319c5b1604d))
+
 # [1.55.0](https://github.com/nyabb/beacon/compare/v1.54.0...v1.55.0) (2026-11-10)
 
 
