@@ -2263,7 +2263,8 @@
   font-size: 12px;
 }
 
-The planner runs on fixed-size tiles, so any label that can grow (a chore
+/* ---------------------------------------------------------------------------
+   The planner runs on fixed-size tiles, so any label that can grow (a chore
    name, a member name, a calendar title, a toast) must ellipsize instead of
    pushing the layout or spilling out of its card. Flex/grid children also need
    `min-width: 0`, otherwise they refuse to shrink below their content width
