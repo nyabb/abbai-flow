@@ -7,9 +7,22 @@
  */
 import { useState } from 'react';
 import { buildFocusUrl } from '../../../focus';
+import type { BeaconSettings } from '../../../hooks/useSettings';
+import type { TranslationKey } from '../../../i18n';
 import type { FamilyMember } from '../../../types/family';
-import { Slider, Toggle } from '../controls';
+import { Segment, Slider, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
+
+/** The display panels, in the order they appear on screen. */
+const PANEL_KEYS: Array<{
+  key: keyof BeaconSettings['displayPanels'];
+  labelKey: TranslationKey;
+}> = [
+  { key: 'agenda', labelKey: 'settings.display.panelAgenda' },
+  { key: 'chores', labelKey: 'settings.display.panelChores' },
+  { key: 'family', labelKey: 'settings.display.panelFamily' },
+  { key: 'weather', labelKey: 'settings.display.panelWeather' },
+];
 
 export interface DisplaySectionProps extends SettingsSectionContext {
   members: FamilyMember[];
@@ -128,6 +141,87 @@ export function DisplaySection({
         </div>
       </div>
 
+      {/* Display Mode (/display): the wall-mounted touchscreen. */}
+      <h2 className="settings-section-title" style={{ marginTop: 32 }}>
+        {t('settings.display.displayModeTitle')}
+      </h2>
+      <div className="settings-group">
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.display.wakeLockLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.display.wakeLockSublabel')}</div>
+          </div>
+          <Toggle
+            checked={settings.displayWakeLock}
+            onChange={(v) => onUpdateSettings({ displayWakeLock: v })}
+          />
+        </div>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.display.fullscreenLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.display.fullscreenSublabel')}</div>
+          </div>
+          <Toggle
+            checked={settings.displayFullscreen}
+            onChange={(v) => onUpdateSettings({ displayFullscreen: v })}
+          />
+        </div>
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.display.idleTimeoutLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.display.idleTimeoutSublabel')}</div>
+          </div>
+          <Segment
+            value={String(settings.displayIdleMinutes)}
+            options={[
+              { value: '0', label: t('settings.display.never') },
+              { value: '5', label: '5 min' },
+              { value: '15', label: '15 min' },
+              { value: '30', label: '30 min' },
+            ]}
+            onChange={(v) => onUpdateSettings({ displayIdleMinutes: Number(v) })}
+          />
+        </div>
+        <div className="settings-row" style={{ alignItems: 'flex-start' }}>
+          <div>
+            <div className="settings-row-label">{t('settings.display.panelsLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.display.panelsSublabel')}</div>
+          </div>
+          <div className="settings-panel-checks">
+            {PANEL_KEYS.map(({ key, labelKey }) => (
+              <label key={key} className="settings-panel-check">
+                <input
+                  type="checkbox"
+                  checked={settings.displayPanels[key]}
+                  onChange={(e) =>
+                    onUpdateSettings({
+                      displayPanels: { ...settings.displayPanels, [key]: e.target.checked },
+                    })
+                  }
+                />
+                <span>{t(labelKey)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Motion: the OS preference cannot be read by every kiosk shell, so it
+          is also a per-device setting. */}
+      <div className="settings-group">
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.appearance.reducedMotionLabel')}</div>
+            <div className="settings-row-sublabel">
+              {t('settings.appearance.reducedMotionSublabel')}
+            </div>
+          </div>
+          <Toggle
+            checked={settings.reducedMotion}
+            onChange={(v) => onUpdateSettings({ reducedMotion: v })}
+          />
+        </div>
+      </div>
       <h2 className="settings-section-title" style={{ marginTop: 32 }}>
         {t('settings.display.kidDisplayTitle')}
       </h2>

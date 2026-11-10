@@ -1,5 +1,3 @@
-
-
 <p align="center">
   <img src="src/assets/beacon-logo-main.png" alt="Beacon" width="280" />
 </p>
@@ -83,8 +81,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Beacon work
 
 Beacon is configured through the Home Assistant add-on options panel:
 
-| Option | Default | Description |
-|--------|---------|-------------|
+| Option           | Default        | Description                      |
+| ---------------- | -------------- | -------------------------------- |
 | `weather_entity` | `weather.home` | Home Assistant weather entity ID |
 
 Additional settings (themes, family members, chores, calendar sources, list providers) are configured through the Beacon UI itself.
@@ -104,7 +102,7 @@ Additional settings (themes, family members, chores, calendar sources, list prov
 - [TypeScript](https://www.typescriptlang.org/) -- Type safety
 - [Vite](https://vitejs.dev/) -- Build tool
 - [Home Assistant](https://www.home-assistant.io/) -- Smart home platform
-- [Capacitor](https://capacitorjs.com/) -- Native iOS/Android builds
+- [React 19](https://react.dev/) -- UI framework
 - [Lucide](https://lucide.dev/) -- Icons
 - [date-fns](https://date-fns.org/) -- Date utilities
 

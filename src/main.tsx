@@ -16,16 +16,15 @@ import './styles/weather.css';
 import './styles/focus.css';
 import './styles/choreops.css';
 import './styles/chore-planner.css';
+import './styles/display.css';
 // Screen design layer last: it refines the per-view stylesheets app-wide.
 import './styles/surface.css';
-import { initNativeBridge } from './native';
+// Responsive/touch additions only - loaded after everything else.
+import './styles/responsive.css';
 import { applyStoredTheme } from './hooks/useTheme';
 
 // Apply stored theme immediately (before first paint) to prevent flash
 applyStoredTheme();
-
-// Initialize Capacitor native bridge (no-op on web)
-initNativeBridge();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

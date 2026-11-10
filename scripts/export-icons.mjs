@@ -2,8 +2,8 @@
 /**
  * Beacon icon export script.
  *
- * Generates every raster icon size Beacon needs (favicon, PWA manifest icons,
- * Capacitor app icons) from the single source SVG (`src/assets/beacon-app-icon.svg`)
+ * Generates every raster icon size Beacon needs (favicon, PWA manifest icons)
+ * from the single source SVG (`src/assets/beacon-app-icon.svg`)
  * plus a maskable variant (`src/assets/beacon-app-icon-maskable.svg`).
  *
  * This exists so the icon set can never drift out of sync again: change the
@@ -29,10 +29,7 @@ const STANDARD_SIZES = [16, 32, 64, 192, 256, 512];
 
 async function exportSize(svgPath, size, outPath) {
   const svgBuffer = readFileSync(svgPath);
-  await sharp(svgBuffer, { density: 384 })
-    .resize(size, size)
-    .png()
-    .toFile(outPath);
+  await sharp(svgBuffer, { density: 384 }).resize(size, size).png().toFile(outPath);
   console.log(`  wrote ${path.relative(root, outPath)} (${size}x${size})`);
 }
 

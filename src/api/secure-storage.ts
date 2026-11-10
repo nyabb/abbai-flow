@@ -1,8 +1,13 @@
-import { Capacitor } from '@capacitor/core';
-import { Preferences } from '@capacitor/preferences';
-
 /**
- * Storage keys used throughout the Beacon app.
+ * Credential storage for the Home Assistant URL and access token.
+ *
+ * Beacon is web-only: the values live in `localStorage`. The functions stay
+ * async so call sites never had to care whether the backing store was
+ * synchronous, and a future backend can be swapped in without touching them.
+ *
+ * Every access is guarded: `localStorage` throws in Safari private mode and can
+ * be unavailable in some embedded webviews, and a failed read must not take the
+ * app down.
  */
 export const StorageKeys = {
   HA_URL: 'beacon_ha_url',
@@ -11,40 +16,29 @@ export const StorageKeys = {
   ONBOARDED: 'beacon_onboarded',
 } as const;
 
-const isNative = Capacitor.isNativePlatform();
-
-/**
- * Retrieve a value by key. Uses Capacitor Preferences on native
- * platforms and localStorage on the web.
- */
+/** Read a stored value, or `null` when it is absent or unreadable. */
 export async function getSecureItem(key: string): Promise<string | null> {
-  if (isNative) {
-    const { value } = await Preferences.get({ key });
-    return value;
+  try {
+    return globalThis.localStorage?.getItem(key) ?? null;
+  } catch {
+    return null;
   }
-  return localStorage.getItem(key);
 }
 
-/**
- * Store a key/value pair. Uses Capacitor Preferences on native
- * platforms and localStorage on the web.
- */
+/** Store a value. Silently does nothing when storage is unavailable. */
 export async function setSecureItem(key: string, value: string): Promise<void> {
-  if (isNative) {
-    await Preferences.set({ key, value });
-  } else {
-    localStorage.setItem(key, value);
+  try {
+    globalThis.localStorage?.setItem(key, value);
+  } catch {
+    /* storage blocked or full — the caller cannot recover from it */
   }
 }
 
-/**
- * Remove a stored value by key. Uses Capacitor Preferences on native
- * platforms and localStorage on the web.
- */
+/** Remove a stored value. */
 export async function removeSecureItem(key: string): Promise<void> {
-  if (isNative) {
-    await Preferences.remove({ key });
-  } else {
-    localStorage.removeItem(key);
+  try {
+    globalThis.localStorage?.removeItem(key);
+  } catch {
+    /* ignore */
   }
 }

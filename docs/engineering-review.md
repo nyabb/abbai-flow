@@ -290,15 +290,15 @@ New tests added:
   `persisted: false` with status, overlapping writes serialised.
 - `src/hooks/useMergedCalendars.test.tsx` (4): local calendar first, events merged by start,
   local events adopt the resolved colour, CRUD routed to the local store vs Home Assistant.
-- `src/components/chore-planner/form.test.ts` (6): task → form value, free chores, prefill
+- `src/components/test/form.test.ts` (6): task → form value, free chores, prefill
   from the ChoreOps chore (day keys, window offset, label), empty form, clock/countdown
   formatting, toast shape.
-- `src/components/SettingsView.test.tsx` (3): first coverage for the settings screen —
+- `src/components/test/SettingsView.test.tsx` (3): first coverage for the settings screen —
   renders, every section opens, a field change reaches `onUpdateSettings`.
-- `src/components/settings/sections/AppearanceSection.test.tsx` (8): a card per theme plus
+- `src/components/test/AppearanceSection.test.tsx` (8): a card per theme plus
   the automatic entry, exactly one active, a pick updating the setting and the stored theme,
   the dark-mode window only when enabled, font scale / sidebar / advanced dashboard.
-- `src/components/settings/sections/FamilySection.test.tsx` (9): member list with roles and
+- `src/components/test/FamilySection.test.tsx` (9): member list with roles and
   empty state, add, edit, two-step delete, cancel, the photo-upload error path, a routine
   saved with its tasks in the arranged order, and routine delete after confirming.
 

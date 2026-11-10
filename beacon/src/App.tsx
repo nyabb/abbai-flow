@@ -26,6 +26,10 @@ import { GroceryView } from './components/GroceryView';
 import { OmniAdd } from './components/OmniAdd';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { Timer } from './components/Timer';
+import { DisplayView } from './components/display/DisplayView';
+import { useConnectionStatus } from './hooks/useConnectionStatus';
+import { isDisplayUrl } from './display-route';
+import { useDisplayMode } from './hooks/useDisplayMode';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
@@ -101,6 +105,11 @@ export function App() {
   const [prefillDate, setPrefillDate] = useState<string | null>(null);
   const [prefillTime, setPrefillTime] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<SidebarView>(() => {
+    // A dedicated display device points its browser at /display (or ?display=1
+    // when the app is served under a Home Assistant ingress path that already
+    // owns the path segment). This is read once on boot and never pushed back
+    // into history, so the ingress base path stays intact.
+    if (isDisplayUrl(window.location)) return 'display';
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';
@@ -427,6 +436,26 @@ export function App() {
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
+  // Why the app cannot reach anything: no network, Beacon down or Home Assistant
+  // down are three different problems, and Display Mode has to say which.
+  const connection = useConnectionStatus({ haConnected: connected });
+  const isDisplayView = activeView === 'display';
+  const displayMode = useDisplayMode({
+    active: isDisplayView,
+    wakeLock: settings.displayWakeLock,
+    fullscreen: settings.displayFullscreen,
+    idleMinutes: settings.displayIdleMinutes,
+    onIdle: () => setActiveView('dashboard'),
+  });
+  const displayConnection = connection.state;
+
+  // One refresh per recovery. Calendars and events are not polled, so nothing
+  // else would notice that the server came back.
+  useEffect(() => {
+    if (!connection.reconnected) return;
+    void fetchCalendars();
+  }, [connection.reconnected, fetchCalendars]);
+
   useEffect(() => {
     if (!choreOpsData?.users.length) return;
     void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
@@ -590,7 +619,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''}`}
+        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''} ${settings.reducedMotion ? ' beacon--reduce-motion' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -701,6 +730,26 @@ export function App() {
             </div>
           ) : activeView === 'weather' ? (
             <WeatherView />
+          ) : activeView === 'display' ? (
+            <DisplayView
+              events={visibleEvents}
+              chores={choreOpsData?.chores ?? []}
+              users={choreOpsData?.users ?? []}
+              members={members}
+              weather={weather}
+              timeFormat={settings.timeFormat}
+              connection={displayConnection}
+              panels={settings.displayPanels}
+              fullscreen={{
+                supported: displayMode.fullscreenSupported,
+                active: displayMode.isFullscreen,
+                onToggle: () => {
+                  if (displayMode.isFullscreen) void displayMode.exitFullscreen();
+                  else void displayMode.enterFullscreen();
+                },
+              }}
+              onNavigate={setActiveView}
+            />
           ) : activeView === 'photos' ? (
             <div className="view-page">
               <PageHeader

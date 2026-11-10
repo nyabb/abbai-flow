@@ -2,9 +2,18 @@
 
 ## Architecture
 
-- React 19 + TypeScript + Vite SPA
+- React 19 + TypeScript + Vite SPA (web only — no native shell)
 - Home Assistant add-on with ingress support
-- Capacitor for native iOS/Android builds
+- Docker for the server; the browser talks to HA directly
+
+## Display Mode (wall touchscreen)
+
+`/display` is a dedicated read-only screen for a permanently running Chromium
+kiosk (Raspberry Pi on the wall). Code: `src/components/display/`,
+`src/display-route.ts`, `src/hooks/useDisplayMode.ts` (wake lock, fullscreen,
+idle timeout), `src/hooks/useConnectionStatus.ts`, `src/styles/display.css`.
+Full documentation, kiosk launch line and connection states: see
+`docs/display-mode.md`.
 
 ## Backend layout (since 2026-11-09)
 

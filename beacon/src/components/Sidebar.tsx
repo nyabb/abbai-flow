@@ -8,6 +8,7 @@ import {
   Image,
   Settings,
   Timer as TimerIcon,
+  Tv,
   CloudSun,
   MoreHorizontal,
   Plus,
@@ -25,6 +26,7 @@ export type SidebarView =
   | 'photos'
   | 'timer'
   | 'weather'
+  | 'display'
   | 'settings';
 
 interface SidebarProps {
@@ -85,6 +87,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.weather',
   },
+  {
+    id: 'display',
+    icon: <Tv size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.display',
+  },
 ];
 
 /**
@@ -104,7 +111,7 @@ const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'timer'];
 /** Everything the phone bar already shows. */
 const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
-const NAV_EXTRA_IDS: SidebarView[] = ['photos', 'weather'];
+const NAV_EXTRA_IDS: SidebarView[] = ['photos', 'weather', 'display'];
 
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();

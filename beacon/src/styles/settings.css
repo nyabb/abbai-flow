@@ -723,3 +723,34 @@
     width: 120px;
   }
 }
+
+/* Display Mode panel switches: a small grid of checkboxes so four panels stay
+   readable next to a long label, and wrap on a narrow screen instead of
+   squeezing the text. */
+.settings-panel-checks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+
+.settings-panel-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.settings-panel-check input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 480px) {
+  .settings-panel-checks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
