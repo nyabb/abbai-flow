@@ -8,8 +8,8 @@
   grid-template-columns: 1fr 300px;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "topbar topbar"
-    "main   sidebar";
+    'topbar topbar'
+    'main   sidebar';
   height: 100%;
   padding: 24px 32px;
   gap: 24px;
@@ -21,8 +21,8 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr;
   grid-template-areas:
-    "topbar"
-    "classic";
+    'topbar'
+    'classic';
   padding: 32px 40px;
   gap: 20px;
 }
@@ -77,9 +77,9 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto auto auto;
   grid-template-areas:
-    "topbar"
-    "main"
-    "sidebar";
+    'topbar'
+    'main'
+    'sidebar';
   height: auto;
   overflow-y: auto;
   padding: 20px;
@@ -131,7 +131,7 @@
   letter-spacing: -1px;
 }
 
-[data-theme="dark"] .dash-topbar-time {
+[data-theme='dark'] .dash-topbar-time {
   color: var(--text-primary);
 }
 
@@ -160,7 +160,9 @@
 
 .dash-topbar-weather--clickable {
   cursor: pointer;
-  transition: box-shadow var(--transition), transform var(--transition);
+  transition:
+    box-shadow var(--transition),
+    transform var(--transition);
 }
 
 .dash-topbar-weather--clickable:hover {
@@ -420,9 +422,16 @@
   padding-right: 4px;
 }
 
-.dashboard-events-scroll::-webkit-scrollbar { width: 4px; }
-.dashboard-events-scroll::-webkit-scrollbar-track { background: transparent; }
-.dashboard-events-scroll::-webkit-scrollbar-thumb { background: var(--border, #e5e5e5); border-radius: 2px; }
+.dashboard-events-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.dashboard-events-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dashboard-events-scroll::-webkit-scrollbar-thumb {
+  background: var(--border, #e5e5e5);
+  border-radius: 2px;
+}
 
 .dashboard-events-list {
   display: flex;
@@ -445,7 +454,9 @@
   flex-direction: column;
   gap: 4px;
   box-shadow: var(--shadow-sm);
-  transition: transform 150ms ease, box-shadow 150ms ease;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .event-card:hover {
@@ -492,11 +503,21 @@
   text-overflow: ellipsis;
 }
 
-[data-theme="dark"] .event-card { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
-[data-theme="dark"] .event-card-calendar { color: rgba(0, 0, 0, 0.5); }
-[data-theme="dark"] .event-card-title { color: rgba(0, 0, 0, 0.85); }
-[data-theme="dark"] .event-card-time { color: rgba(0, 0, 0, 0.5); }
-[data-theme="dark"] .event-card-location { color: rgba(0, 0, 0, 0.5); }
+[data-theme='dark'] .event-card {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+[data-theme='dark'] .event-card-calendar {
+  color: rgba(0, 0, 0, 0.5);
+}
+[data-theme='dark'] .event-card-title {
+  color: rgba(0, 0, 0, 0.85);
+}
+[data-theme='dark'] .event-card-time {
+  color: rgba(0, 0, 0, 0.5);
+}
+[data-theme='dark'] .event-card-location {
+  color: rgba(0, 0, 0, 0.5);
+}
 
 /* --- Task Checklist --- */
 .task-checklist {
@@ -523,7 +544,9 @@
   background: var(--bg-hover, rgba(0, 0, 0, 0.04));
 }
 
-.task-checklist-item--done { opacity: 0.5; }
+.task-checklist-item--done {
+  opacity: 0.5;
+}
 
 .task-checkbox {
   width: 44px;
@@ -561,10 +584,18 @@
 }
 
 @keyframes check-pop {
-  0% { transform: scale(1); }
-  30% { transform: scale(1.3); }
-  50% { transform: scale(0.9); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .task-checklist-label {
@@ -590,7 +621,10 @@
   color: var(--text-muted);
 }
 
-.task-checklist-icon { font-size: 16px; line-height: 1; }
+.task-checklist-icon {
+  font-size: 16px;
+  line-height: 1;
+}
 
 .task-checklist-assignees {
   display: flex;
@@ -649,7 +683,11 @@
   min-height: 0;
 }
 
-.task-group { display: flex; flex-direction: column; gap: 4px; }
+.task-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 
 .task-group-header {
   display: flex;
@@ -671,9 +709,15 @@
   flex-shrink: 0;
 }
 
-.task-group-name { font-size: 0.8rem; font-weight: 700; }
+.task-group-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 
-.task-groups .task-checklist { flex: none; overflow-y: visible; }
+.task-groups .task-checklist {
+  flex: none;
+  overflow-y: visible;
+}
 
 /* ─── Responsive: Tablet < 768px ─── */
 @media (max-width: 768px) {
@@ -681,9 +725,9 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     grid-template-areas:
-      "topbar"
-      "main"
-      "sidebar";
+      'topbar'
+      'main'
+      'sidebar';
     gap: 16px;
     padding: 16px;
     height: auto;
@@ -695,8 +739,12 @@
     flex-wrap: wrap;
   }
 
-  .dash-topbar-time { font-size: 36px; }
-  .dash-topbar-date { font-size: 16px; }
+  .dash-topbar-time {
+    font-size: 36px;
+  }
+  .dash-topbar-date {
+    font-size: 16px;
+  }
 
   .dash-family-grid {
     grid-template-columns: 1fr;
@@ -719,9 +767,13 @@
     overflow-y: auto;
   }
 
-  .event-card { padding: 12px 14px; }
+  .event-card {
+    padding: 12px 14px;
+  }
 
-  .task-checklist-item { min-height: 48px; }
+  .task-checklist-item {
+    min-height: 48px;
+  }
 
   /* Classic layout collapses to a single scrolling column on small screens */
   .dashboard--classic {
@@ -747,22 +799,40 @@
     padding-bottom: 80px;
   }
 
-  .dash-topbar-time { font-size: 28px; }
-  .dash-topbar-date { font-size: 14px; }
-  .dash-topbar-weather { padding: 8px 12px; }
-  .dash-topbar-weather-icon { font-size: 20px; }
-  .dash-topbar-weather-temp { font-size: 18px; }
+  .dash-topbar-time {
+    font-size: 28px;
+  }
+  .dash-topbar-date {
+    font-size: 14px;
+  }
+  .dash-topbar-weather {
+    padding: 8px 12px;
+  }
+  .dash-topbar-weather-icon {
+    font-size: 20px;
+  }
+  .dash-topbar-weather-temp {
+    font-size: 18px;
+  }
 
   .dashboard-section-title {
     font-size: 13px;
     margin-bottom: 10px;
   }
 
-  .dashboard-events-scroll { max-height: 220px; }
+  .dashboard-events-scroll {
+    max-height: 220px;
+  }
 
-  .event-card { padding: 10px 12px; }
-  .event-card-title { font-size: 13px; }
-  .event-card-time { font-size: 12px; }
+  .event-card {
+    padding: 10px 12px;
+  }
+  .event-card-title {
+    font-size: 13px;
+  }
+  .event-card-time {
+    font-size: 12px;
+  }
 }
 
 /* ─── Dashboard edit mode (card add/remove/reorder) ─── */
@@ -1119,7 +1189,9 @@
      variables. Start every guide at that same inset so it matches the
      dashed content outline rather than the invisible outer cell. */
   background-position: var(--gs-item-margin-left) var(--gs-item-margin-top);
-  background-size: var(--gs-column-width) 100%, 100% var(--gs-cell-height);
+  background-size:
+    var(--gs-column-width) 100%,
+    100% var(--gs-cell-height);
 }
 
 .grid-stack:not(.grid-stack-static) > .grid-stack-item > .grid-stack-item-content {
@@ -1193,4 +1265,3 @@
   font-size: 15px;
   cursor: pointer;
 }
-
