@@ -1548,15 +1548,27 @@
    a member switcher plus a tab row (Doelen / Taakjes / Routines / Vrije
    taakjes), matching the reference app's phone layout.
    ------------------------------------------------------------------------- */
-.planner-board--compact {
+/* Specificity is doubled deliberately: `.planner-board` is a grid defined earlier
+   in this file, and anything that leaks through here (grid row sizing, flex
+   growth) shows up as a member chip stretched down the whole column. */
+.planner-board.planner-board--compact {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 10px;
+  min-height: 0;
   padding: 10px 12px 96px;
+  overflow-y: auto;
 }
 
 .planner-mobile-members {
   display: flex;
+  /* Hug the chips: a growing row plus the default `align-items: stretch` is what
+     made the active member's background run the full height. */
+  flex: 0 0 auto;
+  align-items: center;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -1569,6 +1581,7 @@
 .planner-mobile-member {
   display: flex;
   flex: 0 0 auto;
+  align-self: center;
   flex-direction: column;
   align-items: center;
   gap: 4px;
@@ -1614,6 +1627,7 @@
 
 .planner-mobile-tabs {
   display: flex;
+  flex: 0 0 auto;
   gap: 4px;
   border-bottom: 1px solid var(--planner-soft);
 }
@@ -1643,8 +1657,13 @@
 
 .planner-mobile-panel {
   display: flex;
+  /* Only the panel takes the leftover height, so the switcher and tab row stay
+     at their natural size. */
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
 }
 .planner-mission-progress {
   display: flex;
