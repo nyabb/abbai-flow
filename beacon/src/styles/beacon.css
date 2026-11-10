@@ -1369,15 +1369,22 @@ a:focus:not(:focus-visible) {
 }
 
 /*
- * With the tab bar pinned to the bottom of the screen, the overlay reserves the
- * bar's height. The dialog is then centred in the space above it and may use all
- * of that space, so a taller form -- adding a task, for instance -- keeps its
- * footer, and therefore its Save button, above the bar instead of underneath it.
+ * When a bar is pinned to the bottom of the screen, the overlay reserves its
+ * height, so the dialog is centred in the space above it and may use all of that
+ * space -- a taller form (adding a task) keeps its footer, and therefore its Save
+ * button, above the bar instead of underneath it.
+ *
+ * The tab bar is shown by `.beacon--compact` (see the `.beacon--compact
+ * .mobile-tab-bar { display: flex }` rule), not by the sidebar position, so
+ * matching on `beacon--sidebar-bottom` alone never applied. Both are covered:
+ * kiosk mode drops the sidebar class entirely.
  */
+.beacon--compact .modal-overlay,
 .beacon--sidebar-bottom .modal-overlay {
-  padding-bottom: var(--mobile-tab-bar-height, 72px);
+  padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
 }
 
+.beacon--compact .modal-overlay .modal,
 .beacon--sidebar-bottom .modal-overlay .modal {
   max-height: 100%;
 }
