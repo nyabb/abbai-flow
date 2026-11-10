@@ -182,6 +182,16 @@ export function useSettings() {
   const [settings, setSettingsState] = useState<BeaconSettings>(buildDefaults);
   const [loaded, setLoaded] = useState(false);
 
+  /*
+   * The Font Size setting is a document-level concern: it scales the root font
+   * size, and everything sized in rem follows from there. Keeping it here rather
+   * than in a component means it applies once the settings load, on every page,
+   * including ones that never render the Appearance section.
+   */
+  useEffect(() => {
+    document.documentElement.dataset.fontScale = settings.fontScale;
+  }, [settings.fontScale]);
+
   /** Re-fetch settings from server. */
   const refresh = useCallback(async () => {
     const serverSettings = await loadSettingsAsync();

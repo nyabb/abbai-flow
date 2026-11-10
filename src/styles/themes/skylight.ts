@@ -23,8 +23,8 @@ export const skylight: Theme = {
     '#99f6e4', // soft teal
   ],
   fonts: {
-    display: "'Fraunces', serif",
-    body: "'Inter', system-ui, -apple-system, sans-serif",
+    display: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+    body: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
     mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
   },
 };

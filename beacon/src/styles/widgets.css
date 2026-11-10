@@ -54,7 +54,7 @@
 
 .timer-display {
   font-family: var(--font-display);
-  font-size: 56px;
+  font-size: 3.5rem;
   font-weight: 600;
   color: var(--text-primary);
   font-variant-numeric: tabular-nums;
@@ -63,7 +63,7 @@
 }
 
 .timer--compact .timer-display {
-  font-size: 32px;
+  font-size: 2rem;
 }
 
 .timer-display--finished {
@@ -72,8 +72,13 @@
 }
 
 @keyframes timer-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* --- Sound Picker --- */
@@ -194,8 +199,13 @@
 }
 
 @keyframes timer-card-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .timer-card-name {
@@ -299,9 +309,10 @@
 }
 
 .timer-btn--play:hover {
-  background: #16a34a;
+  /* Derived from the base token rather than a second hardcoded green, so the
+       hover follows whatever --color-green-full resolves to. */
+  background: color-mix(in srgb, var(--color-green-full) 88%, #000);
 }
-
 .timer-btn--pause {
   background: var(--color-orange-full);
   border-color: var(--color-orange-full);
@@ -426,7 +437,7 @@
 
 .countdown-days-number {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--accent, var(--color-blue-full));
   line-height: 1;
@@ -579,7 +590,7 @@
 /* --- Responsive: Phone < 480px --- */
 @media (max-width: 480px) {
   .timer-display {
-    font-size: 48px;
+    font-size: 3rem;
   }
 
   .timer {

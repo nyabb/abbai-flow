@@ -38,10 +38,30 @@
   --event-6: #99f6e4;
 
   /* Typography */
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
 
   /* Layout tokens (stable across themes) */
   --radius: 12px;
+
+  /* Font Size setting in Settings > Appearance; <html data-font-scale> sets it. */
+  --font-scale: 1;
+}
+
+/*
+ * The Font Size setting. Every font-size in the stylesheets is expressed in rem,
+ * so raising the root size scales the whole interface -- which is the point of
+ * the setting on a wall display. This is why the pixel sizes were converted.
+ */
+html {
+  font-size: calc(16px * var(--font-scale));
+}
+
+html[data-font-scale='large'] {
+  --font-scale: 1.125;
+}
+
+html[data-font-scale='extra-large'] {
+  --font-scale: 1.25;
 }

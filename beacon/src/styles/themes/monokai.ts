@@ -23,8 +23,8 @@ export const monokai: Theme = {
     '#E6DB74', // yellow
   ],
   fonts: {
-    display: "'Fraunces', serif",
-    body: "'Inter', system-ui, -apple-system, sans-serif",
+    display: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
+    body: "'Poppins', -apple-system, BlinkMacSystemFont, sans-serif",
     mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
   },
 };

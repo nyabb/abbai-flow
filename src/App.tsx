@@ -660,14 +660,6 @@ export function App() {
                 selectedDate={dashboardDate}
                 onSelectedDateChange={setDashboardDate}
               />
-              <OmniAdd
-                onAddEvent={handleAddEvent}
-                onAddGroceryItem={() => setActiveView('grocery')}
-                onAddChore={() => requestChoreCreate('chore')}
-                onAddRoutine={() => requestChoreCreate('routine')}
-                onNavigateTimer={() => setActiveView('timer')}
-                sidebarPosition={sidebarPos}
-              />
             </>
           ) : activeView === 'chores' ? (
             settings.choresEnabled ? (
@@ -818,16 +810,6 @@ export function App() {
                   members={members}
                 />
               </div>
-
-              {/* Omni-Add FAB */}
-              <OmniAdd
-                onAddEvent={handleAddEvent}
-                onAddGroceryItem={() => setActiveView('grocery')}
-                onAddChore={() => requestChoreCreate('chore')}
-                onAddRoutine={() => requestChoreCreate('routine')}
-                onNavigateTimer={() => setActiveView('timer')}
-                sidebarPosition={sidebarPos}
-              />
             </>
           )}
         </div>
