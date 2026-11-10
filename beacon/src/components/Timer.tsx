@@ -30,7 +30,9 @@ function getStoredSound(): SoundName {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v && SOUND_OPTIONS.some((o) => o.key === v)) return v as SoundName;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return 'chime';
 }
 
@@ -112,7 +114,13 @@ function playSoundOnce(sound: SoundName): AudioContext | null {
     }
 
     // Auto-close after 2s to free resources
-    setTimeout(() => { try { ctx.close(); } catch { /* */ } }, 2000);
+    setTimeout(() => {
+      try {
+        ctx.close();
+      } catch {
+        /* */
+      }
+    }, 2000);
     return ctx;
   } catch {
     return null;
@@ -169,7 +177,11 @@ export function Timer({ compact = false }: TimerProps) {
   // Persist sound choice
   const changeSound = useCallback((s: SoundName) => {
     setSound(s);
-    try { localStorage.setItem(STORAGE_KEY, s); } catch { /* */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, s);
+    } catch {
+      /* */
+    }
   }, []);
 
   // Start looping beep for a timer
@@ -194,9 +206,12 @@ export function Timer({ compact = false }: TimerProps) {
 
   // Cleanup all loops on unmount
   useEffect(() => {
+    // Capture the map itself: reading `loopIntervalsRef.current` in the
+    // cleanup would use whatever the ref points at by then.
+    const loopIntervals = loopIntervalsRef.current;
     return () => {
-      loopIntervalsRef.current.forEach((interval) => clearInterval(interval));
-      loopIntervalsRef.current.clear();
+      loopIntervals.forEach((interval) => clearInterval(interval));
+      loopIntervals.clear();
     };
   }, []);
 
@@ -287,23 +302,29 @@ export function Timer({ compact = false }: TimerProps) {
     );
   }, []);
 
-  const dismissTimer = useCallback((id: string) => {
-    stopBeepLoop(id);
-    beeped.current.delete(id);
-    setTimers((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        // Reset to initial state so user can restart or just sees it stopped
-        return { ...t, finished: false, running: false, pausedElapsed: 0 };
-      }),
-    );
-  }, [stopBeepLoop]);
+  const dismissTimer = useCallback(
+    (id: string) => {
+      stopBeepLoop(id);
+      beeped.current.delete(id);
+      setTimers((prev) =>
+        prev.map((t) => {
+          if (t.id !== id) return t;
+          // Reset to initial state so user can restart or just sees it stopped
+          return { ...t, finished: false, running: false, pausedElapsed: 0 };
+        }),
+      );
+    },
+    [stopBeepLoop],
+  );
 
-  const cancelTimer = useCallback((id: string) => {
-    stopBeepLoop(id);
-    beeped.current.delete(id);
-    setTimers((prev) => prev.filter((t) => t.id !== id));
-  }, [stopBeepLoop]);
+  const cancelTimer = useCallback(
+    (id: string) => {
+      stopBeepLoop(id);
+      beeped.current.delete(id);
+      setTimers((prev) => prev.filter((t) => t.id !== id));
+    },
+    [stopBeepLoop],
+  );
 
   // --- Stopwatch logic ---
   const swTick = useCallback(() => {
@@ -385,7 +406,9 @@ export function Timer({ compact = false }: TimerProps) {
               placeholder={t('timer.namePlaceholder')}
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') addTimer(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addTimer();
+              }}
             />
             <div className="timer-presets">
               {PRESETS.map((p) => (
@@ -421,7 +444,9 @@ export function Timer({ compact = false }: TimerProps) {
                     className={`timer-card ${timerItem.finished ? 'timer-card--finished' : ''}`}
                   >
                     <div className="timer-card-name">{timerItem.name}</div>
-                    <div className={`timer-card-time ${timerItem.finished ? 'timer-display--finished' : ''}`}>
+                    <div
+                      className={`timer-card-time ${timerItem.finished ? 'timer-display--finished' : ''}`}
+                    >
                       {formatTime(remaining)}
                     </div>
                     <div className="timer-card-controls">
@@ -435,8 +460,8 @@ export function Timer({ compact = false }: TimerProps) {
                           <BellOff size={14} />
                         </button>
                       )}
-                      {!timerItem.finished && (
-                        timerItem.running ? (
+                      {!timerItem.finished &&
+                        (timerItem.running ? (
                           <button
                             type="button"
                             className="timer-btn timer-btn--pause timer-btn--sm"
@@ -454,8 +479,7 @@ export function Timer({ compact = false }: TimerProps) {
                           >
                             <Play size={14} />
                           </button>
-                        )
-                      )}
+                        ))}
                       <button
                         type="button"
                         className="timer-btn timer-btn--sm"
@@ -475,9 +499,7 @@ export function Timer({ compact = false }: TimerProps) {
 
       {mode === 'stopwatch' && (
         <>
-          <div className="timer-display">
-            {formatTime(swElapsed)}
-          </div>
+          <div className="timer-display">{formatTime(swElapsed)}</div>
 
           <div className="timer-controls">
             {!swRunning ? (
@@ -501,17 +523,12 @@ export function Timer({ compact = false }: TimerProps) {
             )}
 
             {swRunning && (
-              <button
-                type="button"
-                className="timer-btn"
-                onClick={swLap}
-                title={t('timer.lap')}
-              >
+              <button type="button" className="timer-btn" onClick={swLap} title={t('timer.lap')}>
                 <Flag size={compact ? 16 : 20} />
               </button>
             )}
 
-            {(swElapsed > 0) && (
+            {swElapsed > 0 && (
               <button
                 type="button"
                 className="timer-btn"

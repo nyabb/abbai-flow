@@ -50,13 +50,19 @@ export function WeatherView() {
   const fetchHourly = useCallback(async (entityId: string) => {
     try {
       setHourlyLoading(true);
-      const result = await callHaService('weather', 'get_forecasts', {
-        entity_id: entityId,
-        type: 'hourly',
-      }, true) as { service_response?: Record<string, { forecast: HourlyItem[] }> };
+      const result = (await callHaService(
+        'weather',
+        'get_forecasts',
+        {
+          entity_id: entityId,
+          type: 'hourly',
+        },
+        true,
+      )) as { service_response?: Record<string, { forecast: HourlyItem[] }> };
 
       const svcResponse = result?.service_response ?? result;
-      const hourlyData = (svcResponse as Record<string, { forecast: HourlyItem[] }>)?.[entityId]?.forecast ?? [];
+      const hourlyData =
+        (svcResponse as Record<string, { forecast: HourlyItem[] }>)?.[entityId]?.forecast ?? [];
       setHourly(hourlyData);
     } catch {
       setHourly([]);
@@ -78,23 +84,26 @@ export function WeatherView() {
 
       // Discover weather entity — try configured, then auto-discover
       const configEntity = getConfig().weather_entity;
-      let entity: { entity_id: string; state: string; attributes: Record<string, unknown> } | null = null;
+      let entity: { entity_id: string; state: string; attributes: Record<string, unknown> } | null =
+        null;
 
       // Try configured entity first
       if (configEntity) {
         try {
-          entity = await haFetch(`/api/states/${configEntity}`) as typeof entity;
-        } catch { /* entity doesn't exist, fall through to discovery */ }
+          entity = (await haFetch(`/api/states/${configEntity}`)) as typeof entity;
+        } catch {
+          /* entity doesn't exist, fall through to discovery */
+        }
       }
 
       // Auto-discover if configured entity doesn't exist
       if (!entity) {
-        const states = await haFetch('/api/states') as Array<{
+        const states = (await haFetch('/api/states')) as Array<{
           entity_id: string;
           state: string;
           attributes: Record<string, unknown>;
         }>;
-        const found = states.find(s => s.entity_id.startsWith('weather.'));
+        const found = states.find((s) => s.entity_id.startsWith('weather.'));
         if (!found) {
           setError(t('weatherView.noEntityFound'));
           setLoading(false);
@@ -120,13 +129,19 @@ export function WeatherView() {
 
       // Fetch daily forecast
       try {
-        const result = await callHaService('weather', 'get_forecasts', {
-          entity_id: entityId,
-          type: 'daily',
-        }, true) as { service_response?: Record<string, { forecast: ForecastItem[] }> };
+        const result = (await callHaService(
+          'weather',
+          'get_forecasts',
+          {
+            entity_id: entityId,
+            type: 'daily',
+          },
+          true,
+        )) as { service_response?: Record<string, { forecast: ForecastItem[] }> };
 
         const svcResponse = result?.service_response ?? result;
-        const forecastData = (svcResponse as Record<string, { forecast: ForecastItem[] }>)?.[entityId]?.forecast ?? [];
+        const forecastData =
+          (svcResponse as Record<string, { forecast: ForecastItem[] }>)?.[entityId]?.forecast ?? [];
         setForecast(forecastData.slice(0, 7));
       } catch {
         // Forecast not available for this entity
@@ -140,7 +155,7 @@ export function WeatherView() {
     } finally {
       setLoading(false);
     }
-  }, [fetchHourly]);
+  }, [fetchHourly, t]);
 
   useEffect(() => {
     fetchData();
@@ -149,11 +164,11 @@ export function WeatherView() {
   }, [fetchData]);
 
   const handleDayClick = (datetime: string) => {
-    setSelectedDay(prev => prev === datetime ? null : datetime);
+    setSelectedDay((prev) => (prev === datetime ? null : datetime));
   };
 
   const hoursForSelectedDay = selectedDay
-    ? hourly.filter(h => isSameDay(parseISO(h.datetime), parseISO(selectedDay)))
+    ? hourly.filter((h) => isSameDay(parseISO(h.datetime), parseISO(selectedDay)))
     : [];
 
   if (loading && !current) {
@@ -186,16 +201,12 @@ export function WeatherView() {
       {/* Current conditions */}
       <section className="weather-current">
         <div className="weather-current-main">
-          <span className="weather-current-icon">
-            {weatherIcon(current.state)}
-          </span>
+          <span className="weather-current-icon">{weatherIcon(current.state)}</span>
           <div className="weather-current-temp-block">
             <span className="weather-current-temp">
               {Math.round(current.temperature)}°{unit}
             </span>
-            <span className="weather-current-condition">
-              {conditionLabel(current.state, t)}
-            </span>
+            <span className="weather-current-condition">{conditionLabel(current.state, t)}</span>
           </div>
         </div>
 
@@ -203,7 +214,9 @@ export function WeatherView() {
           {current.feelsLike != null && (
             <div className="weather-detail">
               <span className="weather-detail-label">{t('weatherView.feelsLike')}</span>
-              <span className="weather-detail-value">{Math.round(current.feelsLike)}°{unit}</span>
+              <span className="weather-detail-value">
+                {Math.round(current.feelsLike)}°{unit}
+              </span>
             </div>
           )}
           {current.humidity != null && (
@@ -257,9 +270,7 @@ export function WeatherView() {
                 >
                   <span className="weather-forecast-day">{dayName}</span>
                   <span className="weather-forecast-date">{dateLabel}</span>
-                  <span className="weather-forecast-icon">
-                    {weatherIcon(day.condition)}
-                  </span>
+                  <span className="weather-forecast-icon">{weatherIcon(day.condition)}</span>
                   <div className="weather-forecast-temps">
                     <span className="weather-forecast-high">{Math.round(day.temperature)}°</span>
                     <span className="weather-forecast-low">{Math.round(day.templow)}°</span>
@@ -283,7 +294,9 @@ export function WeatherView() {
             <div className="weather-hourly">
               <div className="weather-hourly-header">
                 <h3 className="weather-hourly-title">
-                  {t('weatherView.hourlyForDay', { day: format(parseISO(selectedDay), 'EEEE, MMM d') })}
+                  {t('weatherView.hourlyForDay', {
+                    day: format(parseISO(selectedDay), 'EEEE, MMM d'),
+                  })}
                 </h3>
                 <button
                   type="button"

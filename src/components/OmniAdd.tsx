@@ -112,7 +112,7 @@ export function OmniAdd({
       clearTimeout(timer);
       document.removeEventListener('mousedown', handleClick);
     };
-  }, [expanded]);
+  }, [expanded, setExpanded]);
 
   // Close on Escape
   useEffect(() => {
@@ -122,7 +122,7 @@ export function OmniAdd({
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [expanded]);
+  }, [expanded, setExpanded]);
 
   return (
     <div
