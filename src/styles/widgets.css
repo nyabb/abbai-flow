@@ -72,8 +72,13 @@
 }
 
 @keyframes timer-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 /* --- Sound Picker --- */
@@ -194,8 +199,13 @@
 }
 
 @keyframes timer-card-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
 }
 
 .timer-card-name {
@@ -299,9 +309,10 @@
 }
 
 .timer-btn--play:hover {
-    /* Derived from the base token rather than a second hardcoded green, so the
+  /* Derived from the base token rather than a second hardcoded green, so the
        hover follows whatever --color-green-full resolves to. */
-    background: color-mix(in srgb, var(--color-green-full) 88%, #000);  }
+  background: color-mix(in srgb, var(--color-green-full) 88%, #000);
+}
 .timer-btn--pause {
   background: var(--color-orange-full);
   border-color: var(--color-orange-full);
