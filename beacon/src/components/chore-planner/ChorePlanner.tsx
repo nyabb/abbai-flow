@@ -3,30 +3,24 @@ import {
   ArrowLeft,
   Check,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   Eye,
   EyeOff,
   Filter,
-  Pencil,
   Plus,
   RotateCcw,
-  Trash2,
   Volume2,
   VolumeX,
   X,
 } from 'lucide-react';
-import { ChorePlannerState, PlannerTask, getPlannerTaskStatus } from '../../api/chore-planner-model';
+import {
+  ChorePlannerState,
+  PlannerTask,
+  getPlannerTaskStatus,
+} from '../../api/chore-planner-model';
 import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
-import {
-  resolveMemberForUser,
-  CHOREOPS_ALL_USERS,
-  CHOREOPS_FREQUENCIES,
-  CHOREOPS_INTERVAL_UNITS,
-} from '../../api/choreops';
-import type { ChoreOpsFrequency, ChoreOpsIntervalUnit } from '../../api/choreops';
+import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
 import {
   readRewardReservations,
   releasePoints,
@@ -42,6 +36,22 @@ import { useTranslation } from '../../i18n';
 import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
+import { usePlannerCopy } from './copy';
+import { RewardRow, RoutineRow, TaskRow } from './rows';
+import { ChoreBoard } from './ChoreBoard';
+import { ChoreEditor } from './ChoreEditor';
+import { ConfirmSheet, PinSheet } from './ApprovalDialog';
+import {
+  ActionsSheet,
+  AwardSheet,
+  ClaimSheet,
+  FilterSheet,
+  GoalsSheet,
+  RewardActionsSheet,
+  RewardFormSheet,
+} from './sheets';
+import { ChildView } from './ChildView';
+import { MissionView } from './MissionView';
 import {
   DAY_KEYS,
   MIN_PIN_LENGTH,
@@ -49,12 +59,9 @@ import {
   countdown,
   emptyForm,
   formFromLiveTask,
-  FREQUENCY_KEY,
-  UNIT_KEY,
   toastWith,
   type FormValue,
 } from './form';
-import { usePlannerCopy } from './copy';
 
 /**
  * The planner is one board: a column per family member plus a column of chores
@@ -329,121 +336,57 @@ export function ChorePlanner({
    * pause/resume tap. A paused routine stays visible but greyed out, so a
    * parent can see it is off and bring it back with one tap.
    */
+  /** One routine row; the row component only knows what it displays. */
   const routineRow = (routine: PlannerRoutine) => {
     const paused = pausedRoutineIds.includes(routine.id);
     return (
-      <div
-        className={`planner-row planner-row--routine ${paused ? 'is-paused' : ''}`}
+      <RoutineRow
         key={routine.id}
-      >
-        <span className="planner-row-icon" aria-hidden="true">
-          {routine.icon}
-        </span>
-        <span className="planner-row-name">
-          {routine.fallback ? c.otherDaily : routine.name}
-          <small>{paused ? c.paused : routineLabel(routine)}</small>
-        </span>
-        {!paused && (
-          <span className="planner-row-progress" aria-hidden="true">
-            <i style={{ width: `${blockProgress(routine.timeBlock)}%` }} />
-          </span>
-        )}
-        <button
-          type="button"
-          className="planner-row-more"
-          aria-label={`${paused ? c.resumeRoutine : c.pauseRoutine}: ${routine.name}`}
-          onClick={() => toggleRoutinePaused(routine.id)}
-        >
-          {paused ? '\u25B6' : '\u23F8'}
-        </button>
-      </div>
+        routine={routine}
+        paused={paused}
+        label={routineLabel(routine)}
+        progress={blockProgress(routine.timeBlock)}
+        copy={c}
+        onToggle={() => toggleRoutinePaused(routine.id)}
+      />
     );
   };
-
   /**
    * A reward row: progress towards the goal plus its actions. Shared by the
    * goals sheet and the child's detail page so both behave identically.
    */
+  /** A reward row, shared by the goals sheet and the child detail page. */
   const renderRewardRow = (reward: ChoreOpsReward) => {
-    const { reserved, saved, available, pending, affordable } = rewardState(reward);
+    const state = rewardState(reward);
     const approveId = reward.actions.approve;
     return (
-      <div className="planner-reward" key={reward.id}>
-        <span aria-hidden="true">{'\u{1F381}'}</span>
-        <div className="planner-reward-copy">
-          <strong>{reward.name}</strong>
-          <small>
-            {reserved
-              ? c.assigned
-              : `${saved} / ${reward.cost} ${c.pointsUnit}${
-                  pending ? ` \u00b7 ${c.claimed}` : available ? '' : ` \u00b7 ${c.locked}`
-                }`}
-          </small>
-          <i>
-            <b
-              style={{
-                width: `${
-                  reserved ? 100 : Math.min(100, (saved / Math.max(1, reward.cost)) * 100)
-                }%`,
-              }}
-            />
-          </i>
-        </div>
-        <div className="planner-reward-actions">
-          {reserved ? (
-            <>
-              <button
-                className="planner-ghost planner-reward-action"
-                onClick={() => undoRewardChoice(reward)}
-              >
-                {c.undoShort}
-              </button>
-              <button
-                className="planner-primary planner-reward-action"
-                disabled={saving}
-                onClick={() => confirmReward(reward)}
-              >
-                {c.confirm}
-              </button>
-            </>
-          ) : pending && approveId ? (
-            <button
-              className="planner-primary planner-reward-action"
-              onClick={() =>
-                requestPin(
-                  c.rewards,
-                  reward.name,
-                  () => void runLiveAction(reward.id, approveId, reward.name, c.approved),
-                )
-              }
-            >
-              {c.confirm}
-            </button>
-          ) : (
-            <button
-              className="planner-ghost planner-reward-action"
-              disabled={!available || !affordable}
-              onClick={() => assignReward(reward)}
-            >
-              {c.assign}
-            </button>
-          )}
-          <button
-            type="button"
-            className="planner-task-more"
-            aria-label={`${c.action}: ${reward.name}`}
-            onClick={() => {
-              setSelectedReward(reward);
-              setModal('reward-actions');
-            }}
-          >
-            {'\u22ef'}
-          </button>
-        </div>
-      </div>
+      <RewardRow
+        key={reward.id}
+        reward={reward}
+        reserved={state.reserved !== null}
+        saved={state.saved}
+        available={state.available}
+        pending={state.pending}
+        affordable={state.affordable}
+        saving={saving}
+        copy={c}
+        onUndo={() => undoRewardChoice(reward)}
+        onConfirm={() => confirmReward(reward)}
+        onApprove={() =>
+          requestPin(
+            c.rewards,
+            reward.name,
+            () => void runLiveAction(reward.id, approveId ?? '', reward.name, c.approved),
+          )
+        }
+        onAssign={() => assignReward(reward)}
+        onMore={() => {
+          setSelectedReward(reward);
+          setModal('reward-actions');
+        }}
+      />
     );
   };
-
   /**
    * The one line under a board row's name, when there is something to say. The
    * board is dense, so quiet chores stay a single line.
@@ -464,68 +407,47 @@ export function ChorePlanner({
    * Everything a parent needs (approve, edit, delete) is on the row itself, so
    * the board never has to send you to a separate child page.
    */
+  /** One chore on the board; the row component only knows what it displays. */
   const renderRow = (task: PlannerTask) => {
     const status = taskStatus(task);
-    const busy = pendingTaskId === task.id;
-    // The accessible name is the action the tap performs, not the chore's state.
     const label =
       task.awaitingReview && status !== 'completed'
         ? c.confirm
         : task.audience === 'anyone'
           ? c.claim
           : c.iDidIt;
-    const hint = rowHint(task, status);
     return (
-      <div
-        className={`planner-row planner-row--${status}${
-          task.audience === 'anyone' ? ' planner-row--anyone' : ''
-        }`}
+      <TaskRow
         key={task.id}
-      >
-        <button
-          type="button"
-          className={`planner-row-check ${status === 'completed' ? 'is-done' : ''}`}
-          aria-label={`${label}: ${task.name}`}
-          disabled={!online || status === 'upcoming' || busy}
-          onClick={() => {
-            if (task.audience === 'anyone') {
-              openClaim(task);
-              return;
-            }
-            void completeTask(task);
-          }}
-        >
-          {busy ? (
-            <span className="planner-spinner" />
-          ) : status === 'completed' ? (
-            <Check />
-          ) : task.audience === 'anyone' ? (
-            <span aria-hidden="true">{'\u270B'}</span>
-          ) : null}
-        </button>
-        <span className="planner-row-name">
-          {task.name}
-          {hint && <small>{hint}</small>}
-        </span>
-        {task.points > 0 && (
-          <span className="planner-row-points">
-            <span aria-hidden="true">{'\u{1F3C6}'}</span>
-            {task.points}
-          </span>
-        )}
-        <button
-          type="button"
-          className="planner-row-more"
-          aria-label={`${c.action}: ${task.name}`}
-          onClick={() => openActions(task.id)}
-        >
-          {'\u22ef'}
-        </button>
-      </div>
+        task={task}
+        status={status}
+        busy={pendingTaskId === task.id}
+        online={online}
+        copy={c}
+        hint={rowHint(task, status)}
+        actionLabel={label}
+        onPrimary={() => {
+          if (task.audience === 'anyone') {
+            openClaim(task);
+            return;
+          }
+          void completeTask(task);
+        }}
+        onMore={() => openActions(task.id)}
+      />
     );
   };
-
   /** Calendar order for a list of chores. */
+  /** A child's open chores, in the order the mission runner uses them. */
+  const openTasksFor = (memberId: string) =>
+    data.tasks
+      .filter(
+        (task) =>
+          task.memberId === memberId &&
+          taskStatus(task) !== 'completed' &&
+          taskStatus(task) !== 'expired',
+      )
+      .sort(byDeadline);
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
@@ -1189,11 +1111,6 @@ export function ChorePlanner({
     );
   };
 
-  const memberTodayCount = (id: string) =>
-    data.tasks.filter(
-      (task) =>
-        task.memberId === id && taskStatus(task) !== 'completed' && taskStatus(task) !== 'expired',
-    ).length;
   const completedTodayPoints = (id: string) =>
     data.tasks
       .filter((task) => task.memberId === id && taskStatus(task) === 'completed')
@@ -1294,299 +1211,75 @@ export function ChorePlanner({
           </button>
         </div>
       </header>
-
       {!online && (
         <div className="planner-offline-banner" role="alert">
           {c.offline}
         </div>
       )}
-
       {screen === 'board' && (
-        <main className="planner-board">
-          {boardMembers.map((member) => {
-            const chores = columnTasks(member.id);
-            const routines = columnRoutines(member.id);
-            return (
-              <section
-                className="planner-col"
-                key={member.id}
-                style={{ '--member-color': member.color } as React.CSSProperties}
-              >
-                <header className="planner-col-head">
-                  <button
-                    type="button"
-                    className="planner-col-open"
-                    onClick={() => {
-                      setChildMemberId(member.id);
-                      setScreen('child');
-                    }}
-                    aria-label={`${c.openChild}: ${member.name}`}
-                  >
-                    <span className="planner-col-avatar">
-                      <MemberAvatar member={member} />
-                    </span>
-                    <strong>{member.name}</strong>
-                  </button>
-                  <button
-                    type="button"
-                    className="planner-col-points"
-                    onClick={() => openGoals(member.id)}
-                    aria-label={`${c.goals}: ${member.name}`}
-                  >
-                    <span aria-hidden="true">{'\u{1FA99}'}</span>
-                    {spendableFor(member)}
-                  </button>
-                  <button
-                    type="button"
-                    className="planner-col-play"
-                    disabled={chores.length === 0}
-                    onClick={() => beginMissions(member.id)}
-                    aria-label={`${c.startMissions}: ${member.name}`}
-                  >
-                    {'\u25B6'}
-                  </button>
-                </header>
-
-                <div className="planner-col-body">
-                  <h2>
-                    {c.choresColumn}
-                    <span>{chores.length}</span>
-                  </h2>
-                  {chores.length === 0 ? (
-                    <p className="planner-col-empty">{c.nothing}</p>
-                  ) : (
-                    chores.map((task) => renderRow(task))
-                  )}
-
-                  <h2>
-                    {c.routines}
-                    <span>{routines.length}</span>
-                  </h2>
-                  {routines.length === 0 ? (
-                    <p className="planner-col-empty">{c.noRoutines}</p>
-                  ) : (
-                    routines.map((routine) => routineRow(routine))
-                  )}
-                </div>
-              </section>
-            );
-          })}
-
-          {/* Chores nobody owns yet: whoever taps one keeps it, and from then on
-              it shows up in their own column. */}
-          <section className="planner-col planner-col--free">
-            <header className="planner-col-head">
-              <span className="planner-col-avatar planner-col-avatar--free" aria-hidden="true">
-                {'\u{1F450}'}
-              </span>
-              <strong>{c.free}</strong>
-            </header>
-            <div className="planner-col-body">
-              <h2>
-                {c.choresColumn}
-                <span>{freeTasks.length}</span>
-              </h2>
-              {freeTasks.length === 0 ? (
-                <p className="planner-col-empty">{c.nothing}</p>
-              ) : (
-                freeTasks.map((task) => renderRow(task))
-              )}
-            </div>
-            <button
-              type="button"
-              className="planner-col-start planner-col-start--ghost"
-              onClick={() => openNewForm()}
-            >
-              <Plus />
-              {c.add}
-            </button>
-          </section>
-        </main>
-      )}
+        <ChoreBoard
+          boardMembers={boardMembers}
+          columnTasks={columnTasks}
+          columnRoutines={columnRoutines}
+          freeTasks={freeTasks}
+          spendableFor={spendableFor}
+          renderRow={renderRow}
+          routineRow={routineRow}
+          copy={c}
+          onOpenChild={(memberId) => {
+            setChildMemberId(memberId);
+            setScreen('child');
+          }}
+          onOpenGoals={openGoals}
+          onStartMissions={beginMissions}
+          onNewChore={() => openNewForm()}
+        />
+      )}{' '}
       {screen === 'child' && childMember && (
-        <main className="planner-detail">
-          <header className="planner-detail-hero">
-            <span className="planner-detail-avatar">
-              <MemberAvatar member={childMember} />
-            </span>
-            <div className="planner-detail-copy">
-              <h2>{childMember.name}</h2>
-              <span className="planner-detail-points">
-                <span aria-hidden="true">{'\u{1FA99}'}</span>
-                {spendableFor(childMember)}
-              </span>
-            </div>
-            <div className="planner-detail-nav">
-              <button
-                type="button"
-                className="planner-icon-button"
-                onClick={() => stepChild(-1)}
-                aria-label={c.prevChild}
-              >
-                <ChevronLeft />
-              </button>
-              <button
-                type="button"
-                className="planner-icon-button"
-                onClick={() => stepChild(1)}
-                aria-label={c.nextChild}
-              >
-                <ChevronRight />
-              </button>
-            </div>
-            <button
-              type="button"
-              className="planner-col-play planner-col-play--big"
-              disabled={columnTasks(childMember.id).length === 0}
-              onClick={() => beginMissions(childMember.id)}
-              aria-label={`${c.startMissions}: ${childMember.name}`}
-            >
-              {'\u25B6'}
-            </button>
-          </header>
-
-          <section className="planner-detail-section">
-            <h3>
-              {c.goals}
-              <span>{rewardsForMember(childMember.id).length}</span>
-            </h3>
-            {rewardsForMember(childMember.id).length === 0 && (
-              <p className="planner-col-empty">{c.noRewards}</p>
-            )}
-            {rewardsForMember(childMember.id).map((reward) => renderRewardRow(reward))}
-            <button
-              className="planner-ghost planner-reward-new"
-              onClick={() => startRewardForm(childMember.id)}
-            >
-              <Plus />
-              {c.setGoal}
-            </button>
-          </section>
-
-          <section className="planner-detail-section">
-            <h3>
-              {c.choresColumn}
-              <span>{columnTasks(childMember.id).length}</span>
-            </h3>
-            {columnTasks(childMember.id).length === 0 ? (
-              <p className="planner-col-empty">{c.nothing}</p>
-            ) : (
-              columnTasks(childMember.id).map((task) => renderRow(task))
-            )}
-          </section>
-
-          <section className="planner-detail-section">
-            <h3>
-              {c.done}
-              <span>{completedTasksFor(childMember.id).length}</span>
-            </h3>
-            {completedTasksFor(childMember.id).length === 0 ? (
-              <p className="planner-col-empty">{c.nothing}</p>
-            ) : (
-              completedTasksFor(childMember.id).map((task) => renderRow(task))
-            )}
-          </section>
-
-          <section className="planner-detail-section">
-            <h3>
-              {c.routines}
-              <span>{columnRoutines(childMember.id).length}</span>
-            </h3>
-            {columnRoutines(childMember.id).length === 0 ? (
-              <p className="planner-col-empty">{c.noRoutines}</p>
-            ) : (
-              columnRoutines(childMember.id).map((routine) => routineRow(routine))
-            )}
-          </section>
-        </main>
-      )}
-      {screen === 'missions' && selectedTodayMember && (
-        <main className="planner-content planner-missions">
-          <p className="planner-eyebrow">03 / 04</p>
-          <h2>{c.missions}</h2>
-          {data.tasks
-            .filter(
-              (task) =>
-                task.memberId === selectedTodayMember.id &&
-                taskStatus(task) !== 'completed' &&
-                taskStatus(task) !== 'expired',
-            )
-            .sort(byDeadline)
-            .map((task) => renderTask(task, true))}
-          {memberTodayCount(selectedTodayMember.id) === 0 && (
-            <p className="planner-empty-copy">{c.nothing}</p>
-          )}
-          <button
-            className="planner-primary"
-            disabled={memberTodayCount(selectedTodayMember.id) === 0}
-            onClick={() => beginMissions(selectedTodayMember.id)}
-          >
-            {c.startMissions}
-            <ChevronRight />
-          </button>
-        </main>
-      )}
-      {screen === 'mission' && missionTask && selectedTodayMember && (
-        <main className="planner-mission-screen">
-          <div className="planner-mission-progress">
-            <span>
-              {missionIndex + 1} {t('planner.of')} {missionIds.length}
-            </span>
-            <div>
-              <i style={{ width: `${((missionIndex + 1) / missionIds.length) * 100}%` }} />
-            </div>
-          </div>
-          <div className="planner-mission-hero">
-            {missionTask.icon && <span>{missionTask.icon}</span>}
-            <h2>{missionTask.name}</h2>
-            {missionTask.points > 0 && <b>⭐ {missionTask.points}</b>}
-            <p>
-              {activeMissionStatus === 'late'
-                ? c.late
-                : activeMissionStatus === 'retry'
-                  ? c.retryCopy
-                  : `${c.active} ${countdown(missionTask.deadlineAt, now, c)}`}
-            </p>
-          </div>
-          <button
-            className="planner-mission-done"
-            disabled={!online || pendingTaskId === missionTask.id}
-            onClick={() => void completeTask(missionTask)}
-          >
-            {c.iDidIt}
-            <Check />
-          </button>
-        </main>
-      )}
-      {screen === 'closing' && selectedTodayMember && (
-        <main className="planner-today-step planner-celebrate">
-          {/* Celebration card: soft glow, trophy, "{Well done, name}!" and the
-              goal pill — the closing screen of the reference app. */}
-          <div className="planner-celebrate-glow" aria-hidden="true">
-            <span>{'\u{1F3C6}'}</span>
-          </div>
-          <h2 className="planner-celebrate-title">
-            {t('planner.wellDone', { name: selectedTodayMember.name })}
-          </h2>
-          <p className="planner-celebrate-pill">
-            <span aria-hidden="true">{'\u{1F3AF}'}</span>
-            {c.todayEarned}: {completedTodayPoints(selectedTodayMember.id)}
-          </p>
-          <p className="planner-celebrate-sub">
-            {c.pot}: {spendableFor(selectedTodayMember)}
-          </p>
-          <button
-            className="planner-primary"
-            onClick={() => {
+        <ChildView
+          childMember={childMember}
+          spendableFor={spendableFor}
+          columnTasks={columnTasks}
+          columnRoutines={columnRoutines}
+          completedTasksFor={completedTasksFor}
+          rewardsForMember={rewardsForMember}
+          renderRow={renderRow}
+          routineRow={routineRow}
+          renderRewardRow={renderRewardRow}
+          copy={c}
+          onStepChild={stepChild}
+          onStartMissions={beginMissions}
+          onNewGoal={startRewardForm}
+        />
+      )}{' '}
+      {(screen === 'missions' || screen === 'mission' || screen === 'closing') &&
+        selectedTodayMember && (
+          <MissionView
+            screen={screen}
+            member={selectedTodayMember}
+            copy={c}
+            t={t}
+            openTasks={openTasksFor(selectedTodayMember.id)}
+            completedPoints={completedTodayPoints(selectedTodayMember.id)}
+            spendable={spendableFor(selectedTodayMember)}
+            currentTask={missionTask}
+            currentStatus={activeMissionStatus}
+            index={missionIndex}
+            total={missionIds.length}
+            countdown={missionTask ? countdown(missionTask.deadlineAt, now, c) : ''}
+            online={online}
+            busy={pendingTaskId === missionTask?.id}
+            renderTask={renderTask}
+            onStart={() => beginMissions(selectedTodayMember.id)}
+            onComplete={() => {
+              if (missionTask) void completeTask(missionTask);
+            }}
+            onPass={() => {
               setScreen('board');
               setTodayMemberId(null);
             }}
-          >
-            {c.pass}
-          </button>
-        </main>
-      )}
-
+          />
+        )}
       {modal && (
         <div className="planner-backdrop" onClick={() => setModal(null)}>
           <section
@@ -1601,650 +1294,167 @@ export function ChorePlanner({
               aria-label={c.cancel}
             >
               <X />
-            </button>
+            </button>{' '}
             {modal === 'form' && (
-              <>
-                <h2>{editingId ? c.edit : c.add}</h2>
-                <label className="planner-field">
-                  {c.name}
-                  <input
-                    autoFocus
-                    value={form.name}
-                    disabled={Boolean(editingId)}
-                    onChange={(event) =>
-                      setForm((value) => ({ ...value, name: event.target.value }))
-                    }
-                  />
-                  {editingId && <small className="planner-hint">{c.renameLocked}</small>}
-                </label>
-                <label className="planner-field">
-                  {c.points}
-                  <div className="planner-stepper">
-                    <button
-                      onClick={() =>
-                        setForm((value) => ({ ...value, points: Math.max(0, value.points - 1) }))
-                      }
-                    >
-                      −
-                    </button>
-                    <strong>{form.points}</strong>
-                    <button
-                      onClick={() =>
-                        setForm((value) => ({ ...value, points: Math.min(100, value.points + 1) }))
-                      }
-                    >
-                      +
-                    </button>
-                  </div>
-                </label>
-                <fieldset className="planner-field">
-                  <legend>{c.forWho}</legend>
-                  <div className="planner-member-picker">
-                    <button
-                      className={
-                        form.memberIds.length === data.members.length && !form.free
-                          ? 'is-selected'
-                          : ''
-                      }
-                      onClick={() =>
-                        setForm((value) => ({
-                          ...value,
-                          free: false,
-                          memberIds:
-                            value.memberIds.length === data.members.length
-                              ? []
-                              : data.members.map((member) => member.id),
-                        }))
-                      }
-                    >
-                      {c.everyone}
-                    </button>
-                    {data.members.map((member) => (
-                      <button
-                        key={member.id}
-                        className={form.memberIds.includes(member.id) ? 'is-selected' : ''}
-                        onClick={() =>
-                          setForm((value) => ({
-                            ...value,
-                            free: false,
-                            memberIds: value.memberIds.includes(member.id)
-                              ? value.memberIds.filter((id) => id !== member.id)
-                              : [...value.memberIds, member.id],
-                          }))
-                        }
-                      >
-                        <span>
-                          <MemberAvatar member={member} />
-                        </span>
-                        {member.name}
-                      </button>
-                    ))}
-                  </div>
-                  <label className="planner-check-label">
-                    <input
-                      type="checkbox"
-                      checked={form.free}
-                      onChange={(event) =>
-                        setForm((value) => ({
-                          ...value,
-                          free: event.target.checked,
-                          memberIds: event.target.checked ? [] : value.memberIds,
-                        }))
-                      }
-                    />
-                    {c.freeTask}
-                  </label>
-                </fieldset>
-                <>
-                  <label className="planner-field">
-                    {c.description}
-                    <input
-                      value={form.liveDescription}
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, liveDescription: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="planner-field">
-                    {c.routineLabel}
-                    <input
-                      value={form.liveLabel}
-                      placeholder={c.routinePlaceholder}
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, liveLabel: event.target.value }))
-                      }
-                    />
-                    <small className="planner-hint">{c.routineHint}</small>
-                  </label>
-                  <label className="planner-field">
-                    {c.frequency}
-                    <select
-                      value={form.liveFrequency}
-                      onChange={(event) =>
-                        setForm((value) => ({
-                          ...value,
-                          liveFrequency: event.target.value as ChoreOpsFrequency,
-                        }))
-                      }
-                    >
-                      {CHOREOPS_FREQUENCIES.map((frequency) => (
-                        <option key={frequency} value={frequency}>
-                          {t(FREQUENCY_KEY[frequency])}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {form.liveFrequency === 'weekly' && (
-                    <div className="planner-weekdays">
-                      {DAY_KEYS.map((day, index) => (
-                        <button
-                          key={index}
-                          className={form.liveWeekdays.includes(index) ? 'is-selected' : ''}
-                          onClick={() =>
-                            setForm((value) => ({
-                              ...value,
-                              liveWeekdays: value.liveWeekdays.includes(index)
-                                ? value.liveWeekdays.filter((item) => item !== index)
-                                : [...value.liveWeekdays, index],
-                            }))
-                          }
-                        >
-                          {t(`planner.day.${day}`)}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {(form.liveFrequency === 'custom' ||
-                    form.liveFrequency === 'custom_from_complete') && (
-                    <>
-                      <label className="planner-field">
-                        {c.interval}
-                        <input
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={form.liveInterval}
-                          onChange={(event) =>
-                            setForm((value) => ({
-                              ...value,
-                              liveInterval: Number(event.target.value),
-                            }))
-                          }
-                        />
-                      </label>
-                      <label className="planner-field">
-                        {c.every}
-                        <select
-                          value={form.liveIntervalUnit}
-                          onChange={(event) =>
-                            setForm((value) => ({
-                              ...value,
-                              liveIntervalUnit: event.target.value as ChoreOpsIntervalUnit,
-                            }))
-                          }
-                        >
-                          {CHOREOPS_INTERVAL_UNITS.map((unit) => (
-                            <option key={unit} value={unit}>
-                              {t(UNIT_KEY[unit])}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </>
-                  )}
-                  <label className="planner-field">
-                    {c.dueAt}
-                    <input
-                      type="datetime-local"
-                      value={form.deadlineAt}
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, deadlineAt: event.target.value }))
-                      }
-                    />
-                  </label>
-                  <label className="planner-field">
-                    {c.dueWindow}
-                    <input
-                      value={form.liveWindow}
-                      placeholder="1h"
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, liveWindow: event.target.value }))
-                      }
-                    />
-                    <small className="planner-hint">{c.dueWindowHint}</small>
-                  </label>
-                  <label className="planner-field">
-                    {c.reminder}
-                    <input
-                      value={form.liveReminder}
-                      placeholder="30m"
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, liveReminder: event.target.value }))
-                      }
-                    />
-                    <small className="planner-hint">{c.reminderHint}</small>
-                  </label>
-                  <label className="planner-check-label">
-                    <input
-                      type="checkbox"
-                      checked={form.liveAutoApprove}
-                      onChange={(event) =>
-                        setForm((value) => ({ ...value, liveAutoApprove: event.target.checked }))
-                      }
-                    />
-                    {c.autoApprove}
-                  </label>
-                </>
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                  <button
-                    className="planner-primary"
-                    disabled={!form.name.trim() || (!form.memberIds.length && !form.free) || saving}
-                    onClick={() => void saveForm()}
-                  >
-                    {saving ? '\u2026' : editingId ? c.save : c.create}
-                  </button>
-                </footer>
-              </>
-            )}
+              <ChoreEditor
+                form={form}
+                setForm={setForm}
+                members={data.members}
+                editingId={editingId}
+                saving={saving}
+                copy={c}
+                t={t}
+                onCancel={() => setModal(null)}
+                onSave={() => void saveForm()}
+              />
+            )}{' '}
             {modal === 'actions' && selectedTask && (
-              <>
-                <h2>{c.action}</h2>
-                {taskStatus(selectedTask) === 'completed' ? null : (
-                  <button
-                    className="planner-destination"
-                    onClick={() => openEditForm(selectedTask)}
-                  >
-                    <Pencil />
-                    <strong>{c.edit}</strong>
-                  </button>
-                )}
-                <button
-                  className="planner-destination planner-danger"
-                  onClick={() => {
-                    const task = selectedTask;
-                    // With a parent PIN on file, the PIN itself is the confirmation.
-                    if (hasParentPin) {
-                      setModal(null);
-                      requestPin(c.remove, task.name, () => void removeTask(task));
-                      return;
-                    }
-                    if (confirmingDelete) void removeTask(task);
-                    else setConfirmingDelete(true);
-                  }}
-                >
-                  <Trash2 />
-                  <strong>{confirmingDelete ? c.sure : c.remove}</strong>
-                </button>
-              </>
-            )}
+              <ActionsSheet
+                completed={taskStatus(selectedTask) === 'completed'}
+                copy={c}
+                confirmingDelete={confirmingDelete}
+                onEdit={() => openEditForm(selectedTask)}
+                onDelete={() => {
+                  const task = selectedTask;
+                  // With a parent PIN on file, the PIN itself is the confirmation.
+                  if (hasParentPin) {
+                    setModal(null);
+                    requestPin(c.remove, task.name, () => void removeTask(task));
+                    return;
+                  }
+                  if (confirmingDelete) void removeTask(task);
+                  else setConfirmingDelete(true);
+                }}
+              />
+            )}{' '}
             {modal === 'award' && awardTask && (
-              <>
-                <h2>{c.awardTitle}</h2>
-                <p className="planner-hint">
-                  {awardTask.name}
-                  {awardTask.points > 0 && ` \u00b7 ${'\u{1F3C6}'} ${awardTask.points}`}
-                </p>
-                <div className="planner-goal-list">
-                  <button type="button" className="planner-goal" onClick={() => setModal(null)}>
-                    <span className="planner-goal-icon" aria-hidden="true">
-                      {'\u{1F3E6}'}
-                    </span>
-                    <span className="planner-goal-copy">
-                      <strong>{c.savingsPot}</strong>
-                      <small>
-                        {c.pot} \u00b7 {spendableFor(memberFor(awardTask.memberId))}
-                      </small>
-                    </span>
-                  </button>
-                  {rewardsForMember(awardTask.memberId).map((reward) => {
-                    const { saved, affordable } = rewardState(reward);
-                    return (
-                      <button
-                        type="button"
-                        className="planner-goal"
-                        key={reward.id}
-                        disabled={!affordable}
-                        onClick={() => {
-                          assignReward(reward);
-                          setModal(null);
-                        }}
-                      >
-                        <span className="planner-goal-icon" aria-hidden="true">
-                          {'\u{1F381}'}
-                        </span>
-                        <span className="planner-goal-copy">
-                          <strong>{reward.name}</strong>
-                          <small>
-                            {affordable
-                              ? c.assign
-                              : t('planner.stillNeeded', {
-                                  points: String(Math.max(0, reward.cost - saved)),
-                                })}
-                          </small>
-                        </span>
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    className="planner-goal planner-goal--new"
-                    onClick={() => {
-                      if (awardTask.memberId) startRewardForm(awardTask.memberId);
-                      else setModal('reward-form');
-                    }}
-                  >
-                    <span className="planner-goal-icon" aria-hidden="true">
-                      +
-                    </span>
-                    <span className="planner-goal-copy">
-                      <strong>{c.setGoal}</strong>
-                    </span>
-                  </button>
-                </div>
-              </>
-            )}
+              <AwardSheet
+                task={awardTask}
+                copy={c}
+                t={t}
+                spendable={spendableFor(memberFor(awardTask.memberId))}
+                rewards={rewardsForMember(awardTask.memberId)}
+                rewardState={rewardState}
+                onClose={() => setModal(null)}
+                onAssign={(reward) => {
+                  assignReward(reward);
+                  setModal(null);
+                }}
+                onNewGoal={() => {
+                  if (awardTask.memberId) startRewardForm(awardTask.memberId);
+                  else setModal('reward-form');
+                }}
+              />
+            )}{' '}
             {modal === 'filter' && (
-              <>
-                <h2>{c.filterTitle}</h2>
-                <div className="planner-member-picker">
-                  {data.members.map((member) => {
-                    const hidden = hiddenMemberIds.includes(member.id);
-                    return (
-                      <button
-                        type="button"
-                        key={member.id}
-                        className={hidden ? '' : 'is-selected'}
-                        aria-pressed={!hidden}
-                        onClick={() =>
-                          setHiddenMemberIds((ids) =>
-                            ids.includes(member.id)
-                              ? ids.filter((id) => id !== member.id)
-                              : [...ids, member.id],
-                          )
-                        }
-                      >
-                        <MemberAvatar member={member} />
-                        {member.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                {data.routines.length > 0 && (
-                  <>
-                    <h2>{c.pausedRoutines}</h2>
-                    <div className="planner-goal-list">
-                      {data.routines.map((routine) => {
-                        const paused = pausedRoutineIds.includes(routine.id);
-                        return (
-                          <button
-                            type="button"
-                            className="planner-goal"
-                            key={routine.id}
-                            onClick={() => toggleRoutinePaused(routine.id)}
-                          >
-                            <span className="planner-goal-icon" aria-hidden="true">
-                              {routine.icon}
-                            </span>
-                            <span className="planner-goal-copy">
-                              <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                              <small>{paused ? c.paused : c.active}</small>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                </footer>
-              </>
-            )}
+              <FilterSheet
+                members={data.members}
+                routines={data.routines}
+                hiddenMemberIds={hiddenMemberIds}
+                pausedRoutineIds={pausedRoutineIds}
+                copy={c}
+                onToggleMember={(memberId) =>
+                  setHiddenMemberIds((ids) =>
+                    ids.includes(memberId)
+                      ? ids.filter((id) => id !== memberId)
+                      : [...ids, memberId],
+                  )
+                }
+                onToggleRoutine={toggleRoutinePaused}
+                onClose={() => setModal(null)}
+              />
+            )}{' '}
             {modal === 'claim' && claimTask && (
-              <>
-                <h2>{claimTask.name}</h2>
-                <p className="planner-hint">{c.claimWho}</p>
-                <div className="planner-member-picker planner-member-picker--claim">
-                  {claimOptionsFor(claimTask).map((option) => {
-                    const member = memberFor(option.memberId);
-                    if (!member) return null;
-                    return (
-                      <button
-                        key={option.memberId}
-                        type="button"
-                        onClick={() => {
-                          setModal(null);
-                          void runLiveAction(
-                            option.id,
-                            option.actions!.claim!,
-                            option.name,
-                            c.claimedToast,
-                          );
-                        }}
-                      >
-                        <MemberAvatar member={member} />
-                        {member.name}
-                      </button>
-                    );
-                  })}
-                </div>
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                </footer>
-              </>
-            )}
+              <ClaimSheet
+                task={claimTask}
+                options={claimOptionsFor(claimTask)}
+                memberFor={memberFor}
+                copy={c}
+                onClaim={(option) => {
+                  setModal(null);
+                  void runLiveAction(
+                    option.id,
+                    option.actions!.claim!,
+                    option.name,
+                    c.claimedToast,
+                  );
+                }}
+                onClose={() => setModal(null)}
+              />
+            )}{' '}
             {modal === 'goals' && goalsMember && (
-              <>
-                <h2>
-                  {c.goals}
-                  {' \u00b7 '}
-                  {goalsMember.name}
-                </h2>
-                {rewardsForMember(goalsMember.id).length === 0 && <p>{c.noRewards}</p>}
-                {rewardsForMember(goalsMember.id).map((reward) => renderRewardRow(reward))}
-                <button
-                  className="planner-ghost planner-reward-new"
-                  onClick={() => startRewardForm(goalsMember.id)}
-                >
-                  <Plus />
-                  {c.setGoal}
-                </button>
-              </>
-            )}
+              <GoalsSheet
+                member={goalsMember}
+                rewards={rewardsForMember(goalsMember.id)}
+                copy={c}
+                renderRewardRow={renderRewardRow}
+                onNewGoal={startRewardForm}
+              />
+            )}{' '}
             {modal === 'reward-actions' && selectedReward && (
-              <>
-                <h2>{c.action}</h2>
-                <button
-                  className="planner-destination"
-                  onClick={() => {
-                    setEditingReward(selectedReward.name);
-                    setRewardForm({
-                      name: selectedReward.name,
-                      cost: Math.round(selectedReward.cost),
-                      memberIds: [],
-                    });
-                    setModal('reward-form');
-                  }}
-                >
-                  <Pencil />
-                  <strong>{c.cost}</strong>
-                </button>
-                <button
-                  className="planner-destination planner-danger"
-                  onClick={() => void removeReward(selectedReward)}
-                >
-                  <Trash2 />
-                  <strong>{c.remove}</strong>
-                </button>
-              </>
-            )}
+              <RewardActionsSheet
+                copy={c}
+                onEditCost={() => {
+                  setEditingReward(selectedReward.name);
+                  setRewardForm({
+                    name: selectedReward.name,
+                    cost: Math.round(selectedReward.cost),
+                    memberIds: [],
+                  });
+                  setModal('reward-form');
+                }}
+                onDelete={() => void removeReward(selectedReward)}
+              />
+            )}{' '}
             {modal === 'reward-form' && (
-              <>
-                <h2>{editingReward ? c.cost : c.newReward}</h2>
-                <label className="planner-field">
-                  {c.name}
-                  <input
-                    autoFocus
-                    value={rewardForm.name}
-                    disabled={Boolean(editingReward)}
-                    onChange={(event) =>
-                      setRewardForm((value) => ({ ...value, name: event.target.value }))
-                    }
-                  />
-                  {editingReward && <small className="planner-hint">{c.renameLocked}</small>}
-                </label>
-                <label className="planner-field">
-                  {c.cost}
-                  <input
-                    type="number"
-                    min="1"
-                    max="9999"
-                    value={rewardForm.cost}
-                    onChange={(event) =>
-                      setRewardForm((value) => ({ ...value, cost: Number(event.target.value) }))
-                    }
-                  />
-                </label>
-                {!editingReward && (
-                  <fieldset className="planner-field">
-                    <legend>{c.forWho}</legend>
-                    <div className="planner-member-picker">
-                      {data.members.map((member) => (
-                        <button
-                          key={member.id}
-                          className={rewardForm.memberIds.includes(member.id) ? 'is-selected' : ''}
-                          onClick={() =>
-                            setRewardForm((value) => ({
-                              ...value,
-                              memberIds: value.memberIds.includes(member.id)
-                                ? value.memberIds.filter((id) => id !== member.id)
-                                : [...value.memberIds, member.id],
-                            }))
-                          }
-                        >
-                          <MemberAvatar member={member} />
-                          {member.name}
-                        </button>
-                      ))}
-                    </div>
-                  </fieldset>
-                )}
-                <footer className="planner-sheet-footer">
-                  <button className="planner-ghost" onClick={() => setModal(null)}>
-                    {c.cancel}
-                  </button>
-                  <button
-                    className="planner-primary"
-                    disabled={
-                      saving ||
-                      rewardForm.cost < 1 ||
-                      (!editingReward &&
-                        (!rewardForm.name.trim() || rewardForm.memberIds.length === 0))
-                    }
-                    onClick={() => void saveReward()}
-                  >
-                    {saving ? '\u2026' : c.save}
-                  </button>
-                </footer>
-              </>
+              <RewardFormSheet
+                rewardForm={rewardForm}
+                setRewardForm={setRewardForm}
+                editingReward={editingReward}
+                members={data.members}
+                saving={saving}
+                copy={c}
+                onCancel={() => setModal(null)}
+                onSave={() => void saveReward()}
+              />
             )}
           </section>
         </div>
       )}
       {confirmAction && (
-        <div className="planner-backdrop" onClick={() => setConfirmAction(null)}>
-          <section
-            className="planner-sheet planner-sheet--confirm"
-            role="dialog"
-            aria-modal="true"
-            aria-label={confirmAction.kind === 'claim' ? c.confirmClaimTitle : c.confirmDoneTitle}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2>{confirmAction.kind === 'claim' ? c.confirmClaimTitle : c.confirmDoneTitle}</h2>
-            <p>{confirmAction.kind === 'claim' ? c.confirmClaimBody : c.confirmDoneBody}</p>
-            <p className="planner-confirm-target">{confirmAction.label}</p>
-            <footer className="planner-sheet-footer">
-              <button className="planner-ghost" onClick={() => setConfirmAction(null)}>
-                {c.cancel}
-              </button>
-              <button
-                className="planner-primary"
-                disabled={pendingTaskId === confirmAction.taskId}
-                onClick={() => {
-                  const action = confirmAction;
-                  setConfirmAction(null);
-                  void runLiveAction(action.taskId, action.entityId, action.label, action.action);
-                  const task = getTask(action.taskId);
-                  if (
-                    action.kind === 'done' &&
-                    task?.memberId &&
-                    rewardsForMember(task.memberId).length > 0
-                  ) {
-                    setAwardTaskId(task.id);
-                    setModal('award');
-                  }
-                }}
-              >
-                {c.confirm}
-              </button>
-            </footer>
-          </section>
-        </div>
+        <ConfirmSheet
+          action={confirmAction}
+          copy={c}
+          pending={pendingTaskId === confirmAction.taskId}
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={(action) => {
+            setConfirmAction(null);
+            void runLiveAction(action.taskId, action.entityId, action.label, action.action);
+            const task = getTask(action.taskId);
+            if (
+              action.kind === 'done' &&
+              task?.memberId &&
+              rewardsForMember(task.memberId).length > 0
+            ) {
+              setAwardTaskId(task.id);
+              setModal('award');
+            }
+          }}
+        />
       )}
       {pinGate && (
-        <div className="planner-backdrop" onClick={() => setPinGate(null)}>
-          <section
-            className="planner-sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-label={c.pinTitle}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2>{c.pinTitle}</h2>
-            <p>
-              {pinGate.title} · {pinGate.description}
-            </p>
-            <p>{c.pinHint}</p>
-            <input
-              type="password"
-              inputMode="numeric"
-              autoComplete="off"
-              autoFocus
-              maxLength={6}
-              aria-label={c.pinTitle}
-              className="planner-pin-input"
-              value={livePin}
-              onChange={(event) => {
-                setLivePin(normalizePin(event.target.value));
-                setLivePinError(false);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') submitPin();
-                if (event.key === 'Escape') setPinGate(null);
-              }}
-            />
-            {livePinError && (
-              <p className="planner-validation" role="alert">
-                {c.pinWrong}
-              </p>
-            )}
-            <footer className="planner-sheet-footer">
-              <button className="planner-ghost" onClick={() => setPinGate(null)}>
-                {c.cancel}
-              </button>
-              <button className="planner-primary" onClick={submitPin}>
-                {c.pinConfirm}
-              </button>
-            </footer>
-          </section>
-        </div>
+        <PinSheet
+          gate={pinGate}
+          copy={c}
+          value={livePin}
+          error={livePinError}
+          onChange={(next) => {
+            setLivePin(normalizePin(next));
+            setLivePinError(false);
+          }}
+          onSubmit={submitPin}
+          onCancel={() => setPinGate(null)}
+        />
       )}
       {confetti && (
         <div
