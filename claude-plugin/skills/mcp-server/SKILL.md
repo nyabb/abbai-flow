@@ -1,6 +1,6 @@
 ---
 description: >
-  Use this skill when connecting to or configuring the Beacon MCP server,
+  Use this skill when connecting to or configuring the Abbai Flow MCP server,
   troubleshooting connection issues, or understanding what tools are available.
   Covers setup, authentication, environment variables, and all 17 tools.
 triggers:
@@ -11,11 +11,11 @@ triggers:
   - connect beacon
 ---
 
-# Beacon MCP Server
+# Abbai Flow MCP Server
 
 ## Overview
 
-The Beacon MCP server exposes 17 tools for controlling a family dashboard that runs as a Home Assistant add-on. It communicates with HA via REST API and manages local JSON data files for chores, family members, and meal plans.
+The Abbai Flow MCP server exposes 17 tools for controlling a family dashboard that runs as a Home Assistant add-on. It communicates with HA via REST API and manages local JSON data files for chores, family members, and meal plans.
 
 ## Environment Variables
 
@@ -70,4 +70,4 @@ Stored in `DATA_DIR` as JSON arrays:
 
 - **"Cannot connect"**: Verify `HA_URL` is reachable and `SUPERVISOR_TOKEN` is valid
 - **"Entity not found"**: Check HA Developer Tools > States for correct entity IDs
-- **Empty chore/member lists**: Data files may not exist yet — create a chore or member via the Beacon UI first
+- **Empty chore/member lists**: Data files may not exist yet — create a chore or member via the Abbai Flow UI first

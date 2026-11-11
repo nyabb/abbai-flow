@@ -1,8 +1,8 @@
 /**
  * Calendar orchestration for the app shell.
  *
- * Beacon shows two kinds of calendars side by side: the device-local calendar
- * (stored in Beacon's own persistence) and the calendars Home Assistant
+ * Abbai Flow shows two kinds of calendars side by side: the device-local calendar
+ * (stored in Abbai Flow's own persistence) and the calendars Home Assistant
  * publishes. Both are merged into one list so the dashboard, week view and
  * event modal never need to know where an event lives — they just call
  * `createEvent`/`updateEvent`/`deleteEvent` and this hook routes to the right

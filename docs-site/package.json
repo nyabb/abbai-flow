@@ -1,8 +1,8 @@
 {
-  "name": "beacon-docs",
+  "name": "abbai-flow-docs",
   "type": "module",
   "version": "1.0.0",
-  "description": "Documentation for Beacon — your family's daily signal",
+  "description": "Documentation for Abbai Flow — your family's daily signal",
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",

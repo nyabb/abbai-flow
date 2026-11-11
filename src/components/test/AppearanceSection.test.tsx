@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { AppearanceSection } from '../settings/sections/AppearanceSection';
 import { I18nContext, createI18n } from '../../i18n';
 import { themes } from '../../styles/themes';
-import type { BeaconSettings } from '../../hooks/useSettings';
+import type { AbbaiSettings } from '../../hooks/useSettings';
 
 /**
  * Appearance section.
@@ -14,7 +14,7 @@ import type { BeaconSettings } from '../../hooks/useSettings';
  * the three segmented pickers.
  */
 
-function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
+function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   return {
     themeId: 'skylight',
     autoDarkMode: true,
@@ -24,10 +24,10 @@ function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
     sidebarPosition: 'left',
     advancedDashboard: false,
     ...overrides,
-  } as BeaconSettings;
+  } as AbbaiSettings;
 }
 
-function renderSection(overrides: Partial<BeaconSettings> = {}) {
+function renderSection(overrides: Partial<AbbaiSettings> = {}) {
   const onUpdateSettings = vi.fn();
   const t = createI18n('nl');
   const utils = render(

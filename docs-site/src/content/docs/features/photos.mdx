@@ -1,18 +1,18 @@
 ---
 title: "Photos"
-description: "Turn Beacon into a digital photo frame — setting up photos, slideshow controls, clock overlay, and music integration."
+description: "Turn Abbai Flow into a digital photo frame — setting up photos, slideshow controls, clock overlay, and music integration."
 order: 7
 ---
 
 # Photos
 
-Beacon can display your family photos as a digital photo frame with automatic slideshow, crossfade transitions, a clock/date overlay, and music controls layered on top.
+Abbai Flow can display your family photos as a digital photo frame with automatic slideshow, crossfade transitions, a clock/date overlay, and music controls layered on top.
 
 ---
 
 ## Setting up the photo directory
 
-Beacon loads photos from Home Assistant's media browser. You need to place your photos in a directory that HA can access.
+Abbai Flow loads photos from Home Assistant's media browser. You need to place your photos in a directory that HA can access.
 
 ### Step 1: Create a photo directory
 
@@ -32,7 +32,7 @@ Copy your family photos (JPEG, PNG) into the directory:
 cp ~/family-photos/*.jpg /media/beacon/photos/
 ```
 
-You can organize photos in subdirectories if you prefer — Beacon scans the configured directory for image files.
+You can organize photos in subdirectories if you prefer — Abbai Flow scans the configured directory for image files.
 
 ### Step 3: Configure the photo directory
 
@@ -57,7 +57,7 @@ You can also use Home Assistant's built-in media management:
 1. In Home Assistant, go to **Media > Media Browser**
 2. Navigate to the **Local Media** section
 3. Upload photos using the upload button
-4. These photos will be available to Beacon through the HA media API
+4. These photos will be available to Abbai Flow through the HA media API
 
 ---
 
@@ -116,7 +116,7 @@ Photos are loaded from both the HA media browser API and the configured local di
 
 ### Preloading
 
-Beacon preloads the next photo in the background so transitions are smooth. When the current photo changes, an `Image()` object is created for the next photo in the queue, ensuring it is cached in the browser before it is displayed.
+Abbai Flow preloads the next photo in the background so transitions are smooth. When the current photo changes, an `Image()` object is created for the next photo in the queue, ensuring it is cached in the browser before it is displayed.
 
 ---
 
@@ -149,7 +149,7 @@ The music overlay is always visible (it does not auto-hide with the photo contro
 
 ## Photo sources
 
-Beacon supports two photo sources, configured internally:
+Abbai Flow supports two photo sources, configured internally:
 
 | Source | Description |
 |--------|-------------|
@@ -174,7 +174,7 @@ Both sources are enabled by default. Photos from both sources are combined and s
 ### Photos load slowly or do not transition smoothly
 
 1. Large photo files (10MB+) take time to download. Consider resizing photos to 1920x1080 or smaller.
-2. Beacon preloads the next photo, but on slow networks this may not complete before the interval expires.
+2. Abbai Flow preloads the next photo, but on slow networks this may not complete before the interval expires.
 3. Increase the `photo_interval` to give more time for preloading.
 
 ### Clock overlay does not appear

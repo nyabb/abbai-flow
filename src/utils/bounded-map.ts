@@ -1,7 +1,7 @@
 /**
  * Run an async mapper over a list with a bounded number of parallel calls.
  *
- * Beacon talks to Home Assistant for every calendar, chore and sensor view.
+ * Abbai Flow talks to Home Assistant for every calendar, chore and sensor view.
  * Firing all of them at once floods weak HA installs (and the wall display's
  * connection limit); doing them one by one makes a fifteen-calendar household
  * feel broken. This keeps the fan-out predictable.

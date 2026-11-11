@@ -1,4 +1,4 @@
-# Beacon Design Tokens
+# Abbai Flow Design Tokens
 
 Governance doc for the color/type token system. Add new UI colors here first —
 don't reach for an arbitrary Tailwind hex in a component.
@@ -9,7 +9,7 @@ don't reach for an arbitrary Tailwind hex in a component.
 |---|---|---|
 | `--color-ink` | `#0f172a` | Dark neutral — text/bg base |
 | `--color-paper` | `#f8fafc` | Light neutral — bg/surface base |
-| `--color-brand` | `#f59e0b` | Beacon Gold — brand identity |
+| `--color-brand` | `#f59e0b` | Abbai Flow Gold — brand identity |
 | `--color-accent` | `#3b82f6` | Primary functional accent — links, focus, primary actions, info |
 | `--color-cat-sage` | `#10b981` | Category color 1 (calendar/family member) |
 | `--color-cat-lavender` | `#8b5cf6` | Category color 2 |

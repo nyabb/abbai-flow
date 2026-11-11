@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 
 /**
- * Beacon lint configuration (ESLint 9 flat config).
+ * Abbai Flow lint configuration (ESLint 9 flat config).
  *
  * Scope: `src/` (browser app), `server/` + `server.js` (CommonJS backend) and
  * the build scripts. `beacon/` is a legacy mirror and is linted through the

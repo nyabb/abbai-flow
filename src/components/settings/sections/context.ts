@@ -7,10 +7,10 @@
  * shape stays small.
  */
 import type { I18nValue } from '../../../i18n';
-import type { BeaconSettings } from '../../../hooks/useSettings';
+import type { AbbaiSettings } from '../../../hooks/useSettings';
 
 export interface SettingsSectionContext {
-  settings: BeaconSettings;
-  onUpdateSettings: (patch: Partial<BeaconSettings>) => void;
+  settings: AbbaiSettings;
+  onUpdateSettings: (patch: Partial<AbbaiSettings>) => void;
   t: I18nValue['t'];
 }

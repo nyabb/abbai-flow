@@ -16,7 +16,7 @@ const baseUrl = 'http://localhost:8099';
 // Save as: 09-voice-commands-manual.mp4
 
 // Scene 2: AI Agent Tools (15s–30s)
-// Split-screen setup: terminal/chat on left, Beacon dashboard on right
+// Split-screen setup: terminal/chat on left, Abbai Flow dashboard on right
 navigate(baseUrl);
 wait(2000);
 startRecording('09-ai-tools-dashboard');

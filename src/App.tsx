@@ -437,11 +437,11 @@ export function App() {
 
   // ---- Chore data ----
   // ChoreOps owns all chore data: chores are created and edited in Home
-  // Assistant, so Beacon only reads them and presses the action buttons the
+  // Assistant, so Abbai Flow only reads them and presses the action buttons the
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
-  // Why the app cannot reach anything: no network, Beacon down or Home Assistant
+  // Why the app cannot reach anything: no network, Abbai Flow down or Home Assistant
   // down are three different problems, and Display Mode has to say which.
   const connection = useConnectionStatus({ haConnected: connected });
   const isDisplayView = activeView === 'display';
@@ -470,7 +470,7 @@ export function App() {
     () =>
       (choreOpsData?.chores ?? []).map((chore) => {
         /*
-         * Resolve ChoreOps' assignee names onto Beacon member ids. Without
+         * Resolve ChoreOps' assignee names onto Abbai Flow member ids. Without
          * this the sidebar checklist showed every chore as "nobody's", which
          * made three identical chore names look like duplicates.
          */

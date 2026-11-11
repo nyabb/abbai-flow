@@ -68,7 +68,7 @@ export function useGrocery(connected: boolean): UseGroceryResult {
       setSource('none');
       setExpiringItems([]);
     } catch (err) {
-      console.warn('Beacon: Grocery fetch failed', err);
+      console.warn('Abbai Flow: Grocery fetch failed', err);
       setList(null);
       setSource('none');
     } finally {

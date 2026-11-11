@@ -1,12 +1,12 @@
 ---
 title: 'Getting Started'
-description: "Install Beacon as a Home Assistant add-on, Docker container, or development server and connect your family's calendar in under 10 minutes."
+description: "Install Abbai Flow as a Home Assistant add-on, Docker container, or development server and connect your family's calendar in under 10 minutes."
 order: 3
 ---
 
 # Getting Started
 
-This guide walks you through three ways to install Beacon, then covers first-time setup: connecting calendars, adding family members, configuring weather, and mounting the display.
+This guide walks you through three ways to install Abbai Flow, then covers first-time setup: connecting calendars, adding family members, configuring weather, and mounting the display.
 
 ---
 
@@ -50,7 +50,7 @@ This guide walks you through three ways to install Beacon, then covers first-tim
 
 ## Installation Method 1: Home Assistant Add-on (Recommended)
 
-This is the easiest method. Beacon runs inside Home Assistant as a managed add-on.
+This is the easiest method. Abbai Flow runs inside Home Assistant as a managed add-on.
 
 ### Step 1: Add the repository
 
@@ -67,16 +67,16 @@ This is the easiest method. Beacon runs inside Home Assistant as a managed add-o
 8. Click **Add**
 9. Click **Close**
 
-The page will reload. You should now see a "Beacon" section in the add-on store.
+The page will reload. You should now see a "Abbai Flow" section in the add-on store.
 
 ### Step 2: Install the add-on
 
-1. Find **Beacon** in the add-on store (you may need to scroll down or search)
-2. Click on the Beacon card
+1. Find **Abbai Flow** in the add-on store (you may need to scroll down or search)
+2. Click on the Abbai Flow card
 3. Click **Install**
 4. Wait for the installation to complete (this downloads the container image, typically 30-60 seconds)
 
-You will see the Beacon add-on info page when installation is complete.
+You will see the Abbai Flow add-on info page when installation is complete.
 
 ### Step 3: Configure the add-on
 
@@ -97,25 +97,25 @@ screen_saver_timeout: 5
 4. Replace `"weather.home"` with your actual weather entity ID (find it in **Settings > Devices & Services > Entities**, search for "weather")
 5. Click **Save**
 
-### Step 4: Start Beacon
+### Step 4: Start Abbai Flow
 
 1. Go back to the **Info** tab
 2. Click **Start**
 3. Wait a few seconds for the container to start
-4. Click **Open Web UI** in the sidebar panel, or navigate directly to your Home Assistant URL — Beacon appears as a sidebar panel with a calendar-clock icon
+4. Click **Open Web UI** in the sidebar panel, or navigate directly to your Home Assistant URL — Abbai Flow appears as a sidebar panel with a calendar-clock icon
 
-> **What you should see**: The Beacon dashboard with a large clock, the current date, a personalized greeting, and (if weather is configured) the current temperature. If you have not connected any calendars yet, the calendar view will be empty.
+> **What you should see**: The Abbai Flow dashboard with a large clock, the current date, a personalized greeting, and (if weather is configured) the current temperature. If you have not connected any calendars yet, the calendar view will be empty.
 
 ### Step 5: Enable auto-start (optional)
 
-1. On the Beacon add-on page, toggle **Start on boot** to ON
-2. This ensures Beacon restarts automatically if Home Assistant reboots
+1. On the Abbai Flow add-on page, toggle **Start on boot** to ON
+2. This ensures Abbai Flow restarts automatically if Home Assistant reboots
 
 ---
 
 ## Installation Method 2: Docker Standalone
 
-Use this method if you want to run Beacon outside of Home Assistant, or if you use a Home Assistant Core installation without Supervisor.
+Use this method if you want to run Abbai Flow outside of Home Assistant, or if you use a Home Assistant Core installation without Supervisor.
 
 ### Step 1: Pull and run the container
 
@@ -139,10 +139,10 @@ Replace:
 1. In Home Assistant, click your profile icon (bottom left)
 2. Scroll to the bottom to **Long-Lived Access Tokens**
 3. Click **Create Token**
-4. Name it "Beacon"
+4. Name it "Abbai Flow"
 5. Copy the token immediately (you will not see it again)
 
-### Step 3: Access Beacon
+### Step 3: Access Abbai Flow
 
 Open a browser and navigate to:
 
@@ -171,7 +171,7 @@ services:
 
 ## Installation Method 3: Development
 
-Use this method if you want to contribute to Beacon or run it directly from source.
+Use this method if you want to contribute to Abbai Flow or run it directly from source.
 
 ### Step 1: Clone the repository
 
@@ -265,12 +265,12 @@ This is the most common calendar source. Follow every step carefully.
    - Grant calendar access
    - Home Assistant will create `calendar.*` entities for each of your Google calendars
 
-5. **Verify in Beacon**:
-   - Open Beacon and navigate to the Calendar view (calendar icon in sidebar)
+5. **Verify in Abbai Flow**:
+   - Open Abbai Flow and navigate to the Calendar view (calendar icon in sidebar)
    - You should see your calendars listed as colored filter pills above the week view
    - Events should appear on the correct days and times
 
-> **Using other calendar sources?** Beacon works with any calendar integration Home Assistant supports. CalDAV (Nextcloud, Fastmail, iCloud), ICS feeds, and the Local Calendar integration all work the same way — set them up in HA, and Beacon will discover them automatically.
+> **Using other calendar sources?** Abbai Flow works with any calendar integration Home Assistant supports. CalDAV (Nextcloud, Fastmail, iCloud), ICS feeds, and the Local Calendar integration all work the same way — set them up in HA, and Abbai Flow will discover them automatically.
 
 ### Setting up the Local Calendar (no Google needed)
 
@@ -282,11 +282,11 @@ If you want a purely local calendar with no cloud dependency:
 4. Name it (e.g., "Family Calendar")
 5. Click **Submit**
 
-This creates a `calendar.family_calendar` entity. Events you create in Beacon will be stored locally on your Home Assistant instance.
+This creates a `calendar.family_calendar` entity. Events you create in Abbai Flow will be stored locally on your Home Assistant instance.
 
 ### Setting up family members
 
-1. Open Beacon
+1. Open Abbai Flow
 2. Click the **gear icon** in the bottom of the sidebar (or under "More" on mobile)
 3. The Family Members modal opens
 4. Click **+ Add Member**
@@ -313,7 +313,7 @@ This creates a `calendar.family_calendar` entity. Events you create in Beacon wi
    - Search for "weather"
    - Note the entity ID (e.g., `weather.home` or `weather.forecast_home`)
 
-3. Set the entity in Beacon's configuration:
+3. Set the entity in Abbai Flow's configuration:
    - For add-on: Configuration tab > set `weather_entity`
    - For Docker: set the `WEATHER_ENTITY` environment variable
    - For development: set `VITE_HA_WEATHER_ENTITY` in `.env`
@@ -323,7 +323,7 @@ This creates a `calendar.family_calendar` entity. Events you create in Beacon wi
 **Android tablets (Fire, Samsung, etc.):**
 
 1. Install **Fully Kiosk Browser** from the app store (free version works, paid version adds remote management)
-2. Set the start URL to your Beacon address
+2. Set the start URL to your Abbai Flow address
 3. Enable these settings in Fully Kiosk:
    - **Keep Screen On**: Yes
    - **Autostart on Boot**: Yes
@@ -334,16 +334,16 @@ This creates a `calendar.family_calendar` entity. Events you create in Beacon wi
 
 **iPads:**
 
-1. Open Safari and navigate to your Beacon URL
+1. Open Safari and navigate to your Abbai Flow URL
 2. Tap the Share button and select **Add to Home Screen**
 3. Open the saved shortcut — it will launch in a pseudo-fullscreen mode
 4. Go to **Settings > Display & Brightness > Auto-Lock > Never**
-5. Enable **Guided Access** (Settings > Accessibility > Guided Access) to lock the iPad to Beacon
+5. Enable **Guided Access** (Settings > Accessibility > Guided Access) to lock the iPad to Abbai Flow
 
 **Desktop browsers (Raspberry Pi, mini PC):**
 
 1. Open Chrome or Chromium
-2. Navigate to your Beacon URL
+2. Navigate to your Abbai Flow URL
 3. Press **F11** for fullscreen mode
 4. To auto-start in kiosk mode, create a startup script:
    ```bash

@@ -1,5 +1,5 @@
 /**
- * Beacon backend — request handling.
+ * Abbai Flow backend — request handling.
  *
  * This module is deliberately CommonJS (`*.cjs`) so it can be started by the
  * add-on image (which has no package.json and therefore treats `.js` as CJS)

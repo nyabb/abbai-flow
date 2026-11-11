@@ -1,8 +1,8 @@
-# Getting Started with Beacon
+# Getting Started with Abbai Flow
 
-A visual walkthrough of Beacon — your family's daily signal. This guide shows you what to expect after installation, with annotated screenshots of every major view at both desktop and mobile sizes.
+A visual walkthrough of Abbai Flow — your family's daily signal. This guide shows you what to expect after installation, with annotated screenshots of every major view at both desktop and mobile sizes.
 
-> **Looking for installation instructions?** See the [README](../README.md) for quick-start steps, or the [full Getting Started guide](https://beacon-family-docs.netlify.app/docs/getting-started/) on the docs site for detailed setup (Google Calendar, Docker, development, tablet mounting, and more).
+> **Looking for installation instructions?** See the [README](../README.md) for quick-start steps, or the [full Getting Started guide](./README.md) on the docs site for detailed setup (Google Calendar, Docker, development, tablet mounting, and more).
 
 ---
 
@@ -40,13 +40,13 @@ The dashboard is your family's home screen. At a glance you see:
 
 ![Dashboard — desktop](images/dashboard-desktop.png)
 
-The sidebar on the left is the standard Home Assistant navigation. Beacon's own sidebar runs vertically inside the add-on panel with icons for every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
+The sidebar on the left is the standard Home Assistant navigation. Abbai Flow's own sidebar runs vertically inside the add-on panel with icons for every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
 
 ### Mobile (390 x 844)
 
 ![Dashboard — mobile](images/dashboard-mobile.png)
 
-On mobile, Beacon's navigation moves to a bottom tab bar with the most-used views (Dashboard, Calendar, Chores, Music) and a **More** menu for the rest.
+On mobile, Abbai Flow's navigation moves to a bottom tab bar with the most-used views (Dashboard, Calendar, Chores, Music) and a **More** menu for the rest.
 
 ---
 
@@ -132,8 +132,8 @@ Each row is one meal, in breakfast → lunch → dinner → snack order:
 
 **Where the data comes from:**
 
-- Beacon stores the plan as a `beacon_meal_plans` array in its data store (the Home Assistant add-on keeps it server-side; the standalone build keeps it in the browser). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
-- Meals are **written by a sync, not typed into Beacon**. AnyList plans go through `scripts/sync-meals.mjs`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
+- Abbai Flow stores the plan as a `beacon_meal_plans` array in its data store (the Home Assistant add-on keeps it server-side; the standalone build keeps it in the browser). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
+- Meals are **written by a sync, not typed into Abbai Flow**. AnyList plans go through `scripts/sync-meals.mjs`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
 - The dashboard re-reads the store every 5 minutes, so a sync shows up without reloading the page.
 
 **Key features:**
@@ -146,7 +146,7 @@ Each row is one meal, in breakfast → lunch → dinner → snack order:
 
 ## Tasks
 
-The tasks view shows todo items from Home Assistant's todo entities and Beacon's built-in task list.
+The tasks view shows todo items from Home Assistant's todo entities and Abbai Flow's built-in task list.
 
 **Key features:**
 
@@ -167,7 +167,7 @@ The tasks view shows todo items from Home Assistant's todo entities and Beacon's
 
 ## Music Controls
 
-Control your Home Assistant media players directly from Beacon.
+Control your Home Assistant media players directly from Abbai Flow.
 
 **Key features:**
 
@@ -214,13 +214,13 @@ The 7-day forecast stacks vertically on mobile for easy scrolling.
 
 ## Settings
 
-The settings view is where you configure Beacon's behavior, appearance, and integrations.
+The settings view is where you configure Abbai Flow's behavior, appearance, and integrations.
 
 **Key sections:**
 
 - **Theme** -- choose from 8+ themes (Skylight, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
-- **Calendar Sources** -- manage which HA calendar entities appear in Beacon.
+- **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
 - **List Providers** -- configure AnyList, HA Shopping List, or local list storage.
 - **Weather Entity** -- set which `weather.*` entity powers the Weather view.
 - **Display** -- screen saver timeout, photo slideshow interval, auto-refresh settings.
@@ -266,7 +266,7 @@ Family members appear on the Dashboard chores panel, the Chore planner and in Ca
 
 ## Theme Selection
 
-Beacon ships with 8+ built-in themes:
+Abbai Flow ships with 8+ built-in themes:
 
 | Theme          | Style                                         |
 | -------------- | --------------------------------------------- |
@@ -292,5 +292,5 @@ To change themes:
 
 - **[README](../README.md)** -- installation, features overview, and project info
 - **[Changelog](../CHANGELOG.md)** -- release history
-- **[Contributing](../CONTRIBUTING.md)** -- how to contribute to Beacon
-- **[Docs Site](https://beacon-family-docs.netlify.app/)** -- full documentation with detailed guides for every feature
+- **[Contributing](../CONTRIBUTING.md)** -- how to contribute to Abbai Flow
+- **[Docs Site](./)** -- full documentation with detailed guides for every feature

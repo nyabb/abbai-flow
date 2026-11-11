@@ -19,7 +19,7 @@ export function isIngress(): boolean {
 }
 
 /**
- * Get the base URL for API calls routed through Beacon's backend proxy.
+ * Get the base URL for API calls routed through Abbai Flow's backend proxy.
  * In ingress mode this includes the ingress path; at the standalone root it is empty.
  */
 export function getIngressBasePath(): string {

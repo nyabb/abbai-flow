@@ -45,7 +45,7 @@ const ZARA = member({ id: 'c1', name: 'Zara', choreops_user: 'Zara' });
 
 /**
  * One child with a two-step morning routine and one standalone chore.
- * `labels` is how the household already names routines in ChoreOps; Beacon
+ * `labels` is how the household already names routines in ChoreOps; Abbai Flow
  * adopts it into its own registry.
  */
 function routineState(): ChoreOpsState {

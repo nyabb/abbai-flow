@@ -44,7 +44,7 @@ export type ChoreOpsWeekday = (typeof CHOREOPS_WEEKDAYS)[number];
  * ChoreOps sentinel that resolves `assigned_user_names` to every assignable
  * user. This is how a chore becomes "free for anyone to claim": an empty
  * assignee list creates a *dormant* chore that publishes no entities at all,
- * so Beacon would never see it.
+ * so Abbai Flow would never see it.
  */
 export const CHOREOPS_ALL_USERS = '*';
 
@@ -58,7 +58,7 @@ export interface CreateChoreInput {
   entryId: string | null;
   name: string;
   /**
-   * ChoreOps user names, not Beacon member names. At least one is required
+   * ChoreOps user names, not Abbai Flow member names. At least one is required
    * unless the caller passes the `CHOREOPS_ALL_USERS` sentinel.
    */
   assignedUserNames: string[];
@@ -71,7 +71,7 @@ export interface CreateChoreInput {
   points?: number | null;
   description?: string | null;
   /**
-   * ChoreOps labels. Beacon groups daily chores into routines by their first
+   * ChoreOps labels. Abbai Flow groups daily chores into routines by their first
    * label, so this is how a household names one ("Ochtendroutine").
    */
   labels?: string[] | null;

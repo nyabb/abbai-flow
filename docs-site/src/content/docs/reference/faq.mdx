@@ -1,6 +1,6 @@
 ---
 title: 'FAQ'
-description: 'Answers to 20+ common questions about Beacon — calendar support, hardware, privacy, features, and troubleshooting.'
+description: 'Answers to 20+ common questions about Abbai Flow — calendar support, hardware, privacy, features, and troubleshooting.'
 order: 3
 ---
 
@@ -12,27 +12,27 @@ order: 3
 
 ### Does this work with Google Calendar?
 
-**Yes.** Beacon reads calendar data through Home Assistant's Google Calendar integration. Set up the integration once in HA, and Beacon automatically discovers your calendars. See the [Getting Started guide](/docs/getting-started/installation/) for step-by-step instructions.
+**Yes.** Abbai Flow reads calendar data through Home Assistant's Google Calendar integration. Set up the integration once in HA, and Abbai Flow automatically discovers your calendars. See the [Getting Started guide](/docs/getting-started/installation/) for step-by-step instructions.
 
-Beacon also works with **any calendar source** Home Assistant supports, including CalDAV (Nextcloud, iCloud, Fastmail), ICS feeds, and the built-in Local Calendar.
+Abbai Flow also works with **any calendar source** Home Assistant supports, including CalDAV (Nextcloud, iCloud, Fastmail), ICS feeds, and the built-in Local Calendar.
 
 ### Can I create and edit events from the display?
 
-**Yes.** Beacon supports full CRUD operations on calendar events. Tap the + button or a time slot to create events. Tap an existing event to edit or delete it. You can even drag events to reschedule them. See [Calendar](/docs/features/calendar/).
+**Yes.** Abbai Flow supports full CRUD operations on calendar events. Tap the + button or a time slot to create events. Tap an existing event to edit or delete it. You can even drag events to reschedule them. See [Calendar](/docs/features/calendar/).
 
-### Does Beacon send my data anywhere?
+### Does Abbai Flow send my data anywhere?
 
-**No.** Beacon runs entirely on your local network. It communicates only with your Home Assistant instance — never with any external server. There is no telemetry, analytics, or cloud dependency.
+**No.** Abbai Flow runs entirely on your local network. It communicates only with your Home Assistant instance — never with any external server. There is no telemetry, analytics, or cloud dependency.
 
-Data flow: `Google/CalDAV -> Home Assistant -> Beacon (local only)`
+Data flow: `Google/CalDAV -> Home Assistant -> Abbai Flow (local only)`
 
 ### Is there a subscription?
 
-**No.** Beacon is free and open-source under the MIT license. No subscriptions, no premium tiers, no free trial.
+**No.** Abbai Flow is free and open-source under the MIT license. No subscriptions, no premium tiers, no free trial.
 
 ### Can I use this without Home Assistant?
 
-Not currently. Beacon relies on Home Assistant for calendar data, weather, media players, and grocery integrations. If you do not have Home Assistant, [HA OS](https://www.home-assistant.io/installation/) is free and runs on a Raspberry Pi, old PC, or virtual machine.
+Not currently. Abbai Flow relies on Home Assistant for calendar data, weather, media players, and grocery integrations. If you do not have Home Assistant, [HA OS](https://www.home-assistant.io/installation/) is free and runs on a Raspberry Pi, old PC, or virtual machine.
 
 ---
 
@@ -49,11 +49,11 @@ See [Deployment](/docs/getting-started/deployment/) for detailed hardware recomm
 
 ### Does it work on a phone?
 
-**Yes, but it is not ideal.** Beacon has a mobile-responsive layout with a bottom tab bar. It works on phones, but the experience is designed for landscape tablets and wall-mounted displays. On phones, the calendar week view is cramped and some features are behind the "More" menu.
+**Yes, but it is not ideal.** Abbai Flow has a mobile-responsive layout with a bottom tab bar. It works on phones, but the experience is designed for landscape tablets and wall-mounted displays. On phones, the calendar week view is cramped and some features are behind the "More" menu.
 
 ### Does it work in portrait mode?
 
-Beacon is designed for **landscape displays** (16:9 or 16:10). In portrait mode, the layout works but some views (especially the week calendar) are not optimized for the narrower width.
+Abbai Flow is designed for **landscape displays** (16:9 or 16:10). In portrait mode, the layout works but some views (especially the week calendar) are not optimized for the narrower width.
 
 ### What screen size works best?
 
@@ -65,11 +65,11 @@ Beacon is designed for **landscape displays** (16:9 or 16:10). In portrait mode,
 
 ### Can I show photos like Skylight?
 
-**Yes.** Beacon has a built-in photo frame with slideshow, crossfade transitions, clock/date overlay, and music controls on top. Add photos to your HA media directory and configure the photo directory. See [Photos](/docs/features/photos/).
+**Yes.** Abbai Flow has a built-in photo frame with slideshow, crossfade transitions, clock/date overlay, and music controls on top. Add photos to your HA media directory and configure the photo directory. See [Photos](/docs/features/photos/).
 
 ### Does it have a dark mode?
 
-**Yes.** Beacon ships with 7 themes, including 4 dark themes: Midnight, Dracula, Monokai, and (partially dark) Nord. There is also an "Auto" mode that switches between Skylight (light) and Midnight (dark) based on time of day. See [Themes](/docs/customization/themes/).
+**Yes.** Abbai Flow ships with 7 themes, including 4 dark themes: Midnight, Dracula, Monokai, and (partially dark) Nord. There is also an "Auto" mode that switches between Skylight (light) and Midnight (dark) based on time of day. See [Themes](/docs/customization/themes/).
 
 ### Can multiple family members use it?
 
@@ -81,24 +81,24 @@ Beacon is designed for **landscape displays** (16:9 or 16:10). In portrait mode,
 
 ### Can I control music from the display?
 
-**Yes.** Beacon controls any media player entity in Home Assistant — Sonos, Google Home, Music Assistant, Chromecast, etc. You get play/pause, skip, volume, album art, and a progress bar. A "Now Playing" bar appears on all views when music is active. See [Music](/docs/features/music/).
+**Yes.** Abbai Flow controls any media player entity in Home Assistant — Sonos, Google Home, Music Assistant, Chromecast, etc. You get play/pause, skip, volume, album art, and a progress bar. A "Now Playing" bar appears on all views when music is active. See [Music](/docs/features/music/).
 
 ### Can I set timers?
 
-**Yes.** Beacon has a built-in timer with countdown (1, 5, 10, 15, 30 minute presets) and stopwatch modes. The countdown plays an audio alert when finished. See [Timer](/docs/features/timer/).
+**Yes.** Abbai Flow has a built-in timer with countdown (1, 5, 10, 15, 30 minute presets) and stopwatch modes. The countdown plays an audio alert when finished. See [Timer](/docs/features/timer/).
 
 ### Does it have a grocery list?
 
-**Yes.** Beacon integrates with Grocy and AnyList through Home Assistant. You can view your shopping list, add items, check them off, and see expiring product alerts. See [Grocery](/docs/features/grocery/).
+**Yes.** Abbai Flow integrates with Grocy and AnyList through Home Assistant. You can view your shopping list, add items, check them off, and see expiring product alerts. See [Grocery](/docs/features/grocery/).
 
 ### Does it send notifications?
 
-**Yes.** Beacon monitors upcoming calendar events and sends notifications ahead of each event through two channels:
+**Yes.** Abbai Flow monitors upcoming calendar events and sends notifications ahead of each event through two channels:
 
 1. **Browser push notifications** (requires one-time permission grant)
 2. **Home Assistant mobile app notifications** via `notify.notify`
 
-By default, notifications fire 10 minutes before timed events (not all-day events). You can customize the timing in **Settings > Calendar** to 5, 10, 15, or 30 minutes. Beacon checks every minute and sends each notification once per event.
+By default, notifications fire 10 minutes before timed events (not all-day events). You can customize the timing in **Settings > Calendar** to 5, 10, 15, or 30 minutes. Abbai Flow checks every minute and sends each notification once per event.
 
 See [Notifications](/docs/features/notifications/) for setup details, permission requirements, and troubleshooting.
 
@@ -124,7 +124,7 @@ Set the `weather_entity` option to your HA weather entity ID (e.g., `weather.hom
 
 ### How do I connect multiple calendars?
 
-Add multiple calendar integrations in Home Assistant (Google Calendar, CalDAV, Local Calendar, etc.). Beacon discovers all `calendar.*` entities automatically. Use the filter pills above the calendar to show/hide specific calendars.
+Add multiple calendar integrations in Home Assistant (Google Calendar, CalDAV, Local Calendar, etc.). Abbai Flow discovers all `calendar.*` entities automatically. Use the filter pills above the calendar to show/hide specific calendars.
 
 ### How do I set up family members?
 
@@ -132,13 +132,13 @@ Click the gear icon in the sidebar to open the Family Members modal. Click "+ Ad
 
 ### How do I hide the sidebar for wall tablets / kiosk setups?
 
-**Beacon's own sidebar**: Enable **Kiosk Mode** in **Settings > Display**. This hides Beacon's sidebar entirely and uses a full-width layout. (Fixed in [PR #51](https://github.com/asachs01/beacon/pull/51) — earlier versions had a non-functional toggle.)
+**Abbai Flow's own sidebar**: Enable **Kiosk Mode** in **Settings > Display**. This hides Abbai Flow's sidebar entirely and uses a full-width layout. (Fixed in [PR #51](https://github.com/asachs01/beacon/pull/51) — earlier versions had a non-functional toggle.)
 
-**Home Assistant's sidebar** (when running as an HA add-on): Beacon cannot hide HA's sidebar when running inside Home Assistant ingress — that chrome is controlled by Home Assistant itself. For dedicated wall tablets or Windows kiosk setups, open Beacon's direct URL in full-screen mode instead:
+**Home Assistant's sidebar** (when running as an HA add-on): Abbai Flow cannot hide HA's sidebar when running inside Home Assistant ingress — that chrome is controlled by Home Assistant itself. For dedicated wall tablets or Windows kiosk setups, open Abbai Flow's direct URL in full-screen mode instead:
 
-1. **Find the direct URL**: In HA, click "Open Web UI" on the Beacon add-on page, or use the direct ingress URL (typically `http://YOUR_HA_IP:8123/api/hassio_ingress/<addon-token>`)
+1. **Find the direct URL**: In HA, click "Open Web UI" on the Abbai Flow add-on page, or use the direct ingress URL (typically `http://YOUR_HA_IP:8123/api/hassio_ingress/<addon-token>`)
 2. **For Android tablets**: Use [Fully Kiosk Browser](/docs/getting-started/installation/#mounting-and-displaying-on-a-tablet) with "Hide Navigation Bar" and "Hide Status Bar" enabled
-3. **For desktop/Pi kiosk**: Launch Chrome/Chromium with `--kiosk` flag pointed at the Beacon URL
+3. **For desktop/Pi kiosk**: Launch Chrome/Chromium with `--kiosk` flag pointed at the Abbai Flow URL
 4. **For standalone Docker**: Use the container's direct URL (e.g., `http://YOUR_DOCKER_HOST:3000`)
 
 See the [Installation guide](/docs/getting-started/installation/#mounting-and-displaying-on-a-tablet) for detailed kiosk setup instructions.
@@ -147,9 +147,9 @@ See the [Installation guide](/docs/getting-started/installation/#mounting-and-di
 
 ## Updates and Maintenance
 
-### How do I update Beacon?
+### How do I update Abbai Flow?
 
-**Add-on**: Go to **Settings > Add-ons > Beacon** and click **Update** if available.
+**Add-on**: Go to **Settings > Add-ons > Abbai Flow** and click **Update** if available.
 
 **Docker**: Pull the latest image and recreate the container:
 
@@ -180,9 +180,9 @@ You can view and copy these values in the browser's Developer Tools (F12 > Appli
 
 ## Troubleshooting
 
-### Beacon shows "Demo Mode"
+### Abbai Flow shows "Demo Mode"
 
-This means Beacon cannot connect to Home Assistant. Check:
+This means Abbai Flow cannot connect to Home Assistant. Check:
 
 1. The HA token is configured (add-on: automatic; Docker: `SUPERVISOR_TOKEN` env var; dev: `VITE_HA_TOKEN`)
 2. The HA URL is reachable from the browser
@@ -204,7 +204,7 @@ This means Beacon cannot connect to Home Assistant. Check:
 ### Something else is broken
 
 1. Check the browser console (F12) for error messages
-2. Check the add-on logs (**Settings > Add-ons > Beacon > Log**)
+2. Check the add-on logs (**Settings > Add-ons > Abbai Flow > Log**)
 3. Open a [GitHub issue](https://github.com/asachs01/beacon/issues) with your HA version, browser, device, and relevant logs
 
 ---
@@ -213,5 +213,5 @@ This means Beacon cannot connect to Home Assistant. Check:
 
 - [Getting Started](/docs/getting-started/installation/) — installation walkthrough
 - [Configuration](/docs/customization/configuration/) — all settings explained
-- [Contributing](/docs/reference/contributing/) — help make Beacon better
+- [Contributing](/docs/reference/contributing/) — help make Abbai Flow better
 - [API Reference](/docs/reference/api-reference/) — technical API details

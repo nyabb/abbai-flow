@@ -66,7 +66,7 @@ export function committedRedemptionPoints(
 /**
  * What the child can still allocate: their ChoreOps balance minus everything
  * already promised to a reward. Claims made in Home Assistant count too
- * (`pendingClaims`), but only when Beacon has no redemption for that reward —
+ * (`pendingClaims`), but only when Abbai Flow has no redemption for that reward —
  * otherwise the same points would be held twice.
  */
 export function spendableWithRedemptions(

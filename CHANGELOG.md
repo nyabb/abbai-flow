@@ -115,13 +115,13 @@
 * add a responsive and touch layer with a documented breakpoint ladder ([a80ab23](https://github.com/nyabb/beacon/commit/a80ab23d342982de03858c98eed8f9609ef6f573))
 * add Display Mode, a read-only /display view for wall touchscreens ([143bdad](https://github.com/nyabb/beacon/commit/143bdadfe967d235ea9e0f3d352cbb08ba14a224))
 * document display mode and how to verify a kiosk build ([1ae324b](https://github.com/nyabb/beacon/commit/1ae324bef45dd00cbdf0e32efe312f4617e8235b))
-* drop the Capacitor shell, Beacon is a web-only build ([0ce8b0d](https://github.com/nyabb/beacon/commit/0ce8b0d2866c2d6ab55d2450071a49bf33e7f294))
+* drop the Capacitor shell, Abbai Flow is a web-only build ([0ce8b0d](https://github.com/nyabb/beacon/commit/0ce8b0d2866c2d6ab55d2450071a49bf33e7f294))
 * keep the wall display awake, in fullscreen, and out of the way when idle ([f4d9a32](https://github.com/nyabb/beacon/commit/f4d9a32f4e66c8cf2f7ea4e62c44bb990f2a3116))
 * let the planner pause a routine, and repair its module imports ([5e9ffd2](https://github.com/nyabb/beacon/commit/5e9ffd297c154a421691474c87195d97edd7e931))
 * make the interface comfortable to touch, not just to click ([955f13d](https://github.com/nyabb/beacon/commit/955f13da54cf9f54214d771d60c60c4f8b95fa73))
 * put the display-mode options in Settings > Display ([20b53df](https://github.com/nyabb/beacon/commit/20b53df4f5535f2597a705d8346739187efcbe6a))
 * stop burning a Raspberry Pi's CPU on work nobody can see ([afd02c3](https://github.com/nyabb/beacon/commit/afd02c3ff000d3448e9ba2ac3a33f715f97cf30f))
-* tell offline, Beacon-down and Home Assistant-down apart, and recover ([3534000](https://github.com/nyabb/beacon/commit/353400084383969130136c7d96e23563b40090f0))
+* tell offline, Abbai Flow-down and Home Assistant-down apart, and recover ([3534000](https://github.com/nyabb/beacon/commit/353400084383969130136c7d96e23563b40090f0))
 
 ## [1.52.1](https://github.com/nyabb/beacon/compare/v1.52.0...v1.52.1) (2026-11-10)
 
@@ -250,7 +250,7 @@
 
 ### Features
 
-* **chores:** manage rewards from Beacon and show them on the child screen ([b085e77](https://github.com/nyabb/beacon/commit/b085e77946430a001b91dd0124c2938365c8b609))
+* **chores:** manage rewards from Abbai Flow and show them on the child screen ([b085e77](https://github.com/nyabb/beacon/commit/b085e77946430a001b91dd0124c2938365c8b609))
 * **chores:** run the chores screen entirely on ChoreOps ([350be28](https://github.com/nyabb/beacon/commit/350be2869fb158ff74368a2f49c5efaba72b1344))
 
 # [1.44.0](https://github.com/nyabb/beacon/compare/v1.43.1...v1.44.0) (2026-11-06)
@@ -410,7 +410,7 @@
 * timer panel slides from right (matches sidebar position) ([8046e34](https://github.com/nyabb/beacon/commit/8046e342bb905a178b978e85d59e73396e9789c1))
 * **tokens:** wire the 10-role color tokens into real consumers ([fb9604c](https://github.com/nyabb/beacon/commit/fb9604c69c6402f232de3189ab10edb6d1fe5cac)), closes [#ef4444](https://github.com/nyabb/beacon/issues/ef4444) [#ef4444](https://github.com/nyabb/beacon/issues/ef4444) [#f59e0b](https://github.com/nyabb/beacon/issues/f59e0b)
 * use GitHub repo for astro-tinker dep (not local file path) ([cdf544d](https://github.com/nyabb/beacon/commit/cdf544daefcd86de240c366c733a7d0c0d5d3979))
-* use marketplace install for Beacon Claude plugin ([9b9f8b6](https://github.com/nyabb/beacon/commit/9b9f8b6aa5fa5e35efb96584a559f1146477ddf6))
+* use marketplace install for Abbai Flow Claude plugin ([9b9f8b6](https://github.com/nyabb/beacon/commit/9b9f8b6aa5fa5e35efb96584a559f1146477ddf6))
 * use node:20-alpine runtime instead of hassio base (s6 conflict) ([ea6adc4](https://github.com/nyabb/beacon/commit/ea6adc4dd085116a360256e91a519ec2c3d40243))
 * use nullish coalescing for ha_url — empty string was falling through to supervisor URL ([53769dd](https://github.com/nyabb/beacon/commit/53769ddccd9572dd578ce9a4af10c3da36bbbf7e))
 * use relative base path for HA ingress compatibility ([7882bb7](https://github.com/nyabb/beacon/commit/7882bb764eb571c9d48a848c321f48f176437600))
@@ -440,16 +440,16 @@
 * add-on API proxy — zero-config HA connection ([e16dbf5](https://github.com/nyabb/beacon/commit/e16dbf5c3e42d6d65db2e7cb0e04e4131aebec8e))
 * allow unassigned chores kids can claim ([9b301b9](https://github.com/nyabb/beacon/commit/9b301b9dcdd3d1c6278f92a387db940de5fa6a3f))
 * auto-detect HA ingress mode, adapt sidebar for available space ([5ea4b82](https://github.com/nyabb/beacon/commit/5ea4b82b420b79e1e49d2166b0b74d9b2f948ee9))
-* Beacon docs site with astro-tinker theme ([af5ad81](https://github.com/nyabb/beacon/commit/af5ad810cac0565c44456d17dbc1f990dc3ca1a8))
-* Beacon v0.2.0 — Skylight-style calendar + full feature suite ([7a5bf66](https://github.com/nyabb/beacon/commit/7a5bf660b1c02d7fbef9e2f112e429b1626aa557))
-* Beacon v1.0.0 — feature complete ([ad8befb](https://github.com/nyabb/beacon/commit/ad8befbca84390ed11fdbad4f45c79b53b3b21ae))
-* **brand:** Beacon Light icon set from single SVG source ([#56](https://github.com/nyabb/beacon/issues/56)) ([2506ee1](https://github.com/nyabb/beacon/commit/2506ee107706cf5dca626ba06108a26c98783a62)), closes [#f7a832](https://github.com/nyabb/beacon/issues/f7a832) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c)
+* Abbai Flow docs site with astro-tinker theme ([af5ad81](https://github.com/nyabb/beacon/commit/af5ad810cac0565c44456d17dbc1f990dc3ca1a8))
+* Abbai Flow v0.2.0 — Skylight-style calendar + full feature suite ([7a5bf66](https://github.com/nyabb/beacon/commit/7a5bf660b1c02d7fbef9e2f112e429b1626aa557))
+* Abbai Flow v1.0.0 — feature complete ([ad8befb](https://github.com/nyabb/beacon/commit/ad8befbca84390ed11fdbad4f45c79b53b3b21ae))
+* **brand:** Abbai Flow Light icon set from single SVG source ([#56](https://github.com/nyabb/beacon/issues/56)) ([2506ee1](https://github.com/nyabb/beacon/commit/2506ee107706cf5dca626ba06108a26c98783a62)), closes [#f7a832](https://github.com/nyabb/beacon/issues/f7a832) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c) [#101d3c](https://github.com/nyabb/beacon/issues/101d3c)
 * calendar-entity assignment for family members ([4b66c2e](https://github.com/nyabb/beacon/commit/4b66c2e8bfe52b71034e7ccf95192314225e8b29))
 * chore payout ledger with auto-generated parent chores ([ad8b38d](https://github.com/nyabb/beacon/commit/ad8b38d2705cd096de8ce191dac728163e7ac38d))
 * configurable dashboard layout presets ([92e1dc7](https://github.com/nyabb/beacon/commit/92e1dc737aff9baa4820d6faead148e83e518470))
 * configurable grocery list IDs and sidebar shopping card ([#39](https://github.com/nyabb/beacon/issues/39)) ([872878c](https://github.com/nyabb/beacon/commit/872878c61c4cc36594db080d6cab18a3472ba8c3)), closes [#32](https://github.com/nyabb/beacon/issues/32) [#26](https://github.com/nyabb/beacon/issues/26)
 * dashboard shows todo items from HA lists, music works via REST ([513f748](https://github.com/nyabb/beacon/commit/513f748faed1f40a9eadbff7edfa7f591aacfcd1))
-* dashboard view, music, photos, OSS docs — Beacon v0.3.0 ([e93dcc5](https://github.com/nyabb/beacon/commit/e93dcc5481b5073d659b175168f098101e17be85))
+* dashboard view, music, photos, OSS docs — Abbai Flow v0.3.0 ([e93dcc5](https://github.com/nyabb/beacon/commit/e93dcc5481b5073d659b175168f098101e17be85))
 * dedicated full-page ChoresView replacing slide-out panel ([a05b444](https://github.com/nyabb/beacon/commit/a05b444bd86fd592dc78f49c526c1aa288b27c7c))
 * dedicated full-screen Chores view with per-member columns ([29de05a](https://github.com/nyabb/beacon/commit/29de05a382a7aa43b1bf30a0afa44dd7ca3240f3))
 * default view setting, Midnight Light theme, updated README ([29662a3](https://github.com/nyabb/beacon/commit/29662a33a521c5d3c70683ad7ffe46f9a477dda0))
@@ -459,19 +459,19 @@
 * hourly forecast detail when tapping a day in weather view ([862eca2](https://github.com/nyabb/beacon/commit/862eca2786b753f13f8655aecde4d3eef2c7792a))
 * **icon:** ship simplified lighthouse icon system ([9cc1806](https://github.com/nyabb/beacon/commit/9cc1806fd0371322094377ab3081a44731478436))
 * implement classic dashboard layout preset ([b1b1758](https://github.com/nyabb/beacon/commit/b1b17586a042ea76ce5199578fe857bb98841760))
-* initial Beacon app — family command center for wall displays ([8885516](https://github.com/nyabb/beacon/commit/8885516fec9754126f58b1d5033f930c8c471ac7))
+* initial Abbai Flow app — family command center for wall displays ([8885516](https://github.com/nyabb/beacon/commit/8885516fec9754126f58b1d5033f930c8c471ac7))
 * left sidebar nav, expanded avatars, new brand assets ([1384a54](https://github.com/nyabb/beacon/commit/1384a54ec21156b57b5cba9504ad8ece9dabee5e))
 * max completions per chore frequency period ([b94a69f](https://github.com/nyabb/beacon/commit/b94a69f21167c2a6cdf68bd94cffb0842a79656c))
 * MCP chore CRUD and family member tools ([b6d1706](https://github.com/nyabb/beacon/commit/b6d1706b952384aa87ddf6a4bd2232c29e700ef0))
 * meal plan integration with dashboard display and MCP tools ([2c591bb](https://github.com/nyabb/beacon/commit/2c591bb56f8bc1a4f7618be7015d4aee1803ce7b))
-* move Beacon sidebar to right side — avoids HA sidebar overlap ([9e6ce5e](https://github.com/nyabb/beacon/commit/9e6ce5e1d0ff0f18675718e13944ea96f0fb017f))
+* move Abbai Flow sidebar to right side — avoids HA sidebar overlap ([9e6ce5e](https://github.com/nyabb/beacon/commit/9e6ce5e1d0ff0f18675718e13944ea96f0fb017f))
 * multi-tap counter for repeatable chores ([48b15e0](https://github.com/nyabb/beacon/commit/48b15e0366364d88fcd8f215b56d880f04e94e9b))
 * multiple simultaneous named timers ([6c5e356](https://github.com/nyabb/beacon/commit/6c5e356e09c4b44a99520641d7a182aa7d8f3cd8))
 * on-screen kiosk keyboard + Music Assistant search/browse/queue ([f1f2e60](https://github.com/nyabb/beacon/commit/f1f2e60cdda1ff32e7d0f7daab2a59c0802c98bb))
 * per-family-member dashboard with calendar columns ([e836365](https://github.com/nyabb/beacon/commit/e836365f0f27208b86d5da136f138f6c671226bc))
 * photo screensaver with Google Photos (HA) + Immich support ([8049c79](https://github.com/nyabb/beacon/commit/8049c79bea73e2a6af9ab82e70205f5135a35171))
-* rebuild docs with astro-terminal-docs theme + Beacon gold ([0c44556](https://github.com/nyabb/beacon/commit/0c44556663716c8d0081027b099d7d5211d690a6)), closes [#f59e0b](https://github.com/nyabb/beacon/issues/f59e0b)
-* rename Midnight → Beacon Dark, Midnight Light → Beacon Light ([6e62124](https://github.com/nyabb/beacon/commit/6e6212432f99fc94a5d2a264343e4738750b2c45)), closes [#0f172a](https://github.com/nyabb/beacon/issues/0f172a) [#f59e0b](https://github.com/nyabb/beacon/issues/f59e0b) [#f8fafc](https://github.com/nyabb/beacon/issues/f8fafc)
+* rebuild docs with astro-terminal-docs theme + Abbai Flow gold ([0c44556](https://github.com/nyabb/beacon/commit/0c44556663716c8d0081027b099d7d5211d690a6)), closes [#f59e0b](https://github.com/nyabb/beacon/issues/f59e0b)
+* rename Midnight → Abbai Flow Dark, Midnight Light → Abbai Flow Light ([6e62124](https://github.com/nyabb/beacon/commit/6e6212432f99fc94a5d2a264343e4738750b2c45)), closes [#0f172a](https://github.com/nyabb/beacon/issues/0f172a) [#f59e0b](https://github.com/nyabb/beacon/issues/f59e0b) [#f8fafc](https://github.com/nyabb/beacon/issues/f8fafc)
 * restructure as HA add-on repository ([76e766e](https://github.com/nyabb/beacon/commit/76e766ed12ee19550d275bc76a5d6f243dec12fe))
 * separate Lists and Tasks views with auto-categorization ([136ddc6](https://github.com/nyabb/beacon/commit/136ddc60120776d102b314b92dd972e8839a2728))
 * server-first data sync — all devices share same data ([831b344](https://github.com/nyabb/beacon/commit/831b344bedbb592d42a1d78a9597e0544b922b5d))
@@ -493,7 +493,7 @@
 
 ### Features
 
-* **brand:** Beacon Light icon set from single SVG source ([#56](https://github.com/asachs01/beacon/issues/56)) ([2506ee1](https://github.com/asachs01/beacon/commit/2506ee107706cf5dca626ba06108a26c98783a62)), closes [#f7a832](https://github.com/asachs01/beacon/issues/f7a832) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c)
+* **brand:** Abbai Flow Light icon set from single SVG source ([#56](https://github.com/asachs01/beacon/issues/56)) ([2506ee1](https://github.com/asachs01/beacon/commit/2506ee107706cf5dca626ba06108a26c98783a62)), closes [#f7a832](https://github.com/asachs01/beacon/issues/f7a832) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c) [#101d3c](https://github.com/asachs01/beacon/issues/101d3c)
 
 ## [1.39.6](https://github.com/asachs01/beacon/compare/v1.39.5...v1.39.6) (2026-10-17)
 
@@ -866,7 +866,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Bug Fixes
 
-* use marketplace install for Beacon Claude plugin ([9b9f8b6](https://github.com/asachs01/beacon/commit/9b9f8b6aa5fa5e35efb96584a559f1146477ddf6))
+* use marketplace install for Abbai Flow Claude plugin ([9b9f8b6](https://github.com/asachs01/beacon/commit/9b9f8b6aa5fa5e35efb96584a559f1146477ddf6))
 
 # [1.20.0](https://github.com/asachs01/beacon/compare/v1.19.0...v1.20.0) (2026-04-03)
 
@@ -940,7 +940,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Features
 
-* rename Midnight → Beacon Dark, Midnight Light → Beacon Light ([6e62124](https://github.com/asachs01/beacon/commit/6e6212432f99fc94a5d2a264343e4738750b2c45)), closes [#0f172a](https://github.com/asachs01/beacon/issues/0f172a) [#f59e0b](https://github.com/asachs01/beacon/issues/f59e0b) [#f8fafc](https://github.com/asachs01/beacon/issues/f8fafc)
+* rename Midnight → Abbai Flow Dark, Midnight Light → Abbai Flow Light ([6e62124](https://github.com/asachs01/beacon/commit/6e6212432f99fc94a5d2a264343e4738750b2c45)), closes [#0f172a](https://github.com/asachs01/beacon/issues/0f172a) [#f59e0b](https://github.com/asachs01/beacon/issues/f59e0b) [#f8fafc](https://github.com/asachs01/beacon/issues/f8fafc)
 
 # [1.14.0](https://github.com/asachs01/beacon/compare/v1.13.0...v1.14.0) (2026-03-30)
 
@@ -1079,7 +1079,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Added
 
-* HA custom sentences and intent handlers for voice control of Beacon features
+* HA custom sentences and intent handlers for voice control of Abbai Flow features
 * Voice commands: add to lists, complete chores, check calendar, navigate views, set timers, query grocery/chore status
 * Auto-install of voice intents into HA config on add-on startup
 * Install script at `scripts/install-voice-intents.sh` for manual deployment
@@ -1186,7 +1186,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### New
 - Built-in local task lists (To-Do, Shopping List) that work without any HA integration
-- Built-in local calendar ("Beacon") for standalone event management
+- Built-in local calendar ("Abbai Flow") for standalone event management
 - Both local and HA-powered lists/calendars can be used side by side
 
 ### Fixed

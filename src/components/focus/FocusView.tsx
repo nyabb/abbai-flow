@@ -5,7 +5,7 @@ import { useChoreOps } from '../../hooks/useChoreOps';
 import { findUserForMember } from '../../api/choreops';
 import { MemberAvatar } from '../MemberAvatar';
 import { useRoutines } from '../../hooks/useRoutines';
-import { BeaconSettings } from '../../hooks/useSettings';
+import { AbbaiSettings } from '../../hooks/useSettings';
 import { ScreenSaver } from '../ScreenSaver';
 import { useTranslation } from '../../i18n';
 import { RoutineCard } from './RoutineCard';
@@ -14,7 +14,7 @@ import { pickRoutine, getTimeOfDay } from './period';
 
 interface FocusViewProps {
   memberId: string;
-  settings: BeaconSettings;
+  settings: AbbaiSettings;
   onExit: () => void;
 }
 

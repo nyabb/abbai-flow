@@ -1,4 +1,4 @@
-// Automation: 01 — Meet Beacon (~45s)
+// Automation: 01 — Meet Abbai Flow (~45s)
 // Playwright-style pseudocode for screen recording
 
 // Setup
@@ -28,6 +28,6 @@ stopRecording();
 startRecording('01-closing');
 smoothScroll({ target: 'body', position: 'top', duration: 2000 });
 wait(3000); // hold on full dashboard
-// overlay Beacon logo in post-production
+// overlay Abbai Flow logo in post-production
 wait(5000);
 stopRecording();

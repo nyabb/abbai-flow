@@ -1,4 +1,4 @@
-# Beacon — Engineering review
+# Abbai Flow — Engineering review
 
 Date: 2026-11-09
 Scope: architecture, reliability, security, performance, tests, developer experience.

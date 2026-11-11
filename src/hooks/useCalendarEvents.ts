@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { CalendarEvent, CalendarInfo, CalendarColorMember, resolveCalendarColor } from '../types';
-import { haFetch, hasToken, callBeaconAction, BeaconActionError } from '../api/ha-rest';
+import { haFetch, hasToken, callAbbaiAction, AbbaiActionError } from '../api/ha-rest';
 import { HomeAssistantClient, toWsEventPayload } from '../api/homeassistant';
 import { mapWithConcurrency, isAbortError } from '../utils/bounded-map';
 
@@ -87,7 +87,7 @@ export class CalendarNotSupportedError extends Error {
 }
 
 function isNotSupported(err: unknown): boolean {
-  if (err instanceof BeaconActionError) return err.code === 'not_supported';
+  if (err instanceof AbbaiActionError) return err.code === 'not_supported';
   if (err && typeof err === 'object' && 'code' in err)
     return (err as { code?: string }).code === 'not_supported';
   return false;
@@ -221,7 +221,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.createEvent(calendarId, event);
         } else {
-          await callBeaconAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/beacon-action/calendar-event', {
             op: 'create',
             entity_id: calendarId,
             event: toWsEventPayload(event),
@@ -271,7 +271,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.updateEvent(calendarId, uid, event);
         } else {
-          await callBeaconAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/beacon-action/calendar-event', {
             op: 'update',
             entity_id: calendarId,
             uid,
@@ -297,7 +297,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.deleteEvent(calendarId, uid);
         } else {
-          await callBeaconAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/beacon-action/calendar-event', {
             op: 'delete',
             entity_id: calendarId,
             uid,

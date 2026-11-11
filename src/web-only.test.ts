@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 /**
- * Beacon is web-only (desktop, mobile browser and a Raspberry Pi Chromium
+ * Abbai Flow is web-only (desktop, mobile browser and a Raspberry Pi Chromium
  * kiosk). These guards fail loudly if a native shell creeps back in — the
  * app's whole deployment story is one Docker image plus a browser.
  */

@@ -53,7 +53,7 @@ describe('ChorePlanner language picker', () => {
     localStorage.clear();
   });
 
-  it('offers every locale Beacon supports, exactly like Settings', () => {
+  it('offers every locale Abbai Flow supports, exactly like Settings', () => {
     renderPlanner('nl', () => {});
     const select = screen.getByLabelText('Taal / Regio') as HTMLSelectElement;
 

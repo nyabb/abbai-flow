@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Beacon icon export script.
+ * Abbai Flow icon export script.
  *
- * Generates every raster icon size Beacon needs (favicon, PWA manifest icons)
+ * Generates every raster icon size Abbai Flow needs (favicon, PWA manifest icons)
  * from the single source SVG (`src/assets/beacon-app-icon.svg`)
  * plus a maskable variant (`src/assets/beacon-app-icon-maskable.svg`).
  *
@@ -34,7 +34,7 @@ async function exportSize(svgPath, size, outPath) {
 }
 
 async function main() {
-  console.log('Exporting Beacon icon set from', path.relative(root, SOURCE_SVG));
+  console.log('Exporting Abbai Flow icon set from', path.relative(root, SOURCE_SVG));
 
   for (const size of STANDARD_SIZES) {
     const outPath = path.join(assetsDir, `beacon-app-icon-${size}.png`);

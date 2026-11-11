@@ -6,8 +6,8 @@ const { haFetchMock } = vi.hoisted(() => ({ haFetchMock: vi.fn() }));
 vi.mock('../api/ha-rest', () => ({
   haFetch: haFetchMock,
   hasToken: () => true,
-  callBeaconAction: vi.fn(),
-  BeaconActionError: class BeaconActionError extends Error {
+  callAbbaiAction: vi.fn(),
+  AbbaiActionError: class AbbaiActionError extends Error {
     code: string | null = null;
     status = 0;
   },

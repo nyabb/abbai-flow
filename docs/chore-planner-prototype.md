@@ -11,7 +11,7 @@ Chores screen in every build.
 
 | Mode                               | How                                     | Data source                                       |
 | ---------------------------------- | --------------------------------------- | ------------------------------------------------- |
-| Live planner (default, all builds) | Open **Chores**                         | Home Assistant ChoreOps + Beacon family profiles  |
+| Live planner (default, all builds) | Open **Chores**                         | Home Assistant ChoreOps + Abbai Flow family profiles  |
 | Classic board (dev only)           | `http://localhost:3001/?chores=classic` | ChoreOps, with the claim picker and decline       |
 | Seeded prototype (dev only)        | `http://localhost:3001/?chores=demo`    | `localStorage` key `beacon_chore_planner_demo_v1` |
 
@@ -22,16 +22,16 @@ Reset the prototype by clearing the `beacon_chore_planner_demo_v1` key (and
 
 The default Chores screen renders ChoreOps data in the planner layout:
 
-- **People** come from Beacon family settings — photo, avatar, colour, and display name —
+- **People** come from Abbai Flow family settings — photo, avatar, colour, and display name —
   joined to ChoreOps users by `choreops_user` or name. Unlinked users fall back to their
   ChoreOps name and a neutral avatar.
 - **Chores** come from ChoreOps status sensors and action buttons: name, status, points,
   due date, and icon (`mdi:` icons map to a readable emoji).
 - **Actions** press the ChoreOps buttons: a claim is immediate, while approving a chore the
-  child finished requires a Beacon parent PIN. Decline and the unassigned claim picker live on
+  child finished requires a Abbai Flow parent PIN. Decline and the unassigned claim picker live on
   the classic board (`?chores=classic`).
 - **Creation and deletion** go through `choreops.create_chore` and `choreops.delete_chore`;
-  Beacon never keeps a second chore ledger.
+  Abbai Flow never keeps a second chore ledger.
 
 Demo-only affordances (routine pause, retry/expiry copy, undo, point destinations) are hidden
 when the board runs on ChoreOps, because ChoreOps owns those rules.
@@ -42,7 +42,7 @@ The live board's **+** button creates the chore in ChoreOps with `choreops.creat
 - Points, and repeat: one-time, daily, weekly, or monthly
 - Weekday selection when repeat is weekly
 
-Beacon sends only the fields you set, then re-reads ChoreOps so every display agrees. Save stays
+Abbai Flow sends only the fields you set, then re-reads ChoreOps so every display agrees. Save stays
 disabled until a name and at least one assignee are present. ChoreOps keeps its own defaults for
 due dates, notifications, and approval rules, which stay editable in Home Assistant.
 

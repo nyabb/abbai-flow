@@ -13,7 +13,7 @@ interface Props {
 
 const {
   title,
-  description = 'Documentation for Beacon — your family\'s daily signal',
+  description = 'Documentation for Abbai Flow — your family\'s daily signal',
   canonicalURL,
   ogImage,
   ogType,
@@ -45,7 +45,7 @@ const {
         if (theme) document.documentElement.setAttribute('data-theme', theme);
         else document.documentElement.setAttribute('data-theme', 'beacon');
         var dark = localStorage.getItem('td-dark');
-        // Default to dark mode for Beacon theme (it's designed dark-first)
+        // Default to dark mode for Abbai Flow theme (it's designed dark-first)
         if (dark === 'true' || dark === null) {
           document.documentElement.classList.add('dark');
         }

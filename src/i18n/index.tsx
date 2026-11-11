@@ -45,7 +45,7 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
   });
 }
 
-/** Builds a translator + date-fns locale for a `BeaconSettings.locale` value. */
+/** Builds a translator + date-fns locale for a `AbbaiSettings.locale` value. */
 export function createI18n(locale: string): I18nValue {
   const lang = langForLocale(locale);
   const dictionary = DICTIONARIES[lang];

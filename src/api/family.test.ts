@@ -16,7 +16,7 @@ const choreOpsUser: ChoreOpsUser = {
 describe('FamilyStore.syncChoreOpsMembers', () => {
   afterEach(() => localStorage.clear());
 
-  it('merges ChoreOps state into the linked profile and preserves Beacon fields', async () => {
+  it('merges ChoreOps state into the linked profile and preserves Abbai Flow fields', async () => {
     const linkedMember: FamilyMember = {
       id: 'member-1',
       name: 'Maya',
@@ -51,7 +51,7 @@ describe('FamilyStore.syncChoreOpsMembers', () => {
     });
   });
 
-  it('does not create Beacon members for unlinked ChoreOps users', async () => {
+  it('does not create Abbai Flow members for unlinked ChoreOps users', async () => {
     const store = new FamilyStore();
 
     expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(false);

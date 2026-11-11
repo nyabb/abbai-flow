@@ -1,4 +1,4 @@
-# Beacon Brand Guide
+# Abbai Flow Brand Guide
 
 > **Your family's daily signal.**
 
@@ -8,7 +8,7 @@
 
 ### Name
 
-**Beacon**
+**Abbai Flow**
 
 ### Tagline
 
@@ -16,11 +16,11 @@
 
 ### Positioning
 
-Beacon is an open-source, self-hosted family dashboard designed for wall-mounted displays in smart homes. It replaces expensive commercial products like Skylight ($650+) with a free, privacy-respecting alternative that runs on commodity hardware. Beacon integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to give families a single glanceable view of their day.
+Abbai Flow is an open-source, self-hosted family dashboard designed for wall-mounted displays in smart homes. It replaces expensive commercial products like Skylight ($650+) with a free, privacy-respecting alternative that runs on commodity hardware. Abbai Flow integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to give families a single glanceable view of their day.
 
 ### Personality
 
-Beacon's personality is built around four pillars:
+Abbai Flow's personality is built around four pillars:
 
 | Trait | What it means | What it does NOT mean |
 |-------|--------------|----------------------|
@@ -29,7 +29,7 @@ Beacon's personality is built around four pillars:
 | **Modern** | Clean design, current aesthetics | Trendy, flashy, or overwrought |
 | **Approachable** | Anyone in the family can use it | Dumbed-down or patronizing |
 
-Think of Beacon like a lighthouse for your family's day: steadily present, casting a warm glow, guiding everyone through the routine without demanding attention.
+Think of Abbai Flow like a lighthouse for your family's day: steadily present, casting a warm glow, guiding everyone through the routine without demanding attention.
 
 ---
 
@@ -37,7 +37,7 @@ Think of Beacon like a lighthouse for your family's day: steadily present, casti
 
 ### Design Principles
 
-The Beacon logo must:
+The Abbai Flow logo must:
 
 - Work at sizes from 16px favicons to 512px app icons
 - Render cleanly in monochrome (single color on transparent)
@@ -51,7 +51,7 @@ The icon is a **minimal geometric beacon/lighthouse silhouette** viewed from the
 1. **Base**: A short, wide trapezoid representing the lighthouse foundation. Slightly wider at the bottom than the top. Rounded corners at the bottom edges (2px radius at icon scale).
 2. **Tower**: A tall, narrow trapezoid tapering upward from the base. Clean straight edges. The tower is roughly 3x taller than the base.
 3. **Lantern room**: A small rectangle at the top of the tower, slightly wider than the tower's top edge, creating a subtle overhang.
-4. **Glow element**: Three concentric arc segments radiating outward from the lantern room to the upper-left and upper-right (like a Wi-Fi signal icon rotated 90 degrees, but with only the top half). The arcs use Beacon Gold (#f59e0b) while the tower structure uses the primary foreground color. The arcs decrease in opacity: innermost at 100%, middle at 60%, outermost at 30%.
+4. **Glow element**: Three concentric arc segments radiating outward from the lantern room to the upper-left and upper-right (like a Wi-Fi signal icon rotated 90 degrees, but with only the top half). The arcs use Abbai Flow Gold (#f59e0b) while the tower structure uses the primary foreground color. The arcs decrease in opacity: innermost at 100%, middle at 60%, outermost at 30%.
 
 The overall proportions fit within a square bounding box. The tower is centered horizontally. Negative space is generous -- the icon should breathe.
 
@@ -65,7 +65,7 @@ The standalone beacon icon as described above. Used for favicons, app icons, and
 
 ### Variation B: Icon + Wordmark (Horizontal)
 
-The beacon icon to the left, the word "Beacon" to the right, vertically centered. The wordmark uses Plus Jakarta Sans at SemiBold (600) weight. Letter-spacing: -0.02em for a slightly tight, modern feel.
+The beacon icon to the left, the word "Abbai Flow" to the right, vertically centered. The wordmark uses Plus Jakarta Sans at SemiBold (600) weight. Letter-spacing: -0.02em for a slightly tight, modern feel.
 
 - Icon height equals the cap-height of the wordmark
 - Gap between icon and wordmark: 0.75x the icon width
@@ -73,7 +73,7 @@ The beacon icon to the left, the word "Beacon" to the right, vertically centered
 
 ### Variation C: Wordmark Only
 
-The word "Beacon" in Plus Jakarta Sans SemiBold (600), letter-spacing -0.02em. The dot of the letter "a" is optionally replaced with a small filled circle in Beacon Gold to echo the glow motif. This substitution is subtle and optional -- skip it if it harms legibility at the target size.
+The word "Abbai Flow" in Plus Jakarta Sans SemiBold (600), letter-spacing -0.02em. The dot of the letter "a" is optionally replaced with a small filled circle in Abbai Flow Gold to echo the glow motif. This substitution is subtle and optional -- skip it if it harms legibility at the target size.
 
 - Used for: in-app header when the icon is already present elsewhere, marketing text
 - Minimum size: 14px font size
@@ -88,7 +88,7 @@ The word "Beacon" in Plus Jakarta Sans SemiBold (600), letter-spacing -0.02em. T
 |------|-----|-----|-----|-------|
 | Deep Navy | `#0f172a` | rgb(15, 23, 42) | hsl(222, 47%, 11%) | Dark mode backgrounds, primary dark surface |
 | Warm White | `#f8fafc` | rgb(248, 250, 252) | hsl(210, 40%, 98%) | Primary text on dark, light mode background |
-| Beacon Gold | `#f59e0b` | rgb(245, 158, 11) | hsl(38, 92%, 50%) | Accent color, the "glow", active states, highlights |
+| Abbai Flow Gold | `#f59e0b` | rgb(245, 158, 11) | hsl(38, 92%, 50%) | Accent color, the "glow", active states, highlights |
 | Soft Blue | `#3b82f6` | rgb(59, 130, 246) | hsl(217, 91%, 60%) | Interactive elements, links, buttons |
 
 ### Calendar / Family Member Colors
@@ -111,7 +111,7 @@ Assignment order: Ocean is the default first-member color. Additional members re
 | Name | HEX | RGB | HSL | Usage |
 |------|-----|-----|-----|-------|
 | Success | `#22c55e` | rgb(34, 197, 94) | hsl(142, 71%, 45%) | Confirmation, completed states |
-| Warning | `#f59e0b` | rgb(245, 158, 11) | hsl(38, 92%, 50%) | Caution states (shares value with Beacon Gold) |
+| Warning | `#f59e0b` | rgb(245, 158, 11) | hsl(38, 92%, 50%) | Caution states (shares value with Abbai Flow Gold) |
 | Error | `#ef4444` | rgb(239, 68, 68) | hsl(0, 84%, 60%) | Errors, destructive actions |
 | Info | `#06b6d4` | rgb(6, 182, 212) | hsl(189, 94%, 43%) | Informational callouts, tips |
 
@@ -143,7 +143,7 @@ Assignment order: Ocean is the default first-member color. Additional members re
 
 ### Color Usage Rules
 
-1. **Beacon Gold is the hero.** Use it sparingly for maximum impact: the current time, the active day indicator, primary action buttons, and the logo glow. Never use it for large filled areas.
+1. **Abbai Flow Gold is the hero.** Use it sparingly for maximum impact: the current time, the active day indicator, primary action buttons, and the logo glow. Never use it for large filled areas.
 2. **Dark mode is the default.** Wall-mounted displays in living spaces look best with dark backgrounds, especially in the evening. Light mode activates automatically during daytime hours.
 3. **Calendar colors appear as left-border accents** on event cards (4px wide) and as small dots next to member names. They should never fill entire cards.
 4. **Text on dark backgrounds** uses Warm White (#f8fafc) for primary content and #94a3b8 for secondary/supporting text. Never use pure white (#ffffff) on Dark Navy -- it creates excessive contrast.
@@ -196,7 +196,7 @@ These sizes are calibrated for readability at approximately 6 feet (1.8 meters) 
 
 **Lucide Icons** (https://lucide.dev)
 
-Lucide is chosen for consistency with the Home Assistant ecosystem and its clean, minimal aesthetic. All icons in the Beacon interface must come from Lucide unless a custom icon is specifically required.
+Lucide is chosen for consistency with the Home Assistant ecosystem and its clean, minimal aesthetic. All icons in the Abbai Flow interface must come from Lucide unless a custom icon is specifically required.
 
 ### Icon Specifications
 
@@ -233,7 +233,7 @@ Lucide is chosen for consistency with the Home Assistant ecosystem and its clean
 
 1. Icons always accompany text labels in navigation and section headings. Never use an unlabeled icon as the sole means of conveying meaning.
 2. Interactive icons (buttons) have a minimum tap target of 44x44px regardless of the icon's visual size.
-3. Icon color matches the adjacent text color. Active/selected state icons use Beacon Gold (#f59e0b).
+3. Icon color matches the adjacent text color. Active/selected state icons use Abbai Flow Gold (#f59e0b).
 4. Do not mix icon libraries. If Lucide does not have a needed icon, request a custom SVG drawn in the same style (1.5px stroke, round caps, round joins, 24px viewBox).
 
 ---
@@ -269,7 +269,7 @@ All spacing is derived from a **base unit of 8px**.
 
 ### Three-Panel Layout
 
-The primary Beacon display uses a three-panel horizontal layout:
+The primary Abbai Flow display uses a three-panel horizontal layout:
 
 ```
 +------------+------------------------+------------+
@@ -308,7 +308,7 @@ The primary Beacon display uses a three-panel horizontal layout:
 
 ### General Principles
 
-Wall-mounted displays are ambient. Motion should be **invisible** -- it should smooth transitions without calling attention to itself. Beacon is not a phone app; it does not need to entertain. It needs to inform.
+Wall-mounted displays are ambient. Motion should be **invisible** -- it should smooth transitions without calling attention to itself. Abbai Flow is not a phone app; it does not need to entertain. It needs to inform.
 
 ### Transition Specifications
 
@@ -325,7 +325,7 @@ Wall-mounted displays are ambient. Motion should be **invisible** -- it should s
 ### What Does NOT Animate
 
 - **Clock digits**: No tick animation, no flip-clock effect, no transitions between numbers. The time simply updates. Animating the clock is distracting on a persistent display.
-- **Page transitions**: There are none. Beacon is a single-page display. If settings or configuration panels appear, they overlay as modals.
+- **Page transitions**: There are none. Abbai Flow is a single-page display. If settings or configuration panels appear, they overlay as modals.
 - **Continuous animations**: No pulsing, spinning, or looping effects anywhere in the default display. The screen should be indistinguishable from a static image when no data changes.
 - **Weather icons**: Static. No animated rain, no bouncing sun. Motion on a persistent display creates visual noise.
 
@@ -339,7 +339,7 @@ When the user has `prefers-reduced-motion: reduce` enabled, all transitions beco
 
 ### Guiding Principles
 
-Beacon speaks like a helpful family member, not like software. The tone is warm and direct without being overly casual or resorting to jargon.
+Abbai Flow speaks like a helpful family member, not like software. The tone is warm and direct without being overly casual or resorting to jargon.
 
 ### Language Rules
 
@@ -387,7 +387,7 @@ This section provides exact specifications for generating all brand assets. Thes
 
 | Variant | Size | Format | Notes |
 |---------|------|--------|-------|
-| Standard | 32x32px | PNG, ICO | Icon-only mark, no glow arcs (too small). Solid Beacon Gold tower on transparent background. |
+| Standard | 32x32px | PNG, ICO | Icon-only mark, no glow arcs (too small). Solid Abbai Flow Gold tower on transparent background. |
 | Small | 16x16px | PNG, ICO | Simplified: tower shape only, no base detail. Solid fill, no stroke. |
 | SVG | scalable | SVG | Full icon with glow arcs. Used for modern browsers that support SVG favicons. |
 
@@ -395,7 +395,7 @@ This section provides exact specifications for generating all brand assets. Thes
 
 | Variant | Size | Format | Notes |
 |---------|------|--------|-------|
-| Primary | 512x512px | PNG | Full icon on Deep Navy (#0f172a) rounded-rectangle background (corner radius 80px). Icon centered with 20% padding on all sides. Glow arcs rendered in Beacon Gold with opacity gradient. |
+| Primary | 512x512px | PNG | Full icon on Deep Navy (#0f172a) rounded-rectangle background (corner radius 80px). Icon centered with 20% padding on all sides. Glow arcs rendered in Abbai Flow Gold with opacity gradient. |
 | Standard | 192x192px | PNG | Same as 512 but optimized for the size. Simplify glow arcs if they become muddy. |
 | Maskable | 512x512px | PNG | Icon centered with 40% safe zone. Background fills entire canvas in Deep Navy. For Android adaptive icons. |
 
@@ -407,7 +407,7 @@ This section provides exact specifications for generating all brand assets. Thes
 | Background | Deep Navy (#0f172a) |
 | Layout | Icon + Wordmark centered horizontally. Icon on left, wordmark on right (Variation B). Vertically centered. |
 | Tagline | "Your family's daily signal" in Inter Regular, 24px, #94a3b8, centered below the logo lockup with 32px spacing. |
-| Bottom bar | Optional: a subtle 4px horizontal line in Beacon Gold at the bottom of the image. |
+| Bottom bar | Optional: a subtle 4px horizontal line in Abbai Flow Gold at the bottom of the image. |
 | Border | None. |
 | Format | PNG or JPG (quality 90+). |
 
@@ -419,7 +419,7 @@ This section provides exact specifications for generating all brand assets. Thes
 |----------|-------|
 | Size | 256x256px |
 | Format | PNG |
-| Content | Icon-only mark (Variation A). Deep Navy background, fully rounded (circle or HA-standard square with rounded corners). Icon in Warm White with glow arcs in Beacon Gold. Centered with 20% padding. |
+| Content | Icon-only mark (Variation A). Deep Navy background, fully rounded (circle or HA-standard square with rounded corners). Icon in Warm White with glow arcs in Abbai Flow Gold. Centered with 20% padding. |
 
 **HA Add-on Logo:**
 
@@ -427,7 +427,7 @@ This section provides exact specifications for generating all brand assets. Thes
 |----------|-------|
 | Size | 256x256px (or 512x128px horizontal if HA supports it) |
 | Format | PNG |
-| Content | Icon + Wordmark (Variation B). Deep Navy background. Icon and "Beacon" text in Warm White. Glow arcs in Beacon Gold. Scaled to fit with 15% padding. |
+| Content | Icon + Wordmark (Variation B). Deep Navy background. Icon and "Abbai Flow" text in Warm White. Glow arcs in Abbai Flow Gold. Scaled to fit with 15% padding. |
 
 ### Color Specification Reference
 
@@ -446,7 +446,7 @@ Warm White
   RGB: 248, 250, 252
   HSL: 210, 40%, 98%
 
-Beacon Gold
+Abbai Flow Gold
   HEX: #f59e0b
   RGB: 245, 158, 11
   HSL: 38, 92%, 50%

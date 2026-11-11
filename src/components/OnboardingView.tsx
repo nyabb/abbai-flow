@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ArrowRight, Check, ExternalLink, Key, LogIn } from 'lucide-react';
-import beaconLogo from '../assets/beacon-app-icon.svg';
+import abbaiLogo from '../assets/abbai-flow-icon.svg';
 import { useTranslation } from '../i18n';
 
 // ---------------------------------------------------------------------------
@@ -264,7 +264,7 @@ export default function OnboardingView({ onComplete, onOAuthStart }: OnboardingV
 
   const renderStep1 = () => (
     <div style={{ textAlign: 'center' }}>
-      <img src={beaconLogo} alt="Beacon" style={styles.logo} />
+      <img src={abbaiLogo} alt="Abbai Flow" style={styles.logo} />
       <h1 style={styles.heading}>{t('onboarding.welcome')}</h1>
       <p style={styles.subtext}>{t('onboarding.welcomeDesc')}</p>
       <button

@@ -2,4 +2,3 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://beacon-family-docs.netlify.app/sitemap-index.xml

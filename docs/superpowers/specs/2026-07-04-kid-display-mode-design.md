@@ -30,7 +30,7 @@ New module `src/focus.ts`:
   `beacon_display_member`.
 - `setDeviceFocusMember(id: string | null)` — writes/clears the localStorage
   key.
-- The value is **deliberately not** part of `BeaconSettings`: settings persist
+- The value is **deliberately not** part of `Abbai FlowSettings`: settings persist
   through `beacon-store` and sync across devices in add-on mode; the display
   assignment must stay per-device. Plain `localStorage` is per-device.
 

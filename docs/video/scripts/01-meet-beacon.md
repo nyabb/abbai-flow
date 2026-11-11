@@ -1,4 +1,4 @@
-# Meet Beacon
+# Meet Abbai Flow
 
 **Duration:** ~45 seconds
 
@@ -8,7 +8,7 @@
 
 **Scene:** Full dashboard view — clock front and center, calendar events down the side, weather widget showing today's forecast, task counts visible.
 
-**Voice:** "This is Beacon. It's a family dashboard — the kind of screen you put in your kitchen or hallway so everyone knows what's happening today. Right now you can see the time, today's weather, upcoming calendar events, and what's on the family's to-do list."
+**Voice:** "This is Abbai Flow. It's a family dashboard — the kind of screen you put in your kitchen or hallway so everyone knows what's happening today. Right now you can see the time, today's weather, upcoming calendar events, and what's on the family's to-do list."
 
 **Transitions:** Fade in from black. Camera holds steady on the full dashboard.
 
@@ -26,8 +26,8 @@
 
 ## Scene 3: Closing (35s–45s)
 
-**Scene:** Pull back to full dashboard. Beacon logo appears in corner.
+**Scene:** Pull back to full dashboard. Abbai Flow logo appears in corner.
 
-**Voice:** "Beacon is free, open source, and runs on any screen — a tablet on the wall, an old laptop in the kitchen, or your phone. That's Beacon."
+**Voice:** "Abbai Flow is free, open source, and runs on any screen — a tablet on the wall, an old laptop in the kitchen, or your phone. That's Abbai Flow."
 
-**Transitions:** Gentle zoom out to full view, fade to Beacon logo + tagline.
+**Transitions:** Gentle zoom out to full view, fade to Abbai Flow logo + tagline.

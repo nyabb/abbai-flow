@@ -53,6 +53,12 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
   const [selectedListId, setSelectedListId] = useState<string>(defaultListId || '');
   const [haItems, setHaItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  /**
+   * A failed Home Assistant call used to look like an empty list: the catch
+   * cleared the items and the page said "no items yet". That reads as "my tasks
+   * disappeared", so the failure is now shown, with a retry.
+   */
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = useState(false);
@@ -181,9 +187,12 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
 
       const entityResponse = result?.service_response?.[entityId];
       setHaItems(entityResponse?.items ?? []);
+      setLoadError(null);
     } catch (err) {
       console.warn('GroceryView: Failed to load items', err);
-      setHaItems([]);
+      // Keep whatever was on screen: emptying the list made a connection
+      // problem look like a household with nothing to do.
+      setLoadError(err instanceof Error ? err.message : t('grocery.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -346,6 +355,19 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
           <Plus size={20} />
         </button>
       </form>
+
+      {loadError && !isLocal && (
+        <div className="grocery-view-error" role="status">
+          <span>{t('grocery.loadFailed')}</span>
+          <button
+            type="button"
+            className="grocery-view-retry"
+            onClick={() => loadHaItems(selectedListId)}
+          >
+            {t('grocery.retry')}
+          </button>
+        </div>
+      )}
 
       {/* Items list */}
       <div className="grocery-view-list">

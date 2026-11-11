@@ -1,54 +1,62 @@
-.PHONY: dev build lint typecheck docker-build docker-push clean cap-sync cap-ios cap-android
+# Abbai Flow — developer tasks
+#
+# The app is web-only: a Vite build plus a small Node server. There are no
+# native wrappers, so there is nothing here for Capacitor, Xcode or Android
+# Studio. Container images are produced by .github/workflows/docker-image.yml;
+# the targets below build and publish one by hand.
 
-IMAGE := ghcr.io/asachs01/beacon
-TAG   := $(shell grep '^version:' config.yaml | sed 's/version: *"\{0,1\}\([^"]*\)"\{0,1\}/\1/')
+IMAGE ?= abbai-flow
+TAG   := $(shell node -p "require('./package.json').version")
 
-## Development server
-dev:
+.PHONY: help dev build preview lint typecheck test test-server test-all format \
+        docker-build docker-push clean
+
+help:
+	@grep -E '^[a-zA-Z-]+:.*?## .*$$' $(MAKEFILE_LIST) \
+		| awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
+
+dev: ## Development server (http://localhost:5173)
 	npm run dev
 
-## Production build
-build:
+build: ## Production build (tsc + vite build into dist/)
 	npm run build
 
-## Lint (add eslint when configured)
-lint:
-	@echo "No linter configured yet"
+preview: ## Preview the production build
+	npm run preview
 
-## TypeScript type-check (no emit)
-typecheck:
+lint: ## ESLint
+	npm run lint
+
+typecheck: ## TypeScript type-check, no emit
 	npx tsc --noEmit
 
-## Build Docker image locally
-docker-build:
+test: ## Frontend tests
+	npm run test
+
+test-server: ## Server tests (node --test)
+	npm run test:server
+
+test-all: ## Both suites
+	npm run test:all
+
+format: ## Prettier
+	npm run format
+
+docker-build: ## Build the container image locally for this machine
 	docker buildx build \
-		--platform linux/amd64 \
 		--tag $(IMAGE):$(TAG) \
 		--tag $(IMAGE):latest \
 		--load \
 		.
 
-## Push Docker image to GHCR
-docker-push:
+## Build and push amd64 + arm64 to a registry.
+docker-push: ## Override IMAGE, e.g. `make docker-push IMAGE=ghcr.io/<owner>/abbai-flow`
 	docker buildx build \
-		--platform linux/amd64,linux/arm64,linux/arm/v7 \
+		--platform linux/amd64,linux/arm64 \
 		--tag $(IMAGE):$(TAG) \
 		--tag $(IMAGE):latest \
 		--push \
 		.
 
-## Sync web build to native platforms
-cap-sync:
-	npm run cap:sync
-
-## Open iOS project in Xcode
-cap-ios:
-	npm run cap:ios
-
-## Open Android project in Android Studio
-cap-android:
-	npm run cap:android
-
-## Remove build artifacts
-clean:
+clean: ## Remove build output and dependencies
 	rm -rf dist node_modules

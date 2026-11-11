@@ -57,7 +57,7 @@ export const en = {
   'settings.appearance.reducedMotionSublabel':
     'Shortens every animation and transition in the app.',
   'display.connection.online': 'Connected',
-  'display.connection.beaconDown': 'Beacon unreachable',
+  'display.connection.beaconDown': 'Abbai Flow unreachable',
   'display.connection.haDown': 'Home Assistant unreachable',
   'display.connection.offline': 'No internet connection',
   'nav.display': 'Display mode',
@@ -195,7 +195,7 @@ export const en = {
 
   // ---- settings: general ----
   'settings.general.title': 'General',
-  'settings.general.desc': 'Basic preferences for your Beacon display.',
+  'settings.general.desc': 'Basic preferences for your Abbai Flow display.',
   'settings.general.familyNameLabel': 'Family Name',
   'settings.general.familyNameSublabel': 'Shown in the calendar header',
   'settings.general.defaultViewLabel': 'Default View',
@@ -256,7 +256,7 @@ export const en = {
   'settings.family.photoError': 'That file could not be used. Try a PNG, JPEG or WebP image.',
   'settings.family.haMembersLabel': 'From Home Assistant',
   'settings.family.haMembersEmpty':
-    'No Home Assistant people found. Check that Beacon can reach Home Assistant, then reload.',
+    'No Home Assistant people found. Check that Abbai Flow can reach Home Assistant, then reload.',
   'settings.family.avatarCategory.people': 'People',
   'settings.family.avatarCategory.skinTones': 'Skin Tones',
   'settings.family.avatarCategory.faces': 'Faces',
@@ -619,6 +619,8 @@ export const en = {
   'grocery.completed': 'Completed ({count})',
   'grocery.deleteItem': 'Delete item',
   'grocery.haList': '{name} (HA)',
+  'grocery.loadFailed': 'Could not load this list from Home Assistant',
+  'grocery.retry': 'Retry',
   'grocery.tabsLabel': 'List type',
   'grocery.tab.grocery': 'Groceries',
   'grocery.tab.tasks': 'Tasks',
@@ -634,7 +636,7 @@ export const en = {
   'viewName.name': 'Name',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Welcome to Beacon',
+  'onboarding.welcome': 'Welcome to Abbai Flow',
   'onboarding.welcomeDesc': 'Connect your Home Assistant to get started.',
   'onboarding.getStarted': 'Get Started',
   'onboarding.connectTitle': 'Connect to Home Assistant',
@@ -660,7 +662,7 @@ export const en = {
     'Could not reach Home Assistant. Verify the URL and ensure it is accessible.',
   'onboarding.tokenRequired': 'Please enter your access token.',
 
-  // ---- chores planner (Beacon chores screen) ----
+  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Chores & Routines',
   'planner.shortTitle': 'Chores',
   'planner.today': 'Today',

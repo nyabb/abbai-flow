@@ -1,12 +1,12 @@
 # Display Mode (wall-mounted touchscreen)
 
-Beacon is a web app. Display Mode is the screen you point a permanent browser at:
+Abbai Flow is a web app. Display Mode is the screen you point a permanent browser at:
 a Raspberry Pi driving a touchscreen, a spare tablet on a kitchen wall, a TV in
 the hallway.
 
 ## Pointing a device at it
 
-Open Beacon at:
+Open Abbai Flow at:
 
 ```
 http://<beacon-host>:3000/display
@@ -60,12 +60,12 @@ The badge distinguishes four cases, because they need different fixes:
 
 | State                      | Meaning                                                        |
 | -------------------------- | -------------------------------------------------------------- |
-| Connected                  | Both Beacon and Home Assistant answered                        |
-| Home Assistant unreachable | Beacon is up, HA is not                                        |
-| Beacon unreachable         | The browser has network but Beacon's own origin did not answer |
+| Connected                  | Both Abbai Flow and Home Assistant answered                        |
+| Home Assistant unreachable | Abbai Flow is up, HA is not                                        |
+| Abbai Flow unreachable         | The browser has network but Abbai Flow's own origin did not answer |
 | No internet connection     | The device itself is offline                                   |
 
-The Beacon check is a `HEAD manifest.json` with `cache: no-store` — a cached hit
+The Abbai Flow check is a `HEAD manifest.json` with `cache: no-store` — a cached hit
 would report "up" during an outage. Recovery triggers one refresh of the calendar
 data; nothing else would notice the server coming back, since calendars are not
 polled.

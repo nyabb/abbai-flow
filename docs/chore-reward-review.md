@@ -46,14 +46,14 @@ last_completed`.
 ### Facts that constrain the design
 
 1. **There is no routine concept in ChoreOps.** No service argument, no attribute, no entity.
-   Routines exist in Beacon only as "daily chores that share a label". Identity is therefore a
+   Routines exist in Abbai Flow only as "daily chores that share a label". Identity is therefore a
    **display string**, and nothing prevents two spellings of the same routine.
 2. **There is no task ordering.** `create_chore` / `update_chore` accept no position/sort field,
-   and the status entities publish none. Ordered routine steps must be Beacon metadata.
+   and the status entities publish none. Ordered routine steps must be Abbai Flow metadata.
 3. **`can_approve` is published on the child's own status entity.** Observed:
    `sensor.maya_choreops_chore_status_test` = `claimed` with `can_approve: true`. ChoreOps does
    not model "who may press this"; it exposes the button for that user's row. **Authorization is
-   Beacon's job.**
+   Abbai Flow's job.**
 4. **Reward fulfilment does not delete the definition.** After approval the reward entity stays
    published (status flips back to `available`/`locked`); `claims`/`approvals` counters live on the
    dashboard helper. Reuse is therefore inherent — no reward re-creation needed.
@@ -65,7 +65,7 @@ last_completed`.
 
 ---
 
-## 2. Current Beacon implementation — traced defects
+## 2. Current Abbai Flow implementation — traced defects
 
 | #   | Defect                                                                                                                                                                                                                                                                                   | Evidence                                                                |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
@@ -74,7 +74,7 @@ last_completed`.
 | D3  | **Routine identity is free text.** `routineId = 'routine:' + labels[0].toLowerCase()`; `openNewForm('routine')` only prefills a daily chore and the label is typed by hand. Typos create a second routine; renaming a routine means re-labelling every chore.                            | `chore-planner-view.ts` (`routineLabel`), `ChorePlanner.tsx` `saveForm` |
 | D4  | **Routine tasks are also individual chores.** The same ChoreOps chore renders in the child's column _and_ inside the routine, and can be completed from the board.                                                                                                                       | `columnTasks`, `routineBuckets`                                         |
 | D5  | **A mission is a flat list of everything open**, sorted routine-first, not a sequence of routines with ordered steps.                                                                                                                                                                    | `missionQueueFor`, `beginMissions`                                      |
-| D6  | **Mission progress is React state only**; a refresh rebuilds the queue from scratch and re-offers finished-by-Beacon steps (ChoreOps still hides completed ones, so the award is not duplicated, but the "2 of 4" position resets).                                                      | `missionIds`, `missionIndex`                                            |
+| D6  | **Mission progress is React state only**; a refresh rebuilds the queue from scratch and re-offers finished-by-Abbai Flow steps (ChoreOps still hides completed ones, so the award is not duplicated, but the "2 of 4" position resets).                                                      | `missionIds`, `missionIndex`                                            |
 | D7  | **Reward allocations live in `localStorage` only.** Not shared across devices; write errors are swallowed (`writeRewardReservations` catch → no-op).                                                                                                                                     | `reward-reservations.ts`                                                |
 | D8  | **Reward lifecycle has no states.** `rewardState().done` means "fully saved", and the same sheet mixes saving, achieving and giving. Fulfilment (`approve`) is available as a plain button on the child's goal row, gated by PIN only if one is configured.                              | `ChorePlanner.tsx` `rewardState`, `renderRewardRow`                     |
 | D9  | **No fulfilment record.** Once `approve_reward` runs, the allocation is only dropped by an explicit undo; nothing timestamps who gave what, so "reward given" cannot be shown or audited.                                                                                                | `undoRewardChoice`, `approveReward`                                     |
@@ -91,11 +91,11 @@ last_completed`.
 - The `shared_first` "anyone" flow and the "taken by someone else" filter.
 - Daily completions only count for the day they happened (`completedToday`).
 - `beacon-store`'s `saveData()` already returns `{ cached, persisted, error }` and serialises writes
-  per key — this is the correct persistence primitive for anything Beacon must own.
+  per key — this is the correct persistence primitive for anything Abbai Flow must own.
 
 ## 4. Required model changes
 
-**Beacon-owned metadata** (one document, `/beacon-data/chore-planner-meta`, cached in localStorage):
+**Abbai Flow-owned metadata** (one document, `/beacon-data/chore-planner-meta`, cached in localStorage):
 
 ```ts
 interface PlannerMeta {
@@ -152,9 +152,9 @@ Task states (mapped, not stored): ChoreOps `claimed` → `awaiting_approval`; `c
 
 ## 7. Limitations imposed by ChoreOps
 
-- No routine entity, so routine membership must be a Beacon registry keyed by chore name; renaming a
+- No routine entity, so routine membership must be a Abbai Flow registry keyed by chore name; renaming a
   chore in ChoreOps breaks its registry entry (recovered by the label fallback).
-- No ordering, so routine step order is Beacon metadata.
+- No ordering, so routine step order is Abbai Flow metadata.
 - No "who approved" attribute on the chore (only the service argument), so the approver is recorded
-  by Beacon when Beacon performs the approval.
-- Approve/redeem buttons exist per user with no authorization semantics; Beacon must gate them.
+  by Abbai Flow when Abbai Flow performs the approval.
+- Approve/redeem buttons exist per user with no authorization semantics; Abbai Flow must gate them.

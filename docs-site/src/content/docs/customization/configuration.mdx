@@ -1,26 +1,26 @@
 ---
 title: "Configuration"
-description: "Complete reference for all Beacon configuration options — add-on options, environment variables, runtime config, and advanced settings.
+description: "Complete reference for all Abbai Flow configuration options — add-on options, environment variables, runtime config, and advanced settings.
 Family command center for wall-mounted displays"
 order: 2
 ---
 
 # Configuration Reference
 
-Beacon can be configured through the Home Assistant add-on options panel, Docker environment variables, or Vite environment variables during development. All configuration is ultimately resolved at runtime through the `getConfig()` function.
+Abbai Flow can be configured through the Home Assistant add-on options panel, Docker environment variables, or Vite environment variables during development. All configuration is ultimately resolved at runtime through the `getConfig()` function.
 
 ---
 
 ## Complete add-on options reference
 
-These options are set in **Settings > Add-ons > Beacon > Configuration** when running as an HA add-on.
+These options are set in **Settings > Add-ons > Abbai Flow > Configuration** when running as an HA add-on.
 
 | Option                   | Type    | Default                  | Description                                                                                                                                                                                                                         | Example                   |
 | ------------------------ | ------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | `family_name`            | string  | `"My Family"`            | Your family name. Appears in the dashboard greeting ("Good morning, Sachs") and the calendar header.                                                                                                                                | `"Sachs"`                 |
-| `save_config_in_browser` | boolean | `true`                   | Allows the General settings option to keep a local browser copy of Beacon settings. Set to `false` to disable browser storage; add-on server storage remains available. This configuration takes precedence over the in-app option. | `false`                   |
+| `save_config_in_browser` | boolean | `true`                   | Allows the General settings option to keep a local browser copy of Abbai Flow settings. Set to `false` to disable browser storage; add-on server storage remains available. This configuration takes precedence over the in-app option. | `false`                   |
 | `theme`                  | string  | `"skylight"`             | The color theme to use. Options: `skylight`, `midnight`, `nord`, `dracula`, `monokai`, `rose`, `forest`. The theme selector in the sidebar overrides this value.                                                                    | `"midnight"`              |
-| `auto_dark_mode`         | boolean | `true`                   | When true and theme is set to `auto`, Beacon switches between Skylight (day) and Midnight (night) based on time of day.                                                                                                             | `true`                    |
+| `auto_dark_mode`         | boolean | `true`                   | When true and theme is set to `auto`, Abbai Flow switches between Skylight (day) and Midnight (night) based on time of day.                                                                                                             | `true`                    |
 | `weather_entity`         | string  | `"weather.home"`         | The Home Assistant weather entity ID to use for temperature and forecast data. Leave empty to disable weather.                                                                                                                      | `"weather.forecast_home"` |
 | `photo_directory`        | string  | `"/media/beacon/photos"` | The path to the photo directory on the Home Assistant server. Photos in this directory are displayed in the Photo Frame view.                                                                                                       | `"/media/family-photos"`  |
 | `photo_interval`         | integer | `30`                     | Seconds between automatic photo transitions in the Photo Frame slideshow.                                                                                                                                                           | `15`                      |
@@ -43,7 +43,7 @@ screen_saver_timeout: 5
 
 ## Environment variables (Docker and development)
 
-When running Beacon as a standalone Docker container or in development mode, configuration is provided through environment variables.
+When running Abbai Flow as a standalone Docker container or in development mode, configuration is provided through environment variables.
 
 ### Docker environment variables
 
@@ -97,7 +97,7 @@ VITE_SCREEN_SAVER_TIMEOUT=5
 
 ## Runtime config system
 
-Beacon uses a runtime configuration injection system that works across all deployment methods.
+Abbai Flow uses a runtime configuration injection system that works across all deployment methods.
 
 ### How it works
 
@@ -105,7 +105,7 @@ Beacon uses a runtime configuration injection system that works across all deplo
 
 2. **Development mode**: Vite reads `VITE_*` variables from `.env` and makes them available via `import.meta.env.*`.
 
-3. **Resolution order**: For each config value, Beacon checks:
+3. **Resolution order**: For each config value, Abbai Flow checks:
    1. `window.__BEACON_CONFIG__` (runtime injection, highest priority)
    2. `import.meta.env.VITE_*` (build-time environment variables)
    3. Hard-coded defaults
@@ -153,7 +153,7 @@ This is injected as a `<script>` tag in `index.html` before the main application
 
 ## Advanced: Custom CSS injection
 
-You can inject custom CSS to override any Beacon styles by adding a `<style>` tag to the `runtime-config.js` mechanism or through a browser extension.
+You can inject custom CSS to override any Abbai Flow styles by adding a `<style>` tag to the `runtime-config.js` mechanism or through a browser extension.
 
 ### Example: Override the clock font size
 
@@ -179,7 +179,7 @@ You can inject custom CSS to override any Beacon styles by adding a `<style>` ta
 }
 ```
 
-All Beacon styles use CSS custom properties (see [Themes](/docs/customization/themes/) for the complete list), so most visual customizations can be achieved by overriding the `--*` properties on `:root` rather than targeting specific class names.
+All Abbai Flow styles use CSS custom properties (see [Themes](/docs/customization/themes/) for the complete list), so most visual customizations can be achieved by overriding the `--*` properties on `:root` rather than targeting specific class names.
 
 ---
 
@@ -188,7 +188,7 @@ All Beacon styles use CSS custom properties (see [Themes](/docs/customization/th
 The `config.yaml` file in the repository root defines the add-on metadata for Home Assistant:
 
 ```yaml
-name: Beacon
+name: Abbai Flow
 version: '1.0.0'
 slug: beacon
 description: 'Family command center for wall-mounted displays'
@@ -202,7 +202,7 @@ boot: auto
 ingress: true
 ingress_port: 3000
 panel_icon: mdi:calendar-clock
-panel_title: Beacon
+panel_title: Abbai Flow
 homeassistant_api: true
 auth_api: true
 ```
@@ -210,12 +210,12 @@ auth_api: true
 | Field                     | Description                                                     |
 | ------------------------- | --------------------------------------------------------------- |
 | `arch`                    | Supported CPU architectures (AMD64, ARM64, ARMv7)               |
-| `ingress: true`           | Beacon is accessible through HA's ingress proxy (sidebar panel) |
-| `ingress_port: 3000`      | The internal port Beacon listens on                             |
+| `ingress: true`           | Abbai Flow is accessible through HA's ingress proxy (sidebar panel) |
+| `ingress_port: 3000`      | The internal port Abbai Flow listens on                             |
 | `panel_icon`              | The icon shown in HA's sidebar (`mdi:calendar-clock`)           |
-| `panel_title`             | The label shown in HA's sidebar ("Beacon")                      |
-| `homeassistant_api: true` | Beacon has access to the HA API                                 |
-| `auth_api: true`          | Beacon uses HA's authentication system                          |
+| `panel_title`             | The label shown in HA's sidebar ("Abbai Flow")                      |
+| `homeassistant_api: true` | Abbai Flow has access to the HA API                                 |
+| `auth_api: true`          | Abbai Flow uses HA's authentication system                          |
 
 ---
 
@@ -235,7 +235,7 @@ This appears in the browser console when:
 2. `HA_TOKEN` is missing (standalone Docker mode; legacy `SUPERVISOR_TOKEN` is also accepted)
 3. The runtime-config.js script did not generate correctly (add-on mode)
 
-Without a token, Beacon runs in demo mode — no data is fetched from Home Assistant.
+Without a token, Abbai Flow runs in demo mode — no data is fetched from Home Assistant.
 
 ### Weather entity not found
 

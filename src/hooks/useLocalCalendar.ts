@@ -9,7 +9,7 @@ import { loadData, loadDataSync, saveData } from '../api/beacon-store';
 
 const EVENTS_KEY = 'beacon-local-events';
 const LOCAL_CAL_ID = 'beacon-local';
-const LOCAL_CAL_NAME = 'Beacon';
+const LOCAL_CAL_NAME = 'Abbai Flow';
 
 export const LOCAL_CALENDAR: CalendarInfo = {
   id: LOCAL_CAL_ID,

@@ -1,6 +1,6 @@
 # AI and Voice Control Integration
 
-Beacon supports three approaches for voice and AI control, ranging from a simple built-in keyword API to full LLM agent tooling. Choose the one that fits your setup.
+Abbai Flow supports three approaches for voice and AI control, ranging from a simple built-in keyword API to full LLM agent tooling. Choose the one that fits your setup.
 
 | Approach | Best for | Requires LLM? | Setup |
 |----------|----------|----------------|-------|
@@ -12,7 +12,7 @@ Beacon supports three approaches for voice and AI control, ranging from a simple
 
 ## Voice API
 
-Beacon's server exposes a built-in REST endpoint for natural-language commands. It uses simple keyword matching (no LLM required) and runs entirely on the add-on container.
+Abbai Flow's server exposes a built-in REST endpoint for natural-language commands. It uses simple keyword matching (no LLM required) and runs entirely on the add-on container.
 
 ### Endpoint
 
@@ -77,7 +77,7 @@ curl -X POST http://<beacon-host>:8099/beacon-action/voice \
 
 | Say | What happens |
 |-----|-------------|
-| `show <view>` / `open <view>` / `go to <view>` | Navigates the Beacon UI |
+| `show <view>` / `open <view>` / `go to <view>` | Navigates the Abbai Flow UI |
 
 Valid views: `dashboard`, `calendar`, `grocery`, `chores`, `music`, `photos`, `settings`.
 
@@ -104,17 +104,17 @@ curl -X POST http://<beacon-host>:8099/beacon-action/voice \
 
 The voice API uses regex-based intent matching against the input text. No LLM, no cloud service, and no latency beyond the HA API call. The matching is case-insensitive and handles common phrasings for each intent.
 
-When a list or media player command is recognized, Beacon resolves the entity by fuzzy-matching the friendly name or entity ID against all available HA entities.
+When a list or media player command is recognized, Abbai Flow resolves the entity by fuzzy-matching the friendly name or entity ID against all available HA entities.
 
 ---
 
 ## MCP Server
 
-The MCP (Model Context Protocol) server exposes Beacon's features as structured tools that LLM agents (Claude Code, Claude Desktop, etc.) can call directly. This is the best approach for AI-powered automation where the LLM decides which actions to take.
+The MCP (Model Context Protocol) server exposes Abbai Flow's features as structured tools that LLM agents (Claude Code, Claude Desktop, etc.) can call directly. This is the best approach for AI-powered automation where the LLM decides which actions to take.
 
 ### Setup
 
-Add the Beacon MCP server to your client's configuration. For Claude Code:
+Add the Abbai Flow MCP server to your client's configuration. For Claude Code:
 
 ```bash
 claude mcp add beacon -- node /path/to/beacon/mcp-server.cjs
@@ -143,7 +143,7 @@ Or add it to your MCP config file (`mcp-config.json`):
 |----------|---------|-------------|
 | `SUPERVISOR_TOKEN` | (none) | **Required.** A Home Assistant long-lived access token |
 | `HA_URL` | `http://supervisor/core` | HA base URL. Change this if running outside the add-on container |
-| `DATA_DIR` | `/data` | Path to Beacon's persistent data directory (for chore data) |
+| `DATA_DIR` | `/data` | Path to Abbai Flow's persistent data directory (for chore data) |
 
 To create a long-lived access token: open your HA profile page (click your name in the sidebar), scroll to "Long-lived access tokens", and create one.
 
@@ -252,7 +252,7 @@ Supported actions: `play`, `pause`, `next`, `previous`, `volume`. For volume, in
 { "action": "complete", "chore_name": "dishes", "member_name": "Alex" }
 ```
 
-Reads/writes Beacon's local chore data files (`beacon_chores.json`, `beacon_family_members.json`, `beacon_completions.json` in the data directory).
+Reads/writes Abbai Flow's local chore data files (`beacon_chores.json`, `beacon_family_members.json`, `beacon_completions.json` in the data directory).
 
 ### Protocol details
 
@@ -262,21 +262,21 @@ The MCP server communicates over stdio using JSON-RPC 2.0. It implements the MCP
 
 ## HA Custom Sentences
 
-Beacon ships with custom sentence and intent handler files for [Home Assistant Assist](https://www.home-assistant.io/voice_control/). Once installed, you can use natural voice commands through any HA Assist-enabled device (smart speakers, the HA app, etc.).
+Abbai Flow ships with custom sentence and intent handler files for [Home Assistant Assist](https://www.home-assistant.io/voice_control/). Once installed, you can use natural voice commands through any HA Assist-enabled device (smart speakers, the HA app, etc.).
 
 ### Available intents
 
 | Intent | Example phrases |
 |--------|----------------|
-| **BeaconAddItem** | "Add milk to the grocery list", "Put eggs on the shopping list" |
-| **BeaconCompleteChore** | "Mark dishes as done", "I finished vacuuming" |
-| **BeaconCompleteChoreByPerson** | "Alex finished vacuuming", "Sam did the laundry" |
-| **BeaconCalendarToday** | "What's on the calendar today", "Any events today" |
-| **BeaconCalendarTomorrow** | "What's on the calendar tomorrow" |
-| **BeaconShowView** | "Show the dashboard", "Switch to the grocery view" |
-| **BeaconSetTimer** | "Set a timer for 5 minutes", "Start a 10 minute timer" |
-| **BeaconGroceryList** | "What's on the grocery list", "What do we need from the store" |
-| **BeaconChoreStatus** | "What chores are left", "What needs to be done" |
+| **Abbai FlowAddItem** | "Add milk to the grocery list", "Put eggs on the shopping list" |
+| **Abbai FlowCompleteChore** | "Mark dishes as done", "I finished vacuuming" |
+| **Abbai FlowCompleteChoreByPerson** | "Alex finished vacuuming", "Sam did the laundry" |
+| **Abbai FlowCalendarToday** | "What's on the calendar today", "Any events today" |
+| **Abbai FlowCalendarTomorrow** | "What's on the calendar tomorrow" |
+| **Abbai FlowShowView** | "Show the dashboard", "Switch to the grocery view" |
+| **Abbai FlowSetTimer** | "Set a timer for 5 minutes", "Start a 10 minute timer" |
+| **Abbai FlowGroceryList** | "What's on the grocery list", "What do we need from the store" |
+| **Abbai FlowChoreStatus** | "What chores are left", "What needs to be done" |
 
 ### Installation
 
@@ -306,7 +306,7 @@ The intent handlers reference these entities by default:
 | `todo.grocery` | Grocery list | Any HA todo integration (Shopping List, Todoist, etc.) |
 | `todo.chores` | Chore tracking list | Same as above |
 | `calendar.family` | Family calendar | Google Calendar, CalDAV, or Local Calendar integration |
-| `timer.beacon_voice` | Voice timer | **Settings > Helpers > + Create Helper > Timer**, name it "Beacon Voice" |
+| `timer.beacon_voice` | Voice timer | **Settings > Helpers > + Create Helper > Timer**, name it "Abbai Flow Voice" |
 
 If your entities have different names, edit the installed files in your HA config directory.
 
@@ -322,6 +322,6 @@ To add your own phrasings, edit `/config/custom_sentences/en/beacon.yaml`. For e
 
 ### How intent handlers work
 
-Each intent in `custom_intents/beacon.yaml` maps to a Home Assistant service call. For example, `BeaconAddItem` calls `todo.add_item` with the captured `item` and `list_name` slots. Calendar intents use `calendar.get_events` and return a Jinja-templated spoken response summarizing the events.
+Each intent in `custom_intents/beacon.yaml` maps to a Home Assistant service call. For example, `Abbai FlowAddItem` calls `todo.add_item` with the captured `item` and `list_name` slots. Calendar intents use `calendar.get_events` and return a Jinja-templated spoken response summarizing the events.
 
-The `BeaconShowView` intent fires a `beacon_navigate` custom event that the Beacon SPA listens for via the HA WebSocket, allowing voice-driven UI navigation.
+The `Abbai FlowShowView` intent fires a `beacon_navigate` custom event that the Abbai Flow SPA listens for via the HA WebSocket, allowing voice-driven UI navigation.

@@ -1,12 +1,12 @@
 ---
 title: "AI and Voice Control"
-description: "Control Beacon with voice commands, LLM agents, and Home Assistant Assist — three integration approaches for hands-free family dashboard control."
+description: "Control Abbai Flow with voice commands, LLM agents, and Home Assistant Assist — three integration approaches for hands-free family dashboard control."
 order: 1
 ---
 
 # AI and Voice Control
 
-Beacon supports four approaches for voice and AI control. Choose the one that fits your setup, or use them all together.
+Abbai Flow supports four approaches for voice and AI control. Choose the one that fits your setup, or use them all together.
 
 | Approach | Best for | Requires LLM? |
 |----------|----------|----------------|
@@ -19,7 +19,7 @@ Beacon supports four approaches for voice and AI control. Choose the one that fi
 
 ## Claude Code Plugin
 
-The Beacon plugin for Claude Code gives you slash commands, domain knowledge (skills), and the MCP server in one package. Install it once and Claude understands how to manage your family dashboard.
+The Abbai Flow plugin for Claude Code gives you slash commands, domain knowledge (skills), and the MCP server in one package. Install it once and Claude understands how to manage your family dashboard.
 
 ### Installation
 
@@ -50,7 +50,7 @@ Generate a token in Home Assistant: **Profile > Security > Long-Lived Access Tok
 
 ### Skills
 
-Skills are domain knowledge files that teach Claude how Beacon works. They activate automatically when you ask about related topics.
+Skills are domain knowledge files that teach Claude how Abbai Flow works. They activate automatically when you ask about related topics.
 
 | Skill | Triggers on |
 |-------|-------------|
@@ -85,7 +85,7 @@ Skills are domain knowledge files that teach Claude how Beacon works. They activ
 
 ## Voice API (built-in)
 
-Beacon's server exposes a REST endpoint for natural-language commands. It uses keyword matching — no LLM, no cloud service, and no added latency.
+Abbai Flow's server exposes a REST endpoint for natural-language commands. It uses keyword matching — no LLM, no cloud service, and no added latency.
 
 ### Endpoint
 
@@ -142,7 +142,7 @@ The API resolves list names and media players by fuzzy-matching against availabl
 
 ## MCP Server (for LLM agents)
 
-The [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server exposes Beacon's features as structured tools that LLM agents can call. This is the best approach for AI-powered automation where an LLM decides which actions to take.
+The [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server exposes Abbai Flow's features as structured tools that LLM agents can call. This is the best approach for AI-powered automation where an LLM decides which actions to take.
 
 The server supports **two transports**:
 - **stdio** (default) — for Claude Code, Claude Desktop, and other MCP clients that spawn a subprocess
@@ -210,7 +210,7 @@ The server exposes:
 http://your-beacon-host:3001/mcp
 ```
 
-**For the Beacon HA add-on**, the MCP HTTP server can be exposed alongside the web UI. Set `MCP_TRANSPORT=http` in the add-on configuration to enable it on port 3001.
+**For the Abbai Flow HA add-on**, the MCP HTTP server can be exposed alongside the web UI. Set `MCP_TRANSPORT=http` in the add-on configuration to enable it on port 3001.
 
 ### Environment variables
 
@@ -218,7 +218,7 @@ http://your-beacon-host:3001/mcp
 |----------|---------|-------------|
 | `SUPERVISOR_TOKEN` | — | **Required.** HA long-lived access token |
 | `HA_URL` | `http://supervisor/core` | HA URL (change when running outside the add-on) |
-| `DATA_DIR` | `/data` | Beacon data directory (for chore/payout files) |
+| `DATA_DIR` | `/data` | Abbai Flow data directory (for chore/payout files) |
 | `MCP_TRANSPORT` | `stdio` | Set to `http` for Streamable HTTP transport |
 | `MCP_PORT` | `3001` | HTTP server port (only in HTTP mode) |
 | `MCP_API_KEY` | — | API key for HTTP auth (optional; open if unset) |
@@ -295,7 +295,7 @@ For volume, also pass `volume_level` (0.0 to 1.0).
 
 ## HA Custom Sentences (for HA Assist)
 
-Beacon ships with custom sentence and intent handler files for [Home Assistant Assist](https://www.home-assistant.io/voice_control/). Once installed, you can use voice commands through any Assist-enabled device — smart speakers, the HA companion app, or the Assist dialog in HA.
+Abbai Flow ships with custom sentence and intent handler files for [Home Assistant Assist](https://www.home-assistant.io/voice_control/). Once installed, you can use voice commands through any Assist-enabled device — smart speakers, the HA companion app, or the Assist dialog in HA.
 
 ### Available voice commands
 
@@ -306,7 +306,7 @@ Beacon ships with custom sentence and intent handler files for [Home Assistant A
 | "Alex finished vacuuming" | Completes a chore for a specific person |
 | "What's on the calendar today" | Reads today's events aloud |
 | "What's on the calendar tomorrow" | Reads tomorrow's events |
-| "Show the dashboard" | Navigates the Beacon UI |
+| "Show the dashboard" | Navigates the Abbai Flow UI |
 | "Set a timer for 5 minutes" | Starts a countdown timer |
 | "What's on the grocery list" | Reads uncompleted grocery items |
 | "What chores are left" | Lists remaining chores |
@@ -334,7 +334,7 @@ The intents reference these entities by default. Create or rename them to match:
 | `todo.grocery` | Grocery list | Any HA todo integration |
 | `todo.chores` | Chore list | Any HA todo integration |
 | `calendar.family` | Calendar | Google Calendar, CalDAV, or Local Calendar |
-| `timer.beacon_voice` | Timer | Settings > Helpers > Timer, name "Beacon Voice" |
+| `timer.beacon_voice` | Timer | Settings > Helpers > Timer, name "Abbai Flow Voice" |
 
 If your entities have different names, edit the installed YAML files in your HA config directory (`custom_intents/beacon.yaml` and `custom_sentences/en/beacon.yaml`).
 

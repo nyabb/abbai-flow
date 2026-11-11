@@ -1,7 +1,7 @@
 /**
  * Haptic feedback.
  *
- * Beacon is a web app, so this uses the Vibration API where the browser exposes
+ * Abbai Flow is a web app, so this uses the Vibration API where the browser exposes
  * it — Android Chrome does, iOS Safari and desktop browsers do not — and
  * degrades to a no-op everywhere else. Call sites keep the same four helpers so
  * nothing else had to change when the native shell was dropped.

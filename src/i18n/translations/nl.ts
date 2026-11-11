@@ -51,7 +51,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionLabel': 'Minder animatie',
   'settings.appearance.reducedMotionSublabel': 'Verkort elke animatie en overgang in de app.',
   'display.connection.online': 'Verbonden',
-  'display.connection.beaconDown': 'Beacon onbereikbaar',
+  'display.connection.beaconDown': 'Abbai Flow onbereikbaar',
   'display.connection.haDown': 'Home Assistant onbereikbaar',
   'display.connection.offline': 'Geen internetverbinding',
   'nav.display': 'Displaymodus',
@@ -190,7 +190,7 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- settings: general ----
   'settings.general.title': 'Algemeen',
-  'settings.general.desc': 'Basisvoorkeuren voor je Beacon-scherm.',
+  'settings.general.desc': 'Basisvoorkeuren voor je Abbai Flow-scherm.',
   'settings.general.familyNameLabel': 'Gezinsnaam',
   'settings.general.familyNameSublabel': 'Wordt getoond in de agendaheader',
   'settings.general.defaultViewLabel': 'Standaardweergave',
@@ -253,7 +253,7 @@ export const nl: Record<TranslationKey, string> = {
     'Dat bestand kon niet worden gebruikt. Probeer een PNG-, JPEG- of WebP-afbeelding.',
   'settings.family.haMembersLabel': 'Uit Home Assistant',
   'settings.family.haMembersEmpty':
-    'Geen Home Assistant-personen gevonden. Controleer of Beacon Home Assistant kan bereiken en herlaad de pagina.',
+    'Geen Home Assistant-personen gevonden. Controleer of Abbai Flow Home Assistant kan bereiken en herlaad de pagina.',
   'settings.family.avatarCategory.people': 'Personen',
   'settings.family.avatarCategory.skinTones': 'Huidtinten',
   'settings.family.avatarCategory.faces': 'Gezichten',
@@ -612,6 +612,8 @@ export const nl: Record<TranslationKey, string> = {
   'grocery.completed': 'Voltooid ({count})',
   'grocery.deleteItem': 'Item verwijderen',
   'grocery.haList': '{name} (HA)',
+  'grocery.loadFailed': 'Kon deze lijst niet laden uit Home Assistant',
+  'grocery.retry': 'Opnieuw',
   'grocery.tabsLabel': 'Soort lijst',
   'grocery.tab.grocery': 'Boodschappen',
   'grocery.tab.tasks': 'Taken',
@@ -627,7 +629,7 @@ export const nl: Record<TranslationKey, string> = {
   'viewName.name': 'Naam',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Welkom bij Beacon',
+  'onboarding.welcome': 'Welkom bij Abbai Flow',
   'onboarding.welcomeDesc': 'Verbind je Home Assistant om te beginnen.',
   'onboarding.getStarted': 'Aan de slag',
   'onboarding.connectTitle': 'Verbinden met Home Assistant',
@@ -654,7 +656,7 @@ export const nl: Record<TranslationKey, string> = {
     'Kan Home Assistant niet bereiken. Controleer de URL en zorg ervoor dat het toegankelijk is.',
   'onboarding.tokenRequired': 'Voer je toegangstoken in.',
 
-  // ---- chores planner (Beacon chores screen) ----
+  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Taakjes & Routines',
   'planner.shortTitle': 'Taakjes',
   'planner.today': 'Vandaag',

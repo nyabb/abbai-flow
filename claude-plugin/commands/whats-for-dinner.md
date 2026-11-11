@@ -1,6 +1,6 @@
 ---
 name: whats-for-dinner
-description: Check today's meal plan from Beacon
+description: Check today's meal plan from Abbai Flow
 arguments:
   - name: date
     description: Date to check (YYYY-MM-DD, default today)
@@ -9,7 +9,7 @@ arguments:
 
 # What's for Dinner
 
-Show today's planned meals from the Beacon meal plan.
+Show today's planned meals from the Abbai Flow meal plan.
 
 ## Steps
 

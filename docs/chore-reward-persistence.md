@@ -7,11 +7,11 @@ gives. Companion to `docs/chore-reward-review.md`.
 
 | Data                                                                | Owner        | Key                         | Why                                                                            |
 | ------------------------------------------------------------------- | ------------ | --------------------------- | ------------------------------------------------------------------------------ |
-| Chore status, points, approvals, reward definitions and costs       | **ChoreOps** | its own entities            | never duplicated in Beacon                                                     |
-| Routine identity, routine step order, pause state, mission progress | Beacon       | `beacon-planner-meta`       | ChoreOps has no routine entity and no ordering field                           |
-| Reward pursuits (saving → achieved → given), fulfilment audit       | Beacon       | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
+| Chore status, points, approvals, reward definitions and costs       | **ChoreOps** | its own entities            | never duplicated in Abbai Flow                                                     |
+| Routine identity, routine step order, pause state, mission progress | Abbai Flow       | `beacon-planner-meta`       | ChoreOps has no routine entity and no ordering field                           |
+| Reward pursuits (saving → achieved → given), fulfilment audit       | Abbai Flow       | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
 
-Both Beacon documents go through `src/api/beacon-store.ts`:
+Both Abbai Flow documents go through `src/api/beacon-store.ts`:
 
 - **add-on mode** — `PUT /beacon-data/:key` is the store, localStorage is the
   offline cache; a failed PUT returns `{ cached: true, persisted: false, error }`;
@@ -39,7 +39,7 @@ routine      available → in_progress → completed   (paused is orthogonal)
 redemption   saving → awaiting_fulfilment → fulfilled
 ```
 
-Chore and routine states are _derived_ (ChoreOps status + Beacon registry), not
+Chore and routine states are _derived_ (ChoreOps status + Abbai Flow registry), not
 stored a second time; only the redemption state and mission progress persist.
 
 ## Invariants enforced in code (each has a unit test)

@@ -51,7 +51,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionLabel': '애니메이션 줄이기',
   'settings.appearance.reducedMotionSublabel': '앱의 모든 애니메이션과 전환을 짧게 합니다.',
   'display.connection.online': '연결됨',
-  'display.connection.beaconDown': 'Beacon 연결 불가',
+  'display.connection.beaconDown': 'Abbai Flow 연결 불가',
   'display.connection.haDown': 'Home Assistant 연결 불가',
   'display.connection.offline': '인터넷 연결 없음',
   'nav.display': '표시 모드',
@@ -190,7 +190,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- settings: general ----
   'settings.general.title': '일반',
-  'settings.general.desc': 'Beacon 디스플레이의 기본 환경설정입니다.',
+  'settings.general.desc': 'Abbai Flow 디스플레이의 기본 환경설정입니다.',
   'settings.general.familyNameLabel': '가족 이름',
   'settings.general.familyNameSublabel': '캘린더 헤더에 표시됩니다',
   'settings.general.defaultViewLabel': '기본 화면',
@@ -252,7 +252,7 @@ export const ko: Record<TranslationKey, string> = {
     '이 파일을 사용할 수 없습니다. PNG, JPEG 또는 WebP 이미지를 사용해 보세요.',
   'settings.family.haMembersLabel': 'Home Assistant에서',
   'settings.family.haMembersEmpty':
-    'Home Assistant 사람을 찾을 수 없습니다. Beacon이 Home Assistant에 연결되는지 확인한 후 다시 로드하세요.',
+    'Home Assistant 사람을 찾을 수 없습니다. Abbai Flow이 Home Assistant에 연결되는지 확인한 후 다시 로드하세요.',
   'settings.family.avatarCategory.people': '사람',
   'settings.family.avatarCategory.skinTones': '피부톤',
   'settings.family.avatarCategory.faces': '표정',
@@ -605,6 +605,8 @@ export const ko: Record<TranslationKey, string> = {
   'grocery.completed': '완료 ({count})',
   'grocery.deleteItem': '항목 삭제',
   'grocery.haList': '{name} (HA)',
+  'grocery.loadFailed': 'Home Assistant에서 이 목록을 불러오지 못했습니다',
+  'grocery.retry': '다시 시도',
   'grocery.tabsLabel': '목록 유형',
   'grocery.tab.grocery': '장보기',
   'grocery.tab.tasks': '할 일',
@@ -620,7 +622,7 @@ export const ko: Record<TranslationKey, string> = {
   'viewName.name': '이름',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Beacon에 오신 것을 환영합니다',
+  'onboarding.welcome': 'Abbai Flow에 오신 것을 환영합니다',
   'onboarding.welcomeDesc': 'Home Assistant를 연결하여 시작하세요.',
   'onboarding.getStarted': '시작하기',
   'onboarding.connectTitle': 'Home Assistant에 연결',
@@ -646,7 +648,7 @@ export const ko: Record<TranslationKey, string> = {
     'Home Assistant에 연결할 수 없습니다. URL을 확인하고 접근 가능한지 확인하세요.',
   'onboarding.tokenRequired': '액세스 토큰을 입력하세요.',
 
-  // ---- chores planner (Beacon chores screen) ----
+  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': '집안일과 루틴',
   'planner.shortTitle': '집안일',
   'planner.today': '오늘',

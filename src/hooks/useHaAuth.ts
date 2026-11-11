@@ -15,7 +15,7 @@ interface HaAuthState {
 /**
  * Build the OAuth redirect URI.
  *
- * Beacon runs in the browser, so this is always the current origin. HA must
+ * Abbai Flow runs in the browser, so this is always the current origin. HA must
  * have the same value registered as a trusted redirect URI.
  */
 function getRedirectUri(): string {

@@ -1,7 +1,7 @@
 // Automation: 10 — Install in 2 Minutes (~30s)
 // Playwright-style pseudocode for screen recording
 //
-// NOTE: This records the Home Assistant UI, not the Beacon app itself.
+// NOTE: This records the Home Assistant UI, not the Abbai Flow app itself.
 // Requires a running HA instance accessible via browser.
 
 const viewport = { width: 1920, height: 1080 };
@@ -24,7 +24,7 @@ stopRecording();
 
 // Scene 2: Install Add-on (10s–20s)
 startRecording('10-install');
-click('.addon-card[data-addon="beacon"]'); // find Beacon in the list
+click('.addon-card[data-addon="beacon"]'); // find Abbai Flow in the list
 wait(1000);
 click('.install-button');
 wait(5000); // install progress (speed up in post-production)
@@ -35,6 +35,6 @@ stopRecording();
 // Scene 3: Open and Done (20s–30s)
 startRecording('10-open');
 click('.open-webui-button'); // Open Web UI
-wait(3000); // Beacon dashboard loads with HA data
+wait(3000); // Abbai Flow dashboard loads with HA data
 wait(5000); // hold on the populated dashboard
 stopRecording();

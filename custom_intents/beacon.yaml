@@ -1,6 +1,6 @@
-# Beacon Custom Intent Handlers
+# Abbai Flow Custom Intent Handlers
 # These call HA services in response to voice commands.
-# Requires: Beacon add-on running, todo entities, calendar entities.
+# Requires: Abbai Flow add-on running, todo entities, calendar entities.
 
 # ── List Management ──────────────────────────────────────────────
 BeaconAddItem:
@@ -81,7 +81,7 @@ BeaconCalendarTomorrow:
       {% endif %}
 
 # ── Navigation ──────────────────────────────────────────────────
-# Fires an event that the Beacon SPA can listen for via the HA WebSocket.
+# Fires an event that the Abbai Flow SPA can listen for via the HA WebSocket.
 # The SPA should handle `beacon_navigate` events to switch views.
 BeaconShowView:
   action:

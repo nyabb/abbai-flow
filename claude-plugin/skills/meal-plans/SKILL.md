@@ -1,6 +1,6 @@
 ---
 description: >
-  Use this skill when working with meal plans in Beacon — viewing today's menu,
+  Use this skill when working with meal plans in Abbai Flow — viewing today's menu,
   syncing from AnyList, or managing meal plan data via MCP tools.
 triggers:
   - beacon meal
@@ -11,11 +11,11 @@ triggers:
   - sync meals
 ---
 
-# Beacon Meal Plans
+# Abbai Flow Meal Plans
 
 ## Overview
 
-Beacon displays today's meals (Breakfast, Lunch, Dinner) on the dashboard sidebar. Meal plan data is stored in `beacon_meal_plans.json` and can be populated from AnyList or manually.
+Abbai Flow displays today's meals (Breakfast, Lunch, Dinner) on the dashboard sidebar. Meal plan data is stored in `beacon_meal_plans.json` and can be populated from AnyList or manually.
 
 ## Viewing Meals
 
@@ -49,7 +49,7 @@ A sync script at `scripts/sync-meals.mjs` parses AnyList MCP output:
 
 ```bash
 # Run the AnyList MCP meal_plan list_events tool, save output
-# Then parse it into Beacon format:
+# Then parse it into Abbai Flow format:
 node scripts/sync-meals.mjs anylist-output.txt --from 2026-04-01 --to 2026-04-15
 ```
 

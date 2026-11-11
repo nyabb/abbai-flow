@@ -2,7 +2,7 @@
  * Family member photos.
  *
  * A member's `photo` is one of:
- *  - a data URL produced by uploading a file in Beacon (`imageFileToDataUrl`),
+ *  - a data URL produced by uploading a file in Abbai Flow (`imageFileToDataUrl`),
  *  - an absolute URL (anywhere),
  *  - a Home Assistant relative path such as `/api/image/serve/<id>/512x512`
  *    imported from an HA `person` entity's `entity_picture`.

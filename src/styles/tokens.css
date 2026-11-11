@@ -1,5 +1,5 @@
 /* ============================================================
-   Beacon — Design Tokens
+   Abbai Flow — Design Tokens
    Single source of truth for the 10-role color system.
    See ADR: docs/design-tokens.md for the full reasoning behind
    this exact set (why 14 → 10, why Warning != Brand gold, etc).
@@ -29,7 +29,7 @@
   --color-success: #22c55e;
   --color-warning: #d97706; /* NOT #f7a832 — that's brand gold; warning needs
                                 its own hue so a warning toast is never visually
-                                identical to the Beacon brand mark */
+                                identical to the Abbai Flow brand mark */
   --color-error: #ef4444;
 
   /* Screen bands and card ink are derived from the active theme in

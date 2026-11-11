@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsView } from '../SettingsView';
 import { I18nContext, createI18n } from '../../i18n';
-import type { BeaconSettings } from '../../hooks/useSettings';
+import type { AbbaiSettings } from '../../hooks/useSettings';
 
 /**
  * Smoke coverage for the settings screen.
@@ -13,7 +13,7 @@ import type { BeaconSettings } from '../../hooks/useSettings';
  * renders without throwing.
  */
 
-function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
+function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   return {
     familyName: 'Sachshaus',
     saveConfigInBrowser: true,
@@ -59,10 +59,10 @@ function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
     choresResetTime: '00:00',
     streakDays: 5,
     ...overrides,
-  } as BeaconSettings;
+  } as AbbaiSettings;
 }
 
-function renderSettings(overrides: Partial<BeaconSettings> = {}) {
+function renderSettings(overrides: Partial<AbbaiSettings> = {}) {
   const onUpdateSettings = vi.fn();
   const nl = createI18n('nl');
   const utils = render(

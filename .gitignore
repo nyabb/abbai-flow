@@ -4,8 +4,6 @@ dist
 .env.local
 *.log
 
-# Local Netlify folder
-.netlify
 
 # Capacitor native builds (generated, not committed)
 ios/App/App/public

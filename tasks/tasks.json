@@ -3,7 +3,7 @@
     {
       "id": 1,
       "title": "Phase 1: Zero-Config Standalone Mode",
-      "description": "Make Beacon work out of the box without Home Assistant. Install → 2-minute setup wizard → working dashboard.",
+      "description": "Make Abbai Flow work out of the box without Home Assistant. Install → 2-minute setup wizard → working dashboard.",
       "status": "in-review",
       "priority": "high",
       "tags": ["phase-1", "standalone"],
@@ -19,7 +19,7 @@
         {
           "id": 102,
           "title": "OpenWeatherMap integration",
-          "description": "Free tier weather API integration. User enters zip code during setup, Beacon fetches weather without HA. Needs API key management (built-in free key or user-provided).",
+          "description": "Free tier weather API integration. User enters zip code during setup, Abbai Flow fetches weather without HA. Needs API key management (built-in free key or user-provided).",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-1"]
@@ -119,7 +119,7 @@
         {
           "id": 301,
           "title": "Android APK on Play Store",
-          "description": "Capacitor build → signed APK → Play Store listing. Beacon as a native Android app.",
+          "description": "Capacitor build → signed APK → Play Store listing. Abbai Flow as a native Android app.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-3"]
@@ -127,7 +127,7 @@
         {
           "id": 302,
           "title": "iOS app on App Store",
-          "description": "Capacitor build → Xcode archive → App Store submission. Beacon as a native iOS app.",
+          "description": "Capacitor build → Xcode archive → App Store submission. Abbai Flow as a native iOS app.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-3"]
@@ -143,7 +143,7 @@
         {
           "id": 304,
           "title": "Raspberry Pi ready-to-flash image",
-          "description": "Pre-built image: flash SD card, plug in monitor, boot directly to Beacon in kiosk mode. Cheapest possible hardware path.",
+          "description": "Pre-built image: flash SD card, plug in monitor, boot directly to Abbai Flow in kiosk mode. Cheapest possible hardware path.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-3"]
@@ -161,7 +161,7 @@
     {
       "id": 4,
       "title": "Phase 4: Polish & Delight",
-      "description": "Make Beacon feel like a premium product that happens to be free.",
+      "description": "Make Abbai Flow feel like a premium product that happens to be free.",
       "status": "in-review",
       "priority": "medium",
       "tags": ["phase-4", "polish"],
@@ -235,7 +235,7 @@
         {
           "id": 501,
           "title": "Set up demo data and recording environment",
-          "description": "Populate a Beacon instance with realistic demo data (calendar events, lists, chores, media, weather). Configure Playwright for headless screen recording at 1080p/30fps.",
+          "description": "Populate a Abbai Flow instance with realistic demo data (calendar events, lists, chores, media, weather). Configure Playwright for headless screen recording at 1080p/30fps.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-5"]
@@ -250,7 +250,7 @@
         },
         {
           "id": 503,
-          "title": "Produce featurette 01 — Meet Beacon",
+          "title": "Produce featurette 01 — Meet Abbai Flow",
           "description": "Record screen footage using automation/01-meet-beacon.ts, generate voiceover from scripts/01-meet-beacon.md, composite with FFmpeg.",
           "status": "pending",
           "priority": "high",
@@ -331,7 +331,7 @@
         {
           "id": 513,
           "title": "Final review, title cards, and export",
-          "description": "Add Beacon logo title cards, intro/outro bumpers, consistent fade transitions. Export all 10 featurettes at 1080p MP4 for YouTube and 720p vertical for social.",
+          "description": "Add Abbai Flow logo title cards, intro/outro bumpers, consistent fade transitions. Export all 10 featurettes at 1080p MP4 for YouTube and 720p vertical for social.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-5"]

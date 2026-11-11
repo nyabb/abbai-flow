@@ -1,5 +1,5 @@
 /* ============================================================
-   Beacon — Family Calendar Display
+   Abbai Flow — Family Calendar Display
    Skylight-inspired light theme
    ============================================================ */
 
@@ -1330,7 +1330,7 @@ a:focus:not(:focus-visible) {
   border-radius: 50%;
   /* "Connecting" pending state — deliberately var(--color-warning), NOT brand
      gold, so this transient status dot is never visually identical to the
-     Beacon logo mark. See docs/design-tokens.md. */
+     Abbai Flow logo mark. See docs/design-tokens.md. */
   background: var(--color-warning, #d97706);
   animation: pulse 2s infinite;
 }
@@ -2203,9 +2203,9 @@ a:focus:not(:focus-visible) {
 }
 
 /* --- HA Ingress mode --- */
-/* Beacon sidebar should show alongside HA's sidebar.
+/* Abbai Flow sidebar should show alongside HA's sidebar.
    The ingress iframe already gets the space after HA's sidebar,
-   so Beacon's sidebar just needs to be slightly narrower. */
+   so Abbai Flow's sidebar just needs to be slightly narrower. */
 .beacon--ingress {
   --sidebar-width: 52px;
 }

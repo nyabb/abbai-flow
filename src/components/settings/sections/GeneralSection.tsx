@@ -5,7 +5,7 @@
 import { getConfig } from '../../../config';
 import { isAddOn } from '../../../utils/ha-env';
 import { LOCALE_OPTIONS } from '../../../i18n/locales';
-import type { BeaconSettings } from '../../../hooks/useSettings';
+import type { AbbaiSettings } from '../../../hooks/useSettings';
 import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
 
@@ -37,7 +37,7 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             className="form-select"
             value={settings.defaultView}
             onChange={(e) =>
-              onUpdateSettings({ defaultView: e.target.value as BeaconSettings['defaultView'] })
+              onUpdateSettings({ defaultView: e.target.value as AbbaiSettings['defaultView'] })
             }
             style={{ maxWidth: 180 }}
           >

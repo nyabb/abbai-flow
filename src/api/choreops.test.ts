@@ -58,7 +58,7 @@ describe('buildCreateChorePayload', () => {
     });
   });
 
-  it('sends the routine label so Beacon can group daily chores', () => {
+  it('sends the routine label so Abbai Flow can group daily chores', () => {
     const payload = buildCreateChorePayload({
       entryId: 'entry-1',
       name: 'Tanden poetsen',

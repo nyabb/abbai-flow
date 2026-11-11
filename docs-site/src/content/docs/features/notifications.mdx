@@ -1,25 +1,25 @@
 ---
 title: "Notifications"
-description: "How Beacon sends event notifications — browser push notifications, HA mobile app notifications, timing, and permissions."
+description: "How Abbai Flow sends event notifications — browser push notifications, HA mobile app notifications, timing, and permissions."
 order: 9
 ---
 
 # Notifications
 
-Beacon sends notifications before upcoming calendar events through two channels: browser push notifications and Home Assistant mobile app notifications.
+Abbai Flow sends notifications before upcoming calendar events through two channels: browser push notifications and Home Assistant mobile app notifications.
 
 ---
 
 ## How notifications work
 
-Every 60 seconds, Beacon scans your calendar events and checks if any upcoming event is starting within the configured notification window. When it finds one:
+Every 60 seconds, Abbai Flow scans your calendar events and checks if any upcoming event is starting within the configured notification window. When it finds one:
 
 1. A **browser notification** is sent (if permission is granted)
 2. A **Home Assistant mobile app notification** is sent (if the client is connected)
 
 The default notification timing is **10 minutes** before each event. You can customize this in **Settings > Calendar** to 5, 10, 15, or 30 minutes.
 
-Each event is only notified once — Beacon tracks which event IDs have already triggered notifications to avoid duplicates.
+Each event is only notified once — Abbai Flow tracks which event IDs have already triggered notifications to avoid duplicates.
 
 ---
 
@@ -27,10 +27,10 @@ Each event is only notified once — Beacon tracks which event IDs have already 
 
 ### Permission request flow
 
-The first time Beacon loads, it checks the browser's notification permission:
+The first time Abbai Flow loads, it checks the browser's notification permission:
 
-1. If permission is `default` (not yet decided), Beacon automatically calls `Notification.requestPermission()`
-2. The browser shows a permission prompt: "Beacon wants to send you notifications. Allow / Block"
+1. If permission is `default` (not yet decided), Abbai Flow automatically calls `Notification.requestPermission()`
+2. The browser shows a permission prompt: "Abbai Flow wants to send you notifications. Allow / Block"
 3. If you click **Allow**, browser notifications are enabled
 4. If you click **Block**, browser notifications are disabled (you can change this later in browser settings)
 
@@ -40,7 +40,7 @@ The first time Beacon loads, it checks the browser's notification permission:
 |-------|-------|
 | **Title** | The event title (e.g., "Soccer Practice") |
 | **Body** | "Starts in 12 minutes" or "Starting now" |
-| **Icon** | Beacon's icon (`/beacon-icon.svg`) |
+| **Icon** | Abbai Flow's icon (`/beacon-icon.svg`) |
 | **Tag** | `beacon-event-{eventId}` (prevents duplicate notifications for the same event) |
 
 ### Notification timing
@@ -62,7 +62,7 @@ All-day events are excluded from notifications. Only timed events trigger notifi
 
 ## Home Assistant mobile app notifications
 
-In addition to browser notifications, Beacon sends a notification through Home Assistant's `notify.notify` service. This fans out to all configured notification targets, including:
+In addition to browser notifications, Abbai Flow sends a notification through Home Assistant's `notify.notify` service. This fans out to all configured notification targets, including:
 
 - **Home Assistant Companion App** (iOS/Android)
 - **HTML5 Push Notifications** (if configured)
@@ -72,12 +72,12 @@ In addition to browser notifications, Beacon sends a notification through Home A
 
 | Field | Value |
 |-------|-------|
-| **Title** | `Beacon: {event title}` |
+| **Title** | `Abbai Flow: {event title}` |
 | **Message** | "Starts in X minutes" or "Starting now" |
 
 ### Requirements
 
-- Beacon must be connected to Home Assistant (the WebSocket connection must be active)
+- Abbai Flow must be connected to Home Assistant (the WebSocket connection must be active)
 - The `notify.notify` service must be available in HA
 - At least one notification target must be configured (e.g., the HA Companion App)
 
@@ -103,15 +103,15 @@ Open the app and connect it to your Home Assistant instance. The app will regist
 
 In Home Assistant, go to **Developer Tools > Services** and search for `notify.notify`. You should see it listed. Call it with a test message to verify it reaches your phone.
 
-### Step 4: No Beacon configuration needed
+### Step 4: No Abbai Flow configuration needed
 
-Beacon automatically uses `notify.notify` when it detects an upcoming event. No additional setup is required in Beacon.
+Abbai Flow automatically uses `notify.notify` when it detects an upcoming event. No additional setup is required in Abbai Flow.
 
 ---
 
 ## Duplicate prevention
 
-Beacon uses an in-memory set to track which event IDs have already been notified:
+Abbai Flow uses an in-memory set to track which event IDs have already been notified:
 
 - When a notification is sent for an event, its ID is added to the set
 - Subsequent checks skip events that are already in the set
@@ -127,7 +127,7 @@ This means:
 
 ### No browser notifications appear
 
-1. **Check permission**: Open your browser's site settings for the Beacon URL and verify notifications are set to "Allow"
+1. **Check permission**: Open your browser's site settings for the Abbai Flow URL and verify notifications are set to "Allow"
 2. **Check the browser**: Some browsers (especially on mobile) do not support the `Notification` API. Chrome, Firefox, and Edge on desktop support it. Safari on macOS supports it. Safari on iOS has limited support.
 3. **Check Do Not Disturb**: If your device or browser is in Do Not Disturb mode, notifications may be suppressed
 4. **Check focus mode**: Some operating systems hide notifications when a specific app is focused
@@ -146,6 +146,6 @@ This typically happens when:
 
 ### Notifications arrive too early or too late
 
-Beacon checks for upcoming events every 60 seconds and notifies when an event is within 15 minutes of starting. The worst-case delay is ~60 seconds (one check interval). If notifications seem inconsistent, verify that:
+Abbai Flow checks for upcoming events every 60 seconds and notifies when an event is within 15 minutes of starting. The worst-case delay is ~60 seconds (one check interval). If notifications seem inconsistent, verify that:
 1. The browser tab/window is active (background tabs may throttle timers)
 2. The event's start time is correct in the calendar

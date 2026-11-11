@@ -1,12 +1,12 @@
 ---
 title: 'Meal Plan'
-description: "Show today's breakfast, lunch, dinner and snacks on the Beacon dashboard, filled by the AnyList sync script or a Grocy meal plan sensor."
+description: "Show today's breakfast, lunch, dinner and snacks on the Abbai Flow dashboard, filled by the AnyList sync script or a Grocy meal plan sensor."
 order: 6
 ---
 
 # Meal Plan
 
-Beacon's **Menu** card shows what the household is eating today. It sits in the dashboard
+Abbai Flow's **Menu** card shows what the household is eating today. It sits in the dashboard
 sidebar for the Family layout and in the right-hand column for the Classic layout, and it
 stays hidden while there is nothing planned for today.
 
@@ -23,12 +23,12 @@ Each meal is one row, sorted breakfast → lunch → dinner → snack:
 
 ## Where the data comes from
 
-Beacon does not have a meal editor: the plan is **written by a sync**, and the dashboard
+Abbai Flow does not have a meal editor: the plan is **written by a sync**, and the dashboard
 only reads it.
 
 ### AnyList
 
-`scripts/sync-meals.mjs` turns AnyList meal-plan output into the array Beacon expects:
+`scripts/sync-meals.mjs` turns AnyList meal-plan output into the array Abbai Flow expects:
 
 ```bash
 # raw MCP tool-result file, or plain text with lines like:
@@ -48,7 +48,7 @@ see [Grocery](/docs/features/grocery/) for the sensor setup.
 
 ## Storage and refresh
 
-- Entries live under `beacon_meal_plans` in Beacon's data store: server-side in the Home
+- Entries live under `beacon_meal_plans` in Abbai Flow's data store: server-side in the Home
   Assistant add-on, in browser storage for the standalone build.
 - Each entry looks like
   `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "abc123" }`.

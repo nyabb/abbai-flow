@@ -1,5 +1,5 @@
 /**
- * ChoreOps user ↔ Beacon family member resolution.
+ * ChoreOps user ↔ Abbai Flow family member resolution.
  *
  * Kept separate from normalisation because both the normaliser and the payload
  * builders need it, and because the linking rule (explicit link first, name
@@ -7,7 +7,7 @@
  */
 import type { ChoreOpsUser } from '../../types/choreops';
 
-/** Match a ChoreOps user to a Beacon family member by name (case-insensitive). */
+/** Match a ChoreOps user to a Abbai Flow family member by name (case-insensitive). */
 export function matchMemberByName<T extends { name: string }>(
   userName: string | null,
   members: T[],

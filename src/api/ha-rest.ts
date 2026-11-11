@@ -47,7 +47,7 @@ function getBaseUrl() {
   return _baseUrl;
 }
 
-/** Resolve HA-hosted resources through Beacon when a backend proxy is available. */
+/** Resolve HA-hosted resources through Abbai Flow when a backend proxy is available. */
 export function getHaResourceUrl(path: string): string {
   if (path.startsWith('http')) return path;
 
@@ -174,18 +174,18 @@ export function hasToken(): boolean {
 }
 
 /**
- * Error thrown by callBeaconAction when the add-on server bridge (or HA
+ * Error thrown by callAbbaiAction when the add-on server bridge (or HA
  * itself, relayed through it) rejects the request. Carries the HA error
  * `code` when available (e.g. "not_supported" for calendars that don't
  * support event update/delete) so callers can branch on it instead of
  * pattern-matching the message string.
  */
-export class BeaconActionError extends Error {
+export class AbbaiActionError extends Error {
   code: string | null;
   status: number;
   constructor(message: string, code: string | null, status: number) {
     super(message);
-    this.name = 'BeaconActionError';
+    this.name = 'AbbaiActionError';
     this.code = code;
     this.status = status;
   }
@@ -199,7 +199,7 @@ export class BeaconActionError extends Error {
  * update/delete). Only used in add-on/proxy mode; standalone mode talks to
  * HA directly over WebSocket via HomeAssistantClient instead.
  */
-export async function callBeaconAction(
+export async function callAbbaiAction(
   path: string,
   body: Record<string, unknown>,
 ): Promise<unknown> {
@@ -221,12 +221,12 @@ export async function callBeaconAction(
     const message =
       data && typeof data === 'object' && 'error' in data
         ? String((data as { error: unknown }).error)
-        : `Beacon action ${path} failed: ${res.status}`;
+        : `Abbai Flow action ${path} failed: ${res.status}`;
     const code =
       data && typeof data === 'object' && 'code' in data
         ? (data as { code: string | null }).code
         : null;
-    throw new BeaconActionError(message, code, res.status);
+    throw new AbbaiActionError(message, code, res.status);
   }
 
   return data;

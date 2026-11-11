@@ -1,5 +1,5 @@
 /**
- * Backend tests for the Beacon server.
+ * Backend tests for the Abbai Flow server.
  *
  * Run with `npm run test:server` (node --test). These exercise the real
  * handlers from `server/app.cjs` against a fake Home Assistant, over both
@@ -55,7 +55,7 @@ function close(server) {
   });
 }
 
-/** Start the Beacon app on an ephemeral port. */
+/** Start the Abbai Flow app on an ephemeral port. */
 async function startBeacon(overrides = {}) {
   const distDir = overrides.distDir || tmpDir('dist');
   fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>beacon</title>');

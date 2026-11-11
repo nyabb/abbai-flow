@@ -286,13 +286,13 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   /*
    * Points leave the child's balance the moment they allocate, and the hold is
-   * Beacon-local: no parent confirmation, nothing written to ChoreOps, so the
+   * Abbai Flow-local: no parent confirmation, nothing written to ChoreOps, so the
    * child can take it back whenever they like.
    */
   /*
    * Allocating is the child's own action, and reaching the cost only means the
    * goal is achieved — the reward itself still has to be handed over by a
-   * parent. The pursuit is stored in the shared Beacon document, not in this
+   * parent. The pursuit is stored in the shared Abbai Flow document, not in this
    * device's localStorage reservations.
    */
   it('marks the goal achieved on assign, and never writes to ChoreOps yet', async () => {

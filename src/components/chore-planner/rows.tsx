@@ -133,7 +133,7 @@ export interface RewardRowProps {
   done: boolean;
   /** The child can put something towards it right now. */
   canAdd: boolean;
-  /** A claim made outside Beacon, which a parent settles in ChoreOps. */
+  /** A claim made outside Abbai Flow, which a parent settles in ChoreOps. */
   pending: boolean;
   saving: boolean;
   copy: PlannerCopy;

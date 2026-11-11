@@ -36,7 +36,7 @@ export interface ChoreOpsChore {
   frequency?: string | null;
   /** Weekday keys (`mon`..`sun`) when the repeat is day-bound. */
   applicableDays?: string[];
-  /** ChoreOps labels; Beacon groups daily chores into routines by label. */
+  /** ChoreOps labels; Abbai Flow groups daily chores into routines by label. */
   labels?: string[];
   /**
    * ISO timestamp of the last completion. Daily chores reset at midnight, so
@@ -72,7 +72,7 @@ export interface ChoreOpsReward {
 }
 
 export interface ChoreOpsUser {
-  /** `user_name` attribute — the join key to Beacon's FamilyMember.name. */
+  /** `user_name` attribute — the join key to Abbai Flow's FamilyMember.name. */
   name: string;
   /** Entity-id slug, e.g. "maya" in sensor.maya_choreops_points. */
   slug: string;

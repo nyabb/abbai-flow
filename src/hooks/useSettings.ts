@@ -6,7 +6,7 @@ import { loadDataSync, loadServerData, saveData } from '../api/beacon-store';
 // Types
 // ---------------------------------------------------------------------------
 
-export interface BeaconSettings {
+export interface AbbaiSettings {
   // General
   familyName: string;
   saveConfigInBrowser: boolean;
@@ -86,7 +86,7 @@ export interface BeaconSettings {
 
 const STORAGE_KEY = 'beacon-settings';
 
-function buildDefaults(): BeaconSettings {
+function buildDefaults(): AbbaiSettings {
   const config = getConfig();
 
   return {
@@ -152,13 +152,13 @@ function buildDefaults(): BeaconSettings {
 // Persistence helpers
 // ---------------------------------------------------------------------------
 
-async function loadSettingsAsync(): Promise<BeaconSettings> {
+async function loadSettingsAsync(): Promise<AbbaiSettings> {
   const defaults = buildDefaults();
   const configAllowsBrowserStorage = getConfig().save_config_in_browser;
-  const serverStored = await loadServerData<Partial<BeaconSettings>>(STORAGE_KEY);
+  const serverStored = await loadServerData<Partial<AbbaiSettings>>(STORAGE_KEY);
   const stored =
     serverStored ??
-    (configAllowsBrowserStorage ? loadDataSync<Partial<BeaconSettings>>(STORAGE_KEY, {}) : {});
+    (configAllowsBrowserStorage ? loadDataSync<Partial<AbbaiSettings>>(STORAGE_KEY, {}) : {});
   return {
     ...defaults,
     ...stored,
@@ -168,7 +168,7 @@ async function loadSettingsAsync(): Promise<BeaconSettings> {
   };
 }
 
-function persistSettings(settings: BeaconSettings): void {
+function persistSettings(settings: AbbaiSettings): void {
   const browserStorage = getConfig().save_config_in_browser && settings.saveConfigInBrowser;
   if (!browserStorage) {
     try {
@@ -185,7 +185,7 @@ function persistSettings(settings: BeaconSettings): void {
 // ---------------------------------------------------------------------------
 
 export function useSettings() {
-  const [settings, setSettingsState] = useState<BeaconSettings>(buildDefaults);
+  const [settings, setSettingsState] = useState<AbbaiSettings>(buildDefaults);
   const [loaded, setLoaded] = useState(false);
 
   /*
@@ -229,7 +229,7 @@ export function useSettings() {
   }, [settings, loaded]);
 
   /** Update one or more settings fields. Changes apply immediately. */
-  const updateSettings = useCallback((patch: Partial<BeaconSettings>) => {
+  const updateSettings = useCallback((patch: Partial<AbbaiSettings>) => {
     setSettingsState((prev) => ({ ...prev, ...patch }));
   }, []);
 
@@ -256,7 +256,7 @@ export function useSettings() {
     }
   }, []);
 
-  /** Clear all Beacon data from localStorage. */
+  /** Clear all Abbai Flow data from localStorage. */
   const clearLocalStorage = useCallback(() => {
     try {
       const keysToRemove: string[] = [];
