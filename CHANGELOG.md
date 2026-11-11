@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/nyabb/abbai-flow/compare/v2.1.0...v2.2.0) (2026-11-11)
+
+
+### Features
+
+* **timer:** collapsible timer dock in the header's top-right corner ([ab2dd25](https://github.com/nyabb/abbai-flow/commit/ab2dd2588110d07e396bc0be1e7b71303611089c))
+
 # [2.1.0](https://github.com/nyabb/abbai-flow/compare/v2.0.2...v2.1.0) (2026-11-11)
 
 
