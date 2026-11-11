@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/nyabb/abbai-flow/compare/v2.0.0...v2.0.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **brand:** ship the Abbai Flow mark wherever the old artwork survived ([2e6da9e](https://github.com/nyabb/abbai-flow/commit/2e6da9e4db726616aa7015d4a24a4e747d66871c))
+
 # [2.0.0](https://github.com/nyabb/beacon/compare/v1.61.1...v2.0.0) (2026-11-11)
 
 
