@@ -57,7 +57,6 @@ function makeContext() {
   return { ctx, oscillators, gains };
 }
 
-
 /**
  * `new AudioContext()` needs a constructible function, not an arrow — an arrow
  * would throw "not a constructor" and the module would swallow it as silence.
