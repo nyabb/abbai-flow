@@ -1,3 +1,21 @@
+# [2.0.0](https://github.com/nyabb/beacon/compare/v1.61.1...v2.0.0) (2026-11-11)
+
+
+* feat!: release Abbai Flow 2.0.0 ([2e0429e](https://github.com/nyabb/beacon/commit/2e0429ebb0a767d07dbdebb24cf1b1737d8d21cb))
+
+
+### BREAKING CHANGES
+
+* The application is now Abbai Flow and ships only as a
+container image (ghcr.io/<owner>/abbai-flow). The Home Assistant add-on is
+gone: config.yaml, repository.yaml, build.yaml and run.sh are removed, the
+beacon/ mirror tree no longer exists, and semantic-release no longer bumps or
+copies add-on manifests. Household data is preserved — storage keys, the
+/beacon-data API and the BEACON_* environment variables keep their names on
+purpose, so chores, routines, missions, rewards, calendars, lists and settings
+survive the upgrade. See docs/upgrade-2.0.0.md for the add-on-to-container
+migration and rollback path.
+
 ## [1.61.1](https://github.com/nyabb/beacon/compare/v1.61.0...v1.61.1) (2026-11-10)
 
 
