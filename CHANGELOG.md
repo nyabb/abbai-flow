@@ -1,3 +1,10 @@
+## [1.61.1](https://github.com/nyabb/beacon/compare/v1.61.0...v1.61.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **timer:** keep countdowns running when you leave the page ([96cc3d5](https://github.com/nyabb/beacon/commit/96cc3d5aa4be1356352f77fc58723f12a2fe8065))
+
 # [1.61.0](https://github.com/nyabb/beacon/compare/v1.60.0...v1.61.0) (2026-11-10)
 
 
