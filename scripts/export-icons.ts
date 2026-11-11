@@ -7,33 +7,33 @@
  * plus a maskable variant (`src/assets/beacon-app-icon-maskable.svg`).
  *
  * This exists so the icon set can never drift out of sync again: change the
- * source SVG, re-run `node scripts/export-icons.mjs`, done. No hand-exporting
- * PNGs one size at a time.
+ * source SVG, re-run `node --experimental-strip-types scripts/export-icons.ts`,
+ * done. No hand-exporting PNGs one size at a time.
  *
- * Usage: node scripts/export-icons.mjs
+ * Usage: node --experimental-strip-types scripts/export-icons.ts
  */
 import sharp from 'sharp';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, '..');
+const here = path.dirname(fileURLToPath(import.meta.url));
+const root = path.resolve(here, '..');
 const assetsDir = path.join(root, 'src', 'assets');
 
 const SOURCE_SVG = path.join(assetsDir, 'beacon-app-icon.svg');
 const MASKABLE_SVG = path.join(assetsDir, 'beacon-app-icon-maskable.svg');
 
 // Standard (non-maskable) sizes exported from the main app-icon source.
-const STANDARD_SIZES = [16, 32, 64, 192, 256, 512];
+const STANDARD_SIZES: number[] = [16, 32, 64, 192, 256, 512];
 
-async function exportSize(svgPath, size, outPath) {
+async function exportSize(svgPath: string, size: number, outPath: string): Promise<void> {
   const svgBuffer = readFileSync(svgPath);
   await sharp(svgBuffer, { density: 384 }).resize(size, size).png().toFile(outPath);
   console.log(`  wrote ${path.relative(root, outPath)} (${size}x${size})`);
 }
 
-async function main() {
+async function main(): Promise<void> {
   console.log('Exporting Abbai Flow icon set from', path.relative(root, SOURCE_SVG));
 
   for (const size of STANDARD_SIZES) {
@@ -53,7 +53,7 @@ async function main() {
   console.log('Done.');
 }
 
-main().catch((err) => {
+main().catch((err: unknown) => {
   console.error(err);
   process.exit(1);
 });

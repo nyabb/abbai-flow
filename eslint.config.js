@@ -8,13 +8,15 @@ import reactRefresh from 'eslint-plugin-react-refresh';
  * Abbai Flow lint configuration (ESLint 9 flat config).
  *
  * Scope: `src/` (browser app), `server/` + `server.js` (CommonJS backend) and
- * the build scripts. `beacon/` is a legacy mirror and is linted through the
- * root copy, so it is ignored here to avoid duplicate reports.
+ * the build scripts. Generated output (`dist/`, `server/build/`) and editor
+ * bookkeeping (`.history/`) are ignored — they are never hand-edited.
  */
 export default tseslint.config(
   {
     ignores: [
       'dist/**',
+      'server/build/**',
+      '.history/**',
       'beacon/**',
       'android/**',
       'ios/**',

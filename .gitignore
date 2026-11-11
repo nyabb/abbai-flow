@@ -29,3 +29,6 @@ docs/video/*.mp4
 coverage/*
 coverage/
 .tmp/
+
+# Compiled from src/api/planner-rules.ts for the CommonJS server (npm run build:server)
+server/build/

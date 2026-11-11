@@ -18,7 +18,7 @@ help:
 dev: ## Development server (http://localhost:5173)
 	npm run dev
 
-build: ## Production build (tsc + vite build into dist/)
+build: ## Production build (types, server rules, Vite bundle into dist/)
 	npm run build
 
 preview: ## Preview the production build
@@ -27,8 +27,8 @@ preview: ## Preview the production build
 lint: ## ESLint
 	npm run lint
 
-typecheck: ## TypeScript type-check, no emit
-	npx tsc --noEmit
+typecheck: ## TypeScript type-check, no emit (app + scripts)
+	npm run typecheck
 
 test: ## Frontend tests
 	npm run test
@@ -59,4 +59,4 @@ docker-push: ## Override IMAGE, e.g. `make docker-push IMAGE=ghcr.io/<owner>/abb
 		.
 
 clean: ## Remove build output and dependencies
-	rm -rf dist node_modules
+	rm -rf dist server/build node_modules

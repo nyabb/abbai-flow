@@ -564,3 +564,97 @@ test('calendar bridge maps results and not-supported errors', async (t) => {
   });
   assert.equal(badOp.status, 400);
 });
+
+/* ------------------------------------------------------------------ */
+/*  Planner middle layer (/api/planner/mutate)                        */
+/* ------------------------------------------------------------------ */
+
+test('planner mutate applies an operation and writes the document', async (t) => {
+  const beacon = await startBeacon({});
+  t.after(() => beacon.close());
+
+  const applied = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: {
+      target: 'meta',
+      key: 'op-1',
+      op: { type: 'upsertRoutine', name: 'Morning' },
+    },
+  });
+  assert.equal(applied.status, 200);
+  assert.equal(applied.json.changed, true);
+  assert.equal(applied.json.duplicate, false);
+  assert.equal(applied.json.result.name, 'Morning');
+
+  const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
+  assert.equal(stored.status, 200);
+  assert.deepEqual(
+    stored.json.routines.map((routine) => routine.name),
+    ['Morning'],
+  );
+});
+
+test('planner mutate replays an idempotency key instead of applying twice', async (t) => {
+  const beacon = await startBeacon({});
+  t.after(() => beacon.close());
+
+  const op = {
+    target: 'redemptions',
+    key: 'points-once',
+    op: { type: 'addPoints', user: 'Ada', reward: 'Cinema', cost: 100, amount: 30 },
+  };
+
+  const first = await request(beacon.port, { method: 'POST', path: '/api/planner/mutate', body: op });
+  assert.equal(first.status, 200);
+  assert.equal(first.json.changed, true);
+
+  const replay = await request(beacon.port, { method: 'POST', path: '/api/planner/mutate', body: op });
+  assert.equal(replay.status, 200);
+  assert.equal(replay.json.changed, false);
+  assert.equal(replay.json.duplicate, true);
+
+  const stored = await request(beacon.port, { path: '/beacon-data/beacon-reward-redemptions' });
+  assert.equal(stored.json.length, 1);
+  assert.equal(stored.json[0].points, 30);
+});
+
+test('planner mutate rejects malformed requests without writing', async (t) => {
+  const beacon = await startBeacon({});
+  t.after(() => beacon.close());
+
+  const unknownTarget = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: { target: 'nope', key: 'k1', op: { type: 'upsertRoutine', name: 'X' } },
+  });
+  assert.equal(unknownTarget.status, 400);
+
+  const missingKey = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: { target: 'meta', op: { type: 'upsertRoutine', name: 'X' } },
+  });
+  assert.equal(missingKey.status, 400);
+
+  const missingOp = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: { target: 'meta', key: 'k2' },
+  });
+  assert.equal(missingOp.status, 400);
+
+  // An operation the rules do not know must fail loudly, not look like a no-op.
+  const unknownOp = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: { target: 'meta', key: 'k3', op: { type: 'explode' } },
+  });
+  assert.equal(unknownOp.status, 400);
+
+  const wrongMethod = await request(beacon.port, { method: 'GET', path: '/api/planner/mutate' });
+  assert.equal(wrongMethod.status, 405);
+
+  const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
+  assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
+});

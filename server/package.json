@@ -1,0 +1,6 @@
+{
+  "// why": "The repo root is `\"type\": \"module\"` because the frontend is ESM. This marker makes everything under `server/` — including the compiled `server/build/*.js` — CommonJS, which is what the runtime image needs (it ships without a root package.json).",
+  "name": "abbai-flow-server",
+  "private": true,
+  "type": "commonjs"
+}
