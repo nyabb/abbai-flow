@@ -1,7 +1,7 @@
 /**
  * Video Featurette Recording Script
  *
- * Records Beacon app featurettes by capturing key-frame screenshots via
+ * Records Abbai Flow app featurettes by capturing key-frame screenshots via
  * Chrome DevTools MCP and stitching them into video with FFmpeg.
  *
  * This script is executed step-by-step by Claude Code using Chrome DevTools
@@ -11,7 +11,7 @@
  * Output: docs/video/raw/01-meet-beacon.mp4, etc.
  *
  * Prerequisites:
- *   - Beacon app running at HA ingress URL
+ *   - Abbai Flow app running at HA ingress URL
  *   - Chrome DevTools MCP connected to a browser with the app loaded
  *   - ffmpeg installed (brew install ffmpeg)
  *
@@ -47,11 +47,11 @@ export const CONFIG = {
 /**
  * Anonymization function to inject into the page via evaluate_script.
  *
- * The Beacon iframe lives deep in HA's shadow DOM:
+ * The Abbai Flow iframe lives deep in HA's shadow DOM:
  *   document > home-assistant (shadowRoot)
  *     > home-assistant-main (shadowRoot)
  *       > ha-panel-app (shadowRoot)
- *         > iframe[title="Beacon"]
+ *         > iframe[title="Abbai Flow"]
  *
  * IMPORTANT: Must be re-run after every navigation because React re-renders
  * the text nodes when switching views.
@@ -71,7 +71,7 @@ export const ANONYMIZE_SETUP_SCRIPT = `
     if (!main || !main.shadowRoot) return 0;
     const panel = main.shadowRoot.querySelector('ha-panel-app');
     if (!panel || !panel.shadowRoot) return 0;
-    const iframe = panel.shadowRoot.querySelector('iframe[title="Beacon"]');
+    const iframe = panel.shadowRoot.querySelector('iframe[title="Abbai Flow"]');
     if (!iframe) return 0;
     const doc = iframe.contentDocument;
     if (!doc) return 0;
@@ -202,7 +202,7 @@ export function ffmpegStitchCommand(featuretteId: string, name: string): string 
 // ---------------------------------------------------------------------------
 
 /**
- * Beacon sidebar nav buttons (inside iframe, stable across navigations):
+ * Abbai Flow sidebar nav buttons (inside iframe, stable across navigations):
  *   Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather,
  *   Settings
  *
@@ -212,7 +212,7 @@ export function ffmpegStitchCommand(featuretteId: string, name: string): string 
 export const FEATURETTES = {
   '01': {
     name: 'meet-beacon',
-    title: 'Meet Beacon',
+    title: 'Meet Abbai Flow',
     description: 'Tour of all major views',
     frames: [
       'Dashboard (full view)',

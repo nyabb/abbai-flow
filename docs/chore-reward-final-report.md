@@ -23,7 +23,7 @@ Companion to `docs/chore-reward-review.md` (investigation), `docs/chore-reward-p
 ## 2. The revised task / routine / mission model
 
 ```
-Chore (ChoreOps)            Routine (Beacon)                     Mission (Beacon progress)
+Chore (ChoreOps)            Routine (Abbai Flow)                     Mission (Abbai Flow progress)
 ─────────────────           ─────────────────                    ─────────────────────────
 available                   id: slug (stable)                    keyed per ChoreOps user
 awaiting_approval           name, icon, paused                   routineId + completed[]
@@ -68,7 +68,7 @@ saving ──(points reach cost)──▶ awaiting_fulfilment ──(parent, PIN
 
 A household without a parent PIN still gets a working screen (the gate cannot be unlocked by
 anybody, so requiring it would brick the app); configuring a PIN turns all parent actions into
-PIN-protected ones. This is the same rule the rest of Beacon uses.
+PIN-protected ones. This is the same rule the rest of Abbai Flow uses.
 
 ## 5. Shared persistence
 
@@ -85,7 +85,7 @@ PIN-protected ones. This is the same rule the rest of Beacon uses.
 Existing households are upgraded in place: daily labels are adopted as routines (idempotent, case and
 space insensitive), old localStorage reservations import once as `saving`/`awaiting_fulfilment`
 pursuits, and points, reward costs and PINs are untouched. No reward is ever marked given by the
-migration, and deleting the two Beacon documents restores the previous label-based behaviour.
+migration, and deleting the two Abbai Flow documents restores the previous label-based behaviour.
 Details and rollback: `docs/chore-reward-migration.md`.
 
 ## 7. Files changed
@@ -126,13 +126,13 @@ tried to fetch it), so lint is unverified here.
 
 ## 9. Remaining limitations (ChoreOps)
 
-- No routine entity, so routine membership is a Beacon registry keyed by **chore name**. Renaming a
+- No routine entity, so routine membership is a Abbai Flow registry keyed by **chore name**. Renaming a
   chore in Home Assistant detaches it from its routine until it is added again (the label still
   groups it visually).
-- No ordering field, so step order lives in Beacon; editing chores in HA cannot reorder a routine.
+- No ordering field, so step order lives in Abbai Flow; editing chores in HA cannot reorder a routine.
 - `can_approve` on the child's own entity means ChoreOps itself has no notion of _who_ may approve;
-  only the Beacon UI enforces it. Anyone calling the HA service directly can still approve.
+  only the Abbai Flow UI enforces it. Anyone calling the HA service directly can still approve.
 - `approve_reward` charges the reward's current cost; if a parent changes the price while a child is
-  saving, the deduction uses the new cost (Beacon shows the captured cost of the pursuit).
+  saving, the deduction uses the new cost (Abbai Flow shows the captured cost of the pursuit).
 - Chore renaming, per-step due times and sub-routine nesting are not modelled by ChoreOps and are not
   supported here.

@@ -1,12 +1,12 @@
 ---
 title: "Calendar"
-description: "Complete guide to Beacon's week calendar view — creating, editing, deleting, and rescheduling events, recurring events, multi-day events, and filtering."
+description: "Complete guide to Abbai Flow's week calendar view — creating, editing, deleting, and rescheduling events, recurring events, multi-day events, and filtering."
 order: 2
 ---
 
 # Calendar
 
-The calendar is Beacon's core feature. It displays a full week view with support for timed events, all-day events, multi-day events, recurring events, drag-to-reschedule, and per-calendar filtering.
+The calendar is Abbai Flow's core feature. It displays a full week view with support for timed events, all-day events, multi-day events, recurring events, drag-to-reschedule, and per-calendar filtering.
 
 ---
 
@@ -82,7 +82,7 @@ There is no confirmation dialog — deletion is immediate. If you delete an even
 
 ## Recurring events
 
-Beacon supports creating recurring events with three frequencies:
+Abbai Flow supports creating recurring events with three frequencies:
 
 | Frequency | Behavior |
 |-----------|----------|
@@ -100,7 +100,7 @@ Beacon supports creating recurring events with three frequencies:
 
 ### How recurrence rules (rrules) work
 
-Under the hood, Beacon generates an iCalendar RRULE string and passes it to Home Assistant's `calendar.create_event` service. For example:
+Under the hood, Abbai Flow generates an iCalendar RRULE string and passes it to Home Assistant's `calendar.create_event` service. For example:
 
 - Daily until Dec 31, 2026: `FREQ=DAILY;UNTIL=20261231T235959Z`
 - Weekly until Mar 15, 2027: `FREQ=WEEKLY;UNTIL=20270315T235959Z`
@@ -165,7 +165,7 @@ For a single all-day event, set the start and end date to the same day. For a mu
 
 ## Family member color coding
 
-Each calendar discovered by Beacon is assigned a color from the palette, in discovery order:
+Each calendar discovered by Abbai Flow is assigned a color from the palette, in discovery order:
 
 | Position | Color | Hex |
 |----------|-------|-----|
@@ -182,7 +182,7 @@ Each calendar discovered by Beacon is assigned a color from the palette, in disc
 | 11th calendar | Yellow | `#eab308` |
 | 12th calendar | Green | `#22c55e` |
 
-The first four positions match Beacon's original category colors, so existing setups keep their colors. Colors cycle if you have more than 12 calendars. To change any calendar's color (including the built-in Beacon calendar), open **Settings → Calendar**, click the color dot, and pick a preset swatch or a custom color.
+The first four positions match Abbai Flow's original category colors, so existing setups keep their colors. Colors cycle if you have more than 12 calendars. To change any calendar's color (including the built-in Abbai Flow calendar), open **Settings → Calendar**, click the color dot, and pick a preset swatch or a custom color.
 
 Event blocks use a **pastel** version of the calendar color as the background and the **full** color as a left-side stripe, making events easy to distinguish at a glance.
 
@@ -205,11 +205,11 @@ This is useful when you have many calendars and want to focus on a specific fami
 
 ### Google Calendar
 
-Events are fetched through Home Assistant's Google Calendar integration using the WebSocket API. Beacon calls `calendars/list` to discover calendars and `calendars/list_events` to fetch events for each calendar within the current week's date range.
+Events are fetched through Home Assistant's Google Calendar integration using the WebSocket API. Abbai Flow calls `calendars/list` to discover calendars and `calendars/list_events` to fetch events for each calendar within the current week's date range.
 
 - Events refresh automatically every 5 minutes
 - Creating, editing, or deleting an event triggers an immediate refresh
-- Changes made in Google Calendar appear in Beacon within 5 minutes (or sooner if you reload)
+- Changes made in Google Calendar appear in Abbai Flow within 5 minutes (or sooner if you reload)
 
 ### Local Calendar
 
@@ -221,7 +221,7 @@ Home Assistant's Local Calendar integration stores events on the HA server itsel
 
 ### CalDAV (Nextcloud, iCloud, Fastmail)
 
-Set up the CalDAV integration in Home Assistant and Beacon will discover those calendars automatically. The same 5-minute refresh cycle applies.
+Set up the CalDAV integration in Home Assistant and Abbai Flow will discover those calendars automatically. The same 5-minute refresh cycle applies.
 
 ---
 
@@ -231,7 +231,7 @@ Set up the CalDAV integration in Home Assistant and Beacon will discover those c
 
 1. Make sure you have at least one calendar integration configured in Home Assistant (**Settings > Devices & Services**)
 2. Verify the calendar entities exist: go to **Developer Tools > States** and search for `calendar.`
-3. Check that Beacon is connected (the "Connecting..." badge should not be visible)
+3. Check that Abbai Flow is connected (the "Connecting..." badge should not be visible)
 4. Check the browser console for errors (press F12)
 
 ### Events are missing or stale

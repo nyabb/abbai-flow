@@ -1,6 +1,6 @@
 ---
 title: 'Family Members'
-description: 'How to add, edit, and manage family members in Beacon — avatars, colors, roles, and PINs.'
+description: 'How to add, edit, and manage family members in Abbai Flow — avatars, colors, roles, and PINs.'
 order: 3
 ---
 
@@ -30,7 +30,7 @@ The member is saved immediately to the browser's localStorage and (when possible
 
 ## Avatar selection
 
-Beacon provides 55+ emoji avatars organized into 5 categories:
+Abbai Flow provides 55+ emoji avatars organized into 5 categories:
 
 ### People (16 options)
 
@@ -155,7 +155,7 @@ Removing a member does not delete their chore completions or streak history. How
 
 ## Data storage
 
-Family member data is stored in the browser's localStorage under the key `beacon_family_members`. When a Home Assistant client is connected, Beacon attempts to sync the data to an `input_text.beacon_family_members` helper entity (for payloads under 255 characters).
+Family member data is stored in the browser's localStorage under the key `beacon_family_members`. When a Home Assistant client is connected, Abbai Flow attempts to sync the data to an `input_text.beacon_family_members` helper entity (for payloads under 255 characters).
 
 For larger families, the data may exceed the HA input_text limit. In that case, localStorage is the sole storage location. This means:
 
@@ -174,7 +174,7 @@ For larger families, the data may exceed the HA input_text limit. In that case, 
 Family data is stored in localStorage. If you clear browser data (cache, cookies, site data), family members will be lost. To avoid this:
 
 - Use a kiosk browser (like Fully Kiosk) that does not clear data
-- Avoid clearing site data for your Beacon URL
+- Avoid clearing site data for your Abbai Flow URL
 
 ### The "Add Chore" button does not appear
 

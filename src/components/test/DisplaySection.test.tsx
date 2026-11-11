@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { DisplaySection } from '../settings/sections/DisplaySection';
 import { I18nContext, createI18n } from '../../i18n';
-import type { BeaconSettings } from '../../hooks/useSettings';
+import type { AbbaiSettings } from '../../hooks/useSettings';
 
 /**
  * The display-mode controls: everything the kiosk phase added has to be
@@ -11,7 +11,7 @@ import type { BeaconSettings } from '../../hooks/useSettings';
  */
 const NL = createI18n('nl');
 
-function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
+function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   return {
     screenSaverEnabled: true,
     dimTimeout: 5,
@@ -25,10 +25,10 @@ function makeSettings(overrides: Partial<BeaconSettings> = {}): BeaconSettings {
     displayPanels: { agenda: true, chores: true, family: true, weather: true },
     reducedMotion: false,
     ...overrides,
-  } as BeaconSettings;
+  } as AbbaiSettings;
 }
 
-function renderSection(overrides: Partial<BeaconSettings> = {}) {
+function renderSection(overrides: Partial<AbbaiSettings> = {}) {
   const onUpdateSettings = vi.fn();
   const utils = render(
     <I18nContext.Provider value={NL}>

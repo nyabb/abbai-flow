@@ -1,12 +1,12 @@
 ---
 title: "Music"
-description: "Control music playback from Beacon — Music Assistant setup, player selection, transport controls, volume, and the Now Playing bar."
+description: "Control music playback from Abbai Flow — Music Assistant setup, player selection, transport controls, volume, and the Now Playing bar."
 order: 6
 ---
 
 # Music
 
-Beacon lets you control any media player entity in Home Assistant directly from your wall-mounted display. This includes Music Assistant, Sonos, Google Home speakers, Chromecast, and any other media player integration.
+Abbai Flow lets you control any media player entity in Home Assistant directly from your wall-mounted display. This includes Music Assistant, Sonos, Google Home speakers, Chromecast, and any other media player integration.
 
 ---
 
@@ -38,7 +38,7 @@ Verify they exist in **Developer Tools > States**.
 
 ### Alternative: Other media player integrations
 
-Beacon works with any `media_player.*` entity, not just Music Assistant. Other supported integrations include:
+Abbai Flow works with any `media_player.*` entity, not just Music Assistant. Other supported integrations include:
 
 - **Sonos** (built-in HA integration)
 - **Google Cast** (Chromecast, Google Home speakers)
@@ -120,11 +120,11 @@ If you have multiple media players:
 4. Players currently playing show a "Playing" badge
 5. Click a player to select it
 
-The selected player becomes the active player for all transport and volume controls. If no player is explicitly selected, Beacon automatically selects the first player that is currently playing.
+The selected player becomes the active player for all transport and volume controls. If no player is explicitly selected, Abbai Flow automatically selects the first player that is currently playing.
 
 ### Player priority
 
-Beacon resolves the active player in this order:
+Abbai Flow resolves the active player in this order:
 1. Any player with state `playing`
 2. The explicitly selected player (via the dropdown)
 3. The first player in the list
@@ -144,12 +144,12 @@ Volume is controlled through Home Assistant's `media_player.volume_set` service:
 
 ## Real-time updates
 
-Beacon subscribes to Home Assistant's `state_changed` event for all `media_player.*` entities. When a media player's state changes (new track, volume change, play/pause, etc.), Beacon updates the UI immediately without waiting for the next polling interval.
+Abbai Flow subscribes to Home Assistant's `state_changed` event for all `media_player.*` entities. When a media player's state changes (new track, volume change, play/pause, etc.), Abbai Flow updates the UI immediately without waiting for the next polling interval.
 
 This means:
-- Changing volume on the physical speaker updates the Beacon slider
-- Starting playback from Spotify shows the track in Beacon within 1-2 seconds
-- Skipping tracks from any control surface (phone app, voice assistant) reflects in Beacon
+- Changing volume on the physical speaker updates the Abbai Flow slider
+- Starting playback from Spotify shows the track in Abbai Flow within 1-2 seconds
+- Skipping tracks from any control surface (phone app, voice assistant) reflects in Abbai Flow
 
 ---
 
@@ -158,14 +158,14 @@ This means:
 ### No players appear
 
 1. Verify you have `media_player.*` entities in Home Assistant: **Developer Tools > States**, filter by "media_player"
-2. Check that Beacon is connected to HA (no "Connecting..." badge)
+2. Check that Abbai Flow is connected to HA (no "Connecting..." badge)
 3. Some media players only appear when powered on — if a speaker is off, its entity may not be listed
 
 ### Album art does not load
 
 1. Album art URLs from HA are often relative paths (e.g., `/api/media_player_proxy/...`)
-2. Beacon prepends the HA URL to relative paths, so `ha_url` must be correctly configured
-3. If running Beacon on a different domain/port than HA, CORS restrictions may block the image
+2. Abbai Flow prepends the HA URL to relative paths, so `ha_url` must be correctly configured
+3. If running Abbai Flow on a different domain/port than HA, CORS restrictions may block the image
 
 ### Controls do not respond
 
@@ -175,4 +175,4 @@ This means:
 
 ### Volume slider jumps around
 
-This can happen when the physical speaker and Beacon disagree on the volume level. Each volume change triggers a state update from HA, which may briefly conflict with the local slider position. The slider will settle after 1-2 seconds.
+This can happen when the physical speaker and Abbai Flow disagree on the volume level. Each volume change triggers a state update from HA, which may briefly conflict with the local slider position. The slider will settle after 1-2 seconds.

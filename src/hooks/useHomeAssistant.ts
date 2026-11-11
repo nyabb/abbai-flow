@@ -81,7 +81,7 @@ export function useHomeAssistant() {
       // The backend injects the HA token for all /api/* requests.
       // Just mark as connected so REST-based hooks fire.
       if (usesServerProxy() && !token) {
-        console.info('Beacon: Server proxy mode — using REST API through Beacon.');
+        console.info('Abbai Flow: Server proxy mode — using REST API through Abbai Flow.');
         if (!cancelled) setConnected(true);
         return;
       }
@@ -92,7 +92,7 @@ export function useHomeAssistant() {
       }
 
       if (!token) {
-        console.warn('Beacon: no HA token available. Running with preview data.');
+        console.warn('Abbai Flow: no HA token available. Running with preview data.');
         return;
       }
 
@@ -105,7 +105,7 @@ export function useHomeAssistant() {
       clientRef.current = client;
 
       client.connect().catch((err) => {
-        console.error('Beacon: Failed to connect to Home Assistant', err);
+        console.error('Abbai Flow: Failed to connect to Home Assistant', err);
       });
     }
 

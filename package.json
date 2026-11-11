@@ -1,9 +1,9 @@
 {
-  "name": "beacon",
+  "name": "abbai-flow",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Family command center for wall-mounted displays — a Home Assistant add-on",
+  "description": "Abbai Flow — a family organisation and gamification platform: routines, missions, chores, rewards and everyday family life, with a Home Assistant add-on and a standalone server.",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

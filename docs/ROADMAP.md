@@ -1,7 +1,7 @@
-# Beacon Roadmap
+# Abbai Flow Roadmap
 
 ## Vision
-Make Beacon the free, open-source family command center that anyone can set up on any screen — no technical expertise required. The only cost should be the hardware (a tablet, old monitor, or Raspberry Pi).
+Make Abbai Flow the free, open-source family command center that anyone can set up on any screen — no technical expertise required. The only cost should be the hardware (a tablet, old monitor, or Raspberry Pi).
 
 ## Phase 1: Zero-Config Standalone Mode
 **Goal**: Install → 2-minute setup wizard → working dashboard
@@ -28,7 +28,7 @@ Make Beacon the free, open-source family command center that anyone can set up o
 - [ ] **Android APK** — Play Store via Capacitor (already scaffolded)
 - [ ] **iOS app** — App Store via Capacitor (already scaffolded)
 - [ ] **Docker one-liner** — `docker run -p 3000:3000 beacon` for self-hosting
-- [ ] **Raspberry Pi image** — flash SD card, plug in monitor, boot to Beacon
+- [ ] **Raspberry Pi image** — flash SD card, plug in monitor, boot to Abbai Flow
 - [ ] **HA Add-on Store** — submit to official HA add-on repository (currently custom repo)
 
 ## Phase 4: Polish & Delight

@@ -1,6 +1,6 @@
 ---
 description: >
-  Use this skill when working with Beacon calendar events — viewing schedules,
+  Use this skill when working with Abbai Flow calendar events — viewing schedules,
   creating events, or understanding how calendars map to family members.
 triggers:
   - beacon calendar
@@ -11,11 +11,11 @@ triggers:
   - what's on today
 ---
 
-# Beacon Calendar
+# Abbai Flow Calendar
 
 ## Overview
 
-Beacon reads calendars from Home Assistant (Google Calendar, CalDAV, local calendars). Each family member can be linked to their own calendar for per-person schedule views.
+Abbai Flow reads calendars from Home Assistant (Google Calendar, CalDAV, local calendars). Each family member can be linked to their own calendar for per-person schedule views.
 
 ## Viewing Events
 
@@ -52,7 +52,7 @@ all_day: true
 
 ## Calendar-to-Person Mapping
 
-Family members have an optional `calendar_entity` field that links to their HA calendar. This enables per-member columns on the dashboard. Assign via Beacon Settings > Family Members > Edit > Calendar dropdown.
+Family members have an optional `calendar_entity` field that links to their HA calendar. This enables per-member columns on the dashboard. Assign via Abbai Flow Settings > Family Members > Edit > Calendar dropdown.
 
 Common entity patterns:
 - Google Calendar: `calendar.aaron_sachs`, `calendar.ashley_sachs`

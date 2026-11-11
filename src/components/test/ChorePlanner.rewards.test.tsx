@@ -127,7 +127,7 @@ describe('reward lifecycle', () => {
     fireEvent.change(pin, { target: { value: '0123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
 
-    // 3. ChoreOps deducts exactly once; Beacon records who gave it.
+    // 3. ChoreOps deducts exactly once; Abbai Flow records who gave it.
     await waitFor(() => expect(mocks.approveReward).toHaveBeenCalledTimes(1));
     expect(mocks.approveReward).toHaveBeenCalledWith('Zara', 'Schermtijd', 'Papa');
     await waitFor(() => expect(container.textContent).toContain('Beloning gegeven'));

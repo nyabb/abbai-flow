@@ -1,12 +1,12 @@
 ---
 title: "API Reference"
-description: "Technical reference for Beacon's internal APIs — Home Assistant WebSocket, calendar operations, weather, media player, photos, and configuration."
+description: "Technical reference for Abbai Flow's internal APIs — Home Assistant WebSocket, calendar operations, weather, media player, photos, and configuration."
 order: 2
 ---
 
 # API Reference
 
-This document covers the internal APIs that Beacon uses to communicate with Home Assistant and manage data. It is intended for developers who want to understand Beacon's data layer or build extensions.
+This document covers the internal APIs that Abbai Flow uses to communicate with Home Assistant and manage data. It is intended for developers who want to understand Abbai Flow's data layer or build extensions.
 
 ---
 
@@ -419,13 +419,13 @@ Streaks are updated automatically when `completeChore()` is called. The streak l
 ```typescript
 import { getConfig } from './config';
 
-const config: BeaconConfig = getConfig();
+const config: Abbai FlowConfig = getConfig();
 ```
 
 Returns the resolved configuration object (cached after first call):
 
 ```typescript
-interface BeaconConfig {
+interface Abbai FlowConfig {
   ha_url: string;
   ha_token: string;
   family_name: string;

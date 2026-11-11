@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { FamilySection } from '../settings/sections/FamilySection';
 import { I18nContext, createI18n } from '../../i18n';
-import type { BeaconSettings } from '../../hooks/useSettings';
+import type { AbbaiSettings } from '../../hooks/useSettings';
 import type { FamilyMember, Routine } from '../../types/family';
 
 /**
@@ -55,7 +55,7 @@ vi.mock('../../utils/member-photo', () => ({
   resolveMemberPhoto: (photo: string) => photo,
 }));
 
-const settings = { themeId: 'skylight' } as BeaconSettings;
+const settings = { themeId: 'skylight' } as AbbaiSettings;
 
 const MEMBERS: FamilyMember[] = [
   { id: 'm1', name: 'Noor', avatar: '🧑', color: '#3b82f6', role: 'child' },

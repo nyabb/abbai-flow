@@ -1,8 +1,8 @@
-# Beacon Video Featurette Series — Production Guide
+# Abbai Flow Video Featurette Series — Production Guide
 
 ## Overview
 
-A series of 10 short video featurettes (30–45 seconds each) showcasing Beacon's features. Each video pairs an AI-cloned voiceover with automated screen recordings of the actual app.
+A series of 10 short video featurettes (30–45 seconds each) showcasing Abbai Flow's features. Each video pairs an AI-cloned voiceover with automated screen recordings of the actual app.
 
 **Total runtime:** ~6 minutes across all featurettes.
 
@@ -17,7 +17,7 @@ Script (markdown) → Screen Recording (Playwright) → Voiceover (ElevenLabs) �
 1. **Write/refine script** — Each featurette has a script in `scripts/` with narration, scene descriptions, and timing.
 2. **Record screen footage** — Use Playwright automation (pseudocode in `automation/`) to drive a browser through the app, capturing consistent recordings.
 3. **Generate voiceover** — Feed the `Voice:` sections from each script into ElevenLabs with a cloned voice profile.
-4. **Composite** — Layer voice audio over screen recordings using FFmpeg. Add transitions, title cards, and the Beacon logo.
+4. **Composite** — Layer voice audio over screen recordings using FFmpeg. Add transitions, title cards, and the Abbai Flow logo.
 5. **Export** — Render final MP4s at 1080p for YouTube/social, plus 720p vertical crops for Instagram/TikTok.
 
 ## Tools Required
@@ -27,7 +27,7 @@ Script (markdown) → Screen Recording (Playwright) → Voiceover (ElevenLabs) �
 | **Playwright** | Browser automation for screen recordings | `npx playwright` — headless or headed |
 | **ElevenLabs** | AI voice cloning + text-to-speech | Professional Voice Clone plan recommended |
 | **FFmpeg** | Video compositing, transitions, encoding | `brew install ffmpeg` |
-| **Beacon (running)** | The app itself, populated with demo data | Use the demo/standalone mode |
+| **Abbai Flow (running)** | The app itself, populated with demo data | Use the demo/standalone mode |
 | **OBS Studio** (optional) | Manual screen recording backup | If Playwright capture has issues |
 
 ## ElevenLabs Setup
@@ -40,7 +40,7 @@ Script (markdown) → Screen Recording (Playwright) → Voiceover (ElevenLabs) �
 
 ## Demo Data Requirements
 
-Before recording, the Beacon instance needs realistic demo data:
+Before recording, the Abbai Flow instance needs realistic demo data:
 
 - **Calendar:** 5–7 events across the current week (school, soccer, dentist, date night, etc.)
 - **Lists:** A grocery list with 8–10 items, a household list, a packing list

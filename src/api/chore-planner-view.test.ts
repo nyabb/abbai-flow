@@ -54,7 +54,7 @@ const states = normalizeChoreOps([
 ]);
 
 describe('buildChorePlannerView', () => {
-  it('renders ChoreOps users with Beacon family photo, colour, and display name', () => {
+  it('renders ChoreOps users with Abbai Flow family photo, colour, and display name', () => {
     const view = buildChorePlannerView(states, family);
 
     expect(view.available).toBe(true);
@@ -143,7 +143,7 @@ describe('choreOpsTaskStatus', () => {
 /**
  * "Anyone" chores (ChoreOps `shared_first`) are one chore several children can
  * take. The first child to claim it keeps it — ChoreOps locks the others out
- * with `completed_by_other` — so Beacon must show the "anyone" label and drop
+ * with `completed_by_other` — so Abbai Flow must show the "anyone" label and drop
  * the chore from the other children's boards instead of marking it done there.
  */
 describe('shared chores', () => {

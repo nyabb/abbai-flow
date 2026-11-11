@@ -2,7 +2,7 @@
  * Planner copy.
  *
  * Every string comes from the shared i18n dictionary (`planner.*`), so the
- * chores screen speaks whatever language is selected in Beacon's settings.
+ * chores screen speaks whatever language is selected in Abbai Flow's settings.
  * There is no private EN/NL switch to keep in sync any more.
  */
 import { useMemo } from 'react';

@@ -1,5 +1,5 @@
 /* ============================================================
-   Beacon — Display Mode (/display)
+   Abbai Flow — Display Mode (/display)
 
    A wall-mounted Chromium kiosk, read from 2-3 m away on a Raspberry Pi.
    Everything here is sized for that distance and for fingers: the clock is the
@@ -85,7 +85,7 @@
 
 /* --- Connection badge ----------------------------------------------------
    Four states, each with its own colour so the reason is readable at a glance:
-   connected, Beacon unreachable, Home Assistant unreachable, no network. */
+   connected, Abbai Flow unreachable, Home Assistant unreachable, no network. */
 .display-connection {
   display: inline-flex;
   align-items: center;

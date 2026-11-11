@@ -83,7 +83,7 @@ async function browseAndResolvePhotos(
 
     return resolved.filter((photo): photo is Photo => photo !== null);
   } catch {
-    console.warn(`Beacon: Failed to fetch ${source} photos`);
+    console.warn(`Abbai Flow: Failed to fetch ${source} photos`);
     return [];
   }
 }

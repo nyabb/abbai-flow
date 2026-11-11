@@ -6,9 +6,9 @@
 
 ## Scene 1: Desktop View (0s–10s)
 
-**Scene:** Beacon on a full desktop browser — wide layout, all sections visible, spacious design.
+**Scene:** Abbai Flow on a full desktop browser — wide layout, all sections visible, spacious design.
 
-**Voice:** "Beacon looks great on a big screen. Wall-mounted tablet, old laptop in the kitchen, a monitor in the hallway — the layout stretches to use every pixel."
+**Voice:** "Abbai Flow looks great on a big screen. Wall-mounted tablet, old laptop in the kitchen, a monitor in the hallway — the layout stretches to use every pixel."
 
 **Transitions:** Fade in to desktop view.
 

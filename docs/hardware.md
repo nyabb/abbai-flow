@@ -1,6 +1,6 @@
-# Beacon Hardware Guide
+# Abbai Flow Hardware Guide
 
-Beacon runs on any screen with a web browser. Here are tested and recommended setups, from budget to premium.
+Abbai Flow runs on any screen with a web browser. Here are tested and recommended setups, from budget to premium.
 
 ## Recommended Setups
 
@@ -19,13 +19,13 @@ Beacon runs on any screen with a web browser. Here are tested and recommended se
 
 | Component | Model | Price | Notes |
 |-----------|-------|-------|-------|
-| **Tablet** | Amazon Fire HD 10 (refurb) | ~$70 | Run Beacon as a PWA via Silk browser |
+| **Tablet** | Amazon Fire HD 10 (refurb) | ~$70 | Run Abbai Flow as a PWA via Silk browser |
 | **Stand** | Tablet wall mount or stand | ~$15 | Magnetic or adhesive mount |
 | | | **~$85 total** | |
 
 ### Repurpose What You Have ($0)
 
-- **Old iPad or Android tablet** — Open Beacon in Safari/Chrome, add to home screen
+- **Old iPad or Android tablet** — Open Abbai Flow in Safari/Chrome, add to home screen
 - **Old laptop** — Open in fullscreen (F11), prop up in the kitchen
 - **Spare monitor + any PC** — Chromium kiosk mode
 
@@ -35,7 +35,7 @@ Once you have a Pi + monitor, the kiosk setup is:
 
 ```bash
 # 1. Install Raspberry Pi OS with Desktop
-# 2. Install Beacon add-on in Home Assistant
+# 2. Install Abbai Flow add-on in Home Assistant
 # 3. Create kiosk script:
 
 cat > ~/beacon-kiosk.sh << 'EOF'
@@ -61,7 +61,7 @@ mkdir -p ~/.config/autostart
 cat > ~/.config/autostart/beacon-kiosk.desktop << EOF
 [Desktop Entry]
 Type=Application
-Name=Beacon Kiosk
+Name=Abbai Flow Kiosk
 Exec=/home/$USER/beacon-kiosk.sh
 EOF
 ```
@@ -77,8 +77,8 @@ EOF
 
 ## Tips
 
-- **Touch is optional** — Beacon works great as a view-only display too
+- **Touch is optional** — Abbai Flow works great as a view-only display too
 - **Landscape orientation** — Best for the calendar week view
-- **Screen burn-in** — Beacon's screen saver prevents this on OLED/AMOLED
+- **Screen burn-in** — Abbai Flow's screen saver prevents this on OLED/AMOLED
 - **Power** — Most monitors can be powered via a single outlet; the Pi can share a USB-C hub
 - **Wi-Fi** — Pi 5 has built-in Wi-Fi; no ethernet needed (but wired is more reliable)

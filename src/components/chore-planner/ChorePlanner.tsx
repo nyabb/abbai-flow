@@ -92,9 +92,9 @@ function readPausedRoutines(): string[] {
 }
 
 interface ChorePlannerProps {
-  /** Beacon family members supply photos, colours, and display names. */
+  /** Abbai Flow family members supply photos, colours, and display names. */
   members: FamilyMember[];
-  /** App language (`BeaconSettings.locale`); the planner has no own language switch. */
+  /** App language (`AbbaiSettings.locale`); the planner has no own language switch. */
   locale: string;
   /** The same updater Settings uses, so picking a language here changes the whole app. */
   onLocaleChange: (locale: string) => void;
@@ -113,7 +113,7 @@ export function ChorePlanner({
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
   /**
-   * Beacon-owned planner metadata: the routine registry (identity + step order)
+   * Abbai Flow-owned planner metadata: the routine registry (identity + step order)
    * and per-child mission progress. ChoreOps has neither, so this is the only
    * place routines can be ordered, renamed or paused.
    */
@@ -859,7 +859,7 @@ export function ChorePlanner({
     /*
      * Labels are the routine name. They are only sent when the field differs
      * from what ChoreOps already has, so editing e.g. the points of a chore
-     * whose label Beacon cannot see never wipes that label. Clearing the field
+     * whose label Abbai Flow cannot see never wipes that label. Clearing the field
      * sends `[]`, which is how a routine is removed again.
      */
     const currentLabel = (
@@ -914,7 +914,7 @@ export function ChorePlanner({
       showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
 
       /*
-       * Routine membership is Beacon metadata, not a ChoreOps field: the label
+       * Routine membership is Abbai Flow metadata, not a ChoreOps field: the label
        * names the routine, and the registry remembers the chore belongs to it
        * (with an order ChoreOps cannot store). A cleared label removes it again.
        */
@@ -1040,7 +1040,7 @@ export function ChorePlanner({
   /**
    * Put points aside for a reward.
    *
-   * Approval-free and Beacon-only: the balance drops the moment the child
+   * Approval-free and Abbai Flow-only: the balance drops the moment the child
    * allocates, and nothing is written to ChoreOps, so they can still change
    * their mind. Points accumulate towards the cost instead of being reserved in
    * one go -- that is what makes "on hold" (partway) and "reached the goal"
@@ -1086,7 +1086,7 @@ export function ChorePlanner({
   /**
    * Parent hands a reached reward over.
    *
-   * ChoreOps deducts the cost through `approve_reward` and Beacon records who
+   * ChoreOps deducts the cost through `approve_reward` and Abbai Flow records who
    * gave what and when. A child can never reach this: it is behind the PIN, and
    * the redemption only exists once the goal is actually achieved.
    */

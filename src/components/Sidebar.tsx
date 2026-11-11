@@ -14,7 +14,7 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import beaconIcon from '../assets/beacon-app-icon.svg';
+import abbaiIcon from '../assets/abbai-flow-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
 
 export type SidebarView =
@@ -139,9 +139,9 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
         aria-label={t('nav.mainNavigation')}
         style={position === 'bottom' ? { display: 'none' } : undefined}
       >
-        {/* Beacon logo */}
+        {/* Abbai Flow logo */}
         <div className="sidebar-logo">
-          <img src={beaconIcon} alt="Beacon" width={32} height={32} />
+          <img src={abbaiIcon} alt="Abbai Flow" width={32} height={32} />
         </div>
 
         {/* Main nav icons: three above the add button, three below it. */}

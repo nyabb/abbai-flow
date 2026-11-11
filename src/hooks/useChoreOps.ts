@@ -1,7 +1,7 @@
 /**
  * ChoreOps data hook.
  *
- * Beacon runs in two shapes and they need different transports:
+ * Abbai Flow runs in two shapes and they need different transports:
  *
  *  - Direct-token / dev: `useHomeAssistant` creates a HomeAssistantClient, so
  *    we read `get_states` over its WebSocket and subscribe to `state_changed`
@@ -79,9 +79,9 @@ export interface UseChoreOpsResult {
    * Confirm a reward a child set points aside for.
    *
    * Goes through `choreops.approve_reward` rather than the approve button:
-   * the allocation lives in Beacon, so there is no pending ChoreOps claim for
+   * the allocation lives in Abbai Flow, so there is no pending ChoreOps claim for
    * the button to confirm. ChoreOps deducts the cost here — once — and the
-   * child's Beacon allocation is released so the visible balance stays put.
+   * child's Abbai Flow allocation is released so the visible balance stays put.
    */
   approveReward: (userName: string, rewardName: string, approverName?: string) => Promise<void>;
   /** Delete a ChoreOps chore by name. */
@@ -387,7 +387,7 @@ export function useChoreOps(): UseChoreOpsResult {
   );
 
   /**
-   * Create a chore in ChoreOps. ChoreOps remains the source of truth: Beacon
+   * Create a chore in ChoreOps. ChoreOps remains the source of truth: Abbai Flow
    * only sends the fields the user filled in and then re-reads its entities.
    */
   const createChore = useCallback(
@@ -449,7 +449,7 @@ export function useChoreOps(): UseChoreOpsResult {
    *
    * `approve_reward` is the only ChoreOps entry point that both grants the
    * reward and deducts the points in one go, and its manual origin accepts a
-   * reward with no pending claim — which is exactly the state a Beacon
+   * reward with no pending claim — which is exactly the state a Abbai Flow
    * allocation leaves behind.
    */
   const approveReward = useCallback(
@@ -457,7 +457,7 @@ export function useChoreOps(): UseChoreOpsResult {
       const entryId = snapshot.data?.entryId ?? null;
       await callHaService('choreops', 'approve_reward', {
         ...(entryId ? { config_entry_id: entryId } : {}),
-        approver_name: approverName?.trim() || 'Beacon',
+        approver_name: approverName?.trim() || 'Abbai Flow',
         user_name: userName,
         reward_name: rewardName,
       });

@@ -1,12 +1,12 @@
 {
-  "name": "Beacon - Family Calendar",
-  "short_name": "Beacon",
-  "description": "A family calendar display powered by Home Assistant",
+  "name": "Abbai Flow",
+  "short_name": "Abbai Flow",
+  "description": "Abbai Flow — routines, missions, chores and rewards for the whole family.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "landscape",
-  "theme_color": "#101d3c",
-  "background_color": "#101d3c",
+  "theme_color": "#0f6f6a",
+  "background_color": "#fbf7f1",
   "icons": [
     {
       "src": "/src/assets/beacon-favicon-32.png",
@@ -46,7 +46,7 @@
       "purpose": "maskable"
     },
     {
-      "src": "/src/assets/beacon-app-icon.svg",
+      "src": "/src/assets/abbai-flow-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

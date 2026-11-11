@@ -1,12 +1,12 @@
 ---
 title: 'Deployment'
-description: 'Deploying Beacon — HA add-on, Docker standalone, reverse proxy, hardware recommendations, kiosk mode, and performance optimization.'
+description: 'Deploying Abbai Flow — HA add-on, Docker standalone, reverse proxy, hardware recommendations, kiosk mode, and performance optimization.'
 order: 5
 ---
 
 # Deployment
 
-This guide covers all deployment options for Beacon: the Home Assistant add-on, standalone Docker, reverse proxy setup, hardware recommendations, kiosk mode configuration, and performance optimization.
+This guide covers all deployment options for Abbai Flow: the Home Assistant add-on, standalone Docker, reverse proxy setup, hardware recommendations, kiosk mode configuration, and performance optimization.
 
 ---
 
@@ -36,7 +36,7 @@ wget -qO /dev/null http://localhost:3000/ || exit 1
 
 ## Docker standalone deployment
 
-For running Beacon outside of Home Assistant's add-on system.
+For running Abbai Flow outside of Home Assistant's add-on system.
 
 ### Basic deployment
 
@@ -95,7 +95,7 @@ docker run -d --name beacon -p 3000:3000 \
 
 ## Reverse proxy setup
 
-If you want to access Beacon from outside your local network or behind a reverse proxy.
+If you want to access Abbai Flow from outside your local network or behind a reverse proxy.
 
 ### Nginx
 
@@ -134,9 +134,9 @@ Caddy handles SSL certificates automatically via Let's Encrypt.
 
 ### Important notes
 
-- Beacon routes Home Assistant API and WebSocket requests through its backend proxy. The container must be able to reach the configured `HA_URL`.
-- Because HA requests use the same origin as Beacon, CORS does not need to be enabled on Home Assistant for standalone Docker mode.
-- For best results, keep Beacon and HA on the same network and access Beacon via the reverse proxy.
+- Abbai Flow routes Home Assistant API and WebSocket requests through its backend proxy. The container must be able to reach the configured `HA_URL`.
+- Because HA requests use the same origin as Abbai Flow, CORS does not need to be enabled on Home Assistant for standalone Docker mode.
+- For best results, keep Abbai Flow and HA on the same network and access Abbai Flow via the reverse proxy.
 
 ---
 
@@ -175,14 +175,14 @@ Caddy handles SSL certificates automatically via Let's Encrypt.
 
 ## Kiosk mode setup
 
-Kiosk mode locks the device to showing only Beacon, preventing accidental navigation or app switching.
+Kiosk mode locks the device to showing only Abbai Flow, preventing accidental navigation or app switching.
 
 ### Android (Fully Kiosk Browser)
 
 [Fully Kiosk Browser](https://www.fully-kiosk.com/) is the recommended kiosk solution for Android tablets.
 
 1. Install Fully Kiosk Browser from the APK (it is not on the Play Store)
-2. Set the **Start URL** to your Beacon address
+2. Set the **Start URL** to your Abbai Flow address
 3. Enable these settings:
    - **Web Auto Reload**: Enable, set to reload on connectivity change
    - **Keep Screen On**: Yes
@@ -212,7 +212,7 @@ Add this to a startup script (`~/.config/autostart/beacon.desktop` on Linux):
 ```ini
 [Desktop Entry]
 Type=Application
-Name=Beacon
+Name=Abbai Flow
 Exec=chromium-browser --kiosk --noerrdialogs http://YOUR_BEACON_URL
 ```
 
@@ -224,7 +224,7 @@ firefox --kiosk http://YOUR_BEACON_URL
 
 ### iPad Guided Access
 
-1. Open Beacon in Safari
+1. Open Abbai Flow in Safari
 2. Triple-click the side button to enable Guided Access
 3. Tap **Start** — the iPad is now locked to Safari
 4. To exit, triple-click the side button and enter your passcode
@@ -233,7 +233,7 @@ firefox --kiosk http://YOUR_BEACON_URL
 
 ## Multi-display setup
 
-You can run Beacon on multiple displays simultaneously. Each display:
+You can run Abbai Flow on multiple displays simultaneously. Each display:
 
 - Connects to the same Home Assistant instance
 - Shows the same calendar events (since they come from HA)
@@ -265,7 +265,7 @@ You can run Beacon on multiple displays simultaneously. Each display:
 
 ### General
 
-- Beacon's production build is a static site served by `serve`. It has minimal server overhead.
+- Abbai Flow's production build is a static site served by `serve`. It has minimal server overhead.
 - The main resource consumption is in the browser (JavaScript, DOM rendering, WebSocket connection).
 - Network usage is minimal: WebSocket messages for state changes, REST API calls for photos and grocery data.
 - The health check (`wget` every 30 seconds) has negligible impact.
@@ -280,17 +280,17 @@ You can run Beacon on multiple displays simultaneously. Each display:
 2. Verify `HA_TOKEN` is a valid, non-expired Home Assistant long-lived access token
 3. Verify `HA_URL` is reachable from the Docker container
 
-### Beacon loads but shows "Demo Mode"
+### Abbai Flow loads but shows "Demo Mode"
 
-This means Beacon could not connect to Home Assistant. Check:
+This means Abbai Flow could not connect to Home Assistant. Check:
 
 1. `BEACON_MODE` is set to `standalone`
-2. `HA_URL` is correct and reachable from the Beacon container
+2. `HA_URL` is correct and reachable from the Abbai Flow container
 3. `HA_TOKEN` is valid and the HA instance is running
 
 ### Display goes to sleep / screen turns off
 
-This is controlled by the device's OS, not by Beacon. Disable screen timeout:
+This is controlled by the device's OS, not by Abbai Flow. Disable screen timeout:
 
 - **Android**: Settings > Display > Screen timeout > Never (or use Fully Kiosk's "Keep Screen On")
 - **iPad**: Settings > Display & Brightness > Auto-Lock > Never

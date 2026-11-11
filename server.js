@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Beacon backend entry point.
+ * Abbai Flow backend entry point.
  *
  * Kept byte-for-byte compatible with the add-on image: `run.sh` starts
  * `node /app/server.js`, so this file must stay CommonJS and must not rely on
@@ -26,7 +26,7 @@ try {
 const { server } = createApp(config);
 
 server.listen(PORT, () => {
-  console.log(`Beacon server listening on port ${PORT}`);
+  console.log(`Abbai Flow server listening on port ${PORT}`);
   console.log(`Home Assistant base: ${config.haBaseUrl}`);
   console.log(`Home Assistant token: ${config.haToken ? 'available' : 'NOT available'}`);
   console.log(`Data directory: ${config.dataDir}`);

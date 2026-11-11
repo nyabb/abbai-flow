@@ -55,9 +55,9 @@ describe('design tokens are wired up, not orphaned', () => {
   it.each(
     // Base neutrals are allowed to stay unconsumed outside tokens.css for now
     // (ink/paper largely duplicate existing --bg-primary/--text-primary
-    // tokens). --color-brand is also exempt: it's the Beacon logo mark's
+    // tokens). --color-brand is also exempt: it's the Abbai Flow logo mark's
     // gold, which lives in src/assets/*.svg (raw SVG fill attributes, not
-    // CSS) by design — see beacon-app-icon.svg. Every semantic + category
+    // CSS) by design — see abbai-flow-icon.svg. Every semantic + category
     // color still must have a real CSS/TS consumer, since those are what
     // the design review flagged as needing enforcement (Warning/Brand hex
     // collision, category color governance).
@@ -78,7 +78,7 @@ describe('design tokens are wired up, not orphaned', () => {
 
   it('--color-brand matches the literal gold used in the app icon SVG (its one legitimate consumer)', () => {
     const iconSvg = readFileSync(
-      path.join(SRC_DIR, 'assets', 'beacon-app-icon.svg'),
+      path.join(SRC_DIR, 'assets', 'abbai-flow-icon.svg'),
       'utf-8',
     ).toLowerCase();
     const brandToken = tokens.find((t) => t.name === '--color-brand');

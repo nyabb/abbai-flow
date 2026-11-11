@@ -4,7 +4,7 @@ import { useConnectionStatus } from './useConnectionStatus';
 
 /**
  * Four states, because "disconnected" is not actionable: a wall display has to
- * say whether the wifi is down, Beacon is down, or Home Assistant is down.
+ * say whether the wifi is down, Abbai Flow is down, or Home Assistant is down.
  */
 function setOnline(online: boolean) {
   Object.defineProperty(navigator, 'onLine', { value: online, configurable: true });
@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('useConnectionStatus', () => {
-  it('reports online when both Beacon and HA answer', async () => {
+  it('reports online when both Abbai Flow and HA answer', async () => {
     const { result } = renderHook(() =>
       useConnectionStatus({ haConnected: true, probe: async () => true }),
     );
@@ -28,7 +28,7 @@ describe('useConnectionStatus', () => {
     await waitFor(() => expect(result.current.state).toBe('online'));
   });
 
-  it('separates "Beacon down" from "HA down"', async () => {
+  it('separates "Abbai Flow down" from "HA down"', async () => {
     const beacon = renderHook(() =>
       useConnectionStatus({ haConnected: true, probe: async () => false }),
     );
@@ -83,7 +83,7 @@ describe('useConnectionStatus', () => {
     expect(result.current.reconnected).toBe(true);
   });
 
-  it('treats a throwing probe as "Beacon down" rather than crashing', async () => {
+  it('treats a throwing probe as "Abbai Flow down" rather than crashing', async () => {
     const { result } = renderHook(() =>
       useConnectionStatus({
         haConnected: true,

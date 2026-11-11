@@ -1,12 +1,12 @@
 ---
 title: "Screen Saver"
-description: "Beacon's screen saver and display protection — dim mode, clock screensaver, anti-burn-in, and wake behavior."
+description: "Abbai Flow's screen saver and display protection — dim mode, clock screensaver, anti-burn-in, and wake behavior."
 order: 10
 ---
 
 # Screen Saver
 
-Beacon includes a built-in screen saver to protect wall-mounted displays from burn-in and reduce brightness during idle periods. It operates in three phases.
+Abbai Flow includes a built-in screen saver to protect wall-mounted displays from burn-in and reduce brightness during idle periods. It operates in three phases.
 
 ---
 
@@ -14,7 +14,7 @@ Beacon includes a built-in screen saver to protect wall-mounted displays from bu
 
 | Phase | Trigger | What happens |
 |-------|---------|-------------|
-| **Awake** | User interaction | Normal display — Beacon UI is fully visible |
+| **Awake** | User interaction | Normal display — Abbai Flow UI is fully visible |
 | **Dim** | 5 minutes of inactivity | A semi-transparent dark overlay covers the screen |
 | **Screensaver** | 10 minutes of inactivity | A moving clock replaces the UI entirely |
 
@@ -22,7 +22,7 @@ Beacon includes a built-in screen saver to protect wall-mounted displays from bu
 
 ## Dim mode
 
-After 5 minutes of no interaction, a dark overlay fades in over the entire UI. The underlying Beacon interface is still partially visible but significantly dimmed.
+After 5 minutes of no interaction, a dark overlay fades in over the entire UI. The underlying Abbai Flow interface is still partially visible but significantly dimmed.
 
 - The overlay is a full-screen `div` with a dark background
 - Clicking anywhere on the overlay immediately wakes the display (returns to Awake phase)

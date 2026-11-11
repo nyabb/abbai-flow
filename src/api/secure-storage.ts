@@ -1,7 +1,7 @@
 /**
  * Credential storage for the Home Assistant URL and access token.
  *
- * Beacon is web-only: the values live in `localStorage`. The functions stay
+ * Abbai Flow is web-only: the values live in `localStorage`. The functions stay
  * async so call sites never had to care whether the backing store was
  * synchronous, and a future backend can be swapped in without touching them.
  *

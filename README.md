@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src/assets/beacon-logo-main.png" alt="Beacon" width="280" />
+  <img src="src/assets/beacon-logo-main.png" alt="Abbai Flow" width="280" />
 </p>
 
 <h3 align="center">Your family's daily signal</h3>
@@ -17,20 +17,20 @@
 </p>
 
 <p align="center">
-  Beacon is a free, open-source family command center for wall-mounted displays. It runs as a Home Assistant add-on or standalone — turn any tablet or spare screen into a beautiful family dashboard with no subscription fees and no cloud dependency.
+  Abbai Flow is a free, open-source family command center for wall-mounted displays. It runs as a Home Assistant add-on or standalone — turn any tablet or spare screen into a beautiful family dashboard with no subscription fees and no cloud dependency.
 </p>
 
 <p align="center">
-  <img src="src/assets/beacon-mockup-dark-light.png" alt="Beacon screenshot showing dark and light themes" width="720" />
+  <img src="src/assets/beacon-mockup-dark-light.png" alt="Abbai Flow screenshot showing dark and light themes" width="720" />
 </p>
 
 ---
 
 ## Skylight alternative — without the subscription
 
-Skylight is a polished wall calendar that charges for hardware **and** locks meal planning, photos, and other family features behind Calendar Plus (~$79/year). Beacon is the self-hosted answer: run it as a Home Assistant add-on (or standalone), keep data on your network, and use any tablet you already own.
+Skylight is a polished wall calendar that charges for hardware **and** locks meal planning, photos, and other family features behind Calendar Plus (~$79/year). Abbai Flow is the self-hosted answer: run it as a Home Assistant add-on (or standalone), keep data on your network, and use any tablet you already own.
 
-→ [Getting started](https://beacon-family-docs.netlify.app/docs/getting-started/welcome/) · [Beacon vs Skylight](https://beacon-family-docs.netlify.app/docs/getting-started/skylight-alternative/) · Install with the Home Assistant badge above
+→ [Getting started](./docs/getting-started/welcome/) · [Abbai Flow vs Skylight](./docs/getting-started/skylight-alternative/) · Install with the Home Assistant badge above
 
 ## Features
 
@@ -50,44 +50,70 @@ Skylight is a polished wall calendar that charges for hardware **and** locks mea
 
 ## Installation
 
-### Home Assistant Add-on (Recommended)
+Abbai Flow is a single container. It serves the web app and talks to Home
+Assistant on the browser's behalf, so the tablet never needs a token.
 
-The fastest way to get started is the one-click button:
-
-[![Add to Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fasachs01%2Fbeacon)
-
-Or install manually:
-
-1. In Home Assistant, go to **Settings > Add-ons > Add-on Store**
-2. Click the overflow menu (**...**) and select **Repositories**
-3. Add: `https://github.com/asachs01/beacon`
-4. Find **Beacon** in the store and click **Install**
-5. Start the add-on and click **Open Web UI**
-
-> **Tip:** For the best experience on a wall-mounted tablet, enable **Show in sidebar** in the add-on's Info tab so Beacon is one tap away.
-
-### Standalone / Development
+### Docker (recommended)
 
 ```bash
-git clone https://github.com/asachs01/beacon.git
-cd beacon
-npm install
-npm run dev
+docker run -d \
+  --name abbai-flow \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -e HA_URL=https://homeassistant.local:8123 \
+  -e HA_TOKEN=your_long_lived_access_token \
+  -v abbai-flow-data:/data \
+  ghcr.io/OWNER/abbai-flow:latest
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser. Beacon works fully without Home Assistant — calendars, lists, and tasks are stored locally in the browser.
+Open `http://<host>:3000`. Images are published for `linux/amd64` and
+`linux/arm64`, so the same tag runs on a server and on a Raspberry Pi.
+
+`HA_TOKEN` is a Home Assistant long-lived access token (Profile → Security →
+Long-Lived Access Tokens). Without it, Abbai Flow still runs in standalone mode
+with local calendars, lists and tasks.
+
+### Docker Compose
+
+```yaml
+services:
+  abbai-flow:
+    image: ghcr.io/OWNER/abbai-flow:latest
+    restart: unless-stopped
+    ports: ['3000:3000']
+    environment:
+      HA_URL: https://homeassistant.local:8123
+      HA_TOKEN: ${HA_TOKEN}
+    volumes: ['abbai-flow-data:/data']
+
+volumes:
+  abbai-flow-data:
+```
+
+### Local development
+
+```bash
+npm ci
+npm run dev          # http://localhost:5173
+```
+
+Set `VITE_HA_URL` and `VITE_HA_TOKEN` in `.env` to develop against a real Home
+Assistant. Abbai Flow works fully without it — calendars, lists and tasks are
+then kept in the browser.
 
 ## Configuration
 
-Beacon is configured through the Home Assistant add-on options panel:
+| Variable | Default | Description |
+| --- | --- | --- |
+| `PORT` | `3000` | Port the container listens on |
+| `HA_URL` | — | Home Assistant base URL |
+| `HA_TOKEN` | — | Long-lived access token |
+| `DATA_DIR` | `/data` | Where persisted documents are stored |
 
-| Option           | Default        | Description                      |
-| ---------------- | -------------- | -------------------------------- |
-| `weather_entity` | `weather.home` | Home Assistant weather entity ID |
+Everything else — themes, family members, chores, routines, rewards, calendar
+sources, list providers — is configured through the Abbai Flow UI.
 
-Additional settings (themes, family members, chores, calendar sources, list providers) are configured through the Beacon UI itself.
-
-## Why Beacon?
+## Why Abbai Flow?
 
 - **Free & open source** — no subscriptions, no cloud accounts, no vendor lock-in
 - **Private by design** — all data stays on your network; nothing phones home
@@ -120,9 +146,9 @@ Additional settings (themes, family members, chores, calendar sources, list prov
 
 Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before submitting a pull request.
 
-## Support Beacon
+## Support Abbai Flow
 
-Beacon is free and always will be. If it's useful to your family, consider supporting development:
+Abbai Flow is free and always will be. If it's useful to your family, consider supporting development:
 
 <p>
   <a href="https://github.com/sponsors/asachs01"><img src="https://img.shields.io/badge/GitHub_Sponsors-♥_Sponsor-ea4aaa?style=for-the-badge&logo=github" alt="GitHub Sponsors" /></a>
@@ -131,4 +157,4 @@ Beacon is free and always will be. If it's useful to your family, consider suppo
 
 ## License
 
-Beacon is [MIT licensed](LICENSE). Copyright 2026 Aaron Sachs.
+Abbai Flow is [MIT licensed](LICENSE). Copyright 2026 Aaron Sachs.

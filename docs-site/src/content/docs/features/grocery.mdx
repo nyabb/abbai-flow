@@ -1,21 +1,21 @@
 ---
 title: 'Grocery'
-description: 'Set up grocery list integration with Grocy or AnyList in Beacon — shopping lists, quick-add, expiring items, and meal planning.'
+description: 'Set up grocery list integration with Grocy or AnyList in Abbai Flow — shopping lists, quick-add, expiring items, and meal planning.'
 order: 5
 ---
 
 # Grocery
 
-Beacon integrates with **Grocy** and **AnyList** through Home Assistant to display and manage your grocery shopping lists. You can view items, add new ones, check them off, and see alerts for expiring products.
+Abbai Flow integrates with **Grocy** and **AnyList** through Home Assistant to display and manage your grocery shopping lists. You can view items, add new ones, check them off, and see alerts for expiring products.
 
 ---
 
 ## How the integration works
 
-Beacon tries two grocery sources in order:
+Abbai Flow tries two grocery sources in order:
 
 1. **Grocy**: If the `sensor.grocy_shopping_list` entity exists and has items, Grocy is used
-2. **AnyList**: If Grocy is not available, Beacon looks for `todo.anylist_*` entities
+2. **AnyList**: If Grocy is not available, Abbai Flow looks for `todo.anylist_*` entities
 3. **None**: If neither is available, the grocery drawer shows a message to connect a service
 
 The source detection happens automatically — you do not need to configure which service to use.
@@ -24,7 +24,7 @@ The source detection happens automatically — you do not need to configure whic
 
 ## Grocy integration setup
 
-[Grocy](https://grocy.info/) is a self-hosted groceries and household management solution. To use it with Beacon:
+[Grocy](https://grocy.info/) is a self-hosted groceries and household management solution. To use it with Abbai Flow:
 
 ### Step 1: Install Grocy
 
@@ -52,7 +52,7 @@ After the integration is set up, verify these entities exist:
 
 Check in **Developer Tools > States** by searching for "grocy".
 
-### Step 4: Open Beacon
+### Step 4: Open Abbai Flow
 
 Navigate to the Grocery view (shopping cart icon in the sidebar). You should see your Grocy shopping list with a "via Grocy" label.
 
@@ -79,9 +79,9 @@ The integration creates `todo.anylist_*` entities for each of your AnyList lists
 - `todo.anylist_grocery` — your main grocery list
 - `todo.anylist_costco` — other lists you have in AnyList
 
-### Step 3: Open Beacon
+### Step 3: Open Abbai Flow
 
-Navigate to the Grocery view. You should see your AnyList items with a "via AnyList" label. Beacon uses the first discovered AnyList entity as the primary list.
+Navigate to the Grocery view. You should see your AnyList items with a "via AnyList" label. Abbai Flow uses the first discovered AnyList entity as the primary list.
 
 ---
 
@@ -125,7 +125,7 @@ Each item may show:
 
 ## Expiring items alerts
 
-When using Grocy, Beacon checks for products expiring within the next 3 days. If any are found:
+When using Grocy, Abbai Flow checks for products expiring within the next 3 days. If any are found:
 
 - A yellow alert bar appears at the top of the grocery list
 - The alert shows the count and names of the first 3 expiring items
@@ -137,7 +137,7 @@ This feature is only available with Grocy (AnyList does not track expiration dat
 
 ## Meal plan display
 
-When using Grocy with a meal plan configured, Beacon can display today's planned meals. The meal plan bar shows:
+When using Grocy with a meal plan configured, Abbai Flow can display today's planned meals. The meal plan bar shows:
 
 - **Meal type**: Breakfast, Lunch, or Dinner
 - **Recipe name**: The planned recipe
@@ -166,19 +166,19 @@ Meal types are mapped from Grocy's section labels:
 
 ### "Connect Grocy or AnyList in Home Assistant to see your lists"
 
-This message appears when Beacon cannot find either a Grocy or AnyList integration. Verify:
+This message appears when Abbai Flow cannot find either a Grocy or AnyList integration. Verify:
 
 1. The Grocy integration is set up and `sensor.grocy_shopping_list` exists in HA
 2. OR the AnyList integration is set up and `todo.anylist_*` entities exist
-3. Beacon is connected to Home Assistant (no "Connecting..." badge)
+3. Abbai Flow is connected to Home Assistant (no "Connecting..." badge)
 
 ### Items do not sync back to the app
 
-Beacon uses Home Assistant's REST API to communicate with Grocy/AnyList. Check:
+Abbai Flow uses Home Assistant's REST API to communicate with Grocy/AnyList. Check:
 
 1. The Home Assistant token is valid
 2. The Grocy/AnyList integration is functioning (check **Developer Tools > States** for the entity)
-3. Open the browser console (F12) and look for "Beacon: Failed to..." error messages
+3. Open the browser console (F12) and look for "Abbai Flow: Failed to..." error messages
 
 ### Expiring items alert does not appear
 
@@ -188,7 +188,7 @@ Beacon uses Home Assistant's REST API to communicate with Grocy/AnyList. Check:
 
 ### AnyList shows wrong list
 
-Beacon uses the first `todo.anylist_*` entity it discovers. If you have multiple AnyList lists, the one that appears depends on the order HA returns entities. To ensure the correct list is used, you may need to rename entities in HA.
+Abbai Flow uses the first `todo.anylist_*` entity it discovers. If you have multiple AnyList lists, the one that appears depends on the order HA returns entities. To ensure the correct list is used, you may need to rename entities in HA.
 
 ### Quick-add does nothing
 

@@ -6,7 +6,7 @@
  * by the integration instead of any local sample data.
  *
  * ChoreOps stays authoritative: status, points, and action entity ids all come
- * from its entities, and people are rendered with Beacon family settings
+ * from its entities, and people are rendered with Abbai Flow family settings
  * (photo, avatar, colour, display name) joined by `choreops_user` or name.
  */
 import { resolveMemberForUser } from './choreops';
@@ -99,7 +99,7 @@ const DAILY_FREQUENCY = /^daily/i;
 
 /**
  * A routine is a group of daily chores that share a ChoreOps label, so a
- * household names them in ChoreOps ("Ochtendroutine", "Bedtijd") and Beacon
+ * household names them in ChoreOps ("Ochtendroutine", "Bedtijd") and Abbai Flow
  * simply shows what ChoreOps published. Returns null when the chore has no
  * label; those chores still count as daily work, just without a routine name.
  */
@@ -168,7 +168,7 @@ export function buildChorePlannerView(
   family: FamilyMember[],
   now: Date = new Date(),
   /**
-   * Beacon-owned routine registry. ChoreOps has no routine entity and no
+   * Abbai Flow-owned routine registry. ChoreOps has no routine entity and no
    * ordering, so routine identity and step order come from here; its ChoreOps
    * label remains the fallback for groups that were never adopted.
    */
@@ -340,7 +340,7 @@ export function buildChorePlannerView(
       timeBlock: timeBlockFor(bucket.dueDate),
       points: bucket.points,
       // Registry order first, then anything ChoreOps has that the registry does
-      // not know yet (a chore added in HA without touching Beacon).
+      // not know yet (a chore added in HA without touching Abbai Flow).
       taskNames: [...known, ...unordered],
       paused: bucket.paused,
     };

@@ -1,6 +1,6 @@
-# Beacon — Claude Code Plugin
+# Abbai Flow — Claude Code Plugin
 
-Control your [Beacon](https://github.com/asachs01/beacon) family dashboard from Claude Code.
+Control your [Abbai Flow](https://github.com/asachs01/beacon) family dashboard from Claude Code.
 
 ## What you get
 
@@ -32,7 +32,7 @@ Control your [Beacon](https://github.com/asachs01/beacon) family dashboard from 
 
 ## Documentation
 
-- [Dashboard](https://beacon-family-docs.netlify.app/docs/features/dashboard/)
-- [Chores](https://beacon-family-docs.netlify.app/docs/features/chores/)
-- [Calendar](https://beacon-family-docs.netlify.app/docs/features/calendar/)
-- [AI Integration](https://beacon-family-docs.netlify.app/docs/reference/ai-integration/)
+- [Dashboard](../../docs/)
+- [Chores](../../docs/)
+- [Calendar](../../docs/)
+- [AI Integration](../../docs/ai-integration.md)

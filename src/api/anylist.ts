@@ -57,7 +57,7 @@ export class AnyListClient {
         };
       });
     } catch (err) {
-      console.warn('Beacon: Failed to fetch todo lists', err);
+      console.warn('Abbai Flow: Failed to fetch todo lists', err);
       return [];
     }
   }
@@ -86,7 +86,7 @@ export class AnyListClient {
 
       return [];
     } catch (err) {
-      console.warn(`Beacon: Failed to fetch items for ${listId}`, err);
+      console.warn(`Abbai Flow: Failed to fetch items for ${listId}`, err);
       return [];
     }
   }
@@ -101,7 +101,7 @@ export class AnyListClient {
         item: name,
       });
     } catch (err) {
-      console.warn('Beacon: Failed to add item', err);
+      console.warn('Abbai Flow: Failed to add item', err);
     }
   }
 
@@ -113,7 +113,7 @@ export class AnyListClient {
         status: 'completed',
       });
     } catch (err) {
-      console.warn('Beacon: Failed to check item', err);
+      console.warn('Abbai Flow: Failed to check item', err);
     }
   }
 
@@ -125,7 +125,7 @@ export class AnyListClient {
         status: 'needs_action',
       });
     } catch (err) {
-      console.warn('Beacon: Failed to uncheck item', err);
+      console.warn('Abbai Flow: Failed to uncheck item', err);
     }
   }
 

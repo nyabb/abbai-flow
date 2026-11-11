@@ -1,4 +1,4 @@
-# Beacon — Project Instructions
+# Abbai Flow — Project Instructions
 
 ## Architecture
 

@@ -1,6 +1,6 @@
 ---
 description: >
-  Use this skill when helping users configure or understand the Beacon dashboard
+  Use this skill when helping users configure or understand the Abbai Flow dashboard
   layout, widgets, and display settings.
 triggers:
   - beacon dashboard
@@ -10,7 +10,7 @@ triggers:
   - beacon widget
 ---
 
-# Beacon Dashboard
+# Abbai Flow Dashboard
 
 ## Layout Presets
 

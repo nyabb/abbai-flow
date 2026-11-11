@@ -1,6 +1,6 @@
 ---
 name: create-chore
-description: Create a new family chore in Beacon with assignments and payout
+description: Create a new family chore in Abbai Flow with assignments and payout
 arguments:
   - name: name
     description: Chore name (e.g., "Make bed", "Feed the dog")

@@ -10,7 +10,7 @@ import {
   Info,
 } from 'lucide-react';
 import type { FamilyMember } from '../types/family';
-import type { BeaconSettings } from '../hooks/useSettings';
+import type { AbbaiSettings } from '../hooks/useSettings';
 import { PageHeader } from './PageHeader';
 import { GeneralSection } from './settings/sections/GeneralSection';
 import { ChoresSection } from './settings/sections/ChoresSection';
@@ -37,8 +37,8 @@ type SettingsSection =
   | 'about';
 
 interface SettingsViewProps {
-  settings: BeaconSettings;
-  onUpdateSettings: (patch: Partial<BeaconSettings>) => void;
+  settings: AbbaiSettings;
+  onUpdateSettings: (patch: Partial<AbbaiSettings>) => void;
   onResetSettings: () => void;
   onExportSettings: () => string;
   onImportSettings: (json: string) => void;
@@ -202,7 +202,7 @@ export function SettingsView({
     />
   );
   // ==== CHORES ====
-  // Chore data lives in the ChoreOps integration: Beacon has no local chore
+  // Chore data lives in the ChoreOps integration: Abbai Flow has no local chore
   // store, so streaks, values and payouts are configured in Home Assistant.
   const renderChores = () => (
     <ChoresSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />

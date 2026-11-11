@@ -51,7 +51,7 @@ export class GrocyClient {
 
       return { id: 'grocy', name: 'Grocy Shopping List', items };
     } catch (err) {
-      console.warn('Beacon: Failed to fetch Grocy shopping list', err);
+      console.warn('Abbai Flow: Failed to fetch Grocy shopping list', err);
       return EMPTY_LIST;
     }
   }
@@ -65,7 +65,7 @@ export class GrocyClient {
         data: { note: name, amount: 1 },
       });
     } catch (err) {
-      console.warn('Beacon: Failed to add Grocy item', err);
+      console.warn('Abbai Flow: Failed to add Grocy item', err);
     }
   }
 
@@ -79,7 +79,7 @@ export class GrocyClient {
         data: { done: 1 },
       });
     } catch (err) {
-      console.warn('Beacon: Failed to check Grocy item', err);
+      console.warn('Abbai Flow: Failed to check Grocy item', err);
     }
   }
 
@@ -93,7 +93,7 @@ export class GrocyClient {
         data: { done: 0 },
       });
     } catch (err) {
-      console.warn('Beacon: Failed to uncheck Grocy item', err);
+      console.warn('Abbai Flow: Failed to uncheck Grocy item', err);
     }
   }
 
@@ -124,7 +124,7 @@ export class GrocyClient {
           category: 'expiring',
         }));
     } catch (err) {
-      console.warn('Beacon: Failed to fetch expiring products', err);
+      console.warn('Abbai Flow: Failed to fetch expiring products', err);
       return [];
     }
   }
@@ -158,7 +158,7 @@ export class GrocyClient {
           notes: m.note,
         }));
     } catch (err) {
-      console.warn('Beacon: Failed to fetch Grocy meal plan', err);
+      console.warn('Abbai Flow: Failed to fetch Grocy meal plan', err);
       return [];
     }
   }

@@ -7,7 +7,7 @@
  */
 import { useState } from 'react';
 import { buildFocusUrl } from '../../../focus';
-import type { BeaconSettings } from '../../../hooks/useSettings';
+import type { AbbaiSettings } from '../../../hooks/useSettings';
 import type { TranslationKey } from '../../../i18n';
 import type { FamilyMember } from '../../../types/family';
 import { Segment, Slider, Toggle } from '../controls';
@@ -15,7 +15,7 @@ import type { SettingsSectionContext } from './context';
 
 /** The display panels, in the order they appear on screen. */
 const PANEL_KEYS: Array<{
-  key: keyof BeaconSettings['displayPanels'];
+  key: keyof AbbaiSettings['displayPanels'];
   labelKey: TranslationKey;
 }> = [
   { key: 'agenda', labelKey: 'settings.display.panelAgenda' },

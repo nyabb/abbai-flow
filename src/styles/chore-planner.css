@@ -19,7 +19,7 @@
 }
 
 .chore-planner {
-  /* Every planner colour is derived from the Beacon theme tokens, so changing
+  /* Every planner colour is derived from the Abbai Flow theme tokens, so changing
      the colour scheme in Settings re-themes the whole chores flow along with
      the dashboard, calendar and lists. Nothing here is a literal colour. */
   --planner-bg: var(--bg-primary);

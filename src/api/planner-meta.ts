@@ -1,11 +1,11 @@
 /**
- * Beacon-owned planner metadata: routines, routine step order and mission
+ * Abbai Flow-owned planner metadata: routines, routine step order and mission
  * progress.
  *
  * ChoreOps has no routine entity and no ordering field on a chore (verified
  * against its service registry and entity attributes), so anything that gives
  * a routine a stable identity — or says "task 2 comes after task 1" — has to
- * live in Beacon.
+ * live in Abbai Flow.
  *
  * The **rules** live in `shared/planner-rules.mjs` so the add-on server can run
  * the exact same code for `POST /api/planner/mutate`; this module re-exports them

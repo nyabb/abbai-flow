@@ -1,6 +1,6 @@
-# Beacon Icon Set
+# Abbai Flow Icon Set
 
-This directory contains the source artwork and build tools for Beacon's icon set.
+This directory contains the source artwork and build tools for Abbai Flow's icon set.
 
 ## Regenerating Icons
 

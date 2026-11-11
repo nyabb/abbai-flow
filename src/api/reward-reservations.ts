@@ -6,7 +6,7 @@
  * leave the child's spendable balance, so they can see what is left and change
  * their mind before anyone confirms anything in real life.
  *
- * Beacon therefore keeps a small local reservation per (ChoreOps user, reward).
+ * Abbai Flow therefore keeps a small local reservation per (ChoreOps user, reward).
  * It never invents points: the reserved amount is only subtracted from the
  * balance ChoreOps publishes, and it is dropped again as soon as the child
  * undoes the choice or a parent confirms the reward (ChoreOps then deducts the
@@ -124,8 +124,8 @@ export function reservedPoints(
 }
 
 /**
- * Points that are already spoken for: Beacon allocations plus claims made
- * outside Beacon (a redeem in Home Assistant also ends in a deduction when a
+ * Points that are already spoken for: Abbai Flow allocations plus claims made
+ * outside Abbai Flow (a redeem in Home Assistant also ends in a deduction when a
  * parent approves, so it must not look spendable in the meantime).
  */
 export function committedPoints(

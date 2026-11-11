@@ -1,5 +1,5 @@
 /**
- * Unified read/write helper for Beacon data persistence.
+ * Unified read/write helper for Abbai Flow data persistence.
  *
  * Server (/beacon-data/:key) is the source of truth when running as an
  * HA add-on.  localStorage serves as an offline cache and as the primary

@@ -1,17 +1,17 @@
 # Migrating an existing household (Phase 6)
 
-What happens to data that already exists when Beacon gains explicit routines and
+What happens to data that already exists when Abbai Flow gains explicit routines and
 an explicit reward lifecycle. The guiding rule: **nothing is deleted, nothing is
 re-awarded, and no reward is ever marked as given by a migration.**
 
 ## 1. Chores and daily labels → routines
 
-ChoreOps chores are untouched. Beacon only reads them.
+ChoreOps chores are untouched. Abbai Flow only reads them.
 
 On first load with the new code, `adoptLabels()` turns each existing ChoreOps
 label on a **daily** chore into a routine definition:
 
-| Before (ChoreOps)                              | After (Beacon metadata)                                             |
+| Before (ChoreOps)                              | After (Abbai Flow metadata)                                             |
 | ---------------------------------------------- | ------------------------------------------------------------------- |
 | `labels: ['Ochtendroutine']` on 3 daily chores | one routine `ochtendroutine`, `taskNames: [chore1, chore2, chore3]` |
 | `labels: ['ochtendroutine']` (different case)  | the **same** routine — the slug matches                             |
@@ -22,7 +22,7 @@ routine is visible, and `upsertRoutine`/`addRoutineTask` reuse the existing
 routine and skip tasks that are already members. Running it twice (or on two
 devices at once) cannot produce duplicates.
 
-The ChoreOps label stays in place, so removing Beacon's metadata document simply
+The ChoreOps label stays in place, so removing Abbai Flow's metadata document simply
 falls back to the old label grouping — that is the rollback path.
 
 ## 2. Reward reservations → pursuits
@@ -41,7 +41,7 @@ award or deduct anything.
 
 ## 3. Points, balances, reward definitions, PINs
 
-Untouched. They live in ChoreOps (points, reward cost) and in Beacon's family
+Untouched. They live in ChoreOps (points, reward cost) and in Abbai Flow's family
 settings (PIN, photos). The planner reads them exactly as before.
 
 ## 4. Duplicate labels

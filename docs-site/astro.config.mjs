@@ -4,7 +4,7 @@ import sitemap from "@astrojs/sitemap";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  site: "https://beacon-family-docs.netlify.app",
+  // Deployment URL is not part of the project identity; configure it when hosting.
   integrations: [mdx(), sitemap()],
   vite: {
     plugins: [tailwindcss()],

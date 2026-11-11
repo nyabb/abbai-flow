@@ -94,7 +94,7 @@ export class FamilyStore {
       const member = linkedMember ?? namedMember;
 
       if (import.meta.env.DEV) {
-        console.info('[Beacon] ChoreOps family profile match', {
+        console.info('[Abbai Flow] ChoreOps family profile match', {
           choreOpsUser: user.name,
           choreOpsUserSlug: user.slug,
           matchedBy: linkedMember ? 'choreops_user' : namedMember ? 'name' : 'none',

@@ -51,7 +51,7 @@ export const es: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionLabel': 'Menos animación',
   'settings.appearance.reducedMotionSublabel': 'Acorta cada animación y transición de la app.',
   'display.connection.online': 'Conectado',
-  'display.connection.beaconDown': 'Beacon no disponible',
+  'display.connection.beaconDown': 'Abbai Flow no disponible',
   'display.connection.haDown': 'Home Assistant no disponible',
   'display.connection.offline': 'Sin conexión a internet',
   'nav.display': 'Modo pantalla',
@@ -191,7 +191,7 @@ export const es: Record<TranslationKey, string> = {
 
   // ---- settings: general ----
   'settings.general.title': 'General',
-  'settings.general.desc': 'Preferencias básicas de tu pantalla Beacon.',
+  'settings.general.desc': 'Preferencias básicas de tu pantalla Abbai Flow.',
   'settings.general.familyNameLabel': 'Nombre de familia',
   'settings.general.familyNameSublabel': 'Se muestra en el encabezado del calendario',
   'settings.general.defaultViewLabel': 'Vista predeterminada',
@@ -255,7 +255,7 @@ export const es: Record<TranslationKey, string> = {
     'No se pudo usar ese archivo. Prueba con una imagen PNG, JPEG o WebP.',
   'settings.family.haMembersLabel': 'Desde Home Assistant',
   'settings.family.haMembersEmpty':
-    'No se encontraron personas de Home Assistant. Comprueba que Beacon pueda conectarse y vuelve a cargar.',
+    'No se encontraron personas de Home Assistant. Comprueba que Abbai Flow pueda conectarse y vuelve a cargar.',
   'settings.family.avatarCategory.people': 'Personas',
   'settings.family.avatarCategory.skinTones': 'Tonos de piel',
   'settings.family.avatarCategory.faces': 'Caras',
@@ -616,6 +616,8 @@ export const es: Record<TranslationKey, string> = {
   'grocery.completed': 'Completados ({count})',
   'grocery.deleteItem': 'Eliminar artículo',
   'grocery.haList': '{name} (HA)',
+  'grocery.loadFailed': 'No se pudo cargar esta lista desde Home Assistant',
+  'grocery.retry': 'Reintentar',
   'grocery.tabsLabel': 'Tipo de lista',
   'grocery.tab.grocery': 'Compras',
   'grocery.tab.tasks': 'Tareas',
@@ -631,7 +633,7 @@ export const es: Record<TranslationKey, string> = {
   'viewName.name': 'Nombre',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Bienvenido a Beacon',
+  'onboarding.welcome': 'Bienvenido a Abbai Flow',
   'onboarding.welcomeDesc': 'Conecta tu Home Assistant para comenzar.',
   'onboarding.getStarted': 'Comenzar',
   'onboarding.connectTitle': 'Conectar a Home Assistant',
@@ -658,7 +660,7 @@ export const es: Record<TranslationKey, string> = {
     'No se pudo alcanzar Home Assistant. Verifica la URL y asegúrate de que sea accesible.',
   'onboarding.tokenRequired': 'Por favor ingresa tu token de acceso.',
 
-  // ---- chores planner (Beacon chores screen) ----
+  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Tareas y rutinas',
   'planner.shortTitle': 'Tareas',
   'planner.today': 'Hoy',

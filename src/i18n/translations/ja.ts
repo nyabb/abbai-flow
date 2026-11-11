@@ -51,7 +51,7 @@ export const ja: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionLabel': 'アニメーションを減らす',
   'settings.appearance.reducedMotionSublabel': 'すべてのアニメーションと遷移を短くします。',
   'display.connection.online': '接続済み',
-  'display.connection.beaconDown': 'Beacon に接続できません',
+  'display.connection.beaconDown': 'Abbai Flow に接続できません',
   'display.connection.haDown': 'Home Assistant に接続できません',
   'display.connection.offline': 'インターネット接続がありません',
   'nav.display': '表示モード',
@@ -190,7 +190,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: general ----
   'settings.general.title': '一般',
-  'settings.general.desc': 'Beaconディスプレイの基本設定です。',
+  'settings.general.desc': 'Abbai Flowディスプレイの基本設定です。',
   'settings.general.familyNameLabel': '家族の名前',
   'settings.general.familyNameSublabel': 'カレンダーのヘッダーに表示されます',
   'settings.general.defaultViewLabel': 'デフォルト表示',
@@ -252,7 +252,7 @@ export const ja: Record<TranslationKey, string> = {
     'このファイルは使用できません。PNG・JPEG・WebP の画像をお試しください。',
   'settings.family.haMembersLabel': 'Home Assistant から',
   'settings.family.haMembersEmpty':
-    'Home Assistant の人物が見つかりません。Beacon が Home Assistant に接続できるか確認して再読み込みしてください。',
+    'Home Assistant の人物が見つかりません。Abbai Flow が Home Assistant に接続できるか確認して再読み込みしてください。',
   'settings.family.avatarCategory.people': '人々',
   'settings.family.avatarCategory.skinTones': '肌の色',
   'settings.family.avatarCategory.faces': '顔',
@@ -607,6 +607,8 @@ export const ja: Record<TranslationKey, string> = {
   'grocery.completed': '完了済み（{count}）',
   'grocery.deleteItem': 'アイテムを削除',
   'grocery.haList': '{name}（HA）',
+  'grocery.loadFailed': 'Home Assistant からこのリストを読み込めませんでした',
+  'grocery.retry': '再試行',
   'grocery.tabsLabel': 'リストの種類',
   'grocery.tab.grocery': '買い物',
   'grocery.tab.tasks': 'タスク',
@@ -622,7 +624,7 @@ export const ja: Record<TranslationKey, string> = {
   'viewName.name': '名前',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Beaconへようこそ',
+  'onboarding.welcome': 'Abbai Flowへようこそ',
   'onboarding.welcomeDesc': 'Home Assistantを接続して始めましょう。',
   'onboarding.getStarted': '始める',
   'onboarding.connectTitle': 'Home Assistantに接続',
@@ -649,7 +651,7 @@ export const ja: Record<TranslationKey, string> = {
     'Home Assistantに到達できませんでした。URLを確認し、アクセス可能であることを確認してください。',
   'onboarding.tokenRequired': 'アクセストークンを入力してください。',
 
-  // ---- chores planner (Beacon chores screen) ----
+  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'お手伝いとルーティン',
   'planner.shortTitle': 'お手伝い',
   'planner.today': '今日',

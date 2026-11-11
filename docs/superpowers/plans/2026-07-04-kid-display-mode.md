@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No test infrastructure exists in this repo; each task verifies with `npm run build` (runs `tsc && vite build`) and, where UI-visible, by driving the app with `npm run dev`.
-- The focus member assignment must NEVER be stored in `BeaconSettings` (it syncs across devices via `beacon-store`); device-local state uses plain `localStorage` key `beacon_display_member`.
+- The focus member assignment must NEVER be stored in `Abbai FlowSettings` (it syncs across devices via `beacon-store`); device-local state uses plain `localStorage` key `beacon_display_member`.
 - URL param name is exactly `display`; localStorage key is exactly `beacon_display_member`; storage key for completions is exactly `beacon_routine_completions`.
 - "Today" comparisons use `new Date().toISOString().slice(0, 10)` (UTC date) — this matches the existing `ChoreCompletion` behavior exactly. Do not "fix" this to local time in this feature; consistency with chores on the same screen wins.
 - Follow existing idioms: hooks mirror `useChores`, settings rows use `settings-row`/`Toggle`/`Segment`, CSS uses theme custom properties (`var(--bg-primary)`, `var(--accent)`, `var(--border)`, etc.).
@@ -273,7 +273,7 @@ git commit -m "feat: add useRoutines hook"
  * (?display=<memberId>, wins — survives kiosk-browser reboots) or by a
  * device-local localStorage key.
  *
- * Deliberately NOT part of BeaconSettings: settings sync across devices
+ * Deliberately NOT part of Abbai FlowSettings: settings sync across devices
  * via beacon-store, and the display assignment must stay per-device.
  */
 
@@ -343,8 +343,8 @@ git commit -m "feat: add focus mode resolution module"
 - Modify: `src/main.tsx` (add css import after line 14)
 
 **Interfaces:**
-- Consumes: `useRoutines` (Task 2), `useFamily`, `useChores`, `ScreenSaver`, `BeaconSettings`, `hapticMedium`/`hapticSuccess` from `src/hooks/useHaptics.ts`.
-- Produces: `<FocusView memberId={string} settings={BeaconSettings} onExit={() => void} />` — Task 5 renders exactly this.
+- Consumes: `useRoutines` (Task 2), `useFamily`, `useChores`, `ScreenSaver`, `Abbai FlowSettings`, `hapticMedium`/`hapticSuccess` from `src/hooks/useHaptics.ts`.
+- Produces: `<FocusView memberId={string} settings={Abbai FlowSettings} onExit={() => void} />` — Task 5 renders exactly this.
 
 - [ ] **Step 1: Create `src/components/focus/period.ts`** (pure time-of-day logic)
 
@@ -562,7 +562,7 @@ import { format } from 'date-fns';
 import { useFamily } from '../../hooks/useFamily';
 import { useChores } from '../../hooks/useChores';
 import { useRoutines } from '../../hooks/useRoutines';
-import { BeaconSettings } from '../../hooks/useSettings';
+import { Abbai FlowSettings } from '../../hooks/useSettings';
 import { ScreenSaver } from '../ScreenSaver';
 import { RoutineCard } from './RoutineCard';
 import { FocusChores } from './FocusChores';
@@ -570,7 +570,7 @@ import { pickRoutine, getTimeOfDay } from './period';
 
 interface FocusViewProps {
   memberId: string;
-  settings: BeaconSettings;
+  settings: Abbai FlowSettings;
   onExit: () => void;
 }
 

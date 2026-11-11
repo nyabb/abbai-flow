@@ -1,6 +1,6 @@
-# Contributing to Beacon
+# Contributing to Abbai Flow
 
-First off, thank you for considering contributing to Beacon! This is a family-oriented project, and every contribution helps families stay organized without spending a fortune.
+First off, thank you for considering contributing to Abbai Flow! This is a family-oriented project, and every contribution helps families stay organized without spending a fortune.
 
 ## How to Contribute
 
@@ -10,7 +10,7 @@ Found something broken? Please [open an issue](https://github.com/asachs01/beaco
 
 ### Suggesting Features
 
-Have an idea that would make Beacon better for your family? [Open a feature request](https://github.com/asachs01/beacon/issues/new?template=feature_request.md). We'd love to hear how you use Beacon and what would make it more useful.
+Have an idea that would make Abbai Flow better for your family? [Open a feature request](https://github.com/asachs01/beacon/issues/new?template=feature_request.md). We'd love to hear how you use Abbai Flow and what would make it more useful.
 
 ### Submitting Changes
 
@@ -104,4 +104,4 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 Not sure about something? Feel free to [open a discussion](https://github.com/asachs01/beacon/discussions) or comment on an existing issue. There are no dumb questions here.
 
-Thanks again for helping make Beacon better for families everywhere!
+Thanks again for helping make Abbai Flow better for families everywhere!

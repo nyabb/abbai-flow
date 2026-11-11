@@ -42,14 +42,13 @@ jobs:
 
   # semantic-release creates GitHub releases using the default GITHUB_TOKEN,
   # and GitHub deliberately does not fire downstream `release`/`push: tags`
-  # workflow events for GITHUB_TOKEN-authored activity (loop prevention).
-  # That silently starved build-addon.yml of its trigger for every release
-  # since ~v1.3.0 — the Docker image hasn't been rebuilt in months. Calling
-  # it directly here closes that gap without needing a PAT.
-  build-addon:
+  # workflow events for GITHUB_TOKEN-authored activity (loop prevention), so a
+  # tag-triggered image build would never run. Calling the image workflow
+  # directly after a release closes that gap without needing a PAT.
+  docker-image:
     needs: release
     if: needs.release.outputs.released == 'true'
-    uses: ./.github/workflows/build-addon.yml
+    uses: ./.github/workflows/docker-image.yml
     permissions:
-      contents: write
+      contents: read
       packages: write

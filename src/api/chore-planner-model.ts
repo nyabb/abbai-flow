@@ -14,7 +14,7 @@ export interface PlannerMember {
   id: string;
   name: string;
   avatar: string;
-  /** Beacon family photo (data URL or HA path); emoji is the fallback. */
+  /** Abbai Flow family photo (data URL or HA path); emoji is the fallback. */
   photo?: string;
   color: string;
   savings: number;
@@ -72,7 +72,7 @@ export interface PlannerTask {
    * listed as individual chores and cannot be ticked off from the board.
    */
   inRoutine?: boolean;
-  /** 1-based position inside its routine, from the Beacon routine registry. */
+  /** 1-based position inside its routine, from the Abbai Flow routine registry. */
   routineOrder?: number;
 }
 
@@ -88,7 +88,7 @@ export interface PlannerRoutine {
   customStart?: string;
   customEnd?: string;
   points: number;
-  /** Chore names in execution order (Beacon metadata: ChoreOps has no ordering). */
+  /** Chore names in execution order (Abbai Flow metadata: ChoreOps has no ordering). */
   taskNames?: string[];
   /** Paused routines are hidden from missions but stay on the board. */
   paused?: boolean;

@@ -1,6 +1,6 @@
 ---
 description: >
-  Use this skill when creating, managing, or querying family chores in Beacon.
+  Use this skill when creating, managing, or querying family chores in Abbai Flow.
   Covers chore creation with assignments, frequencies, payouts, completion
   tracking and routines.
 triggers:
@@ -12,7 +12,7 @@ triggers:
   - chore payout
 ---
 
-# Beacon Chores
+# Abbai Flow Chores
 
 ## Overview
 

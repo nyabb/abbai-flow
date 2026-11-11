@@ -4,11 +4,11 @@
  * On a wall display the difference matters to whoever walks past:
  *
  *   offline      the device itself has no network (router, wifi, DNS)
- *   beacon-down  the device has network but Beacon's own server does not answer
- *   ha-down      Beacon is up but Home Assistant is not reachable
+ *   beacon-down  the device has network but Abbai Flow's own server does not answer
+ *   ha-down      Abbai Flow is up but Home Assistant is not reachable
  *   online       everything answered
  *
- * The Beacon probe is a cheap same-origin request for a static asset: it says
+ * The Abbai Flow probe is a cheap same-origin request for a static asset: it says
  * nothing about Home Assistant, only whether this app's own origin responds.
  * It is only re-probed while something is wrong, or when the browser tells us
  * the connectivity changed — probing on every render would defeat the point.
@@ -54,7 +54,7 @@ export function useConnectionStatus({
   probeIntervalMs = 15_000,
   probe = defaultProbe,
 }: UseConnectionStatusOptions): ConnectionStatus {
-  const [beaconReachable, setBeaconReachable] = useState(true);
+  const [beaconReachable, setAbbaiReachable] = useState(true);
   const [offline, setOffline] = useState(browserOffline);
   const [tick, setTick] = useState(0);
   const [reconnected, setReconnected] = useState(false);
@@ -93,7 +93,7 @@ export function useConnectionStatus({
         // origin did not answer usably.
         reachable = false;
       }
-      if (!cancelled) setBeaconReachable(reachable);
+      if (!cancelled) setAbbaiReachable(reachable);
     };
 
     void run();

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { CalendarEvent } from '../types';
 import { HomeAssistantClient } from '../api/homeassistant';
-import beaconIcon from '../assets/beacon-app-icon.svg';
+import abbaiIcon from '../assets/abbai-flow-icon.svg';
 
 const CHECK_INTERVAL = 60 * 1000; // 1 minute
 const DEFAULT_NOTIFY_BEFORE_MINUTES = 15;
@@ -53,7 +53,7 @@ export function useNotifications(
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification(event.title, {
             body,
-            icon: beaconIcon,
+            icon: abbaiIcon,
             tag: `beacon-event-${event.id}`,
           });
         }
@@ -99,7 +99,7 @@ async function sendHANotification(
     // We call the generic notify.notify which fans out to all targets,
     // or we try the mobile_app domain directly.
     await client.callService('notify', 'notify', '', {
-      title: `Beacon: ${title}`,
+      title: `Abbai Flow: ${title}`,
       message,
     });
   } catch {

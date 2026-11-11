@@ -1,0 +1,72 @@
+name: Docker image
+
+# Builds the standalone Abbai Flow container and publishes it to the GitHub
+# Container Registry. Called by the release workflow (so a tagged release always
+# produces an image) and run directly for `main`, tags and manual dispatches.
+#
+# Authentication uses the built-in GITHUB_TOKEN: no PAT to rotate, no registry
+# secrets to store. The workflow needs `packages: write` for that.
+
+on:
+  workflow_call:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ghcr.io requires a lowercase path; repository owners may not be.
+      - name: Resolve image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/abbai-flow" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # semver tags come from release tags (v2.0.0 → 2.0.0, 2.0, 2, latest);
+      # branch builds get a sha tag so a redeploy can pin an exact image.
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # A wall display is usually a Raspberry Pi (arm64) while the server may
+          # be amd64; publishing both means one tag works everywhere.
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

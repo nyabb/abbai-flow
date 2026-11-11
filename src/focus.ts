@@ -5,7 +5,7 @@
  * (?display=<memberId>, wins — survives kiosk-browser reboots) or by a
  * device-local localStorage key.
  *
- * Deliberately NOT part of BeaconSettings: settings sync across devices
+ * Deliberately NOT part of AbbaiSettings: settings sync across devices
  * via beacon-store, and the display assignment must stay per-device.
  */
 

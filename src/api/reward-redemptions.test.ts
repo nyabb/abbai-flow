@@ -109,7 +109,7 @@ describe('spendable balance', () => {
     expect(committedRedemptionPoints(list, 'Zara')).toBe(40);
   });
 
-  it('counts a Home Assistant claim when Beacon has no goal for it', () => {
+  it('counts a Home Assistant claim when Abbai Flow has no goal for it', () => {
     const rewards = [{ name: 'Snoep', assignee: 'Zara', cost: 10, pendingClaims: 1 }];
     expect(spendableWithRedemptions(30, [], rewards, 'Zara')).toBe(20);
   });

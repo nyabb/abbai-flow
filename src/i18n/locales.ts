@@ -2,7 +2,7 @@ import { enUS, enGB, es, fr, de, it, pt, nl, ja, ko, type Locale } from 'date-fn
 
 export type LangCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'nl' | 'ja' | 'ko';
 
-/** Maps a `BeaconSettings.locale` value (as offered in Settings > General)
+/** Maps a `AbbaiSettings.locale` value (as offered in Settings > General)
  *  to the translation language it should use. en-US/en-GB share one
  *  English translation set — only their date-fns locale differs. */
 const LANG_BY_LOCALE: Record<string, LangCode> = {
@@ -36,7 +36,7 @@ export function langForLocale(locale: string): LangCode {
 }
 
 /**
- * Every locale Beacon can display, in the order they should be offered.
+ * Every locale Abbai Flow can display, in the order they should be offered.
  *
  * This is the single list used by Settings > General **and** by the chores
  * header picker, so both always offer exactly the same languages.
