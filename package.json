@@ -55,5 +55,13 @@
     "typescript-eslint": "^8.72.2",
     "vite": "^6.0.0",
     "vitest": "4.1.10"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nyabb/abbai-flow.git"
+  },
+  "homepage": "https://github.com/nyabb/abbai-flow#readme",
+  "bugs": {
+    "url": "https://github.com/nyabb/abbai-flow/issues"
   }
 }

@@ -15,7 +15,7 @@ click('.menu-button'); // three-dot menu
 wait(500);
 click('[data-option="repositories"]');
 wait(1000);
-type('.repository-input', 'https://github.com/asachs01/beacon');
+type('.repository-input', 'https://github.com/nyabb/abbai-flow');
 click('.add-repository-button');
 wait(3000); // repository loads
 click('.dialog-close');

@@ -6,11 +6,11 @@ First off, thank you for considering contributing to Abbai Flow! This is a famil
 
 ### Reporting Bugs
 
-Found something broken? Please [open an issue](https://github.com/asachs01/beacon/issues/new?template=bug_report.md) using the bug report template. Include as much detail as you can -- your Home Assistant version, browser, and device type all help narrow things down.
+Found something broken? Please [open an issue](https://github.com/nyabb/abbai-flow/issues/new?template=bug_report.md) using the bug report template. Include as much detail as you can -- your Home Assistant version, browser, and device type all help narrow things down.
 
 ### Suggesting Features
 
-Have an idea that would make Abbai Flow better for your family? [Open a feature request](https://github.com/asachs01/beacon/issues/new?template=feature_request.md). We'd love to hear how you use Abbai Flow and what would make it more useful.
+Have an idea that would make Abbai Flow better for your family? [Open a feature request](https://github.com/nyabb/abbai-flow/issues/new?template=feature_request.md). We'd love to hear how you use Abbai Flow and what would make it more useful.
 
 ### Submitting Changes
 
@@ -102,6 +102,6 @@ This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.
 
 ## Questions?
 
-Not sure about something? Feel free to [open a discussion](https://github.com/asachs01/beacon/discussions) or comment on an existing issue. There are no dumb questions here.
+Not sure about something? Feel free to [open a discussion](https://github.com/nyabb/abbai-flow/discussions) or comment on an existing issue. There are no dumb questions here.
 
 Thanks again for helping make Abbai Flow better for families everywhere!

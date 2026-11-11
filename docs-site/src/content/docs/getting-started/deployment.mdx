@@ -42,7 +42,7 @@ For running Abbai Flow outside of Home Assistant's add-on system.
 
 ```bash
 docker run -d \
-  --name beacon \
+  --name abbai-flow \
   --restart unless-stopped \
   -p 3000:3000 \
   -e BEACON_MODE="standalone" \
@@ -51,7 +51,7 @@ docker run -d \
   -e FAMILY_NAME="Sachs" \
   -e THEME="midnight" \
   -e WEATHER_ENTITY="weather.home" \
-  ghcr.io/asachs01/beacon:latest
+  ghcr.io/nyabb/abbai-flow:latest
 ```
 
 ### Docker Compose
@@ -60,7 +60,7 @@ docker run -d \
 version: '3.8'
 services:
   beacon:
-    image: ghcr.io/asachs01/beacon:latest
+    image: ghcr.io/nyabb/abbai-flow:latest
     container_name: beacon
     restart: unless-stopped
     ports:
@@ -81,10 +81,10 @@ services:
 ### Building from source
 
 ```bash
-git clone https://github.com/asachs01/beacon.git
+git clone https://github.com/nyabb/abbai-flow.git
 cd beacon
 docker build -t beacon .
-docker run -d --name beacon -p 3000:3000 \
+docker run -d --name abbai-flow -p 3000:3000 \
   -e BEACON_MODE="standalone" \
   -e HA_TOKEN="..." \
   -e HA_URL="..." \

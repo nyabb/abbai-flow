@@ -48,7 +48,7 @@ export function AboutSection({
         <div className="settings-about-row">
           <span className="settings-about-label">{t('settings.about.sourceCode')}</span>
           <span className="settings-about-value">
-            <a href="https://github.com/asachs01/beacon" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/nyabb/abbai-flow" target="_blank" rel="noopener noreferrer">
               {t('settings.about.github')}
             </a>
           </span>

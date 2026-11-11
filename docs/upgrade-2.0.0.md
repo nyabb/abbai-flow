@@ -5,23 +5,23 @@ standalone container, and the Home Assistant add-on packaging is gone.
 
 ## What changed for you
 
-| Area | 1.x | 2.0.0 |
-| --- | --- | --- |
-| Product name | previous name | Abbai Flow |
-| Distribution | Home Assistant add-on **or** container | container (`ghcr.io/<owner>/abbai-flow`) |
-| Add-on manifests | `config.yaml`, `repository.yaml`, `build.yaml`, `run.sh` | removed |
-| Mirror tree | `beacon/` kept in sync with `src/` | removed — one source tree |
-| Native wrappers | (already unused) | Makefile targets removed |
+| Area             | 1.x                                                      | 2.0.0                                    |
+| ---------------- | -------------------------------------------------------- | ---------------------------------------- |
+| Product name     | previous name                                            | Abbai Flow                               |
+| Distribution     | Home Assistant add-on **or** container                   | container (`ghcr.io/<owner>/abbai-flow`) |
+| Add-on manifests | `config.yaml`, `repository.yaml`, `build.yaml`, `run.sh` | removed                                  |
+| Mirror tree      | `beacon/` kept in sync with `src/`                       | removed — one source tree                |
+| Native wrappers  | (already unused)                                         | Makefile targets removed                 |
 
 ## Your data is preserved
 
 Nothing was renamed in the storage layer, so an existing installation keeps its
 chores, routines, missions, rewards, calendars, lists and settings:
 
-* documents still live under the same keys (`beacon-planner-meta`,
+- documents still live under the same keys (`beacon-planner-meta`,
   `beacon-reward-redemptions`, `beacon-local-tasks`, `beacon-settings`, …);
-* the server API is still `/beacon-data/:key`;
-* environment variables keep their names (`BEACON_ALLOWED_ORIGINS`,
+- the server API is still `/beacon-data/:key`;
+- environment variables keep their names (`BEACON_ALLOWED_ORIGINS`,
   `BEACON_DATA`, `window.__BEACON_CONFIG__`).
 
 These identifiers carry the old name on purpose. Renaming them would orphan
@@ -43,7 +43,7 @@ existing household data, so they stay until a versioned migration exists
      -e HA_URL=https://homeassistant.local:8123 \
      -e HA_TOKEN=your_long_lived_access_token \
      -v abbai-flow-data:/data \
-     ghcr.io/OWNER/abbai-flow:2.0.0
+     ghcr.io/nyabb/abbai-flow:2.0.0
    ```
 
 4. Open `http://<host>:3000` and confirm your family, chores and rewards are
@@ -53,11 +53,11 @@ existing household data, so they stay until a versioned migration exists
 
 ## Compatibility promises
 
-* No points are re-awarded, no reward is marked as given, no routine progress is
+- No points are re-awarded, no reward is marked as given, no routine progress is
   reset by the upgrade.
-* The Home Assistant integration (ChoreOps, calendars, `todo` lists, media
+- The Home Assistant integration (ChoreOps, calendars, `todo` lists, media
   players, weather) is unchanged.
-* Standalone mode (no Home Assistant) still works, with local calendars, lists
+- Standalone mode (no Home Assistant) still works, with local calendars, lists
   and tasks.
 
 ## Rolling back

@@ -135,7 +135,7 @@
         {
           "id": 303,
           "title": "Docker one-liner self-hosting",
-          "description": "docker run -p 3000:3000 ghcr.io/asachs01/beacon — works on any server, NAS, or home lab.",
+          "description": "docker run -p 3000:3000 ghcr.io/nyabb/abbai-flow — works on any server, NAS, or home lab.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-3"]
