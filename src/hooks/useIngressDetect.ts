@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getRuntimeConfig } from '../config';
 
 /**
  * Detects HA ingress mode and measures the available width.
@@ -11,7 +12,7 @@ export function useIngressDetect() {
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {
-    const inIngress = window !== window.parent && !!window.__BEACON_CONFIG__?.ha_token;
+    const inIngress = window !== window.parent && !!getRuntimeConfig()?.ha_token;
     setIsIngress(inIngress);
 
     if (!inIngress) return;

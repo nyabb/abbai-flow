@@ -7,10 +7,10 @@
  * `"type": "module"`.
  *
  * Responsibilities:
- *  - serve the built SPA from BEACON_DIST
+ *  - serve the built SPA from ABBAI_FLOW_DIST
  *  - proxy `/api/*` (REST) and `/api/websocket` (upgrade) to Home Assistant
  *  - bridge HA's WebSocket-only calendar commands
- *  - persist JSON documents under BEACON_DATA
+ *  - persist JSON documents under ABBAI_FLOW_DATA
  *
  * Everything is created by `createApp(options)` so tests can drive the real
  * handlers against a fake Home Assistant without touching global state.
@@ -695,7 +695,7 @@ async function writeDataFile(filePath, contents) {
 }
 
 /**
- * Persistent data API — stores JSON in BEACON_DATA (survives add-on rebuilds).
+ * Persistent data API — stores JSON in ABBAI_FLOW_DATA (survives add-on rebuilds).
  *
  * GET  /beacon-data/:key  → read stored JSON (`null` when absent)
  * PUT  /beacon-data/:key  → write JSON body to storage
@@ -1353,6 +1353,18 @@ async function route(req, res, config) {
       await handleDataApi(req, res, config);
       return;
     }
+    if (url === '/runtime-config.js') {
+      // Served dynamically, never cached: the browser must pick up the current
+      // HA address after a redeploy without a hard refresh.
+      const body = `window.__ABBAI_FLOW_CONFIG__ = ${JSON.stringify(runtimeConfigFor(config))};\n`;
+      res.writeHead(200, {
+        'Content-Type': 'application/javascript; charset=utf-8',
+        'Content-Length': Buffer.byteLength(body),
+        'Cache-Control': 'no-store',
+      });
+      res.end(body);
+      return;
+    }
     if (url === '/api/planner/mutate') {
       await handlePlannerMutate(req, res, config);
       return;
@@ -1372,20 +1384,84 @@ async function route(req, res, config) {
   }
 }
 
-/** Read configuration from the environment (what run.sh provides). */
+/**
+ * Normalise the configured Home Assistant address.
+ *
+ * People type `homeassistant.local:8123` into a container UI, paste
+ * `https://ha.example.com/api`, or leave a trailing slash. All three must send
+ * requests to the same place, otherwise the proxy 404s on `/api/api/...`.
+ */
+function normaliseHaBaseUrl(value) {
+  let base = String(value || '').trim();
+  if (!base) return 'http://supervisor/core';
+  if (!/^https?:\/\//i.test(base)) base = `http://${base}`;
+  base = base.replace(/\/+$/, '');
+  base = base.replace(/\/api$/i, '');
+  return base || 'http://supervisor/core';
+}
+
+/**
+ * Runtime configuration for the browser, served at `/runtime-config.js`.
+ *
+ * The SPA has to know it sits behind Abbai Flow's proxy — that is what stops it
+ * asking the household for a long-lived token and makes every request go
+ * same-origin. The token itself is deliberately **never** included: the server
+ * injects it for each proxied call.
+ */
+function runtimeConfigFor(config, env = process.env) {
+  const payload = {
+    deployment_mode: 'standalone',
+    // Display/reference only; requests are always proxied in this mode.
+    ha_url: config.haBaseUrl,
+  };
+
+  const passThrough = {
+    family_name: env.FAMILY_NAME,
+    theme: env.THEME,
+    weather_entity: env.WEATHER_ENTITY,
+    photo_directory: env.PHOTO_DIRECTORY,
+  };
+  for (const [key, value] of Object.entries(passThrough)) {
+    if (typeof value === 'string' && value.trim()) payload[key] = value.trim();
+  }
+
+  const numbers = {
+    photo_interval: env.PHOTO_INTERVAL,
+    screen_saver_timeout: env.SCREEN_SAVER_TIMEOUT,
+  };
+  for (const [key, value] of Object.entries(numbers)) {
+    const parsed = Number(value);
+    if (value !== undefined && value !== '' && Number.isFinite(parsed)) payload[key] = parsed;
+  }
+
+  return payload;
+}
+
+/**
+ * Read configuration from the environment.
+ *
+ * `HA_URL` + `HA_TOKEN` are the documented contract for the container image
+ * (`README.md`, `docs/upgrade-2.0.0.md`). `HA_API_BASE_OVERRIDE` and
+ * `SUPERVISOR_TOKEN` stay supported because the Home Assistant add-on image
+ * sets those.
+ *
+ * Paths, the CSRF allow-list and the extra CA all use `ABBAI_FLOW_*` names.
+ * The pre-2.0 spelling of those variables is deliberately not accepted any
+ * more: silently falling back to an old data path would split a household's
+ * documents in two. `docs/upgrade-2.0.0.md` lists the rename.
+ */
 function configFromEnv(env = process.env) {
-  const haBaseUrl = (env.HA_API_BASE_OVERRIDE || 'http://supervisor/core').replace(/\/$/, '');
   return {
-    distDir: env.BEACON_DIST || '/app/dist',
-    dataDir: env.BEACON_DATA || '/data',
+    distDir: env.ABBAI_FLOW_DIST || '/app/dist',
+    dataDir: env.ABBAI_FLOW_DATA || '/data',
     haToken: env.HA_TOKEN || env.SUPERVISOR_TOKEN || '',
-    haBaseUrl,
-    haWsUrl: env.HA_WS_URL_OVERRIDE || undefined,
-    allowedOrigins: (env.BEACON_ALLOWED_ORIGINS || '')
+    haBaseUrl: normaliseHaBaseUrl(env.HA_URL || env.HA_API_BASE_OVERRIDE),
+    haWsUrl: env.HA_WS_URL || env.HA_WS_URL_OVERRIDE || undefined,
+    allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean),
-    ca: env.BEACON_HA_CA || undefined,
+    ca: env.ABBAI_FLOW_HA_CA || undefined,
   };
 }
 
@@ -1393,6 +1469,8 @@ module.exports = {
   MAX_BODY_SIZE,
   createApp,
   configFromEnv,
+  normaliseHaBaseUrl,
+  runtimeConfigFor,
   collectBody,
   isAllowedOrigin,
   isSafeIdentifier,

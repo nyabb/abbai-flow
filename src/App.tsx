@@ -41,7 +41,7 @@ import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
 import { getFocusMemberId, clearFocusMode, setDeviceFocusMember } from './focus';
 import { CalendarEvent } from './types';
-import { getConfig, patchConfig } from './config';
+import { getConfig, getRuntimeConfig, patchConfig } from './config';
 import { I18nContext, createI18n } from './i18n';
 
 const config = getConfig();
@@ -586,10 +586,10 @@ export function App() {
   }
 
   // Show onboarding ONLY when running as a standalone app with no HA connection configured.
-  // Skip if: __BEACON_CONFIG__ exists (add-on injected it), or env token set, or already onboarded,
+  // Skip if: the deployment injected a runtime config, or env token set, or already onboarded,
   // or running in an iframe (HA ingress), or URL has /ingress/ path.
   const isHaManaged = !!(
-    window.__BEACON_CONFIG__ ||
+    getRuntimeConfig() ||
     import.meta.env.VITE_HA_TOKEN ||
     window !== window.parent ||
     window.location.pathname.includes('/ingress/')

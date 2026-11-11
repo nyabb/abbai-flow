@@ -19,12 +19,15 @@ const WebSocket = require('ws');
 const {
   createApp,
   collectBody,
+  configFromEnv,
   defaultPortFor,
   isAllowedOrigin,
   isSafeIdentifier,
+  normaliseHaBaseUrl,
   parseIntent,
   readDataFile,
   resolveHaUrl,
+  runtimeConfigFor,
   transportFor,
   writeDataFile,
 } = require('../app.cjs');
@@ -657,4 +660,92 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
 
   const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
   assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
+});
+
+/* ------------------------------------------------------------------ */
+/*  Container environment contract (HA_URL / HA_TOKEN)                */
+/* ------------------------------------------------------------------ */
+
+test('configFromEnv reads the documented HA_URL and HA_TOKEN', () => {
+  const config = configFromEnv({ HA_URL: 'https://ha.example.com', HA_TOKEN: 'tok' });
+  assert.equal(config.haBaseUrl, 'https://ha.example.com');
+  assert.equal(config.haToken, 'tok');
+});
+
+test('configFromEnv keeps the add-on contract working', () => {
+  const addon = configFromEnv({ SUPERVISOR_TOKEN: 'supervisor', HA_API_BASE_OVERRIDE: 'http://supervisor/core' });
+  assert.equal(addon.haBaseUrl, 'http://supervisor/core');
+  assert.equal(addon.haToken, 'supervisor');
+
+  // Nothing configured at all must not crash; the Supervisor default is used
+  // and the startup log explains why it will not resolve outside the add-on.
+  const empty = configFromEnv({});
+  assert.equal(empty.haBaseUrl, 'http://supervisor/core');
+  assert.equal(empty.haToken, '');
+});
+
+test('normaliseHaBaseUrl accepts what people actually type', () => {
+  assert.equal(normaliseHaBaseUrl('homeassistant.local:8123'), 'http://homeassistant.local:8123');
+  assert.equal(normaliseHaBaseUrl('http://ha.local:8123/'), 'http://ha.local:8123');
+  assert.equal(normaliseHaBaseUrl('https://ha.example.com/api/'), 'https://ha.example.com');
+  assert.equal(normaliseHaBaseUrl('  http://192.168.1.10:8123  '), 'http://192.168.1.10:8123');
+  assert.equal(normaliseHaBaseUrl(''), 'http://supervisor/core');
+  assert.equal(normaliseHaBaseUrl(undefined), 'http://supervisor/core');
+});
+
+test('runtime config tells the browser to use the proxy and never leaks the token', async (t) => {
+  const ha = await startFakeHa();
+  t.after(() => ha.close());
+
+  const dataDir = tmpDir('data');
+  const distDir = tmpDir('dist');
+  fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>Abbai Flow</title>');
+  fs.writeFileSync(path.join(distDir, 'runtime-config.js'), '/* static stub */');
+
+  const config = {
+    ...configFromEnv({ HA_URL: ha.baseUrl, HA_TOKEN: 'super-secret-token' }),
+    distDir,
+    dataDir,
+  };
+  const { server } = createApp(config);
+  const port = await listen(server);
+  t.after(() => close(server));
+
+  const served = await request(port, { path: '/runtime-config.js' });
+  assert.equal(served.status, 200);
+  assert.match(served.headers['content-type'], /javascript/);
+  assert.equal(served.headers['cache-control'], 'no-store');
+
+  // The SPA only needs to know it is proxied; the token stays server-side.
+  assert.match(served.raw, /window\.__ABBAI_FLOW_CONFIG__ = /);
+  assert.match(served.raw, /"deployment_mode":"standalone"/);
+  assert.match(served.raw, new RegExp(`"ha_url":"${ha.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+  assert.doesNotMatch(served.raw, /super-secret-token/);
+
+  // Proxied REST calls must reach HA_URL with the server-held token — this is
+  // the whole point of the container mode, and the regression being fixed.
+  const proxied = await request(port, { path: '/api/states' });
+  assert.equal(proxied.status, 200);
+  const lastCall = ha.requests[ha.requests.length - 1];
+  assert.equal(lastCall.url, '/api/states');
+  assert.equal(lastCall.headers.authorization, 'Bearer super-secret-token');
+});
+
+test('runtimeConfigFor maps optional appearance env vars', () => {
+  const payload = runtimeConfigFor(
+    { haBaseUrl: 'http://ha.local:8123' },
+    {
+      FAMILY_NAME: '  The Abbatis ',
+      THEME: 'midnight',
+      PHOTO_INTERVAL: '45',
+      SCREEN_SAVER_TIMEOUT: 'disaster',
+      WEATHER_ENTITY: '',
+    },
+  );
+  assert.equal(payload.family_name, 'The Abbatis');
+  assert.equal(payload.theme, 'midnight');
+  assert.equal(payload.photo_interval, 45);
+  assert.equal(payload.screen_saver_timeout, undefined);
+  assert.equal(payload.weather_entity, undefined);
+  assert.equal(payload.ha_token, undefined);
 });

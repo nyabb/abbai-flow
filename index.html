@@ -22,6 +22,12 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
 
     <title>Abbai Flow</title>
+    <!--
+      Runtime config. The container image serves this file dynamically from
+      HA_URL / HA_TOKEN (server/app.cjs); the copy in public/ is an empty stub
+      for `npm run dev` and for hosting the built SPA without a backend.
+    -->
+    <script src="/runtime-config.js"></script>
   </head>
   <body>
     <div id="root"></div>

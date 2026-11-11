@@ -26,10 +26,15 @@ These are identifiers, not branding. Renaming them would break existing installa
 
 1. **`/beacon-data/:key`** — the add-on's document API and the `beacon-store` client for it.
 2. **Persisted document keys** — `beacon-planner-meta`, `beacon-reward-redemptions`, `beacon-timers`, `beacon-planner-ops`, `beacon-family`, `beacon-local-tasks`, `beacon_settings`, `beacon_paused_routines`, `beacon-todo`, `beacon-shopping`, `beacon_reward_reservations`, … A rename here without a migration loses chores, routines, reward progress and settings.
-3. **Home Assistant env contract** — `BEACON_ALLOWED_ORIGINS`, `BEACON_DATA`, `window.__BEACON_CONFIG__`. `run.sh`/`server.js`/`server/app.cjs` read these; the add-on passes them.
-4. **Add-on slug `beacon`** in `config.yaml`. Home Assistant identifies an installed add-on by slug: changing it does not update the existing add-on, it makes a _new_ one, so the household would lose its configuration. Display name and description change; the slug stays.
+3. ~~**Home Assistant env contract**~~ — resolved. Configuration is read from
+   `ABBAI_FLOW_ALLOWED_ORIGINS`, `ABBAI_FLOW_DATA`, `ABBAI_FLOW_DIST`,
+   `ABBAI_FLOW_HA_CA` and `ABBAI_FLOW_PORT`, and the browser global the server
+   injects is `window.__ABBAI_FLOW_CONFIG__`. The `BEACON_*` spellings are gone
+   from the code; `docs/upgrade-2.0.0.md` lists the rename for anyone upgrading.
+4. ~~**Add-on slug `beacon`**~~ — moot in 2.0.0: add-on packaging (and
+   `config.yaml`) was dropped, so no slug exists any more.
 5. **Theme/storage CSS variables** — already renamed away from the old brand in an earlier pass (`--skin-*`); nothing left.
-6. **`beacon/` mirror directory** — the duplicate source tree the repo keeps in sync; kept as a _path_, documented.
+6. ~~**`beacon/` mirror directory**~~ — deleted; the root tree is the only tree.
 7. ~~**Asset file names** `beacon-*.png`~~ — resolved. The raster icon set is now
    generated from `src/assets/abbai-flow-icon.svg` (+ maskable and OG companions)
    by `scripts/export-icons.ts`, which writes stable paths into `public/`
