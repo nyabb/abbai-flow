@@ -747,6 +747,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.assignPointsHint': 'Punkte für eine Belohnung reservieren',
   'planner.missionsHint': 'Arbeite deine Aufgaben ab',
   'planner.startMissions': 'Missionen starten',
+  'planner.startRoutine': 'Diese Routine starten',
   'planner.missions': 'Missionen',
   'planner.continue': 'Weiter',
   'planner.iDidIt': 'Ich hab es gemacht!',

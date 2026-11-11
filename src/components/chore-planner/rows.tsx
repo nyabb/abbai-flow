@@ -80,6 +80,15 @@ export function TaskRow({
   );
 }
 
+/** One step of a routine, as it stands for one child today. */
+export interface RoutineStep {
+  name: string;
+  /** Already ticked off today. */
+  done: boolean;
+  /** Still waiting to be done. */
+  open: boolean;
+}
+
 export interface RoutineRowProps {
   routine: PlannerRoutine;
   paused: boolean;
@@ -87,38 +96,96 @@ export interface RoutineRowProps {
   label: string;
   /** How far through its part of the day the routine is, 0–100. */
   progress: number;
+  /** The routine's steps for the child whose column this is. */
+  steps?: RoutineStep[];
   copy: PlannerCopy;
   onToggle: () => void;
+  /** Start this routine as a mission for that child. */
+  onStart?: () => void;
+  /** There is something left to run, so starting makes sense. */
+  canStart?: boolean;
 }
 
 /**
- * A routine row: name, its part of the day, progress, and a pause/resume tap.
- * A paused routine stays visible but greyed out, so a parent can see it is off
- * and bring it back with one tap.
+ * A routine row: name, its part of the day, how far through the day it is, the
+ * steps it contains and which of them are already done.
+ *
+ * The steps are the point: a parent looking at a child needs to see "three of
+ * five done" without opening anything else, and the child needs to see which
+ * two are left. A paused routine stays visible but greyed out, so a parent can
+ * see it is off and bring it back with one tap.
  */
-export function RoutineRow({ routine, paused, label, progress, copy, onToggle }: RoutineRowProps) {
+export function RoutineRow({
+  routine,
+  paused,
+  label,
+  progress,
+  steps = [],
+  copy,
+  onToggle,
+  onStart,
+  canStart = false,
+}: RoutineRowProps) {
+  const doneCount = steps.filter((step) => step.done).length;
+
   return (
     <div className={`planner-row planner-row--routine ${paused ? 'is-paused' : ''}`}>
-      <span className="planner-row-icon" aria-hidden="true">
-        {routine.icon}
-      </span>
-      <span className="planner-row-name">
-        {routine.fallback ? copy.otherDaily : routine.name}
-        <small>{paused ? copy.paused : label}</small>
-      </span>
-      {!paused && (
-        <span className="planner-row-progress" aria-hidden="true">
-          <i style={{ width: `${progress}%` }} />
+      <div className="planner-routine-head">
+        <span className="planner-row-icon" aria-hidden="true">
+          {routine.icon}
         </span>
+        <span className="planner-row-name">
+          {routine.fallback ? copy.otherDaily : routine.name}
+          <small>{paused ? copy.paused : label}</small>
+        </span>
+        {steps.length > 0 && (
+          <span className="planner-routine-count" aria-label={`${doneCount}/${steps.length}`}>
+            {doneCount}/{steps.length}
+          </span>
+        )}
+        {!paused && (
+          <span className="planner-row-progress" aria-hidden="true">
+            <i style={{ width: `${progress}%` }} />
+          </span>
+        )}
+        {onStart && (
+          <button
+            type="button"
+            className="planner-row-more planner-row-start"
+            disabled={!canStart || paused}
+            aria-label={`${copy.startRoutine}: ${routine.name}`}
+            onClick={onStart}
+          >
+            {'\u25B6'}
+          </button>
+        )}
+        <button
+          type="button"
+          className="planner-row-more"
+          aria-label={`${paused ? copy.resumeRoutine : copy.pauseRoutine}: ${routine.name}`}
+          onClick={onToggle}
+        >
+          {paused ? '\u25B6' : '\u23F8'}
+        </button>
+      </div>
+      {steps.length > 0 && (
+        <ul className="planner-steps">
+          {steps.map((step) => (
+            <li
+              key={step.name}
+              className={`planner-step${step.done ? ' is-done' : ''}${
+                !step.done && !step.open ? ' is-idle' : ''
+              }`}
+            >
+              <span className="planner-step-mark" aria-hidden="true">
+                {step.done ? '\u2713' : '\u25CB'}
+              </span>
+              <span className="planner-step-name">{step.name}</span>
+              <span className="planner-sr-only">{step.done ? copy.done : copy.openTodo}</span>
+            </li>
+          ))}
+        </ul>
       )}
-      <button
-        type="button"
-        className="planner-row-more"
-        aria-label={`${paused ? copy.resumeRoutine : copy.pauseRoutine}: ${routine.name}`}
-        onClick={onToggle}
-      >
-        {paused ? '\u25B6' : '\u23F8'}
-      </button>
     </div>
   );
 }

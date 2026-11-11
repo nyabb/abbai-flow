@@ -16,11 +16,13 @@ export interface ChildViewProps {
   completedTasksFor: (memberId: string) => PlannerTask[];
   rewardsForMember: (memberId: string) => ChoreOpsReward[];
   renderRow: (task: PlannerTask) => React.ReactNode;
-  routineRow: (routine: PlannerRoutine) => React.ReactNode;
+  routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
   renderRewardRow: (reward: ChoreOpsReward) => React.ReactNode;
   copy: PlannerCopy;
   onStepChild: (delta: number) => void;
   onStartMissions: (memberId: string) => void;
+  /** Whether this child has anything left to run — routines, not loose chores. */
+  canRunMissions: (memberId: string) => boolean;
   onNewGoal: (memberId: string) => void;
 }
 
@@ -37,6 +39,7 @@ export function ChildView({
   copy: c,
   onStepChild,
   onStartMissions,
+  canRunMissions,
   onNewGoal,
 }: ChildViewProps) {
   const chores = columnTasks(childMember.id);
@@ -78,7 +81,9 @@ export function ChildView({
         <button
           type="button"
           className="planner-col-play planner-col-play--big"
-          disabled={chores.length === 0}
+          // Missions walk routines; a child whose day is all routine steps has
+          // no loose chores, and used to get a dead button.
+          disabled={!canRunMissions(childMember.id)}
           onClick={() => onStartMissions(childMember.id)}
           aria-label={`${c.startMissions}: ${childMember.name}`}
         >
@@ -134,7 +139,7 @@ export function ChildView({
         {routines.length === 0 ? (
           <p className="planner-col-empty">{c.noRoutines}</p>
         ) : (
-          routines.map((routine) => routineRow(routine))
+          routines.map((routine) => routineRow(routine, childMember.id))
         )}
       </section>
     </main>

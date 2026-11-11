@@ -715,6 +715,126 @@ describe('ChorePlanner board', () => {
     ).not.toBeNull();
   });
 
+  /*
+   * A child whose whole day is routines has no standalone chores, so the old
+   * `disabled={chores.length === 0}` left the mission button dead — and the
+   * routines themselves were only a name and a bar, with no steps.
+   */
+  it('lists a routine’s steps and lets a routine-only child start missions', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const zara = column(container, 'Zara');
+    const row = zara.querySelector<HTMLElement>('.planner-row--routine')!;
+    expect(row.querySelector('.planner-steps')?.textContent).toContain('Kamer opruimen');
+    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('0/1');
+
+    // Nothing loose to do, but there is a routine to run.
+    expect(zara.querySelector<HTMLButtonElement>('.planner-col-play')!.disabled).toBe(false);
+  });
+
+  it('marks routine steps that are already done today', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          status: 'completed',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const row = column(container, 'Zara').querySelector<HTMLElement>('.planner-row--routine')!;
+    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('1/1');
+    expect(row.querySelector('.planner-step')?.className).toContain('is-done');
+    // Nothing left to run, so starting a mission is pointless.
+    expect(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!.disabled,
+    ).toBe(true);
+  });
+
+  it('starts just one routine from its row', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        {
+          ...base.chores[0],
+          id: 'status:zara::kamer-opruimen',
+          name: 'Kamer opruimen',
+          assignee: 'Zara',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>(
+        'button[aria-label^="Deze routine starten: Ochtendroutine"]',
+      )!,
+    );
+
+    // The mission screen walks the routine's remaining steps.
+    expect(container.querySelector('.planner-mission-screen')).not.toBeNull();
+    expect(container.textContent).toContain('Kamer opruimen');
+  });
+
+  /*
+   * The phone layout rendered no entry point at all: no detail page, no way to
+   * start missions. Both now sit right under the member tabs.
+   */
+  it('opens a child’s detail page and starts missions from the phone layout', () => {
+    const original = window.matchMedia;
+    // jsdom has no matchMedia; the board asks for the phone layout explicitly.
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('max-width'),
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+
+    try {
+      const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+      // Pick Zara explicitly: the phone layout starts on the first member.
+      fireEvent.click(within(container).getByRole('button', { name: 'Zara' }));
+
+      const actions = container.querySelector<HTMLElement>('.planner-mobile-actions')!;
+      expect(actions).not.toBeNull();
+      fireEvent.click(within(actions).getByRole('button', { name: /Openen/ }));
+
+      expect(container.querySelector('.planner-detail')).not.toBeNull();
+      expect(container.querySelector('.planner-detail')!.textContent).toContain('Zara');
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
   it('opens one child’s goals from their points badge', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     openRewards(container, 'Zara');

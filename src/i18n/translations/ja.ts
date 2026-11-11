@@ -734,6 +734,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.assignPointsHint': 'ごほうびにポイントを割り当てる',
   'planner.missionsHint': 'タスクを進めましょう',
   'planner.startMissions': 'ミッション開始',
+  'planner.startRoutine': 'このルーティンを開始',
   'planner.missions': 'ミッション',
   'planner.continue': '続ける',
   'planner.iDidIt': 'できた！',

@@ -745,6 +745,7 @@ export const en = {
   'planner.assignPointsHint': 'Put points towards a reward',
   'planner.missionsHint': 'Work through your chores',
   'planner.startMissions': 'Start missions',
+  'planner.startRoutine': 'Start this routine',
   'planner.missions': 'Missions',
   'planner.continue': 'Continue',
   'planner.iDidIt': 'I did it!',
