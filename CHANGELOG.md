@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/nyabb/abbai-flow/compare/v2.0.2...v2.1.0) (2026-11-11)
+
+
+### Features
+
+* **planner:** show routine steps per child, and make missions reachable ([c81e7cf](https://github.com/nyabb/abbai-flow/commit/c81e7cfa1bc5dc9cb0dfff7654dbece8f4afda4e))
+
 ## [2.0.2](https://github.com/nyabb/abbai-flow/compare/v2.0.1...v2.0.2) (2026-11-11)
 
 
