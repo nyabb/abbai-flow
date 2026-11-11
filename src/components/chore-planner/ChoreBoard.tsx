@@ -6,7 +6,7 @@
  * and row renderers), so the board has no ChoreOps knowledge of its own.
  */
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { MemberAvatar } from '../MemberAvatar';
@@ -19,12 +19,14 @@ export interface ChoreBoardProps {
   columnTasks: (memberId: string) => PlannerTask[];
   /** Routines that belong to one member. */
   columnRoutines: (memberId: string) => PlannerRoutine[];
+  /** Whether the child has anything left to run (routines, not loose chores). */
+  canRunMissions: (memberId: string) => boolean;
   /** Chores still up for grabs, deduplicated by name. */
   freeTasks: PlannerTask[];
   /** What one member can still spend (ChoreOps balance minus reservations). */
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
-  routineRow: (routine: PlannerRoutine) => React.ReactNode;
+  routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
   /** A member's goals, rendered inline in the phone layout's Doelen tab. */
   renderGoals: (memberId: string) => React.ReactNode;
   copy: PlannerCopy;
@@ -38,6 +40,7 @@ export function ChoreBoard({
   boardMembers,
   columnTasks,
   columnRoutines,
+  canRunMissions,
   freeTasks,
   spendableFor,
   renderRow,
@@ -107,6 +110,28 @@ export function ChoreBoard({
           ))}
         </div>
 
+        {member && (
+          <div className="planner-mobile-actions">
+            <button
+              type="button"
+              className="planner-ghost planner-mobile-open-child"
+              onClick={() => onOpenChild(member.id)}
+            >
+              <ChevronRight aria-hidden="true" />
+              {c.openChild}
+            </button>
+            <button
+              type="button"
+              className="planner-col-play"
+              disabled={!canRunMissions(member.id)}
+              onClick={() => onStartMissions(member.id)}
+              aria-label={`${c.startMissions}: ${member.name}`}
+            >
+              {'\u25B6'}
+            </button>
+          </div>
+        )}
+
         <section className="planner-col-body planner-mobile-panel">
           {tab === 'chores' &&
             (chores.length === 0 ? (
@@ -118,7 +143,7 @@ export function ChoreBoard({
             (routines.length === 0 ? (
               <p className="planner-col-empty">{c.noRoutines}</p>
             ) : (
-              routines.map((routine) => routineRow(routine))
+              routines.map((routine) => routineRow(routine, member.id))
             ))}
           {tab === 'goals' && member && renderGoals(member.id)}
           {tab === 'free' &&
@@ -167,7 +192,7 @@ export function ChoreBoard({
               <button
                 type="button"
                 className="planner-col-play"
-                disabled={chores.length === 0}
+                disabled={!canRunMissions(member.id)}
                 onClick={() => onStartMissions(member.id)}
                 aria-label={`${c.startMissions}: ${member.name}`}
               >
@@ -193,7 +218,7 @@ export function ChoreBoard({
               {routines.length === 0 ? (
                 <p className="planner-col-empty">{c.noRoutines}</p>
               ) : (
-                routines.map((routine) => routineRow(routine))
+                routines.map((routine) => routineRow(routine, member.id))
               )}
             </div>
           </section>

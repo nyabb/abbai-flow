@@ -20,6 +20,8 @@ const copy = {
   nothing: 'Geen taakjes',
   noRoutines: 'Geen routines',
   add: 'Toevoegen',
+  openChild: 'Openen',
+  startMissions: 'Missies starten',
 } as unknown as PlannerCopy;
 
 const ZARA: PlannerMember = {
@@ -38,6 +40,7 @@ function renderBoard() {
         boardMembers={[ZARA, MAYA]}
         columnTasks={() => []}
         columnRoutines={() => []}
+        canRunMissions={() => true}
         freeTasks={[]}
         spendableFor={() => 25}
         renderRow={() => null}
@@ -100,8 +103,12 @@ describe('ChoreBoard', () => {
     expect(
       container.querySelectorAll('.planner-mobile-member .planner-mobile-avatar'),
     ).toHaveLength(2);
-    // The first member is selected when nothing else has been picked.
-    expect(screen.getByRole('button', { name: /Zara/ }).getAttribute('aria-pressed')).toBe('true');
+    // The first member is selected when nothing else has been picked. (The
+    // phone toolbar's mission button is also named after the member, so the
+    // chip is targeted by class rather than by accessible name.)
+    expect(
+      container.querySelector('.planner-mobile-member.is-active .planner-mobile-name')?.textContent,
+    ).toBe('Zara');
   });
 
   it('shows one tab at a time and switches between them', () => {

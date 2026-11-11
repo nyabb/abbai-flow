@@ -740,6 +740,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.assignPointsHint': 'Zet punten op een beloning',
   'planner.missionsHint': 'Werk je taakjes af',
   'planner.startMissions': 'Start missies',
+  'planner.startRoutine': 'Deze routine starten',
   'planner.missions': 'Missies',
   'planner.continue': 'Verder',
   'planner.iDidIt': 'Ik heb het gedaan!',

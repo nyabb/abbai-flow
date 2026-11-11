@@ -219,12 +219,12 @@ describe('ChorePlanner routines', () => {
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!,
-    );
+    // The only routine is paused, so there is nothing to run: the button says so
+    // instead of starting a mission that immediately ends.
+    const play = column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!;
+    expect(play.disabled).toBe(true);
 
-    // Nothing to run: the closing card instead of a mission screen.
-    await waitFor(() => expect(container.querySelector('.planner-celebrate')).not.toBeNull());
+    fireEvent.click(play);
     expect(container.querySelector('.planner-mission-hero')).toBeNull();
   });
 });

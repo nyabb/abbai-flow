@@ -38,7 +38,7 @@ import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import { usePlannerCopy } from './copy';
-import { RewardRow, RoutineRow, TaskRow } from './rows';
+import { RewardRow, RoutineRow, TaskRow, type RoutineStep } from './rows';
 import { HeaderDate } from '../PageHeader';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
@@ -399,9 +399,13 @@ export function ChorePlanner({
    * pause/resume tap. A paused routine stays visible but greyed out, so a
    * parent can see it is off and bring it back with one tap.
    */
-  /** One routine row; the row component only knows what it displays. */
-  const routineRow = (routine: PlannerRoutine) => {
+  /**
+   * One routine row for one child: its steps, how many are done, and a way to
+   * start just this routine. Steps are per child, so the member is required.
+   */
+  const routineRow = (routine: PlannerRoutine, memberId: string) => {
     const paused = pausedRoutineIds.includes(routine.id);
+    const steps = routineStepsFor(routine, memberId);
     return (
       <RoutineRow
         key={routine.id}
@@ -409,8 +413,11 @@ export function ChorePlanner({
         paused={paused}
         label={routineLabel(routine)}
         progress={blockProgress(routine.timeBlock)}
+        steps={steps}
         copy={c}
         onToggle={() => toggleRoutinePaused(routine.id, routine.name)}
+        onStart={() => beginRoutine(memberId, routine)}
+        canStart={steps.some((step) => step.open)}
       />
     );
   };
@@ -534,9 +541,47 @@ export function ChorePlanner({
     return [...open].sort((a, b) => position(a) - position(b));
   }
 
+  /**
+   * A routine's steps for one child, in configured order, with today's state.
+   *
+   * A step counts as done when every ChoreOps row for it is completed today, and
+   * it is open while at least one row still waits. Steps the registry knows but
+   * ChoreOps has not published yet are listed as idle, so a routine that exists
+   * only in Abbai Flow still shows what it is made of.
+   */
+  function routineStepsFor(routine: PlannerRoutine, memberId: string): RoutineStep[] {
+    const order = routine.taskNames ?? routineTaskOrder(meta, routine.id);
+    const mine = data.tasks.filter(
+      (task) => task.routineId === routine.id && task.memberId === memberId,
+    );
+    const names = [...order];
+    for (const task of mine) {
+      if (!names.some((name) => normaliseName(name) === normaliseName(task.name))) {
+        names.push(task.name);
+      }
+    }
+    return names.map((name) => {
+      const rows = mine.filter((task) => normaliseName(task.name) === normaliseName(name));
+      return {
+        name,
+        done: rows.length > 0 && rows.every((task) => taskStatus(task) === 'completed'),
+        open: rows.some((task) => !['completed', 'expired'].includes(taskStatus(task))),
+      };
+    });
+  }
+
   /** The overview list is the queue: what it shows is what will be run. */
   const openTasksFor = (memberId: string) =>
     missionsFor(memberId).reduce<PlannerTask[]>((all, entry) => [...all, ...entry.tasks], []);
+
+  /**
+   * Is there anything to run for this child?
+   *
+   * The start button used to be disabled whenever the child had no *standalone*
+   * chores, which is exactly the case for a child whose whole day is routines —
+   * so the mission button looked dead.
+   */
+  const canRunMissions = (memberId: string) => missionsFor(memberId).length > 0;
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
     new Date(b.deadlineAt ?? b.expiresAt ?? b.startsAt).getTime();
@@ -1146,6 +1191,25 @@ export function ChorePlanner({
   };
 
   /** Start the guided run through one child's first open routine. */
+  /** Start one routine as a mission, without walking the child's other routines. */
+  const beginRoutine = (memberId: string, routine: PlannerRoutine) => {
+    const steps = routineTasksFor(routine, memberId);
+    setTodayMemberId(memberId);
+    if (steps.length === 0) {
+      setMissionIds([]);
+      setMissionIndex(0);
+      setScreen('closing');
+      return;
+    }
+    const userName = userNameByMemberId.get(memberId);
+    if (userName) {
+      void plannerMeta.runOp({ type: 'startMission', user: userName, routineId: routine.id });
+    }
+    setMissionIds(steps.map((task) => task.id));
+    setMissionIndex(0);
+    setScreen('mission');
+  };
+
   const beginMissions = (memberId: string) => {
     setTodayMemberId(memberId);
     // A mission is a run through *routines*, in the order the parent configured;
@@ -1448,6 +1512,7 @@ export function ChorePlanner({
           }}
           onOpenGoals={openGoals}
           onStartMissions={beginMissions}
+          canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
         />
       )}{' '}
@@ -1465,6 +1530,7 @@ export function ChorePlanner({
           copy={c}
           onStepChild={stepChild}
           onStartMissions={beginMissions}
+          canRunMissions={canRunMissions}
           onNewGoal={startRewardForm}
         />
       )}{' '}

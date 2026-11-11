@@ -731,6 +731,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.assignPointsHint': '보상에 포인트를 배정하세요',
   'planner.missionsHint': '집안일을 진행하세요',
   'planner.startMissions': '미션 시작',
+  'planner.startRoutine': '이 루틴 시작',
   'planner.missions': '미션',
   'planner.continue': '계속',
   'planner.iDidIt': '다 했어요!',
