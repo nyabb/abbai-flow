@@ -26,7 +26,8 @@ COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/node_modules/ws /app/node_modules/ws
 COPY server.js /app/server.js
 COPY server/ /app/server/
-COPY shared/ /app/shared/
+# Compiled by `npm run build:server` in the builder stage (src/api/planner-rules.ts).
+COPY --from=builder /app/server/build /app/server/build
 COPY custom_sentences/ /app/custom_sentences/
 COPY custom_intents/ /app/custom_intents/
 

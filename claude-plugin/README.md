@@ -1,6 +1,6 @@
 # Abbai Flow — Claude Code Plugin
 
-Control your [Abbai Flow](https://github.com/asachs01/beacon) family dashboard from Claude Code.
+Control your [Abbai Flow](https://github.com/nyabb/abbai-flow) family dashboard from Claude Code.
 
 ## What you get
 
@@ -18,7 +18,7 @@ Control your [Abbai Flow](https://github.com/asachs01/beacon) family dashboard f
 
 1. Install the plugin:
    ```
-   /plugin marketplace add asachs01/beacon
+   /plugin marketplace add nyabb/abbai-flow
    ```
 
 2. Set environment variables (or create `.env` from `.env.example`):

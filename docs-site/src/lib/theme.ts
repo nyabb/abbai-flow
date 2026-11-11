@@ -2,8 +2,8 @@ const THEME_KEY = "td-theme";
 const DARK_KEY = "td-dark";
 
 export function getStoredTheme(): string {
-  if (typeof localStorage === "undefined") return "beacon";
-  return localStorage.getItem(THEME_KEY) || "beacon";
+  if (typeof localStorage === "undefined") return "abbai-flow";
+  return localStorage.getItem(THEME_KEY) || "abbai-flow";
 }
 
 export function setStoredTheme(id: string): void {

@@ -753,8 +753,8 @@ async function handleDataApi(req, res, config) {
  *
  * The planner's middle layer: the browser sends an *operation* instead of a
  * whole document, the server reduces it with the same rules the client uses
- * (`shared/planner-rules.mjs`), serialises concurrent mutations per document and
- * writes the result atomically.
+ * (`src/api/planner-rules.ts`, compiled to `server/build/`), serialises
+ * concurrent mutations per document and writes the result atomically.
  *
  * `key` is an idempotency key: replaying the same operation (a retry, a flaky
  * network, a double tap) returns the stored document instead of applying the
@@ -834,7 +834,14 @@ async function handlePlannerMutate(req, res, config) {
     return;
   }
 
-  const rules = await loadPlannerRules();
+  let rules;
+  try {
+    rules = loadPlannerRules();
+  } catch (err) {
+    // A missing build must be loud, not a silent 400 on every mutation.
+    sendJson(res, 500, { error: err.message || 'Planner rules unavailable' });
+    return;
+  }
 
   try {
     const outcome = await withPlannerLock(documentKey, async () => {
@@ -878,19 +885,25 @@ async function handlePlannerMutate(req, res, config) {
   }
 }
 
-/** The shared rules are ESM; the server is CommonJS, so load them once. */
-let plannerRulesPromise = null;
+/**
+ * The planner rules are TypeScript (`src/api/planner-rules.ts`) — the single
+ * implementation the browser imports too. `npm run build:server` compiles them
+ * to CommonJS here, so this file requires the build artefact instead of keeping
+ * a second hand-written copy in sync.
+ */
+let plannerRules = null;
 function loadPlannerRules() {
-  if (!plannerRulesPromise) {
-    plannerRulesPromise = import(
-      pathToFileUrl(path.join(__dirname, '..', 'shared', 'planner-rules.mjs'))
-    );
+  if (!plannerRules) {
+    try {
+      plannerRules = require('./build/planner-rules.js');
+    } catch (err) {
+      throw new Error(
+        'Planner rules are not built. Run `npm run build:server` before starting the server. ' +
+          `(${err && err.message ? err.message : err})`,
+      );
+    }
   }
-  return plannerRulesPromise;
-}
-
-function pathToFileUrl(filePath) {
-  return require('url').pathToFileURL(filePath).href;
+  return plannerRules;
 }
 
 /**

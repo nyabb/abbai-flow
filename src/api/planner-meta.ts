@@ -7,8 +7,8 @@
  * a routine a stable identity — or says "task 2 comes after task 1" — has to
  * live in Abbai Flow.
  *
- * The **rules** live in `shared/planner-rules.mjs` so the add-on server can run
- * the exact same code for `POST /api/planner/mutate`; this module re-exports them
+ * The **rules** live in `planner-rules.ts` so the server bundle can run the exact
+ * same code for `POST /api/planner/mutate`; this module re-exports them
  * with types and adds the bits that only make sense in the browser (persistence
  * through `beacon-store`, and the queries the views need).
  */
@@ -19,7 +19,7 @@ import {
   sanitizePlannerMeta as sharedSanitizeMeta,
   type MissionProgress,
   type PlannerMeta,
-} from '../../shared/planner-rules.mjs';
+} from './planner-rules';
 
 export {
   addRoutineTask,
@@ -40,13 +40,13 @@ export {
   startMission,
   toggleRoutinePaused,
   upsertRoutine,
-} from '../../shared/planner-rules.mjs';
+} from './planner-rules';
 
 export type {
   MissionProgress,
   PlannerMeta,
   RoutineDefinition,
-} from '../../shared/planner-rules.mjs';
+} from './planner-rules';
 
 /** Storage key (also the `/beacon-data/:key` path segment). */
 export const PLANNER_META_KEY = 'beacon-planner-meta';

@@ -9,7 +9,7 @@ the hallway.
 Open Abbai Flow at:
 
 ```
-http://<beacon-host>:3000/display
+http://<abbai-flow-host>:3000/display
 ```
 
 Under Home Assistant ingress the path is preserved, so

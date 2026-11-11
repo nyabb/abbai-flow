@@ -169,34 +169,37 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
   }, [allLists, selectedListId, defaultListId]);
 
   // Load HA items via todo.get_items
-  const loadHaItems = useCallback(async (entityId: string) => {
-    if (!entityId) return;
-    setLoading(true);
+  const loadHaItems = useCallback(
+    async (entityId: string) => {
+      if (!entityId) return;
+      setLoading(true);
 
-    try {
-      const result = (await callHaService(
-        'todo',
-        'get_items',
-        {
-          entity_id: entityId,
-        },
-        true,
-      )) as {
-        service_response?: Record<string, { items?: TodoItem[] }>;
-      };
+      try {
+        const result = (await callHaService(
+          'todo',
+          'get_items',
+          {
+            entity_id: entityId,
+          },
+          true,
+        )) as {
+          service_response?: Record<string, { items?: TodoItem[] }>;
+        };
 
-      const entityResponse = result?.service_response?.[entityId];
-      setHaItems(entityResponse?.items ?? []);
-      setLoadError(null);
-    } catch (err) {
-      console.warn('GroceryView: Failed to load items', err);
-      // Keep whatever was on screen: emptying the list made a connection
-      // problem look like a household with nothing to do.
-      setLoadError(err instanceof Error ? err.message : t('grocery.loadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+        const entityResponse = result?.service_response?.[entityId];
+        setHaItems(entityResponse?.items ?? []);
+        setLoadError(null);
+      } catch (err) {
+        console.warn('GroceryView: Failed to load items', err);
+        // Keep whatever was on screen: emptying the list made a connection
+        // problem look like a household with nothing to do.
+        setLoadError(err instanceof Error ? err.message : t('grocery.loadFailed'));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [t],
+  );
 
   // Reload when selected list changes (HA lists only)
   useEffect(() => {

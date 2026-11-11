@@ -12,7 +12,7 @@
  * Either way the caller gets the resulting document back, so the UI renders what
  * was actually stored instead of assuming its own optimistic version.
  */
-import { applyPlannerOp, type PlannerOp, type PlannerTarget } from '../../shared/planner-rules.mjs';
+import { applyPlannerOp, type PlannerOp, type PlannerTarget } from './planner-rules';
 import { loadData, saveData } from './beacon-store';
 import {
   loadPlannerMeta,
@@ -27,7 +27,7 @@ import {
   type Redemption,
 } from './reward-redemptions';
 
-export type { PlannerOp, PlannerTarget } from '../../shared/planner-rules.mjs';
+export type { PlannerOp, PlannerTarget } from './planner-rules';
 
 export interface PlannerMutationResult<T> {
   document: T;

@@ -133,7 +133,7 @@ Each row is one meal, in breakfast → lunch → dinner → snack order:
 **Where the data comes from:**
 
 - Abbai Flow stores the plan as a `beacon_meal_plans` array in its data store (the Home Assistant add-on keeps it server-side; the standalone build keeps it in the browser). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
-- Meals are **written by a sync, not typed into Abbai Flow**. AnyList plans go through `scripts/sync-meals.mjs`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
+- Meals are **written by a sync, not typed into Abbai Flow**. AnyList plans go through `scripts/sync-meals.ts`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
 - The dashboard re-reads the store every 5 minutes, so a sync shows up without reloading the page.
 
 **Key features:**

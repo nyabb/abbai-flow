@@ -30,8 +30,20 @@ npm run test:server    # node --test server/__tests__/app.test.cjs (backend)
 npm run test:all       # both
 npm run test:coverage  # v8 coverage + threshold ratchet (src/api, src/utils)
 npm run lint           # ESLint 9 flat config (expect 0 errors)
+npm run typecheck      # tsc (src) + tsc -p tsconfig.scripts.json
+npm run build:server   # compile src/api/planner-rules.ts -> server/build/ (CommonJS)
 npm run format         # Prettier write (not a CI gate yet — see docs/engineering-review.md)
 ```
+
+Planner rules are **one TypeScript file** (`src/api/planner-rules.ts`): the
+browser imports it, and `tsconfig.server.json` compiles it to
+`server/build/planner-rules.js` for the CommonJS server (gitignored; produced by
+`npm run build`, `npm run build:server`, and automatically by `pretest:server`).
+`server/package.json` declares `"type": "commonjs"` so that artefact loads as
+CommonJS even though the repo root is `"type": "module"`.
+
+There are **no `.mjs` files**: scripts are TypeScript and run with
+`node --experimental-strip-types` (Node 22.6+).
 
 Dependency note: `@testing-library/dom` is a **peer** dependency of
 `@testing-library/react` and is listed explicitly on purpose. Without it, an install that

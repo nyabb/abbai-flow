@@ -1,0 +1,22 @@
+{
+  "// why": "The server runtime image has no package.json, so the backend stays CommonJS. This config compiles the shared planner rules (the one implementation) to `server/build/planner-rules.js`, which `server/app.cjs` requires. TypeScript is the only source language, so there is no hand-written .mjs/.cjs copy to drift.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "moduleDetection": "force",
+    "rootDir": "src/api",
+    "outDir": "server/build",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "files": ["src/api/planner-rules.ts"]
+}

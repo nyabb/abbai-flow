@@ -62,7 +62,7 @@ This is the easiest method. Abbai Flow runs inside Home Assistant as a managed a
 6. Select **Repositories**
 7. Paste this URL into the text field:
    ```
-   https://github.com/asachs01/beacon
+   https://github.com/nyabb/abbai-flow
    ```
 8. Click **Add**
 9. Click **Close**
@@ -121,12 +121,12 @@ Use this method if you want to run Abbai Flow outside of Home Assistant, or if y
 
 ```bash
 docker run -d \
-  --name beacon \
+  --name abbai-flow \
   -p 3000:3000 \
    -e BEACON_MODE="standalone" \
    -e HA_TOKEN="YOUR_HA_LONG_LIVED_TOKEN" \
   -e HA_URL="http://YOUR_HA_IP:8123" \
-  ghcr.io/asachs01/beacon:latest
+  ghcr.io/nyabb/abbai-flow:latest
 ```
 
 Replace:
@@ -156,7 +156,7 @@ http://YOUR_DOCKER_HOST:3000
 version: "3.8"
 services:
   beacon:
-    image: ghcr.io/asachs01/beacon:latest
+    image: ghcr.io/nyabb/abbai-flow:latest
     container_name: beacon
     restart: unless-stopped
     ports:
@@ -176,7 +176,7 @@ Use this method if you want to contribute to Abbai Flow or run it directly from 
 ### Step 1: Clone the repository
 
 ```bash
-git clone https://github.com/asachs01/beacon.git
+git clone https://github.com/nyabb/abbai-flow.git
 cd beacon
 ```
 

@@ -132,7 +132,7 @@ Click the gear icon in the sidebar to open the Family Members modal. Click "+ Ad
 
 ### How do I hide the sidebar for wall tablets / kiosk setups?
 
-**Abbai Flow's own sidebar**: Enable **Kiosk Mode** in **Settings > Display**. This hides Abbai Flow's sidebar entirely and uses a full-width layout. (Fixed in [PR #51](https://github.com/asachs01/beacon/pull/51) — earlier versions had a non-functional toggle.)
+**Abbai Flow's own sidebar**: Enable **Kiosk Mode** in **Settings > Display**. This hides Abbai Flow's sidebar entirely and uses a full-width layout. (Fixed in [PR #51](https://github.com/nyabb/abbai-flow/pull/51) — earlier versions had a non-functional toggle.)
 
 **Home Assistant's sidebar** (when running as an HA add-on): Abbai Flow cannot hide HA's sidebar when running inside Home Assistant ingress — that chrome is controlled by Home Assistant itself. For dedicated wall tablets or Windows kiosk setups, open Abbai Flow's direct URL in full-screen mode instead:
 
@@ -154,9 +154,9 @@ See the [Installation guide](/docs/getting-started/installation/#mounting-and-di
 **Docker**: Pull the latest image and recreate the container:
 
 ```bash
-docker pull ghcr.io/asachs01/beacon:latest
+docker pull ghcr.io/nyabb/abbai-flow:latest
 docker stop beacon && docker rm beacon
-docker run -d --name beacon ... ghcr.io/asachs01/beacon:latest
+docker run -d --name abbai-flow ... ghcr.io/nyabb/abbai-flow:latest
 ```
 
 ### Is my data preserved across updates?
@@ -205,7 +205,7 @@ This means Abbai Flow cannot connect to Home Assistant. Check:
 
 1. Check the browser console (F12) for error messages
 2. Check the add-on logs (**Settings > Add-ons > Abbai Flow > Log**)
-3. Open a [GitHub issue](https://github.com/asachs01/beacon/issues) with your HA version, browser, device, and relevant logs
+3. Open a [GitHub issue](https://github.com/nyabb/abbai-flow/issues) with your HA version, browser, device, and relevant logs
 
 ---
 

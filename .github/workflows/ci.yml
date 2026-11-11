@@ -10,9 +10,9 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -20,7 +20,7 @@ jobs:
       - run: npm ci
 
       - name: Type check
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Lint
         run: npm run lint
@@ -35,6 +35,8 @@ jobs:
       - name: Backend tests
         run: npm run test:server
 
-      # `npm run build` is `tsc && vite build`, and `Type check` already ran tsc.
+      # `npm run build` is `tsc && tsc -p tsconfig.scripts.json && tsc -p
+      # tsconfig.server.json && vite build`; `Type check` already ran both
+      # type-check configs and `Backend tests` compiles the server rules.
       - name: Build
         run: npx vite build

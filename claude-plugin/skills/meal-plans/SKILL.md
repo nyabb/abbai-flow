@@ -45,12 +45,12 @@ Use `beacon_set_meal_plan` with `entries` array:
 
 ## Syncing from AnyList
 
-A sync script at `scripts/sync-meals.mjs` parses AnyList MCP output:
+A sync script at `scripts/sync-meals.ts` parses AnyList MCP output:
 
 ```bash
 # Run the AnyList MCP meal_plan list_events tool, save output
 # Then parse it into Abbai Flow format:
-node scripts/sync-meals.mjs anylist-output.txt --from 2026-04-01 --to 2026-04-15
+node --experimental-strip-types scripts/sync-meals.ts anylist-output.txt --from 2026-04-01 --to 2026-04-15
 ```
 
 The script auto-detects meal types from `[Breakfast]`/`[Lunch]`/`[Dinner]` brackets and defaults to Dinner.

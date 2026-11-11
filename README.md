@@ -1,34 +1,29 @@
 <p align="center">
-  <img src="src/assets/beacon-logo-main.png" alt="Abbai Flow" width="280" />
+  <img src="src/assets/abbai-flow-icon.svg" alt="Abbai Flow" width="112" />
 </p>
+
+<h1 align="center">Abbai Flow</h1>
 
 <h3 align="center">Your family's daily signal</h3>
 
 <p align="center">
-  <a href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2Fasachs01%2Fbeacon"><img src="https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg" alt="Add to Home Assistant" /></a>
-</p>
-
-<p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" /></a>
-  <a href="https://github.com/asachs01/beacon/releases"><img src="https://img.shields.io/github/v/release/asachs01/beacon" alt="Version" /></a>
-  <a href="https://github.com/asachs01/beacon/stargazers"><img src="https://img.shields.io/github/stars/asachs01/beacon" alt="Stars" /></a>
-  <a href="https://github.com/sponsors/asachs01"><img src="https://img.shields.io/badge/sponsor-♥-ea4aaa.svg" alt="GitHub Sponsors" /></a>
-  <a href="https://buymeacoffee.com/aaronsachs"><img src="https://img.shields.io/badge/buy%20me%20a%20coffee-☕-yellow.svg" alt="Buy Me A Coffee" /></a>
+  <a href="https://github.com/nyabb/abbai-flow/releases"><img src="https://img.shields.io/github/v/release/nyabb/abbai-flow" alt="Version" /></a>
+  <a href="https://github.com/nyabb/abbai-flow/stargazers"><img src="https://img.shields.io/github/stars/nyabb/abbai-flow" alt="Stars" /></a>
 </p>
 
 <p align="center">
-  Abbai Flow is a free, open-source family command center for wall-mounted displays. It runs as a Home Assistant add-on or standalone — turn any tablet or spare screen into a beautiful family dashboard with no subscription fees and no cloud dependency.
-</p>
-
-<p align="center">
-  <img src="src/assets/beacon-mockup-dark-light.png" alt="Abbai Flow screenshot showing dark and light themes" width="720" />
+  Abbai Flow is a free, open-source family organisation and gamification
+  platform — routines, missions, chores, rewards and everyday family life on a
+  wall-mounted display. Run it as a container next to Home Assistant, or
+  standalone, with no subscription fees and no cloud dependency.
 </p>
 
 ---
 
 ## Skylight alternative — without the subscription
 
-Skylight is a polished wall calendar that charges for hardware **and** locks meal planning, photos, and other family features behind Calendar Plus (~$79/year). Abbai Flow is the self-hosted answer: run it as a Home Assistant add-on (or standalone), keep data on your network, and use any tablet you already own.
+Skylight is a polished wall calendar that charges for hardware **and** locks meal planning, photos, and other family features behind Calendar Plus (~$79/year). Abbai Flow is the self-hosted answer: run it in a container next to Home Assistant (or fully standalone), keep data on your network, and use any tablet you already own.
 
 → [Getting started](./docs/getting-started/welcome/) · [Abbai Flow vs Skylight](./docs/getting-started/skylight-alternative/) · Install with the Home Assistant badge above
 
@@ -63,7 +58,7 @@ docker run -d \
   -e HA_URL=https://homeassistant.local:8123 \
   -e HA_TOKEN=your_long_lived_access_token \
   -v abbai-flow-data:/data \
-  ghcr.io/OWNER/abbai-flow:latest
+  ghcr.io/nyabb/abbai-flow:latest
 ```
 
 Open `http://<host>:3000`. Images are published for `linux/amd64` and
@@ -78,7 +73,7 @@ with local calendars, lists and tasks.
 ```yaml
 services:
   abbai-flow:
-    image: ghcr.io/OWNER/abbai-flow:latest
+    image: ghcr.io/nyabb/abbai-flow:latest
     restart: unless-stopped
     ports: ['3000:3000']
     environment:

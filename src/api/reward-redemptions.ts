@@ -8,9 +8,9 @@
  *      ▲                                     │
  *      └──────────(child undoes)─────────────┘
  *
- * The **transition rules** live in `shared/planner-rules.mjs` so the add-on
- * server reduces them for `POST /api/planner/mutate` with the same code the
- * browser uses offline. This module re-exports them with types and adds the
+ * The **transition rules** live in `planner-rules.ts` so the server reduces them
+ * for `POST /api/planner/mutate` with the same code the browser uses offline.
+ * This module re-exports them with types and adds the
  * persistence and balance helpers the UI needs.
  */
 import { loadData, loadDataSync, saveData, type PersistenceResult } from './beacon-store';
@@ -19,7 +19,7 @@ import {
   normaliseName as sharedNormaliseName,
   sanitizeRedemptions as sharedSanitizeRedemptions,
   type Redemption,
-} from '../../shared/planner-rules.mjs';
+} from './planner-rules';
 
 export {
   activeRedemption,
@@ -28,9 +28,9 @@ export {
   normalise,
   releaseRedemption,
   sanitizeRedemptions,
-} from '../../shared/planner-rules.mjs';
+} from './planner-rules';
 
-export type { Redemption, RedemptionState } from '../../shared/planner-rules.mjs';
+export type { Redemption, RedemptionState } from './planner-rules';
 
 export const REDEMPTIONS_KEY = 'beacon-reward-redemptions';
 
