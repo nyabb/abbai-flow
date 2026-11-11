@@ -1,54 +1,202 @@
-
 /* ---------------------------------------------------------------------------
-   Running timer indicator — visible on every page except the timer itself.
-   The countdown lives in a global store, so it keeps running when you navigate
-   away; this is what tells you it is still going.
+   Running timer dock — visible on every page except the timer itself.
+
+   A countdown lives in a global store, so it keeps running when you navigate
+   away. The dock says so without taking layout space: it floats just under the
+   header's top-right corner, semi-transparent, collapsed to one chip, and opens
+   into a list where a timer can be paused or deleted on the spot — no trip to
+   the timer page required.
    --------------------------------------------------------------------------- */
-.timer-pill {
+.timer-dock {
   position: fixed;
-  left: 16px;
-  bottom: 16px;
+  /* Set by the component to the current header's bottom edge + 8px, so the dock
+     sits just under it on every view and breakpoint. 92px is only the first-paint
+     fallback. */
+  top: var(--timer-dock-top, 92px);
+  right: 16px;
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: min(92vw, 340px);
+}
+
+.timer-dock-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
-  max-width: min(60vw, 320px);
-  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: 999px;
-  background: var(--bg-surface);
+  background: color-mix(in srgb, var(--bg-surface) 74%, transparent);
   color: var(--text-primary);
-  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.16));
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   font: inherit;
   font-size: 0.85rem;
   cursor: pointer;
 }
 
-.timer-pill:active {
-  transform: scale(0.98);
+.timer-dock-toggle:hover {
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
 }
 
-.timer-pill-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-}
-
-.timer-pill strong {
+.timer-dock-toggle strong {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
 
-.timer-pill-more {
-  color: var(--text-muted);
-  font-size: 0.78rem;
+.timer-dock-label {
+  font-weight: 600;
 }
 
-/* Keep clear of the phone tab bar. */
+/* "2" — how many timers this chip stands for. */
+.timer-dock-count {
+  display: grid;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.timer-dock-chevron {
+  color: var(--text-muted);
+  transition: transform 0.16s ease;
+}
+
+.timer-dock.is-open .timer-dock-chevron {
+  transform: rotate(180deg);
+}
+
+/* A ringing timer tints the chip so a wall display notices it. */
+.timer-dock-toggle.is-ringing {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg-surface));
+}
+
+.timer-dock-panel {
+  width: min(92vw, 320px);
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-surface) 82%, transparent);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.timer-dock-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timer-dock-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.timer-dock-item.is-ringing {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.timer-dock-item.is-paused .timer-dock-time {
+  color: var(--text-muted);
+}
+
+.timer-dock-avatar {
+  display: grid;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+
+.timer-dock-copy {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.timer-dock-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.timer-dock-time {
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer-dock-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 2px;
+}
+
+.timer-dock-action {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.timer-dock-action:hover {
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-primary);
+}
+
+.timer-dock-action--danger:hover {
+  background: color-mix(in srgb, var(--error, #ef4444) 14%, transparent);
+  color: var(--error, #ef4444);
+}
+
+.timer-dock-open {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 7px;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Phones: keep it off the rounded edge; the top offset is measured. */
 @media (max-width: 768px) {
-  .timer-pill {
-    left: 12px;
-    bottom: calc(var(--mobile-tab-bar-height, 72px) + 12px);
+  .timer-dock {
+    right: 10px;
   }
 }

@@ -17,6 +17,7 @@ import './styles/focus.css';
 import './styles/choreops.css';
 import './styles/chore-planner.css';
 import './styles/display.css';
+import './styles/timer.css';
 // Screen design layer last: it refines the per-view stylesheets app-wide.
 import './styles/surface.css';
 // Responsive/touch additions only - loaded after everything else.

@@ -15,7 +15,7 @@ import { SettingsView } from './components/SettingsView';
 import { useSettings } from './hooks/useSettings';
 import { ChorePlanner } from './components/ChorePlanner';
 import { TimerAlarm } from './components/TimerAlarm';
-import { RunningTimerPill } from './components/RunningTimerPill';
+import { TimerDock } from './components/TimerDock';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { PhotoFrame } from './components/PhotoFrame';
@@ -645,9 +645,10 @@ export function App() {
         )}
 
         {/* A countdown belongs to the household, not to the timer page: the
-            alarm rings and the pill shows the time left on every view. */}
+            alarm rings and the dock shows what is left on every view, with
+            pause/delete right there so the timer page is optional. */}
         <TimerAlarm />
-        {activeView !== 'timer' && <RunningTimerPill onOpen={() => setActiveView('timer')} />}
+        {activeView !== 'timer' && <TimerDock onOpen={() => setActiveView('timer')} />}
 
         {/* Main content area */}
         <div className="beacon-main">
