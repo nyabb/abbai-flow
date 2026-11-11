@@ -17,6 +17,17 @@ import path from 'node:path';
 const stylesDir = path.dirname(fileURLToPath(import.meta.url));
 const sheets = readdirSync(stylesDir).filter((name) => name.endsWith('.css'));
 
+/**
+ * Sheets nothing loads, with the reason. They are unreachable at runtime, so
+ * this list is a to-do list, not a place to park new files: anything here earns
+ * its keep only until somebody decides to wire it up or delete it.
+ *
+ * - `dark-theme.css`      — dark-mode overrides, superseded by the JS theme
+ *                           engine in `hooks/useTheme` + `styles/themes/*.ts`.
+ * - `theme-base.css`      — duplicate of the `:root` defaults in `beacon.css`.
+ */
+const RETIRED_SHEETS = new Set(['dark-theme.css', 'theme-base.css']);
+
 interface Problem {
   file: string;
   detail: string;
@@ -115,5 +126,25 @@ describe('stylesheets parse', () => {
 
   it.each(sheets)('%s is balanced', (file) => {
     expect(inspect(file)).toEqual([]);
+  });
+
+  /*
+   * `timer.css` shipped for months without being imported by `main.tsx`: the
+   * rules were fine, the file was simply never loaded, so the "floating" timer
+   * pill rendered as an ordinary block and pushed every page header down. A
+   * stylesheet nobody imports is dead weight, so assert every top-level sheet is
+   * loaded from the entry point.
+   */
+  it('imports every top-level stylesheet from main.tsx', () => {
+    const srcDir = path.resolve(stylesDir, '..');
+    const mainTsx = readFileSync(path.join(srcDir, 'main.tsx'), 'utf8');
+    const missing = sheets.filter(
+      (name) =>
+        !RETIRED_SHEETS.has(name) &&
+        name !== 'css-syntax.test.ts' &&
+        !mainTsx.includes(`./styles/${name}`),
+    );
+
+    expect(missing, `not imported by src/main.tsx: ${missing.join(', ')}`).toEqual([]);
   });
 });
