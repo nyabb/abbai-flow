@@ -17,10 +17,12 @@ Full documentation, kiosk launch line and connection states: see
 
 ## Backend layout (since 2026-11-09)
 
-`server.js` is a thin CommonJS entry (env → `createApp()` → `listen`). All request
-handling lives in `server/app.cjs` so it can be tested with `node --test`. The
-Dockerfile copies **both** `server.js` and `server/`; the runtime image has no
-`package.json`, which is why the backend must stay CommonJS (`.cjs`).
+`server/main.cjs` is the real entry (env → `createApp()` → `listen`); the
+root `server.js` is a one-line CommonJS shim so the image's
+`CMD ["node", "server.js"]` keeps working. All request handling lives in
+`server/app.cjs` so it can be tested with `node --test`. `npm start` runs
+`server/main.cjs` locally — a root `.js` file cannot be CommonJS here because
+`package.json` declares `"type": "module"` for the frontend.
 
 Commands:
 
@@ -32,6 +34,7 @@ npm run test:coverage  # v8 coverage + threshold ratchet (src/api, src/utils)
 npm run lint           # ESLint 9 flat config (expect 0 errors)
 npm run typecheck      # tsc (src) + tsc -p tsconfig.scripts.json
 npm run build:server   # compile src/api/planner-rules.ts -> server/build/ (CommonJS)
+npm start              # run the backend locally (needs build:server first)
 npm run format         # Prettier write (not a CI gate yet — see docs/engineering-review.md)
 ```
 
