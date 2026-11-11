@@ -4,9 +4,9 @@
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/../beacon/mcp-server.cjs"],
       "env": {
-        "SUPERVISOR_TOKEN": "${BEACON_HA_TOKEN}",
-        "HA_URL": "${BEACON_HA_URL}",
-        "DATA_DIR": "${BEACON_DATA_DIR}"
+        "SUPERVISOR_TOKEN": "${ABBAI_FLOW_HA_TOKEN}",
+        "HA_URL": "${ABBAI_FLOW_HA_URL}",
+        "DATA_DIR": "${ABBAI_FLOW_DATA_DIR}"
       }
     }
   }

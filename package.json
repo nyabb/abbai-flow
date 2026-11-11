@@ -20,6 +20,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "start": "node server/main.cjs",
     "serve": "vite build && npx serve dist -l 3000"
   },
   "dependencies": {

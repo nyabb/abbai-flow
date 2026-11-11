@@ -16,8 +16,8 @@ this review was written; nothing here is a projected result.
 | Mode                    | Entry                  | Who talks to Home Assistant                                             |
 | ----------------------- | ---------------------- | ----------------------------------------------------------------------- |
 | Dev (`npm run dev`)     | Vite (port 3001)       | Browser directly; Vite proxies `/api` to `VITE_HA_URL`                  |
-| Add-on (Supervisor)     | `run.sh` → `server.js` | Server-side proxy with `SUPERVISOR_TOKEN`; browser uses HA ingress path |
-| Standalone Docker       | `run.sh` → `server.js` | Server-side proxy with `HA_TOKEN` + `HA_API_BASE_OVERRIDE`              |
+| Container (Portainer…)  | `server.js`            | Server-side proxy with `HA_URL` + `HA_TOKEN`                              |
+| Container behind HA ingress | `server.js`        | Server-side proxy with `SUPERVISOR_TOKEN`; browser uses the ingress path  |
 | Capacitor (iOS/Android) | `dist/` in WebView     | Browser directly with a user supplied long-lived token                  |
 
 ### Backend (`server.js` + `server/app.cjs`)
@@ -25,7 +25,7 @@ this review was written; nothing here is a projected result.
 ```
 server.js            thin entry: env → createApp() → listen, graceful shutdown
 server/app.cjs       request routing + handlers (CommonJS, testable)
-  ├─ serveStatic()               SPA from BEACON_DIST, traversal-guarded
+  ├─ serveStatic()               SPA from ABBAI_FLOW_DIST, traversal-guarded
   ├─ proxyToHA()                 /api/* → HA REST (server token)
   ├─ handleUpgrade()             /api/websocket → HA WS (ws/wss aware)
   ├─ handleServiceCall()         /beacon-action/service
@@ -151,7 +151,7 @@ Oversized modules (see H for what is still open):
   - `Origin` host must equal `Host` / `X-Forwarded-Host`,
   - `capacitor://localhost`, `ionic://localhost`, `http(s)://localhost` are allowed for
     the native builds,
-  - extra origins can be added with `BEACON_ALLOWED_ORIGINS=origin1,origin2`.
+  - extra origins can be added with `ABBAI_FLOW_ALLOWED_ORIGINS=origin1,origin2`.
 - HA identifiers are validated (`/^[a-z_][a-z0-9_]*$/i`, max 64) before being spliced
   into a proxied path.
 - JSON content type required on the JSON bridges (415 otherwise).
@@ -160,7 +160,7 @@ Oversized modules (see H for what is still open):
     not published. The token never leaves the server.
   - _Standalone Docker_: port 3000 is directly reachable. Anything that can reach it can
     use the server-side HA token; put it behind a reverse proxy or a firewall rule, or set
-    `BEACON_ALLOWED_ORIGINS` when fronting it with another host name. This is unchanged
+    `ABBAI_FLOW_ALLOWED_ORIGINS` when fronting it with another host name. This is unchanged
     behaviour, now documented rather than implied.
   - _Capacitor_: the app talks to HA directly with a user-provided token; no server hop.
 
@@ -372,7 +372,7 @@ Remaining assumptions (documented, not changed):
 4. **Prettier enforcement** — a `format` script exists, but `.prettierrc` was never applied
    repo-wide. Running `prettier --write .` is a mechanical but very large diff; do it as a
    standalone `chore:` commit, then add `format:check` to CI.
-5. **Standalone auth** — optional `BEACON_API_KEY` (header or cookie) that is off by
+5. **Standalone auth** — optional `ABBAI_FLOW_API_KEY` (header or cookie) that is off by
    default, so existing installs keep working.
 6. **Reduce the mirror** — `beacon/` is unused by the image build; if no installed add-on
    points at it, delete it and keep one source tree. Until then the sync check stays.

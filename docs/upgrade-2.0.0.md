@@ -20,13 +20,28 @@ chores, routines, missions, rewards, calendars, lists and settings:
 
 - documents still live under the same keys (`beacon-planner-meta`,
   `beacon-reward-redemptions`, `beacon-local-tasks`, `beacon-settings`, …);
-- the server API is still `/beacon-data/:key`;
-- environment variables keep their names (`BEACON_ALLOWED_ORIGINS`,
-  `BEACON_DATA`, `window.__BEACON_CONFIG__`).
+- the server API is still `/beacon-data/:key`.
 
-These identifiers carry the old name on purpose. Renaming them would orphan
+Those identifiers carry the old name on purpose: renaming them would orphan
 existing household data, so they stay until a versioned migration exists
 (see `docs/rebrand-audit.md`).
+
+### Environment variables were renamed
+
+Configuration is no longer read under `BEACON_*` names. Update your container
+definition if you set any of these:
+
+| Old | New |
+| --- | --- |
+| `BEACON_DATA` | `ABBAI_FLOW_DATA` |
+| `BEACON_DIST` | `ABBAI_FLOW_DIST` |
+| `BEACON_ALLOWED_ORIGINS` | `ABBAI_FLOW_ALLOWED_ORIGINS` |
+| `BEACON_HA_CA` | `ABBAI_FLOW_HA_CA` |
+| `BEACON_PORT` | `PORT` (or `ABBAI_FLOW_PORT`) |
+
+`HA_URL` and `HA_TOKEN` are unchanged, and remain the only two you normally
+need. The browser-side global the server injects is now
+`window.__ABBAI_FLOW_CONFIG__` (served at `/runtime-config.js`).
 
 ## Moving from the add-on to the container
 

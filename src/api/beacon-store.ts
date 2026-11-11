@@ -5,6 +5,7 @@
  * HA add-on.  localStorage serves as an offline cache and as the primary
  * store during local development (no add-on server).
  */
+import { getRuntimeConfig } from '../config';
 
 /** A server-side persistence failure (transport, HTTP status, corruption). */
 export class PersistenceError extends Error {
@@ -41,7 +42,7 @@ export interface PersistenceResult {
 const writeQueues = new Map<string, Promise<unknown>>();
 
 function isAddOn(): boolean {
-  return !!window.__BEACON_CONFIG__;
+  return !!getRuntimeConfig();
 }
 
 function getIngressBasePath(): string {

@@ -26,6 +26,7 @@ import {
   sanitizeRedemptions,
   type Redemption,
 } from './reward-redemptions';
+import { getRuntimeConfig } from '../config';
 
 export type { PlannerOp, PlannerTarget } from './planner-rules';
 
@@ -41,7 +42,7 @@ export interface PlannerMutationResult<T> {
 }
 
 function isAddOn(): boolean {
-  return Boolean(window.__BEACON_CONFIG__);
+  return Boolean(getRuntimeConfig());
 }
 
 function ingressBase(): string {

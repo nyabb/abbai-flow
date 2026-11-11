@@ -15,7 +15,7 @@ import { saveData, loadData, PersistenceError } from './beacon-store';
 describe('saveData', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    delete (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__;
+    delete (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__;
     localStorage.clear();
   });
 
@@ -29,7 +29,7 @@ describe('saveData', () => {
         return { ok: true, json: async () => ({}) } as unknown as Response;
       }),
     );
-    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+    (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     await saveData('beacon_test_members', [{ id: '1', name: 'Natnael', pin: '1234' }]);
 
@@ -47,7 +47,7 @@ describe('saveData', () => {
         throw new Error('offline');
       }),
     );
-    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+    (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     const result = await saveData('beacon_test_members', [{ id: '2' }]);
     expect(result.cached).toBe(true);
@@ -61,7 +61,7 @@ describe('saveData', () => {
       'fetch',
       vi.fn(async () => ({ ok: false, status: 500 }) as unknown as Response),
     );
-    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+    (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     const result = await saveData('beacon_test_http', [{ id: '3' }]);
     expect(result).toMatchObject({ cached: true, persisted: false });
@@ -81,7 +81,7 @@ describe('saveData', () => {
         return { ok: true, status: 200 } as unknown as Response;
       }),
     );
-    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+    (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     await Promise.all([
       saveData('beacon_test_order', [{ id: 'first' }]),
@@ -100,7 +100,7 @@ describe('saveData', () => {
         throw new Error('offline');
       }),
     );
-    (window as { __BEACON_CONFIG__?: unknown }).__BEACON_CONFIG__ = {};
+    (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     await expect(loadData('beacon_test_members', [])).resolves.toEqual([{ id: 'cached' }]);
   });
