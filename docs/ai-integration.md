@@ -46,12 +46,12 @@ Content-Type: application/json
 
 ```bash
 # Add an item
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "add eggs to the grocery list"}'
 
 # Complete a chore
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "mark dishes as done"}'
 ```
@@ -68,7 +68,7 @@ curl -X POST http://<beacon-host>:8099/beacon-action/voice \
 The voice API automatically finds the best media player: it prefers one that is currently playing, then paused, then falls back to the first available.
 
 ```bash
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "set volume to 40"}'
 ```
@@ -82,7 +82,7 @@ curl -X POST http://<beacon-host>:8099/beacon-action/voice \
 Valid views: `dashboard`, `calendar`, `grocery`, `chores`, `music`, `photos`, `settings`.
 
 ```bash
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "show the calendar"}'
 ```
@@ -95,7 +95,7 @@ curl -X POST http://<beacon-host>:8099/beacon-action/voice \
 | `what's the weather` / `weather today` | Returns current weather |
 
 ```bash
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "what'\''s on my calendar"}'
 ```

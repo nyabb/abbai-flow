@@ -30,7 +30,12 @@ These are identifiers, not branding. Renaming them would break existing installa
 4. **Add-on slug `beacon`** in `config.yaml`. Home Assistant identifies an installed add-on by slug: changing it does not update the existing add-on, it makes a _new_ one, so the household would lose its configuration. Display name and description change; the slug stays.
 5. **Theme/storage CSS variables** — already renamed away from the old brand in an earlier pass (`--skin-*`); nothing left.
 6. **`beacon/` mirror directory** — the duplicate source tree the repo keeps in sync; kept as a _path_, documented.
-7. **Asset file names** `beacon-*.png` referenced by `manifest.json` and `index.html`. Kept for now: renaming binaries + every reference is churn with no user-visible effect. The _visible_ marks (app icon, wordmarks, docs branding page) are replaced.
+7. ~~**Asset file names** `beacon-*.png`~~ — resolved. The raster icon set is now
+   generated from `src/assets/abbai-flow-icon.svg` (+ maskable and OG companions)
+   by `scripts/export-icons.ts`, which writes stable paths into `public/`
+   (`/icon-192.png`, `/favicon.svg`, `/og.png`). The old navy lighthouse artwork,
+   its `branding/icon/` sources and the unrunnable `scripts/build-icons.py` are
+   deleted.
 
 ## What is preserved
 

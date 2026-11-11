@@ -22,7 +22,6 @@ android
 ios
 docs
 docs-site
-branding
 claude-plugin
 
 # Compiled inside the builder stage by `npm run build:server`

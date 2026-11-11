@@ -106,7 +106,7 @@ export function SettingsView({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'beacon-settings.json';
+    a.download = 'abbai-flow-settings.json';
     a.click();
     URL.revokeObjectURL(url);
   }, [onExportSettings]);

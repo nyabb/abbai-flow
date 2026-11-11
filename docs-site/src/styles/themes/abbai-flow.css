@@ -1,0 +1,32 @@
+/* Abbai Flow theme — deep river teal on warm neutral, gold accent */
+:root:not([data-theme]),
+:root[data-theme="abbai-flow"] {
+  --td-bg: #fbf7f1;
+  --td-bg-alt: #f4ece1;
+  --td-bg-code: #0f172a;
+  --td-text: #14231f;
+  --td-text-muted: #5c6b64;
+  --td-border: #e3d8c9;
+  --td-accent: #0f6f6a;
+  --td-accent-hover: #0b5b58;
+  --td-success: #22c55e;
+  --td-warning: #d97706;
+  --td-error: #ef4444;
+  --td-info: #06b6d4;
+}
+
+:root:not([data-theme]).dark,
+:root[data-theme="abbai-flow"].dark {
+  --td-bg: #0f1720;
+  --td-bg-alt: #16222b;
+  --td-bg-code: #0b1117;
+  --td-text: #f7f3ec;
+  --td-text-muted: #9aa8a3;
+  --td-border: #27343b;
+  --td-accent: #f7a832;
+  --td-accent-hover: #ffc061;
+  --td-success: #22c55e;
+  --td-warning: #d97706;
+  --td-error: #ef4444;
+  --td-info: #06b6d4;
+}

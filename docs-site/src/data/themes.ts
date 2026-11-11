@@ -6,7 +6,7 @@ export interface ThemePreset {
 }
 
 export const themes: ThemePreset[] = [
-  { id: "beacon", name: "Abbai Flow", preview: ["#0f172a", "#f59e0b", "#f8fafc"] },
+  { id: "abbai-flow", name: "Abbai Flow", preview: ["#0f6f6a", "#f7a832", "#fbf7f1"] },
   { id: "default", name: "Default", preview: ["#0a0a0a", "#3b82f6", "#ededed"] },
   { id: "nord", name: "Nord", preview: ["#2e3440", "#88c0d0", "#eceff4"] },
   { id: "dracula", name: "Dracula", preview: ["#282a36", "#bd93f9", "#f8f8f2"] },

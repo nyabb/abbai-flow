@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "beacon",
+  "name": "abbai-flow",
   "description": "Claude Code plugin for Abbai Flow — a family dashboard with calendar, chores, meal plans, grocery lists, music, and weather. Runs as a Home Assistant add-on.",
   "version": "1.0.0",
   "owner": {
@@ -8,12 +8,12 @@
   },
   "plugins": [
     {
-      "name": "beacon",
+      "name": "abbai-flow",
       "source": "./claude-plugin",
       "description": "Abbai Flow family dashboard — chores, calendar, meal plans, grocery lists, media, weather",
       "version": "1.0.0",
       "category": "smart-home",
-      "tags": ["beacon", "home-assistant", "family", "chores", "calendar", "meal-plans", "smart-home"]
+      "tags": ["abbai-flow", "home-assistant", "family", "chores", "calendar", "meal-plans", "smart-home"]
     }
   ]
 }
