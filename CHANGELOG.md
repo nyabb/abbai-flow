@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/nyabb/abbai-flow/compare/v2.4.0...v2.5.0) (2026-11-12)
+
+
+### Features
+
+* add parent approval functionality and missions overview access in chore planner ([b914d0b](https://github.com/nyabb/abbai-flow/commit/b914d0bacb0de37ed914255486843722a34977ae))
+
 # [2.4.0](https://github.com/nyabb/abbai-flow/compare/v2.3.0...v2.4.0) (2026-11-12)
 
 
