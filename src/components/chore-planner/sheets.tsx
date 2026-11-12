@@ -8,7 +8,16 @@
  * writes.
  */
 import { useEffect, useState } from 'react';
-import { CheckCheck, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  CheckCheck,
+  Clock3,
+  Gift,
+  ListChecks,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
@@ -23,6 +32,37 @@ export interface RewardState {
   remaining: number;
   done: boolean;
   canAdd: boolean;
+}
+
+export interface CreateSheetProps {
+  copy: PlannerCopy;
+  onChore: () => void;
+  onRoutine: () => void;
+  onReward: () => void;
+}
+
+/**
+ * The header "+" asks what to create instead of assuming a chore. Rewards are
+ * created here too, with the same child picker a chore uses.
+ */
+export function CreateSheet({ copy: c, onChore, onRoutine, onReward }: CreateSheetProps) {
+  return (
+    <>
+      <h2>{c.chooseWhat}</h2>
+      <button className="planner-destination" onClick={onChore}>
+        <ListChecks />
+        <strong>{c.add}</strong>
+      </button>
+      <button className="planner-destination" onClick={onRoutine}>
+        <Clock3 />
+        <strong>{c.routineNew}</strong>
+      </button>
+      <button className="planner-destination" onClick={onReward}>
+        <Gift />
+        <strong>{c.newReward}</strong>
+      </button>
+    </>
+  );
 }
 
 export interface ActionsSheetProps {

@@ -57,7 +57,20 @@ function state(): ChoreOpsState {
         completedToday: 0,
       },
     ],
-    chores: [],
+    chores: [
+      {
+        id: 'status:zara::afwassen',
+        name: 'Afwassen',
+        icon: null,
+        status: 'pending',
+        assignee: 'Zara',
+        points: 0,
+        dueDate: null,
+        canClaim: true,
+        canApprove: false,
+        actions: { claim: 'button.zara_claim_afwassen' },
+      },
+    ],
     rewards: [
       {
         id: 'sensor.zara_choreops_reward_status_schermtijd',
@@ -100,14 +113,29 @@ function rewardRow(container: HTMLElement, name = 'Schermtijd') {
   )!;
 }
 
-/** Choose an explicit amount in the "Punten verdelen" sheet. */
+/**
+ * Complete a chore and choose an explicit amount in the "Punten verdelen"
+ * sheet. The reward row intentionally has no Assign button: points reach a
+ * goal through the award sheet after a chore is ticked.
+ */
 function assign(container: HTMLElement, name: string, amount: number) {
+  const backdrop = container.querySelector<HTMLElement>('.planner-backdrop');
+  if (backdrop) fireEvent.click(backdrop);
+
+  fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-row-check')!);
+  fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+  const award = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.click(
-    within(rewardRow(container, name)).getByRole('button', { name: 'Toewijzen', exact: true }),
+    within(award)
+      .getAllByRole('button')
+      .find((button) => button.textContent?.includes(name))!,
   );
+
   const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.change(within(sheet).getByRole('spinbutton'), { target: { value: String(amount) } });
   fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+  openRewards(container);
 }
 
 /** Parent approves the payout from the funded reward row. */
@@ -151,6 +179,7 @@ describe('reward lifecycle', () => {
 
     // 3. The prompt offers reuse or delete; reuse puts the goal back at zero.
     fireEvent.click(screen.getByRole('button', { name: 'Opnieuw gebruiken' }));
+    openRewards(container);
     await waitFor(() => expect(container.textContent).toContain('0 / 20'));
     expect(container.textContent).toContain('Beloning teruggezet met 0 punten');
     expect(mocks.deleteReward).not.toHaveBeenCalled();

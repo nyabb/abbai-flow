@@ -48,6 +48,7 @@ import {
   AssignPointsSheet,
   AwardSheet,
   ClaimSheet,
+  CreateSheet,
   FilterSheet,
   GoalsSheet,
   RewardActionsSheet,
@@ -155,6 +156,7 @@ export function ChorePlanner({
     | 'reward-actions'
     | 'assign'
     | 'reward-given'
+    | 'create'
     | null
   >(null);
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
@@ -444,9 +446,7 @@ export function ChorePlanner({
         allocated={state.allocated}
         remaining={state.remaining}
         done={state.done}
-        canAdd={state.canAdd}
         pending={state.pending}
-        saving={saving}
         copy={c}
         onUndo={() => undoRewardChoice(reward)}
         onApprove={() =>
@@ -460,7 +460,6 @@ export function ChorePlanner({
           const pursuit = rewardState(reward).pursuit;
           if (pursuit) giveReward(pursuit);
         }}
-        onAssign={() => openAssign(reward)}
         onMore={() => {
           setSelectedReward(reward);
           setModal('reward-actions');
@@ -867,10 +866,13 @@ export function ChorePlanner({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
   }, [createToken]);
 
-  /** Open the reward form with the given child already selected. */
-  const startRewardForm = (memberId: string) => {
+  /**
+   * Open the reward form. A child's goals sheet preselects that child; the
+   * header create menu starts empty and lets the parent pick who gets it.
+   */
+  const startRewardForm = (memberId?: string) => {
     setEditingReward(null);
-    setRewardForm({ name: '', cost: 10, memberIds: [memberId] });
+    setRewardForm({ name: '', cost: 10, memberIds: memberId ? [memberId] : [] });
     setModal('reward-form');
   };
 
@@ -1216,7 +1218,7 @@ export function ChorePlanner({
     if (!givenReward) return;
     const name = givenReward.name;
     setGivenReward(null);
-    setModal(goalsMemberId ? 'goals' : null);
+    setModal(null);
     showToast(toastWith(c.rewardReset, name));
   };
 
@@ -1510,7 +1512,11 @@ export function ChorePlanner({
             </button>
           )}
           {(screen === 'board' || screen === 'child') && (
-            <button className="planner-add" onClick={() => openNewForm()} aria-label={c.add}>
+            <button
+              className="planner-add"
+              onClick={() => setModal('create')}
+              aria-label={t('omniAdd.quickAdd')}
+            >
               <Plus />
             </button>
           )}
@@ -1771,6 +1777,16 @@ export function ChorePlanner({
                 }
               />
             )}{' '}
+            {modal === 'create' && (
+              <CreateSheet
+                copy={c}
+                onChore={() => openNewForm('chore')}
+                onRoutine={() => openNewForm('routine')}
+                onReward={() =>
+                  startRewardForm(screen === 'child' ? (childMember?.id ?? undefined) : undefined)
+                }
+              />
+            )}{' '}
             {modal === 'assign' && assigningReward && (
               <AssignPointsSheet
                 reward={assigningReward}
@@ -1779,12 +1795,12 @@ export function ChorePlanner({
                 copy={c}
                 onCancel={() => {
                   setAssigningReward(null);
-                  setModal(goalsMemberId ? 'goals' : null);
+                  setModal(null);
                 }}
                 onAssign={(amount) => {
                   const reward = assigningReward;
                   setAssigningReward(null);
-                  setModal(goalsMemberId ? 'goals' : null);
+                  setModal(null);
                   assignReward(reward, amount);
                 }}
               />

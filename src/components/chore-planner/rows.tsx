@@ -198,17 +198,13 @@ export interface RewardRowProps {
   remaining: number;
   /** The full cost is set aside: the reward is on hold and belongs under Done. */
   done: boolean;
-  /** The child can put something towards it right now. */
-  canAdd: boolean;
   /** A claim made outside Abbai Flow, which a parent settles in ChoreOps. */
   pending: boolean;
-  saving: boolean;
   copy: PlannerCopy;
   onUndo: () => void;
   onApprove: () => void;
   /** Parent-only: hand the fully funded reward over (PIN-gated by the caller). */
   onGive: () => void;
-  onAssign: () => void;
   onMore: () => void;
 }
 
@@ -218,14 +214,11 @@ export function RewardRow({
   allocated,
   remaining,
   done,
-  canAdd,
   pending,
-  saving,
   copy,
   onUndo,
   onApprove,
   onGive,
-  onAssign,
   onMore,
 }: RewardRowProps) {
   /* The bar tracks what has been set aside for this reward, not the child's
@@ -264,20 +257,14 @@ export function RewardRow({
             </button>
           </>
         ) : (
-          <>
-            <button
-              className="planner-ghost planner-reward-action"
-              disabled={!canAdd || saving}
-              onClick={onAssign}
-            >
-              {copy.assign}
+          /* Saving happens through the award sheet after a chore is ticked;
+             the row itself only offers releasing the points again. "Use
+             again" is reserved for the end-of-lifecycle reuse/delete prompt. */
+          allocated > 0 && (
+            <button className="planner-ghost planner-reward-action" onClick={onUndo}>
+              {copy.undoShort}
             </button>
-            {allocated > 0 && (
-              <button className="planner-ghost planner-reward-action" onClick={onUndo}>
-                {copy.useAgain}
-              </button>
-            )}
-          </>
+          )
         )}
         <button
           type="button"

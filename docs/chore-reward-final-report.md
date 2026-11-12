@@ -51,8 +51,9 @@ fulfilled ──▶ reuse: back at 0 allocations   |   delete: definition remove
    └──────────(child undoes a saving pursuit)─────┘
 ```
 
-- Creating a reward is the child's proposal with the parent's approval: the form is open to the
-  child, but the ChoreOps write only happens after a parent PIN.
+- Creating a reward is the child's proposal with the parent's approval: the form is open from the
+  header **+ → Add reward** (pick one or more children, just like a chore) and from a child's goals
+  sheet, but the ChoreOps write only happens after a parent PIN.
 - Allocation is the child's action and never touches ChoreOps. The child chooses the amount
   explicitly, so several goals can be funded side by side (e.g. 5 + 3 out of 10) while the rest
   stays in the savings pot. The amount is still clamped to what the goal needs and what the child

@@ -265,12 +265,28 @@ describe('ChorePlanner anyone chores', () => {
   });
 });
 
-/** Choose an explicit amount in the "Punten verdelen" sheet. */
+/**
+ * Complete the (zero-point) chore, open the award sheet and choose an explicit
+ * amount for the reward. The reward row itself has no Assign button.
+ */
 function assignReward(container: HTMLElement, amount: number) {
-  fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+  const backdrop = container.querySelector<HTMLElement>('.planner-backdrop');
+  if (backdrop) fireEvent.click(backdrop);
+
+  fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-row-check')!);
+  fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+  const award = container.querySelector<HTMLElement>('.planner-sheet')!;
+  fireEvent.click(
+    within(award)
+      .getAllByRole('button')
+      .find((button) => button.textContent?.includes('Schermtijd'))!,
+  );
+
   const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.change(within(sheet).getByRole('spinbutton'), { target: { value: String(amount) } });
   fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+  openRewards(container);
 }
 
 describe('ChorePlanner rewards from ChoreOps', () => {
@@ -287,9 +303,11 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
     expect(container.textContent).toContain('Schermtijd');
     expect(container.textContent).toContain('20 punten');
-    // Zara saved 25, so the reward is affordable.
-    const assign = screen.getByRole('button', { name: 'Toewijzen' }) as HTMLButtonElement;
-    expect(assign.disabled).toBe(false);
+    // Allocation happens from the award sheet after a chore, not on the row.
+    const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
+      element.textContent?.includes('Schermtijd'),
+    )!;
+    expect(within(row).queryByRole('button', { name: 'Toewijzen' })).toBeNull();
   });
 
   /*
@@ -385,6 +403,38 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
     // Creating a reward is a parent action, so the PIN comes first.
     const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() =>
+      expect(mocks.createReward).toHaveBeenCalledWith({
+        name: 'Naar de film',
+        cost: 40,
+        assignedUserNames: ['Zara'],
+      }),
+    );
+  });
+
+  it('creates a reward for a child from the header create menu', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector('.planner-add')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Beloning toevoegen' }));
+
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    const inputs = sheet.querySelectorAll<HTMLInputElement>('.planner-field input');
+    fireEvent.change(inputs[0], { target: { value: 'Naar de film' } });
+    fireEvent.change(inputs[1], { target: { value: '40' } });
+
+    // Nothing is preselected from the header; the parent assigns it explicitly.
+    const zara = within(sheet)
+      .getAllByRole('button')
+      .find((button) => button.textContent?.includes('Zara'))!;
+    fireEvent.click(zara);
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Opslaan' }));
+
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    expect(pin).not.toBeNull();
     fireEvent.change(pin, { target: { value: '0123' } });
     fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
 

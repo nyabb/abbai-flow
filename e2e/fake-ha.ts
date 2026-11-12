@@ -23,6 +23,13 @@ export interface FakeReward {
   status: string;
 }
 
+export interface FakeChore {
+  userName: string;
+  name: string;
+  points: number;
+  status: string;
+}
+
 export interface FakeServiceCall {
   service: string;
   data: Record<string, unknown>;
@@ -37,6 +44,7 @@ export interface FakeSeed {
     pendingClaims?: number;
     status?: string;
   }>;
+  chores?: Array<{ user: string; name: string; points?: number; status?: string }>;
 }
 
 interface EntityState {
@@ -88,6 +96,7 @@ export class FakeHa {
   readonly server: http.Server;
   private users = new Map<string, FakeUser>();
   private rewards: FakeReward[] = [];
+  private chores: FakeChore[] = [];
   private calls: FakeServiceCall[] = [];
 
   private constructor(server: http.Server) {
@@ -119,6 +128,12 @@ export class FakeHa {
       cost: reward.cost,
       pendingClaims: reward.pendingClaims ?? 0,
       status: reward.status ?? 'available',
+    }));
+    this.chores = (seed.chores ?? []).map((chore) => ({
+      userName: chore.user,
+      name: chore.name,
+      points: chore.points ?? 0,
+      status: chore.status ?? 'pending',
     }));
     this.calls = [];
   }
@@ -171,6 +186,33 @@ export class FakeHa {
           purpose: 'purpose_points',
           user_name: user.name,
           friendly_name: `${user.name} points`,
+        },
+      });
+    }
+
+    for (const chore of this.chores) {
+      entities.push({
+        entity_id: `sensor.${slug(chore.userName)}_choreops_chore_status_${slug(chore.name)}`,
+        state: chore.status,
+        attributes: {
+          purpose: 'purpose_chore_status',
+          user_name: chore.userName,
+          chore_name: chore.name,
+          default_points: chore.points,
+          assigned_user_names: [chore.userName],
+          can_claim: chore.status !== 'completed',
+          can_approve: false,
+          friendly_name: chore.name,
+        },
+      });
+      entities.push({
+        entity_id: `button.${slug(chore.userName)}_chore_claim_${slug(chore.name)}`,
+        state: 'unknown',
+        attributes: {
+          purpose: 'purpose_button_chore_claim',
+          user_name: chore.userName,
+          chore_name: chore.name,
+          friendly_name: `Claim ${chore.name}`,
         },
       });
     }
@@ -250,6 +292,20 @@ export class FakeHa {
 
   private applyService(domain: string, service: string, data: Record<string, unknown>): void {
     this.calls.push({ service: `${domain}.${service}`, data });
+
+    if (domain === 'button' && service === 'press') {
+      const entityId = String(data.entity_id ?? '');
+      const chore = this.chores.find(
+        (item) =>
+          entityId === `button.${slug(item.userName)}_chore_claim_${slug(item.name)}` ||
+          entityId === `button.${slug(item.userName)}_chore_approve_${slug(item.name)}`,
+      );
+      if (!chore || chore.status === 'completed') return;
+      chore.status = 'completed';
+      const user = this.users.get(chore.userName.toLowerCase());
+      if (user) user.points += chore.points;
+      return;
+    }
 
     if (domain !== 'choreops') return;
 
