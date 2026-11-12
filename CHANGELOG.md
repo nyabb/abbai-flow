@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/nyabb/abbai-flow/compare/v2.2.0...v2.3.0) (2026-11-12)
+
+
+### Features
+
+* enhance ChorePlanner tests with reward assignment functionality ([b8618c8](https://github.com/nyabb/abbai-flow/commit/b8618c8bb72fc1dcc0e28ea4e57620de9974b267))
+
 # [2.2.0](https://github.com/nyabb/abbai-flow/compare/v2.1.0...v2.2.0) (2026-11-11)
 
 
