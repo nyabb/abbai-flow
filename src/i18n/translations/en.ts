@@ -778,10 +778,11 @@ export const en = {
   'planner.approveCompletion': 'Approve completion',
   'planner.goalAchieved': 'Goal achieved',
   'planner.waitingForReward': 'Waiting for reward',
-  'planner.markGiven': 'Mark reward as given',
   'planner.rewardsToGive': 'Rewards to give',
   'planner.givenRewards': 'Given rewards',
   'planner.rewardGiven': 'Reward given',
+  'planner.approvePayout': 'Approve reward',
+  'planner.rewardReset': 'Reward reset with 0 points',
   'planner.routinePicker': 'Existing routine',
   'planner.routineNew': 'New routine',
 

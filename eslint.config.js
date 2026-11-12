@@ -65,6 +65,15 @@ export default tseslint.config(
     },
   },
   {
+    // Playwright runs in Node but is ESM (the repo root is `"type": "module"`).
+    files: ['e2e/**/*.ts'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+  {
     // Build scripts are ESM (`.mjs`), where `__dirname` does not exist — the
     // scripts define it themselves, so that must not read as a redeclaration.
     files: ['scripts/**/*.mjs', '*.config.mjs'],

@@ -13,12 +13,12 @@ this review was written; nothing here is a projected result.
 
 ### Runtime shapes
 
-| Mode                    | Entry                  | Who talks to Home Assistant                                             |
-| ----------------------- | ---------------------- | ----------------------------------------------------------------------- |
-| Dev (`npm run dev`)     | Vite (port 3001)       | Browser directly; Vite proxies `/api` to `VITE_HA_URL`                  |
-| Container (Portainer…)  | `server.js`            | Server-side proxy with `HA_URL` + `HA_TOKEN`                              |
-| Container behind HA ingress | `server.js`        | Server-side proxy with `SUPERVISOR_TOKEN`; browser uses the ingress path  |
-| Capacitor (iOS/Android) | `dist/` in WebView     | Browser directly with a user supplied long-lived token                  |
+| Mode                        | Entry              | Who talks to Home Assistant                                              |
+| --------------------------- | ------------------ | ------------------------------------------------------------------------ |
+| Dev (`npm run dev`)         | Vite (port 3001)   | Browser directly; Vite proxies `/api` to `VITE_HA_URL`                   |
+| Container (Portainer…)      | `server.js`        | Server-side proxy with `HA_URL` + `HA_TOKEN`                             |
+| Container behind HA ingress | `server.js`        | Server-side proxy with `SUPERVISOR_TOKEN`; browser uses the ingress path |
+| Capacitor (iOS/Android)     | `dist/` in WebView | Browser directly with a user supplied long-lived token                   |
 
 ### Backend (`server.js` + `server/app.cjs`)
 
@@ -71,25 +71,25 @@ Persistence: UI → saveData() → PUT /beacon-data/:key → /data/<key>.json (a
 
 Severity is about impact on users of the shipped add-on image.
 
-| #   | Sev      | Where                                 | Problem                                                                                                                                                          | Status                                        |
-| --- | -------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| 1   | Critical | `server.js` upgrade handler           | Transport hard-coded to `http` with port `80`; an `https://` HA URL could never upgrade. Also forwarded browser cookies and had no timeout/cleanup.              | Fixed                                         |
-| 2   | Critical | `haRequest()` (voice, service bridge) | Same hard-coded `http`/`80`, so HTTPS Home Assistant installs broke on `/beacon-action/service` and `/beacon-action/voice`.                                      | Fixed                                         |
-| 3   | High     | `proxyToHA()`                         | Body buffered without a limit, no upstream timeout, could answer twice after a client abort.                                                                     | Fixed                                         |
-| 4   | High     | `handleVoiceAction()`                 | Read the raw body with no size limit (`chunks` unbounded) — trivial memory exhaustion.                                                                           | Fixed                                         |
-| 5   | High     | `/beacon-data` PUT                    | `writeFile` in place: a crash mid-write left truncated JSON that then read back as corrupt.                                                                      | Fixed (temp file + rename)                    |
-| 6   | High     | `/beacon-data` GET                    | Malformed stored JSON surfaced as a raw error message / inconsistent status.                                                                                     | Fixed (typed `CORRUPT_STORE`, stable message) |
-| 7   | High     | All token-bearing endpoints           | No origin check: any web page opened on the wall display could drive `/beacon-action/*` and `/api/*` against HA.                                                 | Fixed (same-origin/native-shell guard)        |
-| 8   | Medium   | `/beacon-action/service`              | `domain`/`service` were interpolated into an HA path unvalidated (`../` traversal into other HA endpoints).                                                      | Fixed                                         |
-| 9   | Medium   | `server.js` structure                 | 829-line monolith that started listening on `require`, so no automated test could exercise it.                                                                   | Fixed (entry + `server/app.cjs`)              |
-| 10  | Medium   | `src/api/beacon-store.ts`             | PUT resolved regardless of `res.ok`, so a rejected write looked successful.                                                                                      | Fixed (typed result + error)                  |
-| 11  | Medium   | `src/api/beacon-store.ts`             | Two saves of one key raced; the slower one landed last on the server.                                                                                            | Fixed (per-key write queue)                   |
-| 12  | Medium   | `src/hooks/useCalendarEvents.ts`      | Calendars fetched one-by-one; a slow earlier response could overwrite a newer range; no cancellation.                                                            | Fixed                                         |
-| 13  | Low      | `src/hooks/useChoreOps.ts`            | REST fallback polled every 30 s even while the tab was hidden.                                                                                                   | Fixed                                         |
-| 14  | Low      | `beacon/` mirror                      | Duplicated tree; `beacon/package.json` had drifted (no test tooling). Not used by the published image.                                                           | Documented (kept for compatibility)           |
-| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                                 | Lint + coverage gates added; E2E open         |
-| 16  | High     | `src/components/MusicView.tsx`        | Five hooks were called after an early return, so the hook count changed when the player list loaded asynchronously (React throws on that).                       | Fixed                                         |
-| 17  | Low      | `package.json`                        | `@testing-library/dom` existed only as an auto-installed peer; any install that resolves peers differently (`--legacy-peer-deps`) silently emptied the test run. | Fixed (explicit devDependency)                |
+| #   | Sev      | Where                                 | Problem                                                                                                                                                          | Status                                                    |
+| --- | -------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| 1   | Critical | `server.js` upgrade handler           | Transport hard-coded to `http` with port `80`; an `https://` HA URL could never upgrade. Also forwarded browser cookies and had no timeout/cleanup.              | Fixed                                                     |
+| 2   | Critical | `haRequest()` (voice, service bridge) | Same hard-coded `http`/`80`, so HTTPS Home Assistant installs broke on `/beacon-action/service` and `/beacon-action/voice`.                                      | Fixed                                                     |
+| 3   | High     | `proxyToHA()`                         | Body buffered without a limit, no upstream timeout, could answer twice after a client abort.                                                                     | Fixed                                                     |
+| 4   | High     | `handleVoiceAction()`                 | Read the raw body with no size limit (`chunks` unbounded) — trivial memory exhaustion.                                                                           | Fixed                                                     |
+| 5   | High     | `/beacon-data` PUT                    | `writeFile` in place: a crash mid-write left truncated JSON that then read back as corrupt.                                                                      | Fixed (temp file + rename)                                |
+| 6   | High     | `/beacon-data` GET                    | Malformed stored JSON surfaced as a raw error message / inconsistent status.                                                                                     | Fixed (typed `CORRUPT_STORE`, stable message)             |
+| 7   | High     | All token-bearing endpoints           | No origin check: any web page opened on the wall display could drive `/beacon-action/*` and `/api/*` against HA.                                                 | Fixed (same-origin/native-shell guard)                    |
+| 8   | Medium   | `/beacon-action/service`              | `domain`/`service` were interpolated into an HA path unvalidated (`../` traversal into other HA endpoints).                                                      | Fixed                                                     |
+| 9   | Medium   | `server.js` structure                 | 829-line monolith that started listening on `require`, so no automated test could exercise it.                                                                   | Fixed (entry + `server/app.cjs`)                          |
+| 10  | Medium   | `src/api/beacon-store.ts`             | PUT resolved regardless of `res.ok`, so a rejected write looked successful.                                                                                      | Fixed (typed result + error)                              |
+| 11  | Medium   | `src/api/beacon-store.ts`             | Two saves of one key raced; the slower one landed last on the server.                                                                                            | Fixed (per-key write queue)                               |
+| 12  | Medium   | `src/hooks/useCalendarEvents.ts`      | Calendars fetched one-by-one; a slow earlier response could overwrite a newer range; no cancellation.                                                            | Fixed                                                     |
+| 13  | Low      | `src/hooks/useChoreOps.ts`            | REST fallback polled every 30 s even while the tab was hidden.                                                                                                   | Fixed                                                     |
+| 14  | Low      | `beacon/` mirror                      | Duplicated tree; `beacon/package.json` had drifted (no test tooling). Not used by the published image.                                                           | Documented (kept for compatibility)                       |
+| 15  | Low      | Toolchain                             | No linter, no formatter check, no E2E harness, no coverage gate.                                                                                                 | Lint + coverage gates added; Playwright E2E harness added |
+| 16  | High     | `src/components/MusicView.tsx`        | Five hooks were called after an early return, so the hook count changed when the player list loaded asynchronously (React throws on that).                       | Fixed                                                     |
+| 17  | Low      | `package.json`                        | `@testing-library/dom` existed only as an auto-installed peer; any install that resolves peers differently (`--legacy-peer-deps`) silently emptied the test run. | Fixed (explicit devDependency)                            |
 
 Oversized modules (see H for what is still open):
 
@@ -365,8 +365,9 @@ Remaining assumptions (documented, not changed):
    views in `settings/sections/family/`. Appearance and Family now have per-section tests
    (17 cases); the other six sections still rely on the screen-level smoke suite, so they are
    the cheapest place to broaden coverage before raising the `src/components/**` gate.
-2. **Playwright smoke suite** — onboarding, HA connect, add/edit calendar event, chore create
-   - complete, app reload recovery, against the Docker image with a mocked HA.
+2. **Playwright smoke suite** — the harness and a full reward-lifecycle suite now live in
+   `e2e/` (`npm run test:e2e`, real backend + fake HA). Extend it to onboarding, HA connect,
+   add/edit calendar event and app reload recovery.
 3. **Raise coverage gates** — `src/hooks/**` (19%) and `src/components/**` (24%) once the
    splits land; component tests for the settings and chore flows are the cheapest win.
 4. **Prettier enforcement** — a `format` script exists, but `.prettierrc` was never applied

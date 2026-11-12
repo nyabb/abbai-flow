@@ -773,10 +773,11 @@ export const nl: Record<TranslationKey, string> = {
   'planner.approveCompletion': 'Voltooiing goedkeuren',
   'planner.goalAchieved': 'Doel bereikt',
   'planner.waitingForReward': 'Wacht op beloning',
-  'planner.markGiven': 'Beloning als gegeven markeren',
   'planner.rewardsToGive': 'Beloningen om te geven',
   'planner.givenRewards': 'Gegeven beloningen',
   'planner.rewardGiven': 'Beloning gegeven',
+  'planner.approvePayout': 'Beloning goedkeuren',
+  'planner.rewardReset': 'Beloning teruggezet met 0 punten',
   'planner.routinePicker': 'Bestaande routine',
   'planner.routineNew': 'Nieuwe routine',
 
