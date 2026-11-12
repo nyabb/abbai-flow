@@ -38,7 +38,17 @@ let stack: E2EStack;
 
 test.beforeAll(async () => {
   stack = await startStack();
-  stack.fakeHa.reset({ users: [{ name: 'Zara', points: 10 }] });
+  stack.fakeHa.reset({
+    users: [{ name: 'Zara', points: 10 }],
+    // Four zero-point chores: each completion opens the award sheet without
+    // changing the balance, so the 5 + 3 allocation stays deterministic.
+    chores: [
+      { user: 'Zara', name: 'Afwassen' },
+      { user: 'Zara', name: 'Tafel dekken' },
+      { user: 'Zara', name: 'Kamer opruimen' },
+      { user: 'Zara', name: 'Vaatwasser' },
+    ],
+  });
   await putData(stack.appUrl, 'beacon_family_members', FAMILY);
 });
 
@@ -90,14 +100,24 @@ async function unlockPin(page: Page) {
   await page.getByRole('button', { name: 'Unlock', exact: true }).click();
 }
 
+async function closeSheet(page: Page) {
+  const close = page.locator('.planner-sheet-close');
+  if (await close.isVisible().catch(() => false)) await close.click();
+}
+
 async function createReward(page: Page, name: string, cost: number) {
-  await openGoals(page);
-  await goalsSheet(page).getByRole('button', { name: 'Set a goal' }).click();
+  await closeSheet(page);
+  // The header "+" asks what to create; a reward is created just like a chore.
+  await page.locator('.planner-add').click();
+  const menu = sheetWithHeading(page, 'What would you like to do?');
+  await expect(menu).toBeVisible();
+  await menu.getByRole('button', { name: 'Add reward', exact: true }).click();
+
   const form = sheetWithHeading(page, 'Add reward');
   await form.getByRole('textbox').fill(name);
   await form.locator('input[type="number"]').fill(String(cost));
-  // The child whose goals sheet was opened is preselected; adding another
-  // child is a toggle, so the test leaves the prefilled selection alone.
+  // The header flow starts with nobody selected: the parent assigns the child.
+  await form.getByRole('button', { name: 'Zara', exact: true }).click();
   await form.getByRole('button', { name: 'Save', exact: true }).click();
 
   // Creating a reward is a parent decision: the PIN sheet must appear.
@@ -111,14 +131,31 @@ function rewardRow(page: Page, name: string) {
   return goalsSheet(page).locator('.planner-reward').filter({ hasText: name }).first();
 }
 
-async function assignPoints(page: Page, name: string, amount: number) {
-  await rewardRow(page, name).getByRole('button', { name: 'Assign', exact: true }).click();
+/**
+ * Complete a chore, then use the award sheet to put an explicit amount towards
+ * a reward. This is the only allocation entry point: the reward row itself no
+ * longer carries an Assign button.
+ */
+async function earnAndAssign(
+  page: Page,
+  choreName: string,
+  rewardName: string,
+  amount: number,
+) {
+  await closeSheet(page);
+  const row = zaraColumn(page).locator('.planner-row').filter({ hasText: choreName });
+  await row.locator('.planner-row-check').click();
+  await page.getByRole('button', { name: 'Confirm', exact: true }).click();
+
+  const award = sheetWithHeading(page, 'Where should these points go?');
+  await expect(award).toBeVisible();
+  await award.locator('.planner-goal').filter({ hasText: rewardName }).click();
+
   const assign = sheetWithHeading(page, 'Distribute points');
   await expect(assign).toBeVisible();
   await assign.getByRole('spinbutton').fill(String(amount));
   await assign.getByRole('button', { name: 'Assign', exact: true }).click();
   await expect(assign).toHaveCount(0);
-  await expect(goalsSheet(page)).toBeVisible();
 }
 
 async function approvePayout(page: Page, name: string) {
@@ -142,18 +179,20 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   expect(stack.fakeHa.serviceCalls('choreops.create_reward')).toHaveLength(2);
 
   // 2. 10 points split as 5 + 3, with 2 still in the savings pot.
-  await assignPoints(page, 'Film night', 5);
+  await earnAndAssign(page, 'Afwassen', 'Film night', 5);
+  await openGoals(page);
   await expect(rewardRow(page, 'Film night')).toContainText('5 / 7');
-  await assignPoints(page, 'Snack', 3);
+  await earnAndAssign(page, 'Tafel dekken', 'Snack', 3);
+  await openGoals(page);
   await expect(rewardRow(page, 'Snack')).toContainText('3 / 8');
   await expect(zaraColumn(page).locator('.planner-col-points')).toHaveText(/2/);
 
   // 3. The last 2 points complete Film night; it locks until fulfilment.
-  await assignPoints(page, 'Film night', 2);
+  await earnAndAssign(page, 'Kamer opruimen', 'Film night', 2);
+  await openGoals(page);
   const film = rewardRow(page, 'Film night');
   await expect(film).toContainText('7 / 7');
   await expect(film).toContainText('Waiting for reward');
-  await expect(film.getByRole('button', { name: 'Assign', exact: true })).toHaveCount(0);
   await expect(rewardRow(page, 'Snack')).toContainText('3 / 8');
 
   // 4. A parent approves the payout: ChoreOps is called exactly once.
@@ -168,7 +207,7 @@ test('child splits points, parent approves payout, then reuse or delete', async 
 
   // 5. "Use again" puts the same reward back at zero allocations.
   await sheetWithHeading(page, 'Reward given').getByRole('button', { name: 'Use again' }).click();
-  await expect(goalsSheet(page)).toBeVisible();
+  await openGoals(page);
   await expect(rewardRow(page, 'Film night')).toContainText('0 / 7');
   // Snack is still untouched and still holds its 3 points.
   await expect(rewardRow(page, 'Snack')).toContainText('3 / 8');
@@ -177,8 +216,8 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   stack.fakeHa.setPoints('Zara', 8); // 3 still committed to Snack → 5 spendable
   await page.reload();
   await gotoChores(page);
+  await earnAndAssign(page, 'Vaatwasser', 'Snack', 5);
   await openGoals(page);
-  await assignPoints(page, 'Snack', 5);
   await expect(rewardRow(page, 'Snack')).toContainText('8 / 8');
 
   await approvePayout(page, 'Snack');

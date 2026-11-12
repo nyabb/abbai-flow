@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
@@ -81,6 +81,8 @@ function renderPlanner() {
 /** Fill the "new chore" sheet just enough to submit it. */
 function submitNewChore(container: HTMLElement) {
   fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+  const menu = container.querySelector<HTMLElement>('.planner-sheet')!;
+  fireEvent.click(within(menu).getByRole('button', { name: 'Taakje toevoegen' }));
   fireEvent.change(screen.getByLabelText('Naam'), { target: { value: 'Afwassen' } });
   const picker = container.querySelector<HTMLElement>('.planner-member-picker')!;
   const zara = Array.from(picker.querySelectorAll('button')).find((button) =>
