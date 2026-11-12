@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, waitFor } from '@testing-library/react';
+import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
@@ -152,6 +152,87 @@ describe('ChorePlanner routines', () => {
     expect(names).not.toContain('Aankleden');
     // ...and the routine itself is shown, so nothing is hidden from the child.
     expect(zara.textContent).toContain('Ochtendroutine');
+  });
+
+  it('opens the missions overview from the routines section', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const missions = column(container, 'Zara').querySelector<HTMLButtonElement>(
+      '.planner-section-action',
+    )!;
+
+    // The overview is the mission screen's back destination; it is a visible
+    // entry point from the routines UI, not a hidden result of the back arrow.
+    expect(missions.textContent).toContain('Missies');
+    fireEvent.click(missions);
+    expect(container.querySelector('.planner-mission-hero')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Start missies' })).toBeTruthy();
+  });
+
+  it('lets a parent approve a routine step that waits in review', async () => {
+    const base = routineState();
+    mocks.state.current = {
+      ...base,
+      chores: base.chores.map((chore) =>
+        chore.name === 'Tanden poetsen'
+          ? {
+              ...chore,
+              status: 'claimed',
+              canClaim: false,
+              canApprove: true,
+              actions: { approve: 'button.zara_approve_tanden' },
+            }
+          : chore,
+      ),
+    };
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
+      (element) => element.textContent?.includes('Tanden poetsen'),
+    )!;
+
+    // A routine step has no row menu, so the step itself carries the action.
+    fireEvent.click(within(step).getByRole('button', { name: 'Voltooiing goedkeuren' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    expect(pin).not.toBeNull();
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_tanden'),
+    );
+  });
+
+  it('offers approval on the read-only missions overview', async () => {
+    const base = routineState();
+    mocks.state.current = {
+      ...base,
+      chores: base.chores.map((chore) =>
+        chore.name === 'Tanden poetsen'
+          ? {
+              ...chore,
+              status: 'claimed',
+              canClaim: false,
+              canApprove: true,
+              actions: { approve: 'button.zara_approve_tanden' },
+            }
+          : chore,
+      ),
+    };
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-section-action')!,
+    );
+    const card = [...container.querySelectorAll<HTMLElement>('.planner-task')].find((element) =>
+      element.textContent?.includes('Tanden poetsen'),
+    )!;
+    fireEvent.click(within(card).getByRole('button', { name: 'Voltooiing goedkeuren' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_tanden'),
+    );
   });
 
   it('adopts an existing ChoreOps label as one routine with an ordered task list', async () => {

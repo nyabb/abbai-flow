@@ -33,6 +33,8 @@ export interface ChoreBoardProps {
   onOpenChild: (memberId: string) => void;
   onOpenGoals: (memberId: string) => void;
   onStartMissions: (memberId: string) => void;
+  /** Open the missions overview (the mission screen's back destination). */
+  onOpenMissions: (memberId: string) => void;
   onNewChore: () => void;
 }
 
@@ -50,6 +52,7 @@ export function ChoreBoard({
   onOpenChild,
   onOpenGoals,
   onStartMissions,
+  onOpenMissions,
   onNewChore,
 }: ChoreBoardProps) {
   /*
@@ -139,12 +142,31 @@ export function ChoreBoard({
             ) : (
               chores.map((task) => renderRow(task))
             ))}
-          {tab === 'routines' &&
-            (routines.length === 0 ? (
-              <p className="planner-col-empty">{c.noRoutines}</p>
-            ) : (
-              routines.map((routine) => routineRow(routine, member.id))
-            ))}
+          {tab === 'routines' && (
+            <>
+              {member && (
+                <div className="planner-section-head">
+                  <h2>
+                    {c.routines}
+                    <span>{routines.length}</span>
+                  </h2>
+                  <button
+                    type="button"
+                    className="planner-section-action"
+                    disabled={!canRunMissions(member.id)}
+                    onClick={() => onOpenMissions(member.id)}
+                  >
+                    {'\u25B6'} {c.missions}
+                  </button>
+                </div>
+              )}
+              {routines.length === 0 ? (
+                <p className="planner-col-empty">{c.noRoutines}</p>
+              ) : (
+                routines.map((routine) => routineRow(routine, member.id))
+              )}
+            </>
+          )}
           {tab === 'goals' && member && renderGoals(member.id)}
           {tab === 'free' &&
             (freeTasks.length === 0 ? (
@@ -211,10 +233,20 @@ export function ChoreBoard({
                 chores.map((task) => renderRow(task))
               )}
 
-              <h2>
-                {c.routines}
-                <span>{routines.length}</span>
-              </h2>
+              <div className="planner-section-head">
+                <h2>
+                  {c.routines}
+                  <span>{routines.length}</span>
+                </h2>
+                <button
+                  type="button"
+                  className="planner-section-action"
+                  disabled={!canRunMissions(member.id)}
+                  onClick={() => onOpenMissions(member.id)}
+                >
+                  {'\u25B6'} {c.missions}
+                </button>
+              </div>
               {routines.length === 0 ? (
                 <p className="planner-col-empty">{c.noRoutines}</p>
               ) : (

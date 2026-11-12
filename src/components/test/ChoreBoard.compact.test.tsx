@@ -22,6 +22,7 @@ const copy = {
   add: 'Toevoegen',
   openChild: 'Openen',
   startMissions: 'Missies starten',
+  missions: 'Missies',
 } as unknown as PlannerCopy;
 
 const ZARA: PlannerMember = {
@@ -50,6 +51,7 @@ function renderBoard() {
         onOpenChild={() => {}}
         onOpenGoals={() => {}}
         onStartMissions={() => {}}
+        onOpenMissions={() => {}}
         onNewChore={() => {}}
       />
     </I18nContext.Provider>,

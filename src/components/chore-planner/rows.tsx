@@ -87,6 +87,8 @@ export interface RoutineStep {
   done: boolean;
   /** Still waiting to be done. */
   open: boolean;
+  /** The child finished it and a parent still has to sign it off. */
+  awaiting?: boolean;
 }
 
 export interface RoutineRowProps {
@@ -104,6 +106,8 @@ export interface RoutineRowProps {
   onStart?: () => void;
   /** There is something left to run, so starting makes sense. */
   canStart?: boolean;
+  /** Parent sign-off for a step that is waiting for review (PIN-gated by the caller). */
+  onApproveStep?: (stepName: string) => void;
 }
 
 /**
@@ -125,8 +129,12 @@ export function RoutineRow({
   onToggle,
   onStart,
   canStart = false,
+  onApproveStep,
 }: RoutineRowProps) {
   const doneCount = steps.filter((step) => step.done).length;
+  /* The bar sits next to "3/3", so it must track steps done. The time-of-day
+     progress is only a fallback for a routine that has no steps yet. */
+  const stepProgress = steps.length > 0 ? (doneCount / steps.length) * 100 : progress;
 
   return (
     <div className={`planner-row planner-row--routine ${paused ? 'is-paused' : ''}`}>
@@ -145,7 +153,7 @@ export function RoutineRow({
         )}
         {!paused && (
           <span className="planner-row-progress" aria-hidden="true">
-            <i style={{ width: `${progress}%` }} />
+            <i style={{ width: `${stepProgress}%` }} />
           </span>
         )}
         {onStart && (
@@ -181,6 +189,15 @@ export function RoutineRow({
                 {step.done ? '\u2713' : '\u25CB'}
               </span>
               <span className="planner-step-name">{step.name}</span>
+              {step.awaiting && onApproveStep && (
+                <button
+                  type="button"
+                  className="planner-approve planner-step-approve"
+                  onClick={() => onApproveStep(step.name)}
+                >
+                  {copy.approveCompletion}
+                </button>
+              )}
               <span className="planner-sr-only">{step.done ? copy.done : copy.openTodo}</span>
             </li>
           ))}
@@ -200,8 +217,11 @@ export interface RewardRowProps {
   done: boolean;
   /** A claim made outside Abbai Flow, which a parent settles in ChoreOps. */
   pending: boolean;
+  /** There are unallocated points available for this reward. */
+  canAdd: boolean;
   copy: PlannerCopy;
   onUndo: () => void;
+  onAssign: () => void;
   onApprove: () => void;
   /** Parent-only: hand the fully funded reward over (PIN-gated by the caller). */
   onGive: () => void;
@@ -215,8 +235,10 @@ export function RewardRow({
   remaining,
   done,
   pending,
+  canAdd,
   copy,
   onUndo,
+  onAssign,
   onApprove,
   onGive,
   onMore,
@@ -257,14 +279,24 @@ export function RewardRow({
             </button>
           </>
         ) : (
-          /* Saving happens through the award sheet after a chore is ticked;
-             the row itself only offers releasing the points again. "Use
-             again" is reserved for the end-of-lifecycle reuse/delete prompt. */
-          allocated > 0 && (
-            <button className="planner-ghost planner-reward-action" onClick={onUndo}>
-              {copy.undoShort}
-            </button>
-          )
+          /* Allow points already sitting in the savings pot to be allocated
+             later, as well as from the award sheet after a chore is ticked. */
+          <>
+            {canAdd && (
+              <button
+                type="button"
+                className="planner-primary planner-reward-action"
+                onClick={onAssign}
+              >
+                {copy.assign}
+              </button>
+            )}
+            {allocated > 0 && (
+              <button className="planner-ghost planner-reward-action" onClick={onUndo}>
+                {copy.undoShort}
+              </button>
+            )}
+          </>
         )}
         <button
           type="button"

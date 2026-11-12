@@ -2675,6 +2675,49 @@
   font-size: 0.6875rem;
 }
 
+/* A section heading with its own action (Routines → Missions). */
+.planner-section-head,
+.planner-detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.planner-section-head h2,
+.planner-detail-section-head h3 {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.planner-section-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--planner-accent);
+  background: color-mix(in srgb, var(--planner-accent) 12%, var(--planner-surface));
+  font: inherit;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.planner-section-action:hover {
+  background: color-mix(in srgb, var(--planner-accent) 20%, var(--planner-surface));
+}
+
+.planner-section-action:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
 .planner-col-empty {
   margin: 2px 0 6px;
   padding: 10px 12px;
@@ -2783,6 +2826,39 @@
   opacity: 0.7;
 }
 
+/* Parent sign-off on a chore waiting for review. It appears on mission cards
+   (including the read-only overview) and inside routine step rows, where there
+   is no row action menu; the caller PIN-gates it. */
+.planner-approve {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--planner-on-accent);
+  background: var(--planner-accent);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.planner-approve:disabled {
+  opacity: 0.46;
+  cursor: default;
+}
+
+.planner-step-approve {
+  min-height: 24px;
+  margin-left: auto;
+  padding: 0 8px;
+  font-size: 0.6875rem;
+}
+
 .planner-row-start:disabled {
   cursor: default;
   opacity: 0.35;
@@ -2801,7 +2877,8 @@
   border: 0;
 }
 
-/* Small time bar on a routine row, showing how far through its window we are. */
+/* Routine progress bar: the share of the routine's steps that are done today.
+   Falls back to the time-window progress only when there are no steps yet. */
 .planner-row-progress {
   flex: 0 0 auto;
   width: 44px;
