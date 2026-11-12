@@ -68,12 +68,7 @@ const NL = createI18n('nl');
 function renderPlanner() {
   return render(
     <I18nContext.Provider value={NL}>
-      <ChorePlanner
-        members={[ZARA]}
-        nextAppointment={null}
-        locale="nl"
-        onLocaleChange={() => {}}
-      />
+      <ChorePlanner members={[ZARA]} nextAppointment={null} locale="nl" onLocaleChange={() => {}} />
     </I18nContext.Provider>,
   );
 }

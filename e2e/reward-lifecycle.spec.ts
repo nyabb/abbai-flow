@@ -136,12 +136,7 @@ function rewardRow(page: Page, name: string) {
  * a reward. This is the only allocation entry point: the reward row itself no
  * longer carries an Assign button.
  */
-async function earnAndAssign(
-  page: Page,
-  choreName: string,
-  rewardName: string,
-  amount: number,
-) {
+async function earnAndAssign(page: Page, choreName: string, rewardName: string, amount: number) {
   await closeSheet(page);
   const row = zaraColumn(page).locator('.planner-row').filter({ hasText: choreName });
   await row.locator('.planner-row-check').click();
