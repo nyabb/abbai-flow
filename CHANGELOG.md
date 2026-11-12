@@ -1,3 +1,11 @@
+# [2.4.0](https://github.com/nyabb/abbai-flow/compare/v2.3.0...v2.4.0) (2026-11-12)
+
+
+### Features
+
+* implement reward creation and approval flow in ChorePlanner ([7aad570](https://github.com/nyabb/abbai-flow/commit/7aad57096dd62c691b86416924974326c0c098b6))
+* streamline function parameters and improve code readability in ChorePlanner ([243a8d2](https://github.com/nyabb/abbai-flow/commit/243a8d271d1f0bdda64ca28689336c5c45346f00))
+
 # [2.3.0](https://github.com/nyabb/abbai-flow/compare/v2.2.0...v2.3.0) (2026-11-12)
 
 
