@@ -267,7 +267,7 @@ describe('ChorePlanner anyone chores', () => {
 
 /**
  * Complete the (zero-point) chore, open the award sheet and choose an explicit
- * amount for the reward. The reward row itself has no Assign button.
+ * amount for the reward through the post-chore award sheet.
  */
 function assignReward(container: HTMLElement, amount: number) {
   const backdrop = container.querySelector<HTMLElement>('.planner-backdrop');
@@ -297,17 +297,36 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     localStorage.clear();
   });
 
-  it('lists the rewards ChoreOps publishes with their cost', () => {
+  it('lists rewards and lets Zara allocate points already in her savings pot', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
     expect(container.textContent).toContain('Schermtijd');
     expect(container.textContent).toContain('20 punten');
-    // Allocation happens from the award sheet after a chore, not on the row.
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
       element.textContent?.includes('Schermtijd'),
     )!;
-    expect(within(row).queryByRole('button', { name: 'Toewijzen' })).toBeNull();
+    fireEvent.click(within(row).getByRole('button', { name: 'Toewijzen' }));
+
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    expect(sheet.textContent).toContain('Spaarpot');
+    expect(sheet.textContent).toContain('25');
+    const amount = within(sheet).getByRole('spinbutton');
+    expect(amount.getAttribute('max')).toBe('20');
+    fireEvent.change(amount, { target: { value: '10' } });
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+
+    await waitFor(() =>
+      expect(localStorage.getItem('beacon-reward-redemptions')).toContain('"points":10'),
+    );
+    openRewards(container);
+    const updatedRow = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find(
+      (element) => element.textContent?.includes('Schermtijd'),
+    )!;
+    expect(updatedRow.textContent).toContain('10 / 20');
+    expect(column(container, 'Zara').querySelector('.planner-col-points')?.textContent).toContain(
+      '15',
+    );
   });
 
   /*
@@ -802,6 +821,8 @@ describe('ChorePlanner board', () => {
 
     // Nothing loose to do, but there is a routine to run.
     expect(zara.querySelector<HTMLButtonElement>('.planner-col-play')!.disabled).toBe(false);
+    // 0/1 steps done: the bar starts empty, not at the time-of-day position.
+    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('0%');
   });
 
   it('marks routine steps that are already done today', () => {
@@ -825,10 +846,33 @@ describe('ChorePlanner board', () => {
     const row = column(container, 'Zara').querySelector<HTMLElement>('.planner-row--routine')!;
     expect(row.querySelector('.planner-routine-count')?.textContent).toBe('1/1');
     expect(row.querySelector('.planner-step')?.className).toContain('is-done');
+    // A completed routine fills its bar, even when the day is only half over.
+    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('100%');
     // Nothing left to run, so starting a mission is pointless.
     expect(
       column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!.disabled,
     ).toBe(true);
+  });
+
+  it('fills the routine bar when all three steps are done', () => {
+    const base = twoChildren();
+    mocks.state.current = {
+      ...base,
+      chores: ['Kamer opruimen', 'Tanden poetsen', 'Afwassen'].map((name, index) => ({
+        ...base.chores[0],
+        id: `status:zara::done-${index}`,
+        name,
+        assignee: 'Zara',
+        frequency: 'daily',
+        status: 'completed',
+        labels: ['Ochtendroutine'],
+      })),
+    };
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    const row = column(container, 'Zara').querySelector<HTMLElement>('.planner-row--routine')!;
+    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('3/3');
+    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('100%');
   });
 
   it('starts just one routine from its row', () => {

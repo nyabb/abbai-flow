@@ -33,6 +33,8 @@ export interface MissionViewProps {
   renderTask: (task: PlannerTask, readOnly?: boolean) => React.ReactNode;
   onStart: () => void;
   onComplete: () => void;
+  /** Parent sign-off when the current chore is waiting for review. */
+  onApprove: () => void;
   onPass: () => void;
 }
 
@@ -55,6 +57,7 @@ export function MissionView({
   renderTask,
   onStart,
   onComplete,
+  onApprove,
   onPass,
 }: MissionViewProps) {
   if (screen === 'missions') {
@@ -103,10 +106,19 @@ export function MissionView({
           {currentTask.points > 0 && <b>⭐ {currentTask.points}</b>}
           <p>{remaining}</p>
         </div>
-        <button className="planner-mission-done" disabled={!online || busy} onClick={onComplete}>
-          {c.iDidIt}
-          <Check />
-        </button>
+        {currentTask.awaitingReview ? (
+          /* The child already did their part; only a parent can finish this
+             step, so the mission screen must offer the approval instead of a
+             button that refuses the tap. */
+          <button className="planner-primary" onClick={onApprove}>
+            {c.approveCompletion}
+          </button>
+        ) : (
+          <button className="planner-mission-done" disabled={!online || busy} onClick={onComplete}>
+            {c.iDidIt}
+            <Check />
+          </button>
+        )}
       </main>
     );
   }

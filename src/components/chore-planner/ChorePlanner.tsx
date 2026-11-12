@@ -428,6 +428,17 @@ export function ChorePlanner({
         onToggle={() => toggleRoutinePaused(routine.id, routine.name)}
         onStart={() => beginRoutine(memberId, routine)}
         canStart={steps.some((step) => step.open)}
+        onApproveStep={(name) => {
+          const task = data.tasks.find(
+            (item) =>
+              item.routineId === routine.id &&
+              item.memberId === memberId &&
+              normaliseName(item.name) === normaliseName(name) &&
+              item.awaitingReview &&
+              item.actions?.approve,
+          );
+          if (task) approveTask(task);
+        }}
       />
     );
   };
@@ -447,7 +458,9 @@ export function ChorePlanner({
         remaining={state.remaining}
         done={state.done}
         pending={state.pending}
+        canAdd={state.canAdd}
         copy={c}
+        onAssign={() => openAssign(reward)}
         onUndo={() => undoRewardChoice(reward)}
         onApprove={() =>
           requestPin(
@@ -577,6 +590,7 @@ export function ChorePlanner({
         name,
         done: rows.length > 0 && rows.every((task) => taskStatus(task) === 'completed'),
         open: rows.some((task) => !['completed', 'expired'].includes(taskStatus(task))),
+        awaiting: rows.some((task) => task.awaitingReview && taskStatus(task) !== 'completed'),
       };
     });
   }
@@ -838,6 +852,27 @@ export function ChorePlanner({
     setLivePin('');
     setLivePinError(false);
     setPinGate({ title, description, run });
+  };
+
+  /**
+   * Parent sign-off for a chore waiting in review.
+   *
+   * A routine step has no row actions on the board and the mission overview is
+   * read-only, so this is the one visible way to approve such a chore. It is
+   * always PIN-gated (or runs immediately when the household has no PIN, like
+   * every other parent action).
+   */
+  const approveTask = (task: PlannerTask) => {
+    const entityId = task.actions?.approve;
+    if (!entityId) {
+      showToast(c.awaitingApproval, 'error');
+      return;
+    }
+    requestPin(
+      c.approveCompletion,
+      task.name,
+      () => void runLiveAction(task.id, entityId, task.name, c.approved),
+    );
   };
 
   const openNewForm = (kind: 'chore' | 'routine' = 'chore') => {
@@ -1296,6 +1331,18 @@ export function ChorePlanner({
     setScreen('mission');
   };
 
+  /**
+   * Open the missions overview — the same screen the mission's back arrow
+   * returns to. The overview is the clear entry point from the routine UI;
+   * "Start missions" on it begins the actual run.
+   */
+  const openMissions = (memberId: string) => {
+    setTodayMemberId(memberId);
+    setMissionIds([]);
+    setMissionIndex(0);
+    setScreen('missions');
+  };
+
   const renderTask = (task: PlannerTask, readOnly = false) => {
     const status = taskStatus(task);
     const assigned = memberFor(task.memberId);
@@ -1434,6 +1481,13 @@ export function ChorePlanner({
               <Clock3 size={18} />
               {timeLabel}
             </span>
+          )}
+          {/* A chore waiting for review needs a visible parent action: the
+              mission overview is read-only and routine steps have no row menu. */}
+          {task.awaitingReview && status !== 'completed' && task.actions?.approve && (
+            <button type="button" className="planner-approve" onClick={() => approveTask(task)}>
+              {c.approveCompletion}
+            </button>
           )}
           {!readOnly && (
             <button
@@ -1581,6 +1635,7 @@ export function ChorePlanner({
           }}
           onOpenGoals={openGoals}
           onStartMissions={beginMissions}
+          onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
         />
@@ -1599,6 +1654,7 @@ export function ChorePlanner({
           copy={c}
           onStepChild={stepChild}
           onStartMissions={beginMissions}
+          onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewGoal={startRewardForm}
         />
@@ -1625,6 +1681,9 @@ export function ChorePlanner({
             onStart={() => beginMissions(selectedTodayMember.id)}
             onComplete={() => {
               if (missionTask) void completeTask(missionTask);
+            }}
+            onApprove={() => {
+              if (missionTask) approveTask(missionTask);
             }}
             onPass={() => {
               setScreen('board');
@@ -1670,16 +1729,10 @@ export function ChorePlanner({
                   selectedTask.awaitingReview && selectedTask.actions?.approve
                     ? () => {
                         const task = selectedTask;
-                        const entityId = task.actions?.approve;
-                        if (!entityId) return;
                         setModal(null);
                         // Signing off is a parent action: it awards the points,
                         // so it goes through the PIN, never through the child row.
-                        requestPin(
-                          c.approveCompletion,
-                          task.name,
-                          () => void runLiveAction(task.id, entityId, task.name, c.approved),
-                        );
+                        approveTask(task);
                       }
                     : undefined
                 }

@@ -21,6 +21,8 @@ export interface ChildViewProps {
   copy: PlannerCopy;
   onStepChild: (delta: number) => void;
   onStartMissions: (memberId: string) => void;
+  /** Open the missions overview from the routines section. */
+  onOpenMissions: (memberId: string) => void;
   /** Whether this child has anything left to run — routines, not loose chores. */
   canRunMissions: (memberId: string) => boolean;
   onNewGoal: (memberId: string) => void;
@@ -39,6 +41,7 @@ export function ChildView({
   copy: c,
   onStepChild,
   onStartMissions,
+  onOpenMissions,
   canRunMissions,
   onNewGoal,
 }: ChildViewProps) {
@@ -132,10 +135,20 @@ export function ChildView({
       </section>
 
       <section className="planner-detail-section">
-        <h3>
-          {c.routines}
-          <span>{routines.length}</span>
-        </h3>
+        <div className="planner-detail-section-head">
+          <h3>
+            {c.routines}
+            <span>{routines.length}</span>
+          </h3>
+          <button
+            type="button"
+            className="planner-section-action"
+            disabled={!canRunMissions(childMember.id)}
+            onClick={() => onOpenMissions(childMember.id)}
+          >
+            {'\u25B6'} {c.missions}
+          </button>
+        </div>
         {routines.length === 0 ? (
           <p className="planner-col-empty">{c.noRoutines}</p>
         ) : (
