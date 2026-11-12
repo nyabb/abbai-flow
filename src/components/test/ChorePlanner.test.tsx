@@ -265,6 +265,14 @@ describe('ChorePlanner anyone chores', () => {
   });
 });
 
+/** Choose an explicit amount in the "Punten verdelen" sheet. */
+function assignReward(container: HTMLElement, amount: number) {
+  fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+  const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+  fireEvent.change(within(sheet).getByRole('spinbutton'), { target: { value: String(amount) } });
+  fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+}
+
 describe('ChorePlanner rewards from ChoreOps', () => {
   beforeEach(() => {
     mocks.state.current = choreOpsState();
@@ -299,7 +307,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    assignReward(container, 20);
 
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
@@ -315,7 +323,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    assignReward(container, 20);
 
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.querySelector('.planner-pin-input')).toBeNull();
@@ -329,9 +337,9 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    assignReward(container, 25);
 
-    // Zara has 25 and the goal wants 40, so all 25 go towards it and it stays open.
+    // Zara has 25 and the goal wants 40, so the explicit 25 stays open.
     await waitFor(() => expect(container.textContent).toContain('25 / 40'));
     expect(container.textContent).not.toContain('Gereserveerd');
   });
@@ -344,7 +352,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Toewijzen' }));
+    assignReward(container, 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
 
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>

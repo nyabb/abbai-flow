@@ -45,12 +45,14 @@ import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
 import {
   ActionsSheet,
+  AssignPointsSheet,
   AwardSheet,
   ClaimSheet,
   FilterSheet,
   GoalsSheet,
   RewardActionsSheet,
   RewardFormSheet,
+  RewardGivenSheet,
 } from './sheets';
 import { ChildView } from './ChildView';
 import { MissionView } from './MissionView';
@@ -151,6 +153,8 @@ export function ChorePlanner({
     | 'goals'
     | 'reward-form'
     | 'reward-actions'
+    | 'assign'
+    | 'reward-given'
     | null
   >(null);
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
@@ -217,6 +221,10 @@ export function ChorePlanner({
   /** Name of the reward being edited; `null` means the form creates a new one. */
   const [editingReward, setEditingReward] = useState<string | null>(null);
   const [selectedReward, setSelectedReward] = useState<ChoreOpsReward | null>(null);
+  /** Reward whose explicit point allocation sheet is open. */
+  const [assigningReward, setAssigningReward] = useState<ChoreOpsReward | null>(null);
+  /** Reward just paid out; the sheet asks "use again" or "delete". */
+  const [givenReward, setGivenReward] = useState<{ name: string } | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   /**
    * Reward progress (saving → achieved → given). Shared through beacon-store:
@@ -448,7 +456,11 @@ export function ChorePlanner({
             () => void runLiveAction(reward.id, approveId ?? '', reward.name, c.approved),
           )
         }
-        onAssign={() => assignReward(reward)}
+        onGive={() => {
+          const pursuit = rewardState(reward).pursuit;
+          if (pursuit) giveReward(pursuit);
+        }}
+        onAssign={() => openAssign(reward)}
         onMore={() => {
           setSelectedReward(reward);
           setModal('reward-actions');
@@ -1058,12 +1070,19 @@ export function ChorePlanner({
     requestPin(c.newReward, rewardForm.name.trim(), () => void create());
   };
 
-  /** Delete a reward from ChoreOps. */
-  const removeReward = async (reward: ChoreOpsReward) => {
+  /**
+   * Delete a reward from ChoreOps.
+   *
+   * `skipPin` is only used by the post-payout prompt: the parent has already
+   * unlocked the payout in this very flow, so asking for the PIN twice would be
+   * noise rather than a second decision.
+   */
+  const removeReward = async (reward: Pick<ChoreOpsReward, 'name'>, skipPin = false) => {
     const remove = async () => {
       try {
         setSaving(true);
         await choreOps.deleteReward(reward.name);
+        setGivenReward(null);
         setModal(null);
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
@@ -1079,7 +1098,24 @@ export function ChorePlanner({
      * free for a fully funded goal, which let a child delete a reward they were
      * about to receive.
      */
+    if (skipPin) {
+      await remove();
+      return;
+    }
     requestPin(c.remove, reward.name, () => void remove());
+  };
+
+  /**
+   * Ask how many points go towards this reward.
+   *
+   * The allocation is explicit: a child can fund several goals side by side
+   * (5 here, 3 there) and leave the rest in the savings pot. The old button
+   * silently took as much as the goal still needed.
+   */
+  const openAssign = (reward: ChoreOpsReward) => {
+    if (!rewardState(reward).canAdd) return;
+    setAssigningReward(reward);
+    setModal('assign');
   };
 
   /**
@@ -1087,12 +1123,12 @@ export function ChorePlanner({
    *
    * Approval-free and Abbai Flow-only: the balance drops the moment the child
    * allocates, and nothing is written to ChoreOps, so they can still change
-   * their mind. Points accumulate towards the cost instead of being reserved in
-   * one go -- that is what makes "on hold" (partway) and "reached the goal"
-   * (fully covered) two different states.
+   * their mind. The amount is chosen explicitly by the child; points accumulate
+   * towards the cost instead of being reserved in one go -- that is what makes
+   * "on hold" (partway) and "reached the goal" (fully covered) two different
+   * states.
    */
-  /** Put points towards a reward. */
-  const assignReward = (reward: ChoreOpsReward, amount?: number) => {
+  const assignReward = (reward: ChoreOpsReward, amount: number) => {
     const userName =
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
@@ -1104,9 +1140,9 @@ export function ChorePlanner({
     const owner = memberByName(userName);
     const already = activeRedemption(redemptions, userName, reward.name)?.points ?? 0;
     const stillNeeded = Math.max(0, reward.cost - already);
-    // Never invent points: the amount is capped by what the child can still
-    // spend and by what the goal still needs.
-    const give = Math.min(amount ?? stillNeeded, stillNeeded, owner ? spendableFor(owner) : 0);
+    // Never invent points: the explicit amount is still capped by what the
+    // child can spend and by what the goal still needs.
+    const give = Math.min(Math.round(amount), stillNeeded, owner ? spendableFor(owner) : 0);
     if (give <= 0) return;
 
     void rewardsState.runOp({
@@ -1142,7 +1178,7 @@ export function ChorePlanner({
       showToast(c.assignToClaim, 'error');
       return;
     }
-    requestPin(c.markGiven, redemption.rewardLabel, (approverName) => {
+    requestPin(c.approvePayout, redemption.rewardLabel, (approverName) => {
       void (async () => {
         try {
           setSaving(true);
@@ -1154,6 +1190,18 @@ export function ChorePlanner({
           });
           showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
           setConfetti(true);
+          /*
+           * The goal is met and handed over. Ask the parent what happens to the
+           * definition: save for it again from zero, or remove it altogether.
+           */
+          const definition =
+            rewards.find(
+              (item) =>
+                normaliseName(item.name) === normaliseName(redemption.reward) &&
+                normaliseName(item.assignee) === normaliseName(redemption.user),
+            ) ?? null;
+          setGivenReward({ name: definition?.name ?? redemption.rewardLabel });
+          setModal('reward-given');
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail, 'error');
         } finally {
@@ -1161,6 +1209,21 @@ export function ChorePlanner({
         }
       })();
     });
+  };
+
+  /** Payout done: keep the goal and put it back at 0 allocations. */
+  const reuseGivenReward = () => {
+    if (!givenReward) return;
+    const name = givenReward.name;
+    setGivenReward(null);
+    setModal(goalsMemberId ? 'goals' : null);
+    showToast(toastWith(c.rewardReset, name));
+  };
+
+  /** Payout done: delete the definition; the payout PIN already covered this. */
+  const deleteGivenReward = () => {
+    if (!givenReward) return;
+    void removeReward(givenReward, true);
   };
 
   /**
@@ -1637,10 +1700,7 @@ export function ChorePlanner({
                 rewards={rewardsForMember(awardTask.memberId)}
                 rewardState={rewardState}
                 onClose={() => setModal(null)}
-                onAssign={(reward) => {
-                  assignReward(reward);
-                  setModal(null);
-                }}
+                onAssign={(reward) => openAssign(reward)}
                 onNewGoal={() => {
                   if (awardTask.memberId) startRewardForm(awardTask.memberId);
                   else setModal('reward-form');
@@ -1709,6 +1769,32 @@ export function ChorePlanner({
                     month: 'short',
                   })
                 }
+              />
+            )}{' '}
+            {modal === 'assign' && assigningReward && (
+              <AssignPointsSheet
+                reward={assigningReward}
+                allocated={rewardState(assigningReward).allocated}
+                spendable={spendableFor(memberByName(assigningReward.assignee))}
+                copy={c}
+                onCancel={() => {
+                  setAssigningReward(null);
+                  setModal(goalsMemberId ? 'goals' : null);
+                }}
+                onAssign={(amount) => {
+                  const reward = assigningReward;
+                  setAssigningReward(null);
+                  setModal(goalsMemberId ? 'goals' : null);
+                  assignReward(reward, amount);
+                }}
+              />
+            )}{' '}
+            {modal === 'reward-given' && givenReward && (
+              <RewardGivenSheet
+                rewardName={givenReward.name}
+                copy={c}
+                onReuse={reuseGivenReward}
+                onDelete={deleteGivenReward}
               />
             )}{' '}
             {modal === 'reward-actions' && selectedReward && (

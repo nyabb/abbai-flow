@@ -29,7 +29,8 @@ Commands:
 ```bash
 npm test               # Vitest (frontend)
 npm run test:server    # node --test server/__tests__/app.test.cjs (backend)
-npm run test:all       # both
+npm run test:e2e       # Playwright browser suite (real server + fake HA; see e2e/)
+npm run test:all       # all three
 npm run test:coverage  # v8 coverage + threshold ratchet (src/api, src/utils)
 npm run lint           # ESLint 9 flat config (expect 0 errors)
 npm run typecheck      # tsc (src) + tsc -p tsconfig.scripts.json
@@ -72,7 +73,7 @@ See `docs/engineering-review.md` for the full review, findings and open items.
 ### Deployment configuration (container)
 
 The image reads `HA_URL` + `HA_TOKEN` — a long-lived access token, created in
-Home Assistant under *Profile → Security*. That is the whole contract; everything
+Home Assistant under _Profile → Security_. That is the whole contract; everything
 else has a working default.
 
 Paths, the CSRF allow-list and a private CA use `ABBAI_FLOW_*` names

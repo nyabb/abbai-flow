@@ -15,7 +15,8 @@
     "test:ui": "vitest --ui",
     "pretest:server": "npm run build:server",
     "test:server": "node --test server/__tests__/app.test.cjs",
-    "test:all": "npm run test && npm run test:server",
+    "test:e2e": "playwright test",
+    "test:all": "npm run test && npm run test:server && npm run test:e2e",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -36,6 +37,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.65.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^7.1.0",
     "@semantic-release/git": "^10.0.1",

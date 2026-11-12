@@ -42,29 +42,40 @@ points (0 allowed)          memberIds derived from ChoreOps
 ## 3. The revised reward lifecycle
 
 ```
-saving ──(points reach cost)──▶ awaiting_fulfilment ──(parent, PIN)──▶ fulfilled
-   ▲                                    │
-   └──────────(child undoes)────────────┘
+(propose) ──(parent PIN)──▶ available
+available ──(child allocates an explicit amount)──▶ saving
+saving ──(points reach cost)──▶ awaiting_fulfilment   (locked)
+awaiting_fulfilment ──(parent approves payout, PIN)──▶ fulfilled
+fulfilled ──▶ reuse: back at 0 allocations   |   delete: definition removed, history kept
+   ▲                                              │
+   └──────────(child undoes a saving pursuit)─────┘
 ```
 
-- Allocation is the child's action and never touches ChoreOps; the amount is clamped to what the
-  goal still needs, so a goal cannot absorb points twice.
-- `awaiting_fulfilment` is _goal achieved, waiting for a parent_ — visibly different from a saved
-  goal and from a given reward.
-- Only a parent can hand it over: the action lives in the goals sheet's **Rewards to give** queue,
-  behind the PIN, and it calls `choreops.approve_reward` (the real deduction) with the parent's name.
-- Fulfilment writes `fulfilledAt`/`fulfilledBy`, removes the pursuit from the child's active goals
-  and keeps it in the **Given rewards** history. The reward _definition_ is never deleted, so the
-  same reward can be earned again.
+- Creating a reward is the child's proposal with the parent's approval: the form is open to the
+  child, but the ChoreOps write only happens after a parent PIN.
+- Allocation is the child's action and never touches ChoreOps. The child chooses the amount
+  explicitly, so several goals can be funded side by side (e.g. 5 + 3 out of 10) while the rest
+  stays in the savings pot. The amount is still clamped to what the goal needs and what the child
+  can spend.
+- `awaiting_fulfilment` is _goal achieved, waiting for a parent_ — locked: the child cannot add
+  more points or undo it.
+- Only a parent can pay it out. The action sits on the funded reward row and in the goals sheet's
+  **Rewards to give** queue, behind the PIN, and it calls `choreops.approve_reward` (the real
+  deduction) with the parent's name.
+- Fulfilment writes `fulfilledAt`/`fulfilledBy` and keeps the pursuit in the **Given rewards**
+  history. It then asks the parent what happens to the definition: **Use again** leaves the reward
+  available at 0 allocations, **Delete** removes it from ChoreOps. Deleting here does not ask for
+  the PIN a second time — the payout approval just unlocked the flow.
 
 ## 4. How parent-only authorization is enforced
 
-| Path                                                              | Gate                                                                                                      |
-| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Approve a chore completion                                        | Row actions → "Approve completion" → PIN; the child's check button refuses and says it waits for a parent |
-| Mark a reward as given                                            | Goals sheet → "Mark reward as given" → PIN, then `approve_reward`                                         |
-| Create / edit / delete a chore or reward                          | PIN (unchanged)                                                                                           |
-| Child actions (claim, complete, save points, undo, start mission) | none — they are the child's own steps                                                                     |
+| Path                                                                                               | Gate                                                                                                              |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Approve a chore completion                                                                         | Row actions → "Approve completion" → PIN; the child's check button refuses and says it waits for a parent         |
+| Approve a reward payout (goal reached)                                                             | Funded reward row or **Rewards to give** queue → "Approve reward" → PIN, then `approve_reward`                    |
+| Create / edit / delete a chore or reward                                                           | PIN (unchanged)                                                                                                   |
+| Choose reuse/delete after a payout                                                                 | No second PIN: it follows the payout approval the parent just completed; only the PIN-gated approval precedes it. |
+| Child actions (claim, complete, allocate an explicit amount, undo a saving pursuit, start mission) | none — they are the child's own steps                                                                             |
 
 A household without a parent PIN still gets a working screen (the gate cannot be unlocked by
 anybody, so requiring it would brick the app); configuring a PIN turns all parent actions into

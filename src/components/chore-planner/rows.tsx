@@ -206,6 +206,8 @@ export interface RewardRowProps {
   copy: PlannerCopy;
   onUndo: () => void;
   onApprove: () => void;
+  /** Parent-only: hand the fully funded reward over (PIN-gated by the caller). */
+  onGive: () => void;
   onAssign: () => void;
   onMore: () => void;
 }
@@ -222,6 +224,7 @@ export function RewardRow({
   copy,
   onUndo,
   onApprove,
+  onGive,
   onAssign,
   onMore,
 }: RewardRowProps) {
@@ -251,9 +254,15 @@ export function RewardRow({
             {copy.confirm}
           </button>
         ) : done ? (
-          /* Goal reached: the child cannot add more, and only a parent can hand
-             the reward over — so there is no button here, just the state. */
-          <span className="planner-hint">{copy.waitingForReward}</span>
+          /* Goal reached: the child cannot add more. The payout is the parent's
+             approval, so the action sits on the row itself instead of only in
+             the "rewards to give" queue. */
+          <>
+            <span className="planner-hint">{copy.waitingForReward}</span>
+            <button className="planner-primary planner-reward-action" onClick={onGive}>
+              {copy.approvePayout}
+            </button>
+          </>
         ) : (
           <>
             <button

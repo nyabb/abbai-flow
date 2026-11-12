@@ -7,9 +7,9 @@ gives. Companion to `docs/chore-reward-review.md`.
 
 | Data                                                                | Owner        | Key                         | Why                                                                            |
 | ------------------------------------------------------------------- | ------------ | --------------------------- | ------------------------------------------------------------------------------ |
-| Chore status, points, approvals, reward definitions and costs       | **ChoreOps** | its own entities            | never duplicated in Abbai Flow                                                     |
-| Routine identity, routine step order, pause state, mission progress | Abbai Flow       | `beacon-planner-meta`       | ChoreOps has no routine entity and no ordering field                           |
-| Reward pursuits (saving → achieved → given), fulfilment audit       | Abbai Flow       | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
+| Chore status, points, approvals, reward definitions and costs       | **ChoreOps** | its own entities            | never duplicated in Abbai Flow                                                 |
+| Routine identity, routine step order, pause state, mission progress | Abbai Flow   | `beacon-planner-meta`       | ChoreOps has no routine entity and no ordering field                           |
+| Reward pursuits (saving → achieved → given), fulfilment audit       | Abbai Flow   | `beacon-reward-redemptions` | ChoreOps only deducts at approval; progress between chores is not its business |
 
 Both Abbai Flow documents go through `src/api/beacon-store.ts`:
 
@@ -36,8 +36,13 @@ Writes are serialised per key, so two quick edits cannot land out of order.
 ```
 chore        available → awaiting_approval → approved | rejected
 routine      available → in_progress → completed   (paused is orthogonal)
-redemption   saving → awaiting_fulfilment → fulfilled
+redemption   saving → awaiting_fulfilment → fulfilled → (reuse: new saving | delete: gone)
 ```
+
+A payout is only possible from `awaiting_fulfilment`. "Reuse" does not mutate the
+fulfilled record: it stays in the history and the next allocation starts a new
+pursuit at zero. "Delete" removes the ChoreOps definition for every child it was
+assigned to; the fulfilment history remains.
 
 Chore and routine states are _derived_ (ChoreOps status + Abbai Flow registry), not
 stored a second time; only the redemption state and mission progress persist.

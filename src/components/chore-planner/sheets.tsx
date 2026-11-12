@@ -7,7 +7,8 @@
  * callbacks for its buttons, so the planner keeps all state and all ChoreOps
  * writes.
  */
-import { CheckCheck, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCheck, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
@@ -339,7 +340,7 @@ export function GoalsSheet({
                     className="planner-primary planner-reward-action"
                     onClick={() => onGive(redemption.id)}
                   >
-                    {c.markGiven}
+                    {c.approvePayout}
                   </button>
                 </div>
               )}
@@ -370,6 +371,113 @@ export function GoalsSheet({
       <button className="planner-ghost planner-reward-new" onClick={() => onNewGoal(member.id)}>
         <Plus />
         {c.setGoal}
+      </button>
+    </>
+  );
+}
+
+export interface AssignPointsSheetProps {
+  reward: ChoreOpsReward;
+  /** Points already set aside for this reward. */
+  allocated: number;
+  /** What the child can still spend right now. */
+  spendable: number;
+  copy: PlannerCopy;
+  onCancel: () => void;
+  onAssign: (amount: number) => void;
+}
+
+/**
+ * Explicit amount picker.
+ *
+ * The child chooses how much of the balance goes to this reward, so several
+ * goals can be funded side by side while the rest stays in the savings pot.
+ * It replaced "take as much as the goal still needs", which made a 5 + 3 split
+ * impossible unless the costs happened to match.
+ */
+export function AssignPointsSheet({
+  reward,
+  allocated,
+  spendable,
+  copy: c,
+  onCancel,
+  onAssign,
+}: AssignPointsSheetProps) {
+  const max = Math.max(0, Math.min(reward.cost - allocated, spendable));
+  const [amount, setAmount] = useState(max);
+  useEffect(() => setAmount(max), [max]);
+  const valid = Number.isInteger(amount) && amount >= 1 && amount <= max;
+
+  return (
+    <>
+      <h2>{c.assignPoints}</h2>
+      <p className="planner-hint">
+        {reward.name}
+        {` \u00b7 ${allocated} / ${reward.cost} ${c.pointsUnit}`}
+      </p>
+      <p className="planner-hint">
+        {c.pot}
+        {` \u00b7 ${spendable}`}
+      </p>
+      <label className="planner-field">
+        {c.points}
+        <input
+          autoFocus
+          type="number"
+          min={1}
+          max={max}
+          step={1}
+          value={Number.isFinite(amount) ? amount : ''}
+          onChange={(event) => setAmount(Number(event.target.value))}
+        />
+      </label>
+      <footer className="planner-sheet-footer">
+        <button className="planner-ghost" onClick={onCancel}>
+          {c.cancel}
+        </button>
+        <button
+          className="planner-primary"
+          disabled={!valid}
+          onClick={() => onAssign(Math.round(amount))}
+        >
+          {c.assign}
+        </button>
+      </footer>
+    </>
+  );
+}
+
+export interface RewardGivenSheetProps {
+  rewardName: string;
+  copy: PlannerCopy;
+  /** Keep the goal and put it back at 0 allocations. */
+  onReuse: () => void;
+  /** Remove the reward definition from ChoreOps. */
+  onDelete: () => void;
+}
+
+/**
+ * The question asked right after a parent approved a payout: the goal is met,
+ * so the reward can either be saved for again from zero or deleted.
+ */
+export function RewardGivenSheet({
+  rewardName,
+  copy: c,
+  onReuse,
+  onDelete,
+}: RewardGivenSheetProps) {
+  return (
+    <>
+      <h2>{c.rewardGiven}</h2>
+      <p className="planner-hint">{rewardName}</p>
+      <p>{c.chooseWhat}</p>
+      <button className="planner-destination" onClick={onReuse}>
+        <RotateCcw />
+        <strong>{c.useAgain}</strong>
+      </button>
+      <button className="planner-destination planner-danger" onClick={onDelete}>
+        <Trash2 />
+        <strong>{c.remove}</strong>
       </button>
     </>
   );
