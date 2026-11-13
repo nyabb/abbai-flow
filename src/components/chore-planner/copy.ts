@@ -149,6 +149,7 @@ export function usePlannerCopy() {
       historyLastWeek: t('planner.historyLastWeek'),
       historyAllTime: t('planner.historyAllTime'),
       historyEmpty: t('planner.historyEmpty'),
+      completedHistory: t('planner.completedHistory'),
       rewardGiven: t('planner.rewardGiven'),
       routinePicker: t('planner.routinePicker'),
       routineNew: t('planner.routineNew'),

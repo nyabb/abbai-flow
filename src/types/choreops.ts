@@ -22,6 +22,8 @@ export type ChoreOpsActions = Partial<Record<ChoreOpsActionKind, string>>;
 export interface ChoreOpsChore {
   /** Stable key: ChoreOps `eid` when present, otherwise a name-derived id. */
   id: string;
+  /** Per-user ChoreOps status sensor, used to read its Recorder history. */
+  statusEntityId?: string;
   name: string;
   icon: string | null;
   status: string;

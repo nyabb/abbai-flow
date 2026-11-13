@@ -361,7 +361,11 @@ describe('normalizeChoreOps — per-user chore status', () => {
     ]);
 
     expect(result.chores).toHaveLength(1);
-    expect(result.chores[0]).toMatchObject({ name: 'Bed opmaken', status: 'claimed' });
+    expect(result.chores[0]).toMatchObject({
+      name: 'Bed opmaken',
+      status: 'claimed',
+      statusEntityId: 'sensor.nova_choreops_chore_status_bed_opmaken',
+    });
   });
 
   it('adds a card for a status sensor whose buttons have not been seen yet', () => {

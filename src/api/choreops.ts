@@ -217,6 +217,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     string,
     {
       assignee: string;
+      entityId: string;
       name: string;
       status: string;
       points: number | null;
@@ -356,6 +357,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
         if (slug) ensureUser(slug, userName);
         choreStatuses.set(choreKey(userName, choreName), {
           assignee: userName,
+          entityId: entity.entity_id,
           name: choreName,
           status: entity.state,
           points: num(entity.attributes, 'default_points'),
@@ -487,6 +489,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     const existing = choreMap.get(key);
     if (existing) {
       existing.status = record.status;
+      existing.statusEntityId = record.entityId;
       existing.points = existing.points ?? record.points;
       existing.icon = existing.icon ?? record.icon;
       existing.dueDate = record.dueDate ?? existing.dueDate;
@@ -507,6 +510,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
     }
     choreMap.set(key, {
       id: `status:${key}`,
+      statusEntityId: record.entityId,
       name: record.name,
       icon: record.icon,
       status: record.status,
