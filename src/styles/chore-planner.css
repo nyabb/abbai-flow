@@ -2137,6 +2137,33 @@
   color: var(--planner-muted);
 }
 
+.planner-history-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 10px;
+  color: var(--planner-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.planner-history-filter select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--planner-line);
+  border-radius: 12px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  font: inherit;
+}
+
+.planner-history-empty {
+  color: var(--planner-muted);
+  text-align: center;
+}
+
 .planner-reward--done .planner-reward-copy strong {
   color: var(--planner-muted);
 }

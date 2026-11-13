@@ -11,6 +11,14 @@ const mocks = vi.hoisted(() => ({
   deleteChore: vi.fn(async () => {}),
   approveReward: vi.fn(async () => {}),
   pressButton: vi.fn(async () => {}),
+  fetchChoreHistory: vi.fn(async () => [] as Array<{
+    id: string;
+    entityId: string;
+    choreName: string;
+    completedAt: string;
+    completedAtMs: number;
+    points: number | null;
+  }>),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -30,6 +38,10 @@ vi.mock('../../hooks/useChoreOps', () => ({
     deleteChore: mocks.deleteChore,
     approveReward: mocks.approveReward,
   }),
+}));
+
+vi.mock('../../api/choreops-chore-history', () => ({
+  fetchChoreOpsChoreHistory: mocks.fetchChoreHistory,
 }));
 
 function makeMember(overrides: Partial<FamilyMember>): FamilyMember {
@@ -63,6 +75,7 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
     chores: [
       {
         id: 'status:zara::afwassen',
+        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
         name: 'Afwassen',
         icon: 'mdi:silverware',
         status: 'pending',
@@ -625,6 +638,8 @@ describe('ChorePlanner board', () => {
   beforeEach(() => {
     mocks.state.current = twoChildren();
     mocks.createReward.mockClear();
+    mocks.fetchChoreHistory.mockReset();
+    mocks.fetchChoreHistory.mockResolvedValue([]);
   });
 
   it('shows a column per child plus the free-chore column, and no header rewards button', () => {
@@ -727,6 +742,73 @@ describe('ChorePlanner board', () => {
     fireEvent.click(container.querySelector('.planner-header .planner-icon-button')!);
     expect(container.querySelector('.planner-detail')).toBeNull();
     expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+  });
+
+  it('shows completed chore history with the same date ranges', async () => {
+    const now = Date.now();
+    const base = choreOpsState();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        {
+          ...base.chores[0],
+          statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+        },
+        {
+          ...base.chores[0],
+          id: 'status:zara::bed-opmaken',
+          statusEntityId: 'sensor.zara_choreops_chore_status_bed_opmaken',
+          name: 'Bed opmaken',
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    mocks.fetchChoreHistory.mockResolvedValue([
+      {
+        id: 'recent',
+        entityId: 'sensor.zara_choreops_chore_status_afwassen',
+        choreName: 'Afwassen vandaag',
+        completedAt: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+        completedAtMs: now - 24 * 60 * 60 * 1000,
+        points: 3,
+      },
+      {
+        id: 'older',
+        entityId: 'sensor.zara_choreops_chore_status_afwassen',
+        choreName: 'Afwassen eerder',
+        completedAt: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        completedAtMs: now - 3 * 24 * 60 * 60 * 1000,
+        points: 3,
+      },
+    ]);
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!);
+    await waitFor(() => expect(container.textContent).toContain('Afwassen eerder'));
+    expect(mocks.fetchChoreHistory).toHaveBeenCalledWith([
+      {
+        entityId: 'sensor.zara_choreops_chore_status_afwassen',
+        choreName: 'Afwassen',
+        points: 3,
+      },
+    ]);
+
+    const history = container.querySelector<HTMLElement>('.planner-detail')!;
+    const range = within(history).getByLabelText('Periode');
+    const completedSection = [...history.querySelectorAll<HTMLElement>('.planner-detail-section')].find(
+      (section) => section.querySelector('h3')?.textContent?.includes('Voltooide taakjes'),
+    )!;
+    const historyNames = () =>
+      [...completedSection.querySelectorAll('.planner-reward-copy strong')].map(
+        (item) => item.textContent,
+      );
+
+    fireEvent.change(range, { target: { value: 'twoDays' } });
+    expect(historyNames()).toEqual(['Afwassen vandaag']);
+
+    fireEvent.change(range, { target: { value: 'week' } });
+    expect(historyNames()).toEqual(['Afwassen vandaag', 'Afwassen eerder']);
   });
 
   /*

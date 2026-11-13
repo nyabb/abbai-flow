@@ -232,6 +232,7 @@ export function buildChorePlannerView(
         retryMinutes: null,
         timeBlock: 'custom',
         statusOverride: status,
+        completedAt: chore.lastCompleted ?? undefined,
         audience: choreAudience(chore, users.length),
         // Kept regardless of status: see `freeForAll` on PlannerTask.
         freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',

@@ -20,6 +20,13 @@ import {
 } from '../../api/chore-planner-model';
 import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
+import { fetchChoreOpsChoreHistory } from '../../api/choreops-chore-history';
+import type {
+  ChoreOpsChoreHistoryEntity,
+  ChoreOpsChoreHistoryEntry,
+} from '../../api/choreops-chore-history';
+import { fetchChoreOpsRewardHistory } from '../../api/choreops-ledger';
+import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
 import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
 import {
   activeRedemption,
@@ -32,7 +39,13 @@ import type { ChoreOpsReward } from '../../types/choreops';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
-import { findRoutine, missionStep, normaliseName, routineTaskOrder } from '../../api/planner-meta';
+import {
+  findRoutine,
+  missionStep,
+  normaliseName,
+  routineIdForTask,
+  routineTaskOrder,
+} from '../../api/planner-meta';
 import { useTranslation } from '../../i18n';
 import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
@@ -234,6 +247,15 @@ export function ChorePlanner({
    */
   const rewardsState = useRewardRedemptions();
   const redemptions = rewardsState.redemptions;
+  const [rewardLedgerHistory, setRewardLedgerHistory] = useState<{
+    userName: string;
+    entries: ChoreOpsRewardHistoryEntry[];
+  } | null>(null);
+  const [choreHistorySnapshot, setChoreHistorySnapshot] = useState<{
+    userName: string;
+    entityKey: string;
+    entries: ChoreOpsChoreHistoryEntry[];
+  } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
 
@@ -681,7 +703,10 @@ export function ChorePlanner({
 
   /** Completed chores of one child today (the detail page's history). */
   const completedTasksFor = (memberId: string) =>
-    data.tasks.filter((task) => task.memberId === memberId && taskStatus(task) === 'completed');
+    data.tasks.filter(
+      (task) =>
+        task.memberId === memberId && !task.inRoutine && taskStatus(task) === 'completed',
+    );
 
   /** Step to the previous/next child from the detail page. */
   const stepChild = (delta: number) => {
@@ -732,8 +757,96 @@ export function ChorePlanner({
     setModal('goals');
   };
   const goalsMember = memberFor(goalsMemberId);
+  const goalsUserName = goalsMember ? (userNameByMemberId.get(goalsMember.id) ?? null) : null;
+  const goalsLedgerHistory =
+    rewardLedgerHistory?.userName === goalsUserName ? rewardLedgerHistory.entries : [];
+  useEffect(() => {
+    if (modal !== 'goals' || !goalsUserName || !choreOps.available) {
+      setRewardLedgerHistory(null);
+      return;
+    }
+
+    let current = true;
+    setRewardLedgerHistory(null);
+    void fetchChoreOpsRewardHistory(goalsUserName)
+      .then((history) => {
+        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: history });
+      })
+      .catch(() => {
+        // Older ChoreOps versions may not expose get_ledger. Keep the
+        // Abbai Flow history available when the optional ledger query fails.
+        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: [] });
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [modal, goalsUserName, choreOps.available]);
   const claimTask = getTask(claimTaskId);
   const childMember = memberFor(childMemberId);
+  const childUserName = childMember ? (userNameByMemberId.get(childMember.id) ?? null) : null;
+  const childHistoryEntities = useMemo<ChoreOpsChoreHistoryEntity[]>(() => {
+    const userKey = childUserName?.trim().toLocaleLowerCase();
+    if (!userKey) return [];
+    return (choreOps.data?.chores ?? []).flatMap((chore) => {
+      const label = (chore.labels ?? []).map((item) => item.trim()).find(Boolean) ?? null;
+      const isRoutineStep =
+        /^daily/i.test(chore.frequency ?? '') &&
+        routineIdForTask(meta, chore.name, label) !== null;
+      return chore.statusEntityId &&
+        chore.assignee?.trim().toLocaleLowerCase() === userKey &&
+        !isRoutineStep
+        ? [
+            {
+              entityId: chore.statusEntityId,
+              choreName: chore.name,
+              points: chore.points,
+            },
+          ]
+        : [];
+    });
+  }, [choreOps.data?.chores, childUserName, meta]);
+  const childHistoryEntityKey = childHistoryEntities
+    .map((entity) => entity.entityId)
+    .sort()
+    .join('|');
+  const childChoreHistory =
+    choreHistorySnapshot?.userName === childUserName &&
+    choreHistorySnapshot.entityKey === childHistoryEntityKey
+      ? choreHistorySnapshot.entries
+      : null;
+  useEffect(() => {
+    if (screen !== 'child' || !childUserName || !choreOps.available) {
+      setChoreHistorySnapshot(null);
+      return;
+    }
+
+    let current = true;
+    setChoreHistorySnapshot(null);
+    void fetchChoreOpsChoreHistory(childHistoryEntities)
+      .then((history) => {
+        if (current) {
+          setChoreHistorySnapshot({
+            userName: childUserName,
+            entityKey: childHistoryEntityKey,
+            entries: history,
+          });
+        }
+      })
+      .catch(() => {
+        if (current) {
+          setChoreHistorySnapshot({
+            userName: childUserName,
+            entityKey: childHistoryEntityKey,
+            entries: [],
+          });
+        }
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [screen, childUserName, childHistoryEntities, childHistoryEntityKey, choreOps.available]);
   /** The filter sheet doubles as the board's filter state indicator. */
   const filterOpen = modal === 'filter';
 
@@ -1669,6 +1782,15 @@ export function ChorePlanner({
           columnTasks={columnTasks}
           columnRoutines={columnRoutines}
           completedTasksFor={completedTasksFor}
+          completedHistory={childChoreHistory}
+          formatHistoryDate={(value) =>
+            new Date(value).toLocaleString(timeLocale, {
+              day: 'numeric',
+              month: 'short',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
+          }
           rewardsForMember={rewardsForMember}
           renderRow={renderRow}
           routineRow={routineRow}
@@ -1838,8 +1960,9 @@ export function ChorePlanner({
                 ).filter((item) => item.state === 'awaiting_fulfilment')}
                 given={fulfilledRedemptions(
                   redemptions,
-                  userNameByMemberId.get(goalsMember.id) ?? null,
+                  goalsUserName,
                 )}
+                ledgerHistory={goalsLedgerHistory}
                 onGive={(id) => {
                   const redemption = redemptions.find((item) => item.id === id);
                   if (redemption) giveReward(redemption);

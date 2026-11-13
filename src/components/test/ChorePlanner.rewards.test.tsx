@@ -8,6 +8,15 @@ import type { ChoreOpsState } from '../../types/choreops';
 const mocks = vi.hoisted(() => ({
   approveReward: vi.fn(async () => {}),
   deleteReward: vi.fn(async () => {}),
+  fetchRewardHistory: vi.fn(async () => [] as Array<{
+    id: string;
+    timestamp: string;
+    timestampMs: number;
+    amount: number;
+    balanceAfter: number | null;
+    itemName: string;
+    referenceId: string | null;
+  }>),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -28,6 +37,10 @@ vi.mock('../../hooks/useChoreOps', () => ({
     deleteChore: async () => {},
     approveReward: mocks.approveReward,
   }),
+}));
+
+vi.mock('../../api/choreops-ledger', () => ({
+  fetchChoreOpsRewardHistory: mocks.fetchRewardHistory,
 }));
 
 function member(overrides: Partial<FamilyMember>): FamilyMember {
@@ -158,7 +171,73 @@ describe('reward lifecycle', () => {
     localStorage.clear();
     mocks.approveReward.mockClear();
     mocks.deleteReward.mockClear();
+    mocks.fetchRewardHistory.mockReset();
+    mocks.fetchRewardHistory.mockResolvedValue([]);
     mocks.state.current = state();
+  });
+
+  it('shows ChoreOps reward transactions in the reward history', async () => {
+    mocks.fetchRewardHistory.mockResolvedValue([
+      {
+        id: 'ledger-1',
+        timestamp: '2026-11-12T18:30:00Z',
+        timestampMs: Date.parse('2026-11-12T18:30:00Z'),
+        amount: -20,
+        balanceAfter: 5,
+        itemName: 'Schermtijd',
+        referenceId: 'ledger-1',
+      },
+    ]);
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+
+    await waitFor(() => expect(container.textContent).toContain('Schermtijd'));
+    expect(container.textContent).toContain('Gegeven beloningen');
+    expect(container.textContent).toContain('20 punten');
+    expect(mocks.fetchRewardHistory).toHaveBeenCalledWith('Zara');
+  });
+
+  it('filters the reward history by a rolling date range', async () => {
+    const now = Date.now();
+    mocks.fetchRewardHistory.mockResolvedValue([
+      {
+        id: 'recent',
+        timestamp: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
+        timestampMs: now - 24 * 60 * 60 * 1000,
+        amount: -5,
+        balanceAfter: 20,
+        itemName: 'Recent reward',
+        referenceId: 'recent',
+      },
+      {
+        id: 'older',
+        timestamp: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        timestampMs: now - 3 * 24 * 60 * 60 * 1000,
+        amount: -10,
+        balanceAfter: 15,
+        itemName: 'Older reward',
+        referenceId: 'older',
+      },
+    ]);
+    const { container } = renderPlanner([PARENT, ZARA]);
+    openRewards(container);
+    await waitFor(() => expect(container.textContent).toContain('Older reward'));
+
+    const historyNames = () =>
+      [...container.querySelectorAll('.planner-sheet .planner-reward--done strong')].map(
+        (item) => item.textContent,
+      );
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    const range = within(sheet).getByLabelText('Periode');
+
+    fireEvent.change(range, { target: { value: 'twoDays' } });
+    expect(historyNames()).toEqual(['Recent reward']);
+
+    fireEvent.change(range, { target: { value: 'week' } });
+    expect(historyNames()).toEqual(['Recent reward', 'Older reward']);
+
+    fireEvent.change(range, { target: { value: 'all' } });
+    expect(historyNames()).toEqual(['Recent reward', 'Older reward']);
   });
 
   it('saves an explicit amount, asks a parent to pay out, then resets for reuse', async () => {

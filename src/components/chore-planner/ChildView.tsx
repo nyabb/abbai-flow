@@ -3,6 +3,8 @@
  * finished today and their routines — the board's per-member drill-down.
  */
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { useState } from 'react';
+import type { ChoreOpsChoreHistoryEntry } from '../../api/choreops-chore-history';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import { MemberAvatar } from '../MemberAvatar';
@@ -14,6 +16,8 @@ export interface ChildViewProps {
   columnTasks: (memberId: string) => PlannerTask[];
   columnRoutines: (memberId: string) => PlannerRoutine[];
   completedTasksFor: (memberId: string) => PlannerTask[];
+  completedHistory: ChoreOpsChoreHistoryEntry[] | null;
+  formatHistoryDate: (value: number) => string;
   rewardsForMember: (memberId: string) => ChoreOpsReward[];
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
@@ -34,6 +38,8 @@ export function ChildView({
   columnTasks,
   columnRoutines,
   completedTasksFor,
+  completedHistory,
+  formatHistoryDate,
   rewardsForMember,
   renderRow,
   routineRow,
@@ -49,6 +55,42 @@ export function ChildView({
   const completed = completedTasksFor(childMember.id);
   const routines = columnRoutines(childMember.id);
   const rewards = rewardsForMember(childMember.id);
+  const [historyRange, setHistoryRange] = useState<'twoDays' | 'week' | 'all'>('all');
+  const currentCompletions = completed.flatMap((task) => {
+    const completedAtMs = task.completedAt ? Date.parse(task.completedAt) : Number.NaN;
+    if (!Number.isFinite(completedAtMs)) return [];
+    return [
+      {
+        id: `current:${task.id}:${completedAtMs}`,
+        choreName: task.name,
+        completedAtMs,
+        points: task.points,
+      },
+    ];
+  });
+  const recordedCompletions = completedHistory ?? [];
+  const recentFallbacks = currentCompletions.filter(
+    (current) =>
+      !recordedCompletions.some(
+        (recorded) =>
+          current.choreName.trim().toLocaleLowerCase() ===
+            recorded.choreName.trim().toLocaleLowerCase() &&
+          Math.abs(current.completedAtMs - recorded.completedAtMs) < 15 * 60_000,
+      ),
+  );
+  const allCompletions = [...recordedCompletions, ...recentFallbacks].sort(
+    (left, right) => right.completedAtMs - left.completedAtMs,
+  );
+  const rangeStart =
+    historyRange === 'twoDays'
+      ? Date.now() - 2 * 24 * 60 * 60 * 1000
+      : historyRange === 'week'
+        ? Date.now() - 7 * 24 * 60 * 60 * 1000
+        : null;
+  const visibleCompletions =
+    rangeStart === null
+      ? allCompletions
+      : allCompletions.filter((entry) => entry.completedAtMs >= rangeStart);
 
   return (
     <main className="planner-detail">
@@ -124,13 +166,37 @@ export function ChildView({
 
       <section className="planner-detail-section">
         <h3>
-          {c.done}
-          <span>{completed.length}</span>
+          {c.completedHistory}
+          <span>{visibleCompletions.length}</span>
         </h3>
-        {completed.length === 0 ? (
-          <p className="planner-col-empty">{c.nothing}</p>
+        <label className="planner-history-filter">
+          <span>{c.historyRange}</span>
+          <select
+            value={historyRange}
+            onChange={(event) =>
+              setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
+            }
+          >
+            <option value="twoDays">{c.historyLastTwoDays}</option>
+            <option value="week">{c.historyLastWeek}</option>
+            <option value="all">{c.historyAllTime}</option>
+          </select>
+        </label>
+        {visibleCompletions.length === 0 ? (
+          <p className="planner-col-empty">{c.historyEmpty}</p>
         ) : (
-          completed.map((task) => renderRow(task))
+          visibleCompletions.map((entry) => (
+            <article className="planner-reward planner-reward--done" key={entry.id}>
+              <span aria-hidden="true">{'\u2705'}</span>
+              <div className="planner-reward-copy">
+                <strong>{entry.choreName}</strong>
+                <small>
+                  {formatHistoryDate(entry.completedAtMs)}
+                  {entry.points !== null ? ` \u00b7 ${entry.points} ${c.pointsUnit}` : ''}
+                </small>
+              </div>
+            </article>
+          ))
         )}
       </section>
 
