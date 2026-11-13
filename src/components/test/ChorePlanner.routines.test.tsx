@@ -8,7 +8,7 @@ import { PLANNER_META_KEY } from '../../api/planner-meta';
 
 const mocks = vi.hoisted(() => ({
   pressButton: vi.fn(async () => {}),
-  updateChore: vi.fn(async () => {}),
+  updateChore: vi.fn(async (..._args: unknown[]) => {}),
   deleteChore: vi.fn(async () => {}),
   state: { current: null as ChoreOpsState | null },
 }));
@@ -185,6 +185,19 @@ describe('ChorePlanner routines', () => {
     await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Tanden poetsen'));
   });
 
+  it('keeps standalone chores on their normal action flow', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const choreRow = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
+      (row) => row.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
+    );
+    expect(choreRow).toBeTruthy();
+
+    fireEvent.click(choreRow!.querySelector<HTMLButtonElement>('.planner-row-more')!);
+
+    expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
+  });
+
   it('only offers routine actions for chores still published by ChoreOps', () => {
     const base = routineState();
     mocks.state.current = {
@@ -238,11 +251,17 @@ describe('ChorePlanner routines', () => {
     fireEvent.change(routineLabel, { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
 
-    await waitFor(() =>
-      expect(mocks.updateChore).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'Tanden poetsen', labels: [] }),
-      ),
-    );
+    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
+    const update = mocks.updateChore.mock.calls[0][0];
+    expect(update).toMatchObject({
+      name: 'Tanden poetsen',
+      labels: [],
+      frequency: 'daily',
+      points: 5,
+    });
+    expect(update).not.toHaveProperty('status');
+    expect(update).not.toHaveProperty('lastCompleted');
+    expect(mocks.pressButton).not.toHaveBeenCalled();
   });
 
   it('opens the missions overview from the routines section', () => {
