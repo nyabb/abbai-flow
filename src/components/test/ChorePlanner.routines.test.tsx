@@ -8,6 +8,8 @@ import { PLANNER_META_KEY } from '../../api/planner-meta';
 
 const mocks = vi.hoisted(() => ({
   pressButton: vi.fn(async () => {}),
+  updateChore: vi.fn(async () => {}),
+  deleteChore: vi.fn(async () => {}),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -21,10 +23,10 @@ vi.mock('../../hooks/useChoreOps', () => ({
     pressButton: mocks.pressButton,
     claimChore: async () => {},
     createChore: async () => {},
-    updateChore: async () => {},
+    updateChore: mocks.updateChore,
     createReward: async () => {},
     deleteReward: async () => {},
-    deleteChore: async () => {},
+    deleteChore: mocks.deleteChore,
     approveReward: async () => {},
   }),
 }));
@@ -138,6 +140,8 @@ describe('ChorePlanner routines', () => {
   beforeEach(() => {
     localStorage.clear();
     mocks.pressButton.mockClear();
+    mocks.updateChore.mockClear();
+    mocks.deleteChore.mockClear();
     mocks.state.current = routineState();
   });
 
@@ -164,6 +168,21 @@ describe('ChorePlanner routines', () => {
 
     expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
+  });
+
+  it('deletes a live routine chore through the parent PIN gate', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
+      (element) => element.textContent?.includes('Tanden poetsen'),
+    )!;
+
+    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Verwijderen' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Tanden poetsen'));
   });
 
   it('only offers routine actions for chores still published by ChoreOps', () => {
@@ -215,6 +234,15 @@ describe('ChorePlanner routines', () => {
       return input!;
     });
     expect(routineLabel.value).toBe('Ochtendroutine');
+
+    fireEvent.change(routineLabel, { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() =>
+      expect(mocks.updateChore).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Tanden poetsen', labels: [] }),
+      ),
+    );
   });
 
   it('opens the missions overview from the routines section', () => {
