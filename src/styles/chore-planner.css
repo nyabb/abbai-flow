@@ -2835,8 +2835,10 @@
 
 .planner-step-action {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   justify-content: space-between;
+  min-width: 0;
   min-height: 30px;
   margin: -4px -6px;
   padding: 4px 6px;
@@ -2872,6 +2874,29 @@
 .planner-step-action:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+.planner-step-more {
+  display: grid;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin: -2px -4px -2px auto;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  color: var(--planner-muted);
+  background: transparent;
+  font: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.planner-step-more:hover {
+  color: var(--planner-ink);
+  background: color-mix(in srgb, var(--planner-accent) 10%, transparent);
 }
 
 .planner-step.is-done {

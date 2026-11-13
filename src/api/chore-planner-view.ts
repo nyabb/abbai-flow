@@ -32,6 +32,8 @@ import type { FamilyMember } from '../types/family';
 
 export interface ChorePlannerView {
   members: PlannerMember[];
+  /** All live chores, including stale completed routine steps kept off the board. */
+  allTasks: PlannerTask[];
   tasks: PlannerTask[];
   /** Daily repeating chores, grouped by their ChoreOps label. */
   routines: PlannerRoutine[];
@@ -190,18 +192,10 @@ export function buildChorePlannerView(
 
   const memberIds = new Set(members.map((member) => member.id));
 
-  const tasks: PlannerTask[] = (state?.chores ?? [])
+  const choreTasks = (state?.chores ?? [])
     // Another child already took this shared_first chore; it is no longer on
     // this child's list, and ChoreOps only awards points to whoever did it.
-    .filter((chore) => {
-      if (TAKEN_BY_SOMEONE_ELSE.test(chore.status)) return false;
-      // A daily chore finished on an earlier day is not today's completion.
-      const finished = choreOpsTaskStatus(chore.status) === 'completed';
-      if (finished && DAILY_FREQUENCY.test(chore.frequency ?? '') && !completedToday(chore, now)) {
-        return false;
-      }
-      return true;
-    })
+    .filter((chore) => !TAKEN_BY_SOMEONE_ELSE.test(chore.status))
     .map((chore) => {
       const member = resolveMemberForUser(chore.assignee, family);
       const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
@@ -218,35 +212,51 @@ export function buildChorePlannerView(
       const position = order.findIndex((name) => normaliseName(name) === normaliseName(chore.name));
 
       return {
-        id: chore.id,
-        name: chore.name,
-        icon: plannerIcon(chore.icon),
-        points: chore.points ?? 0,
-        // A chore whose assignee has no ChoreOps user falls back to unassigned
-        // so it renders in the shared column instead of a phantom person.
-        memberId: assignedId && memberIds.has(assignedId) ? assignedId : null,
-        kind: 'task',
-        startsAt: new Date(0).toISOString(),
-        deadlineAt: chore.dueDate ?? null,
-        expiresAt: null,
-        retryMinutes: null,
-        timeBlock: 'custom',
-        statusOverride: status,
-        completedAt: chore.lastCompleted ?? undefined,
-        audience: choreAudience(chore, users.length),
-        // Kept regardless of status: see `freeForAll` on PlannerTask.
-        freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
-        awaitingReview,
-        autoApprove: chore.autoApprove ?? false,
-        actions: chore.actions,
-        routineId: routineId ?? undefined,
-        routineName: routine?.name ?? label ?? undefined,
-        // A routine step is not an individual chore: the board hides these from
-        // the member column and the missions run is the only way to do them.
-        inRoutine: Boolean(routineId),
-        routineOrder: position >= 0 ? position + 1 : undefined,
-      } satisfies PlannerTask;
+        chore,
+        task: {
+          id: chore.id,
+          name: chore.name,
+          icon: plannerIcon(chore.icon),
+          points: chore.points ?? 0,
+          // A chore whose assignee has no ChoreOps user falls back to unassigned
+          // so it renders in the shared column instead of a phantom person.
+          memberId: assignedId && memberIds.has(assignedId) ? assignedId : null,
+          kind: 'task',
+          startsAt: new Date(0).toISOString(),
+          deadlineAt: chore.dueDate ?? null,
+          expiresAt: null,
+          retryMinutes: null,
+          timeBlock: 'custom',
+          statusOverride: status,
+          completedAt: chore.lastCompleted ?? undefined,
+          audience: choreAudience(chore, users.length),
+          // Kept regardless of status: see `freeForAll` on PlannerTask.
+          freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
+          awaitingReview,
+          autoApprove: chore.autoApprove ?? false,
+          actions: chore.actions,
+          routineId: routineId ?? undefined,
+          routineName: routine?.name ?? label ?? undefined,
+          // A routine step is not an individual chore: the board hides these from
+          // the member column and the missions run is the only way to do them.
+          inRoutine: Boolean(routineId),
+          routineOrder: position >= 0 ? position + 1 : undefined,
+        } satisfies PlannerTask,
+      };
     });
+  const allTasks = choreTasks.map(({ task }) => task);
+  const tasks = choreTasks
+    .filter(({ chore }) => {
+      // A daily chore finished on an earlier day is yesterday's work and stays
+      // off today's board, but remains available for its routine's edit menu.
+      const finished = choreOpsTaskStatus(chore.status) === 'completed';
+      return !(
+        finished &&
+        DAILY_FREQUENCY.test(chore.frequency ?? '') &&
+        !completedToday(chore, now)
+      );
+    })
+    .map(({ task }) => task);
 
   /*
    * Routines are the daily chores, grouped by their ChoreOps label. One entry
@@ -377,6 +387,7 @@ export function buildChorePlannerView(
 
   return {
     members,
+    allTasks,
     tasks,
     routines,
     goals,
