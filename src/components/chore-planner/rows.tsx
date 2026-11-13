@@ -83,6 +83,8 @@ export function TaskRow({
 /** One step of a routine, as it stands for one child today. */
 export interface RoutineStep {
   name: string;
+  /** ChoreOps task to complete directly from the routine list. */
+  taskId?: string;
   /** Already ticked off today. */
   done: boolean;
   /** Still waiting to be done. */
@@ -106,6 +108,10 @@ export interface RoutineRowProps {
   onStart?: () => void;
   /** There is something left to run, so starting makes sense. */
   canStart?: boolean;
+  online: boolean;
+  busyTaskId?: string | null;
+  /** Child completion for an open step; the caller uses the normal confirm flow. */
+  onCompleteStep?: (taskId: string) => void;
   /** Parent sign-off for a step that is waiting for review (PIN-gated by the caller). */
   onApproveStep?: (stepName: string) => void;
 }
@@ -129,6 +135,9 @@ export function RoutineRow({
   onToggle,
   onStart,
   canStart = false,
+  online,
+  busyTaskId,
+  onCompleteStep,
   onApproveStep,
 }: RoutineRowProps) {
   const doneCount = steps.filter((step) => step.done).length;
@@ -188,7 +197,21 @@ export function RoutineRow({
               <span className="planner-step-mark" aria-hidden="true">
                 {step.done ? '\u2713' : '\u25CB'}
               </span>
-              <span className="planner-step-name">{step.name}</span>
+              {step.taskId && onCompleteStep && !step.awaiting && (
+                <button
+                  type="button"
+                  className="planner-step-action"
+                  aria-label={`${copy.iDidIt}: ${step.name}`}
+                  disabled={paused || !online || busyTaskId === step.taskId}
+                  onClick={() => onCompleteStep(step.taskId!)}
+                >
+                  <span className="planner-step-label">{step.name}</span>
+                  <Check />
+                </button>
+              )}
+              {(!step.taskId || !onCompleteStep || step.awaiting) && (
+                <span className="planner-step-name">{step.name}</span>
+              )}
               {step.awaiting && onApproveStep && (
                 <button
                   type="button"
