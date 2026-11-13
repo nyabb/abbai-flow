@@ -1,3 +1,10 @@
+## [2.5.1](https://github.com/nyabb/abbai-flow/compare/v2.5.0...v2.5.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* make routine steps actionable and rewards reusable ([adab711](https://github.com/nyabb/abbai-flow/commit/adab7115a6bf9e90bdf84712da828900fc4a9e9a))
+
 # [2.5.0](https://github.com/nyabb/abbai-flow/compare/v2.4.0...v2.5.0) (2026-11-12)
 
 
