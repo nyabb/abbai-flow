@@ -20,6 +20,8 @@ import {
 } from '../../api/chore-planner-model';
 import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
+import { fetchChoreOpsRewardHistory } from '../../api/choreops-ledger';
+import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
 import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
 import {
   activeRedemption,
@@ -234,6 +236,10 @@ export function ChorePlanner({
    */
   const rewardsState = useRewardRedemptions();
   const redemptions = rewardsState.redemptions;
+  const [rewardLedgerHistory, setRewardLedgerHistory] = useState<{
+    userName: string;
+    entries: ChoreOpsRewardHistoryEntry[];
+  } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
 
@@ -732,6 +738,31 @@ export function ChorePlanner({
     setModal('goals');
   };
   const goalsMember = memberFor(goalsMemberId);
+  const goalsUserName = goalsMember ? (userNameByMemberId.get(goalsMember.id) ?? null) : null;
+  const goalsLedgerHistory =
+    rewardLedgerHistory?.userName === goalsUserName ? rewardLedgerHistory.entries : [];
+  useEffect(() => {
+    if (modal !== 'goals' || !goalsUserName || !choreOps.available) {
+      setRewardLedgerHistory(null);
+      return;
+    }
+
+    let current = true;
+    setRewardLedgerHistory(null);
+    void fetchChoreOpsRewardHistory(goalsUserName)
+      .then((history) => {
+        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: history });
+      })
+      .catch(() => {
+        // Older ChoreOps versions may not expose get_ledger. Keep the
+        // Abbai Flow history available when the optional ledger query fails.
+        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: [] });
+      });
+
+    return () => {
+      current = false;
+    };
+  }, [modal, goalsUserName, choreOps.available]);
   const claimTask = getTask(claimTaskId);
   const childMember = memberFor(childMemberId);
   /** The filter sheet doubles as the board's filter state indicator. */
@@ -1838,8 +1869,9 @@ export function ChorePlanner({
                 ).filter((item) => item.state === 'awaiting_fulfilment')}
                 given={fulfilledRedemptions(
                   redemptions,
-                  userNameByMemberId.get(goalsMember.id) ?? null,
+                  goalsUserName,
                 )}
+                ledgerHistory={goalsLedgerHistory}
                 onGive={(id) => {
                   const redemption = redemptions.find((item) => item.id === id);
                   if (redemption) giveReward(redemption);

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { Redemption } from '../../api/reward-redemptions';
+import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
@@ -322,6 +323,8 @@ export interface GoalsSheetProps {
   awaiting?: Redemption[];
   /** Rewards already handed over (newest first). */
   given?: Redemption[];
+  /** Reward spends from ChoreOps' retained point ledger. */
+  ledgerHistory?: ChoreOpsRewardHistoryEntry[];
   /** Parent-only action, gated by the PIN in the caller. */
   onGive?: (id: string) => void;
   formatDate?: (value: number) => string;
@@ -336,9 +339,11 @@ export function GoalsSheet({
   isDone,
   awaiting = [],
   given = [],
+  ledgerHistory = [],
   onGive,
   formatDate,
 }: GoalsSheetProps) {
+  const [historyRange, setHistoryRange] = useState<'twoDays' | 'week' | 'all'>('all');
   /*
    * A reward whose full cost is set aside is "on hold": the child is no longer
    * saving for it, so it belongs under Done the way a finished chore does. It
@@ -347,6 +352,39 @@ export function GoalsSheet({
    */
   const done = rewards.filter((reward) => isDone(reward));
   const open = rewards.filter((reward) => !isDone(reward));
+  const ledgerOnly = ledgerHistory.filter(
+    (entry) =>
+      !given.some((redemption) => {
+        if (!redemption.fulfilledAt) return false;
+        const sameReward =
+          redemption.rewardLabel.trim().toLocaleLowerCase() === entry.itemName.toLocaleLowerCase();
+        return sameReward && Math.abs(redemption.fulfilledAt - entry.timestampMs) < 15 * 60_000;
+      }),
+  );
+  const history = [
+    ...given.map((redemption) => ({
+      id: `abbai:${redemption.id}`,
+      rewardLabel: redemption.rewardLabel,
+      at: redemption.fulfilledAt ?? 0,
+      fulfilledBy: redemption.fulfilledBy,
+      points: null as number | null,
+    })),
+    ...ledgerOnly.map((entry) => ({
+      id: `choreops:${entry.id}`,
+      rewardLabel: entry.itemName,
+      at: entry.timestampMs,
+      fulfilledBy: null,
+      points: Math.abs(entry.amount),
+    })),
+  ].sort((left, right) => right.at - left.at);
+  const rangeStart =
+    historyRange === 'twoDays'
+      ? Date.now() - 2 * 24 * 60 * 60 * 1000
+      : historyRange === 'week'
+        ? Date.now() - 7 * 24 * 60 * 60 * 1000
+        : null;
+  const visibleHistory =
+    rangeStart === null ? history : history.filter((item) => item.at >= rangeStart);
 
   return (
     <>
@@ -355,7 +393,9 @@ export function GoalsSheet({
         {' \u00b7 '}
         {member.name}
       </h2>
-      {rewards.length === 0 && awaiting.length === 0 && <p>{c.noRewards}</p>}
+      {rewards.length === 0 && awaiting.length === 0 && history.length === 0 && (
+        <p>{c.noRewards}</p>
+      )}
       {open.map((reward) => renderRewardRow(reward))}
       {done.length > 0 && <h3 className="planner-reward-group">{c.done}</h3>}
       {done.map((reward) => renderRewardRow(reward))}
@@ -388,20 +428,35 @@ export function GoalsSheet({
           ))}
         </>
       )}
-      {given.length > 0 && (
+      {history.length > 0 && (
         <>
           <h3 className="planner-reward-group">{c.givenRewards}</h3>
-          {given.map((redemption) => (
-            <div className="planner-reward planner-reward--done" key={redemption.id}>
+          <label className="planner-history-filter">
+            <span>{c.historyRange}</span>
+            <select
+              value={historyRange}
+              onChange={(event) =>
+                setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
+              }
+            >
+              <option value="twoDays">{c.historyLastTwoDays}</option>
+              <option value="week">{c.historyLastWeek}</option>
+              <option value="all">{c.historyAllTime}</option>
+            </select>
+          </label>
+          {visibleHistory.length === 0 && <p className="planner-history-empty">{c.historyEmpty}</p>}
+          {visibleHistory.map((item) => (
+            <div className="planner-reward planner-reward--done" key={item.id}>
               <span aria-hidden="true">{'\u2705'}</span>
               <div className="planner-reward-copy">
-                <strong>{redemption.rewardLabel}</strong>
+                <strong>{item.rewardLabel}</strong>
                 <small>
                   {c.rewardGiven}
-                  {redemption.fulfilledAt && formatDate
-                    ? ` \u00b7 ${formatDate(redemption.fulfilledAt)}`
+                  {item.at && formatDate
+                    ? ` \u00b7 ${formatDate(item.at)}`
                     : ''}
-                  {redemption.fulfilledBy ? ` \u00b7 ${redemption.fulfilledBy}` : ''}
+                  {item.fulfilledBy ? ` \u00b7 ${item.fulfilledBy}` : ''}
+                  {item.points !== null ? ` \u00b7 ${item.points} ${c.pointsUnit}` : ''}
                 </small>
               </div>
             </div>
