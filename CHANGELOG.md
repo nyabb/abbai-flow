@@ -1,3 +1,11 @@
+# [2.6.0](https://github.com/nyabb/abbai-flow/compare/v2.5.1...v2.6.0) (2026-11-13)
+
+
+### Features
+
+* add completed chore history ([744eb94](https://github.com/nyabb/abbai-flow/commit/744eb942b2dd957e19da6c63d0f6a7f082a42a28))
+* show ChoreOps reward history ([eb4535e](https://github.com/nyabb/abbai-flow/commit/eb4535e5b4b5c3159621978c59386d66bb054d33))
+
 ## [2.5.1](https://github.com/nyabb/abbai-flow/compare/v2.5.0...v2.5.1) (2026-11-13)
 
 
