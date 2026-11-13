@@ -168,6 +168,25 @@ describe('ChorePlanner routines', () => {
     expect(screen.getByRole('button', { name: 'Start missies' })).toBeTruthy();
   });
 
+  it('lets the child complete a routine step directly from the routine list', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+
+    const step = [...container.querySelectorAll<HTMLElement>('.planner-step')].find((element) =>
+      element.textContent?.includes('Tanden poetsen'),
+    )!;
+    fireEvent.click(within(step).getByRole('button', { name: /Tanden poetsen/ }));
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>('.planner-sheet--confirm .planner-primary')!,
+    );
+    await waitFor(() =>
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_tanden'),
+    );
+  });
+
   it('lets a parent approve a routine step that waits in review', async () => {
     const base = routineState();
     mocks.state.current = {

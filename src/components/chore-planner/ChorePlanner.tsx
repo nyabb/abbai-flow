@@ -428,6 +428,14 @@ export function ChorePlanner({
         onToggle={() => toggleRoutinePaused(routine.id, routine.name)}
         onStart={() => beginRoutine(memberId, routine)}
         canStart={steps.some((step) => step.open)}
+        online={online}
+        busyTaskId={pendingTaskId}
+        onCompleteStep={(taskId) => {
+          const task = getTask(taskId);
+          if (!task) return;
+          if (task.audience === 'anyone') openClaim(task);
+          else void completeTask(task);
+        }}
         onApproveStep={(name) => {
           const task = data.tasks.find(
             (item) =>
@@ -586,8 +594,17 @@ export function ChorePlanner({
     }
     return names.map((name) => {
       const rows = mine.filter((task) => normaliseName(task.name) === normaliseName(name));
+      const actionableTask = rows.find((task) => {
+        const status = taskStatus(task);
+        return (
+          !task.awaitingReview &&
+          !['upcoming', 'expired', 'completed'].includes(status) &&
+          Boolean(task.actions?.claim ?? task.actions?.approve)
+        );
+      });
       return {
         name,
+        ...(actionableTask ? { taskId: actionableTask.id } : {}),
         done: rows.length > 0 && rows.every((task) => taskStatus(task) === 'completed'),
         open: rows.some((task) => !['completed', 'expired'].includes(taskStatus(task))),
         awaiting: rows.some((task) => task.awaitingReview && taskStatus(task) !== 'completed'),
@@ -1276,6 +1293,11 @@ export function ChorePlanner({
     const saved = owner ? spendableFor(owner) : 0;
     const allocated = pursuit?.points ?? 0;
     const remaining = Math.max(0, reward.cost - allocated);
+    const status = reward.status.toLowerCase();
+    // ChoreOps marks rewards `locked` when the balance is below the full
+    // cost. Abbai Flow supports smaller allocations, so the child can still
+    // save toward a locked reward while they have points.
+    const canSave = status === 'available' || status === 'locked';
     return {
       owner,
       pursuit,
@@ -1284,9 +1306,9 @@ export function ChorePlanner({
       remaining,
       /** Reached the cost: waiting for a parent to hand it over. */
       done: pursuit?.state === 'awaiting_fulfilment',
-      available: reward.status === 'available',
+      available: status === 'available',
       pending: reward.pendingClaims > 0,
-      canAdd: reward.status === 'available' && saved > 0 && remaining > 0,
+      canAdd: canSave && saved > 0 && remaining > 0,
     };
   };
 
