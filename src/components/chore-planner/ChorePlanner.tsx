@@ -175,6 +175,7 @@ export function ChorePlanner({
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [actionsOpenedFromRoutine, setActionsOpenedFromRoutine] = useState(false);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   /**
    * Chore the child tapped, waiting for "are you sure?".
@@ -356,8 +357,9 @@ export function ChorePlanner({
     return c.done;
   };
 
-  const openActions = (taskId: string) => {
+  const openActions = (taskId: string, fromRoutine = false) => {
     setSelectedTaskId(taskId);
+    setActionsOpenedFromRoutine(fromRoutine);
     setConfirmingDelete(false);
     setModal('actions');
   };
@@ -472,7 +474,7 @@ export function ChorePlanner({
           );
           if (task) approveTask(task);
         }}
-        onMoreStep={(taskId) => openActions(taskId)}
+        onMoreStep={(taskId) => openActions(taskId, true)}
       />
     );
   };
@@ -1876,7 +1878,7 @@ export function ChorePlanner({
             )}{' '}
             {modal === 'actions' && selectedTask && (
               <ActionsSheet
-                completed={taskStatus(selectedTask) === 'completed' && !selectedTask.inRoutine}
+                completed={taskStatus(selectedTask) === 'completed' && !actionsOpenedFromRoutine}
                 copy={c}
                 confirmingDelete={confirmingDelete}
                 onApprove={
