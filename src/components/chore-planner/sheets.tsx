@@ -67,7 +67,7 @@ export function CreateSheet({ copy: c, onChore, onRoutine, onReward }: CreateShe
 }
 
 export interface ActionsSheetProps {
-  /** A completed chore cannot be edited any more. */
+  /** A completed standalone chore cannot be edited any more. */
   completed: boolean;
   copy: PlannerCopy;
   /** True once the delete button shows its "sure?" label. */
