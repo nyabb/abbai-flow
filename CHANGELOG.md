@@ -1,3 +1,10 @@
+# [2.7.0](https://github.com/nyabb/abbai-flow/compare/v2.6.0...v2.7.0) (2026-11-13)
+
+
+### Features
+
+* add routine step actions ([1f82397](https://github.com/nyabb/abbai-flow/commit/1f82397bb2edda42f5e648c865ae576e2cfa8354))
+
 # [2.6.0](https://github.com/nyabb/abbai-flow/compare/v2.5.1...v2.6.0) (2026-11-13)
 
 
