@@ -1,29 +1,33 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath, URL } from 'node:url';
+import { URL } from 'node:url';
 
-// Read the authoritative add-on version from config.yaml at the repo root
-// (kept in sync with beacon/config.yaml by the semantic-release pipeline —
-// see .releaserc.json's @semantic-release/exec prepareCmd). package.json's
-// "version" field is NOT the source of truth for this add-on; don't read it.
-function getAppVersion(): string {
+// package.json is the version source for builds and releases. A deployment can
+// override it with VITE_APP_VERSION without needing a release plugin locally.
+function getAppVersion(override: string | undefined): string {
+  const supplied = override?.trim();
+  if (supplied) return supplied;
+
   try {
-    const configPath = fileURLToPath(new URL('./config.yaml', import.meta.url));
-    const configYaml = readFileSync(configPath, 'utf-8');
-    const match = configYaml.match(/^version:\s*["']?([^"'\n]+)["']?\s*$/m);
-    if (match) return match[1].trim();
+    const packageJson = JSON.parse(
+      readFileSync(new URL('./package.json', import.meta.url), 'utf-8'),
+    ) as { version?: unknown };
+    if (typeof packageJson.version === 'string' && packageJson.version.trim()) {
+      return packageJson.version.trim();
+    }
   } catch {
-    // fall through to default below
+    // A development build should still identify itself if package metadata is unavailable.
   }
-  return '0.0.0';
+  return 'dev';
 }
 
 export default defineConfig(({ mode }) => {
   // Dev-only stand-in for the add-on's server proxy: forward /api to HA so REST
   // calls stay same-origin and CORS never comes into play. Mirrors the
   // condition in src/api/ha-rest.ts's resolveBaseUrl().
-  const haUrl = loadEnv(mode, process.cwd(), '').VITE_HA_URL?.trim();
+  const env = loadEnv(mode, process.cwd(), '');
+  const haUrl = env.VITE_HA_URL?.trim();
 
   return {
     plugins: [react()],
@@ -43,7 +47,9 @@ export default defineConfig(({ mode }) => {
     },
     base: './',
     define: {
-      __APP_VERSION__: JSON.stringify(getAppVersion()),
+      __APP_VERSION__: JSON.stringify(
+        getAppVersion(process.env.VITE_APP_VERSION?.trim() || env.VITE_APP_VERSION),
+      ),
     },
     build: {
       outDir: 'dist',

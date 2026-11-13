@@ -21,12 +21,6 @@
 
 ---
 
-## Skylight alternative — without the subscription
-
-Skylight is a polished wall calendar that charges for hardware **and** locks meal planning, photos, and other family features behind Calendar Plus (~$79/year). Abbai Flow is the self-hosted answer: run it in a container next to Home Assistant (or fully standalone), keep data on your network, and use any tablet you already own.
-
-→ [Getting started](./docs/getting-started/welcome/) · [Abbai Flow vs Skylight](./docs/getting-started/skylight-alternative/) · Install with the Home Assistant badge above
-
 ## Features
 
 - **Weekly Calendar** -- Beautiful week view with color-coded family members; supports HA calendar entities and a built-in local calendar
@@ -38,7 +32,7 @@ Skylight is a polished wall calendar that charges for hardware **and** locks mea
 - **Timer / Countdown** -- On-screen timer for cooking, homework, and more
 - **Screen Saver** -- Automatic screen saver with clock overlay
 - **Weather** -- Real-time weather from your Home Assistant weather entity
-- **8+ Themes** -- Skylight, Midnight, Midnight Light, Nord, Dracula, Monokai, Rose, Forest, and dark mode (automatic or manual)
+- **8+ Themes** -- Light, Midnight, Midnight Light, Nord, Dracula, Monokai, Rose, Forest, and dark mode (automatic or manual)
 - **Family Management** -- Per-member colors, calendar filtering, and PIN-based profiles
 - **Meal Planning** -- Meal plan bar with weekly dinner overview
 - **Standalone Mode** -- Works without Home Assistant using local calendars, lists, and tasks

@@ -27,7 +27,7 @@ Make Abbai Flow the free, open-source family command center that anyone can set 
 
 - [ ] **Android APK** — Play Store via Capacitor (already scaffolded)
 - [ ] **iOS app** — App Store via Capacitor (already scaffolded)
-- [ ] **Docker one-liner** — `docker run -p 3000:3000 beacon` for self-hosting
+- [ ] **Docker one-liner** — `docker run -p 3000:3000 ghcr.io/nyabb/abbai-flow:latest` for self-hosting
 - [ ] **Raspberry Pi image** — flash SD card, plug in monitor, boot to Abbai Flow
 - [ ] **HA Add-on Store** — submit to official HA add-on repository (currently custom repo)
 

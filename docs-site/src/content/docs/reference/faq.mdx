@@ -32,7 +32,7 @@ Data flow: `Google/CalDAV -> Home Assistant -> Abbai Flow (local only)`
 
 ### Can I use this without Home Assistant?
 
-Not currently. Abbai Flow relies on Home Assistant for calendar data, weather, media players, and grocery integrations. If you do not have Home Assistant, [HA OS](https://www.home-assistant.io/installation/) is free and runs on a Raspberry Pi, old PC, or virtual machine.
+**Yes.** Abbai Flow runs in standalone mode without a Home Assistant connection. Local calendars, tasks, and shopping lists are available; Home Assistant features such as integrated calendars, weather, and media players need a valid connection. See [Getting Started](/docs/getting-started/installation/).
 
 ---
 
@@ -63,13 +63,13 @@ Abbai Flow is designed for **landscape displays** (16:9 or 16:10). In portrait m
 
 ## Features
 
-### Can I show photos like Skylight?
+### Can I show family photos?
 
 **Yes.** Abbai Flow has a built-in photo frame with slideshow, crossfade transitions, clock/date overlay, and music controls on top. Add photos to your HA media directory and configure the photo directory. See [Photos](/docs/features/photos/).
 
 ### Does it have a dark mode?
 
-**Yes.** Abbai Flow ships with 7 themes, including 4 dark themes: Midnight, Dracula, Monokai, and (partially dark) Nord. There is also an "Auto" mode that switches between Skylight (light) and Midnight (dark) based on time of day. See [Themes](/docs/customization/themes/).
+**Yes.** Abbai Flow ships with 7 themes, including 4 dark themes: Midnight, Dracula, Monokai, and (partially dark) Nord. There is also an "Auto" mode that switches between the light theme and Midnight (dark) based on time of day. See [Themes](/docs/customization/themes/).
 
 ### Can multiple family members use it?
 
@@ -116,11 +116,11 @@ Click the palette icon at the bottom of the sidebar. A dropdown shows all 7 them
 
 ### How do I change the family name?
 
-Set the `family_name` option in the add-on configuration, or the `VITE_FAMILY_NAME` environment variable in development. See [Configuration](/docs/customization/configuration/).
+Set `FAMILY_NAME` in the Docker environment, or use `VITE_FAMILY_NAME` during development. See [Configuration](/docs/customization/configuration/).
 
 ### How do I change the weather entity?
 
-Set the `weather_entity` option to your HA weather entity ID (e.g., `weather.home`). Find your entity ID in **Settings > Devices & Services > Entities**. See [Configuration](/docs/customization/configuration/).
+Set `WEATHER_ENTITY` in the Docker environment, or `VITE_HA_WEATHER_ENTITY` during development, to your HA weather entity ID (e.g., `weather.home`). Find it in **Settings > Devices & Services > Entities**. See [Configuration](/docs/customization/configuration/).
 
 ### How do I connect multiple calendars?
 
@@ -134,14 +134,7 @@ Click the gear icon in the sidebar to open the Family Members modal. Click "+ Ad
 
 **Abbai Flow's own sidebar**: Enable **Kiosk Mode** in **Settings > Display**. This hides Abbai Flow's sidebar entirely and uses a full-width layout. (Fixed in [PR #51](https://github.com/nyabb/abbai-flow/pull/51) — earlier versions had a non-functional toggle.)
 
-**Home Assistant's sidebar** (when running as an HA add-on): Abbai Flow cannot hide HA's sidebar when running inside Home Assistant ingress — that chrome is controlled by Home Assistant itself. For dedicated wall tablets or Windows kiosk setups, open Abbai Flow's direct URL in full-screen mode instead:
-
-1. **Find the direct URL**: In HA, click "Open Web UI" on the Abbai Flow add-on page, or use the direct ingress URL (typically `http://YOUR_HA_IP:8123/api/hassio_ingress/<addon-token>`)
-2. **For Android tablets**: Use [Fully Kiosk Browser](/docs/getting-started/installation/#mounting-and-displaying-on-a-tablet) with "Hide Navigation Bar" and "Hide Status Bar" enabled
-3. **For desktop/Pi kiosk**: Launch Chrome/Chromium with `--kiosk` flag pointed at the Abbai Flow URL
-4. **For standalone Docker**: Use the container's direct URL (e.g., `http://YOUR_DOCKER_HOST:3000`)
-
-See the [Installation guide](/docs/getting-started/installation/#mounting-and-displaying-on-a-tablet) for detailed kiosk setup instructions.
+Open the Docker deployment URL directly in fullscreen mode. See [Deployment](/docs/getting-started/deployment/) for kiosk setup instructions.
 
 ---
 
@@ -149,21 +142,17 @@ See the [Installation guide](/docs/getting-started/installation/#mounting-and-di
 
 ### How do I update Abbai Flow?
 
-**Add-on**: Go to **Settings > Add-ons > Abbai Flow** and click **Update** if available.
-
-**Docker**: Pull the latest image and recreate the container:
+Pull the latest Docker image and recreate the container:
 
 ```bash
 docker pull ghcr.io/nyabb/abbai-flow:latest
-docker stop beacon && docker rm beacon
+docker stop abbai-flow && docker rm abbai-flow
 docker run -d --name abbai-flow ... ghcr.io/nyabb/abbai-flow:latest
 ```
 
 ### Is my data preserved across updates?
 
-**Add-on**: Yes. Configuration and add-on data are preserved.
-
-**Browser data**: Family members, chores, and theme preferences are stored in the browser's localStorage and persist across updates. Clearing browser data will remove this information.
+**Yes.** Docker deployments preserve server data through the mounted `/data` volume. Browser-only data remains in localStorage and is preserved unless browser data is cleared.
 
 ### Can I back up my data?
 
@@ -184,8 +173,8 @@ You can view and copy these values in the browser's Developer Tools (F12 > Appli
 
 This means Abbai Flow cannot connect to Home Assistant. Check:
 
-1. The HA token is configured (add-on: automatic; Docker: `SUPERVISOR_TOKEN` env var; dev: `VITE_HA_TOKEN`)
-2. The HA URL is reachable from the browser
+1. Docker: `HA_TOKEN` and `HA_URL` are configured; development: `VITE_HA_TOKEN` and `VITE_HA_URL` are set
+2. Home Assistant is reachable from the Abbai Flow server
 3. Home Assistant is running
 
 ### Calendar is empty
@@ -204,7 +193,7 @@ This means Abbai Flow cannot connect to Home Assistant. Check:
 ### Something else is broken
 
 1. Check the browser console (F12) for error messages
-2. Check the add-on logs (**Settings > Add-ons > Abbai Flow > Log**)
+2. Check the container logs with `docker compose logs -f abbai-flow`
 3. Open a [GitHub issue](https://github.com/nyabb/abbai-flow/issues) with your HA version, browser, device, and relevant logs
 
 ---

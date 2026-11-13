@@ -21,10 +21,7 @@ Abbai Flow ships with 7 built-in themes plus an automatic day/night switching mo
 
 ### From the configuration
 
-Set the `theme` option:
-- **Add-on**: Configuration tab > `theme: "midnight"`
-- **Docker**: Environment variable in the container config
-- **Development**: `VITE_THEME=midnight` in `.env`
+Set `THEME=midnight` in the Docker environment, or use `VITE_THEME=midnight` in `.env` during development.
 
 The theme selector in the sidebar overrides the configuration value (since it saves to localStorage).
 
@@ -32,7 +29,7 @@ The theme selector in the sidebar overrides the configuration value (since it sa
 
 ## All 7 themes
 
-### 1. Skylight (default light theme)
+### 1. Light (default)
 
 A warm, clean light theme with soft pastels. Designed for well-lit rooms and daytime use.
 
@@ -171,13 +168,13 @@ Select **Auto (time)** in the theme selector to let Abbai Flow switch themes aut
 
 | Time Range | Theme Used |
 |------------|------------|
-| 6:00 AM - 6:59 PM | Skylight (light) |
+| 6:00 AM - 6:59 PM | Light |
 | 7:00 PM - 5:59 AM | Midnight (dark) |
 
 ### How it works
 
 1. On load, Abbai Flow checks the current hour
-2. If between 6 AM and 7 PM, the Skylight theme is applied
+2. If between 6 AM and 7 PM, the light theme is applied
 3. Otherwise, the Midnight theme is applied
 4. A timer re-evaluates every 60 seconds, so the switch happens automatically at the threshold hours
 5. The `data-theme` attribute on `<html>` is set to `light` or `dark` based on the background color luminance

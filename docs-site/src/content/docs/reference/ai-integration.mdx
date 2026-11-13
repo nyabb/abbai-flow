@@ -32,9 +32,9 @@ Then restart Claude Code. That's it — the plugin, skills, commands, and MCP se
 Then set your environment variables:
 
 ```bash
-export BEACON_HA_TOKEN="your-ha-long-lived-access-token"
-export BEACON_HA_URL="http://homeassistant.local:8123"
-export BEACON_DATA_DIR="/path/to/beacon/data"
+export HA_TOKEN="your-ha-long-lived-access-token"
+export HA_URL="http://homeassistant.local:8123"
+export ABBAI_FLOW_DATA="/path/to/abbai-flow/data"
 ```
 
 Generate a token in Home Assistant: **Profile > Security > Long-Lived Access Tokens > Create Token**.
@@ -121,17 +121,17 @@ Content-Type: application/json
 
 ```bash
 # Add a grocery item
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "add eggs to the grocery list"}'
 
 # Control media
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "set volume to 40"}'
 
 # Check the calendar
-curl -X POST http://<beacon-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "what'\''s on my calendar"}'
 ```
@@ -153,7 +153,7 @@ The server supports **two transports**:
 For **Claude Code**:
 
 ```bash
-claude mcp add beacon -- node /path/to/beacon/mcp-server.cjs
+claude mcp add abbai-flow -- node /path/to/abbai-flow/mcp-server.cjs
 ```
 
 For **Claude Desktop** or other local MCP clients, add to your config file:
@@ -161,9 +161,9 @@ For **Claude Desktop** or other local MCP clients, add to your config file:
 ```json
 {
   "mcpServers": {
-    "beacon": {
+    "abbai-flow": {
       "command": "node",
-      "args": ["beacon/mcp-server.cjs"],
+      "args": ["abbai-flow/mcp-server.cjs"],
       "env": {
         "SUPERVISOR_TOKEN": "your-long-lived-access-token",
         "HA_URL": "http://your-ha-instance:8123"
@@ -183,13 +183,13 @@ MCP_PORT=3001 \
 MCP_API_KEY=your-secret-key \
 SUPERVISOR_TOKEN=your-ha-token \
 HA_URL=http://your-ha-instance:8123 \
-  node beacon/mcp-server.cjs
+  node abbai-flow/mcp-server.cjs
 ```
 
 Or use the `--http` flag:
 
 ```bash
-node beacon/mcp-server.cjs --http
+node abbai-flow/mcp-server.cjs --http
 ```
 
 The server exposes:
@@ -207,10 +207,10 @@ The server exposes:
 **For Open Claw / other HTTP MCP clients**, point them at:
 
 ```
-http://your-beacon-host:3001/mcp
+http://your-abbai-flow-host:3001/mcp
 ```
 
-**For the Abbai Flow HA add-on**, the MCP HTTP server can be exposed alongside the web UI. Set `MCP_TRANSPORT=http` in the add-on configuration to enable it on port 3001.
+For a Docker deployment, expose the MCP HTTP server on your private network and configure `MCP_TRANSPORT=http` and `MCP_PORT=3001` in its environment.
 
 ### Environment variables
 
@@ -317,10 +317,10 @@ Run the included install script:
 
 ```bash
 # Auto-detect the HA config directory
-beacon/scripts/install-voice-intents.sh
+abbai-flow/scripts/install-voice-intents.sh
 
 # Or specify it
-beacon/scripts/install-voice-intents.sh /config
+abbai-flow/scripts/install-voice-intents.sh /config
 ```
 
 Then reload the Conversation integration: **Developer Tools > YAML > Conversation**.

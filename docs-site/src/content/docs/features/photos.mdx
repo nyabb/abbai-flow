@@ -14,12 +14,12 @@ Abbai Flow can display your family photos as a digital photo frame with automati
 
 Abbai Flow loads photos from Home Assistant's media browser. You need to place your photos in a directory that HA can access.
 
-### Step 1: Create a photo directory
+### Step 1: Choose a photo directory
 
 On your Home Assistant server, create a directory for photos:
 
 ```bash
-mkdir -p /media/beacon/photos
+mkdir -p /media/family-photos
 ```
 
 If you are using Home Assistant OS, the `/media` directory is accessible through the Samba or SSH add-ons.
@@ -29,18 +29,17 @@ If you are using Home Assistant OS, the `/media` directory is accessible through
 Copy your family photos (JPEG, PNG) into the directory:
 
 ```bash
-cp ~/family-photos/*.jpg /media/beacon/photos/
+cp ~/family-photos/*.jpg /media/family-photos/
 ```
 
 You can organize photos in subdirectories if you prefer — Abbai Flow scans the configured directory for image files.
 
 ### Step 3: Configure the photo directory
 
-Set the `photo_directory` option to point to your photos:
+Set `PHOTO_DIRECTORY` in Docker, or `VITE_PHOTO_DIRECTORY` in development, to the path used by your Home Assistant media setup. For example:
 
-- **Add-on**: Configuration tab > `photo_directory: "/media/beacon/photos"`
-- **Docker**: Environment variable `PHOTO_DIRECTORY=/media/beacon/photos`
-- **Development**: `.env` file > `VITE_PHOTO_DIRECTORY=/media/beacon/photos`
+- **Docker**: Environment variable `PHOTO_DIRECTORY=/media/family-photos`
+- **Development**: `.env` file > `VITE_PHOTO_DIRECTORY=/media/family-photos`
 
 ### Step 4: Verify in Home Assistant
 
@@ -102,7 +101,6 @@ If no photos are found, the view shows:
 The slideshow auto-advances every N seconds. The default is **30 seconds**.
 
 Configure it:
-- **Add-on**: `photo_interval: 30` (value in seconds)
 - **Docker**: `PHOTO_INTERVAL=30`
 - **Development**: `VITE_PHOTO_INTERVAL=30`
 

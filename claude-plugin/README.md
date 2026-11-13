@@ -23,9 +23,9 @@ Control your [Abbai Flow](https://github.com/nyabb/abbai-flow) family dashboard 
 
 2. Set environment variables (or create `.env` from `.env.example`):
    ```bash
-   export ABBAI_FLOW_HA_TOKEN="your-ha-long-lived-access-token"
-   export ABBAI_FLOW_HA_URL="http://homeassistant.local:8123"
-   export ABBAI_FLOW_DATA_DIR="/path/to/beacon/data"
+   export HA_TOKEN="your-ha-long-lived-access-token"
+   export HA_URL="http://homeassistant.local:8123"
+   export ABBAI_FLOW_DATA="/path/to/abbai-flow/data"
    ```
 
 3. Generate an HA token: **Profile > Security > Long-Lived Access Tokens > Create Token**

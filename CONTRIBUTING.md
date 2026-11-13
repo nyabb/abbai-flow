@@ -24,8 +24,8 @@ Have an idea that would make Abbai Flow better for your family? [Open a feature 
 ## Development Setup
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/beacon.git
-cd beacon
+git clone https://github.com/nyabb/abbai-flow.git
+cd abbai-flow
 npm install
 npm run dev
 ```

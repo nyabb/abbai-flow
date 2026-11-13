@@ -1,297 +1,83 @@
 ---
 title: 'Deployment'
-description: 'Deploying Abbai Flow — HA add-on, Docker standalone, reverse proxy, hardware recommendations, kiosk mode, and performance optimization.'
-order: 5
+description: 'Deploy Abbai Flow with Docker, configure a reverse proxy, and set up a kiosk display.'
+order: 4
 ---
 
 # Deployment
 
-This guide covers all deployment options for Abbai Flow: the Home Assistant add-on, standalone Docker, reverse proxy setup, hardware recommendations, kiosk mode configuration, and performance optimization.
+Abbai Flow runs in a Docker container and serves the web app on port `3000`. See [Getting Started](/docs/getting-started/installation/) for the initial Docker command and Compose file.
 
----
+## Reverse proxy
 
-## HA Add-on deployment
-
-The simplest deployment. See [Getting Started](/docs/getting-started/installation/) for the step-by-step installation.
-
-**How it works under the hood:**
-
-1. The Dockerfile uses a two-stage build:
-   - **Build stage**: Node.js 20 Alpine builds the Vite/React app (`npm ci && npm run build`)
-   - **Runtime stage**: Based on `ghcr.io/hassio-addons/base:16.3.2`, installs Node.js and the `serve` static file server
-2. `run.sh` runs at container start:
-   - Reads add-on options from `/data/options.json` via `bashio::config`
-   - Generates `runtime-config.js` with the configuration values
-   - Injects the script tag into `index.html`
-   - Starts `serve` on port 3000
-3. HA's ingress proxy forwards requests from the sidebar panel to port 3000
-
-**Health check**: The container includes a health check that runs every 30 seconds:
-
-```
-wget -qO /dev/null http://localhost:3000/ || exit 1
-```
-
----
-
-## Docker standalone deployment
-
-For running Abbai Flow outside of Home Assistant's add-on system.
-
-### Basic deployment
-
-```bash
-docker run -d \
-  --name abbai-flow \
-  --restart unless-stopped \
-  -p 3000:3000 \
-  -e BEACON_MODE="standalone" \
-  -e HA_TOKEN="YOUR_LONG_LIVED_TOKEN" \
-  -e HA_URL="http://192.168.1.100:8123" \
-  -e FAMILY_NAME="Sachs" \
-  -e THEME="midnight" \
-  -e WEATHER_ENTITY="weather.home" \
-  ghcr.io/nyabb/abbai-flow:latest
-```
-
-### Docker Compose
-
-```yaml
-version: '3.8'
-services:
-  beacon:
-    image: ghcr.io/nyabb/abbai-flow:latest
-    container_name: beacon
-    restart: unless-stopped
-    ports:
-      - '3000:3000'
-    environment:
-      BEACON_MODE: 'standalone'
-      HA_TOKEN: '${HA_TOKEN}'
-      HA_URL: 'http://192.168.1.100:8123'
-      FAMILY_NAME: 'Sachs'
-      THEME: 'midnight'
-      AUTO_DARK_MODE: 'true'
-      WEATHER_ENTITY: 'weather.home'
-      PHOTO_DIRECTORY: '/media/beacon/photos'
-      PHOTO_INTERVAL: '30'
-      SCREEN_SAVER_TIMEOUT: '5'
-```
-
-### Building from source
-
-```bash
-git clone https://github.com/nyabb/abbai-flow.git
-cd beacon
-docker build -t beacon .
-docker run -d --name abbai-flow -p 3000:3000 \
-  -e BEACON_MODE="standalone" \
-  -e HA_TOKEN="..." \
-  -e HA_URL="..." \
-  beacon
-```
-
----
-
-## Reverse proxy setup
-
-If you want to access Abbai Flow from outside your local network or behind a reverse proxy.
+Put the container behind a reverse proxy when you want to use HTTPS or a domain name. Keep the Docker port bound to your private network and use your existing TLS certificate setup.
 
 ### Nginx
 
 ```nginx
 server {
     listen 443 ssl;
-    server_name beacon.yourdomain.com;
+    server_name family.example.com;
 
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
+    ssl_certificate /path/to/fullchain.pem;
+    ssl_certificate_key /path/to/privkey.pem;
 
     location / {
         proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-
-        # WebSocket support (for HA API passthrough)
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
     }
 }
 ```
 
 ### Caddy
 
-```
-beacon.yourdomain.com {
+```caddy
+family.example.com {
     reverse_proxy localhost:3000
 }
 ```
 
-Caddy handles SSL certificates automatically via Let's Encrypt.
+## Kiosk display
 
-### Important notes
-
-- Abbai Flow routes Home Assistant API and WebSocket requests through its backend proxy. The container must be able to reach the configured `HA_URL`.
-- Because HA requests use the same origin as Abbai Flow, CORS does not need to be enabled on Home Assistant for standalone Docker mode.
-- For best results, keep Abbai Flow and HA on the same network and access Abbai Flow via the reverse proxy.
-
----
-
-## Hardware recommendations
-
-### Tablets (wall-mounted)
-
-| Device                | Display         | Price    | Best For                            |
-| --------------------- | --------------- | -------- | ----------------------------------- |
-| Amazon Fire HD 8      | 8" 1280x800     | $35-50   | Budget setup, small kitchen display |
-| Amazon Fire HD 10     | 10.1" 1920x1200 | $75-100  | Family room, great value            |
-| Samsung Galaxy Tab A8 | 10.5" 1920x1200 | $150     | Better build quality, Android apps  |
-| iPad (10th gen)       | 10.9" 2360x1640 | $300     | Premium display, reliable           |
-| Lenovo Tab M10        | 10.1" 1920x1200 | $100-130 | Good alternative to Fire            |
-
-### Mini PCs + Monitor
-
-| Setup                                   | Price    | Best For                   |
-| --------------------------------------- | -------- | -------------------------- |
-| Raspberry Pi 4 (4GB) + 10" HDMI monitor | $80-120  | DIY setup, larger displays |
-| Raspberry Pi 5 + 15" touchscreen        | $150-200 | Living room command center |
-| Intel NUC + repurposed monitor          | $100-200 | Desktop-class reliability  |
-| Beelink Mini S + any HDMI display       | $120-180 | Compact, powerful          |
-
-### Mounting options
-
-| Mount Type                | Price  | Notes                              |
-| ------------------------- | ------ | ---------------------------------- |
-| 3M Command strips         | $5     | Temporary, no damage to walls      |
-| Magnetic wall mount       | $15    | Easy to detach for charging        |
-| VESA mount (for monitors) | $15-30 | Standard TV/monitor mounting       |
-| 3D-printed bracket        | $5-10  | Custom fit for specific tablets    |
-| Recessed wall mount       | $50+   | Professional look, flush with wall |
-
----
-
-## Kiosk mode setup
-
-Kiosk mode locks the device to showing only Abbai Flow, preventing accidental navigation or app switching.
-
-### Android (Fully Kiosk Browser)
-
-[Fully Kiosk Browser](https://www.fully-kiosk.com/) is the recommended kiosk solution for Android tablets.
-
-1. Install Fully Kiosk Browser from the APK (it is not on the Play Store)
-2. Set the **Start URL** to your Abbai Flow address
-3. Enable these settings:
-   - **Web Auto Reload**: Enable, set to reload on connectivity change
-   - **Keep Screen On**: Yes
-   - **Screen Brightness**: 40-60%
-   - **Autostart on Boot**: Yes
-   - **Kiosk Mode**: Enable (requires device admin)
-   - **Hide Status Bar**: Yes
-   - **Hide Navigation Bar**: Yes
-   - **Disable Home Button**: Yes (kiosk mode)
-
-### Chrome kiosk mode (desktop/Raspberry Pi)
+Open the deployment URL in a browser on the display. For Chromium-based kiosks, start the browser in fullscreen mode:
 
 ```bash
-chromium-browser \
-  --kiosk \
-  --noerrdialogs \
-  --disable-translate \
-  --disable-infobars \
-  --disable-session-crashed-bubble \
-  --disable-features=TranslateUI \
-  --autoplay-policy=no-user-gesture-required \
-  http://YOUR_BEACON_URL
+chromium --kiosk --noerrdialogs --disable-infobars https://family.example.com
 ```
 
-Add this to a startup script (`~/.config/autostart/beacon.desktop` on Linux):
+Configure the device to launch this command at startup using its operating system's kiosk or autostart settings. The app includes a screen saver and touch-friendly layout for wall-mounted displays.
 
-```ini
-[Desktop Entry]
-Type=Application
-Name=Abbai Flow
-Exec=chromium-browser --kiosk --noerrdialogs http://YOUR_BEACON_URL
-```
+## Backups and updates
 
-### Firefox kiosk mode
+Persist `/data` with a Docker volume or bind mount. Back up that volume along with the browser's local storage if you use standalone local lists or calendars.
+
+To update the container:
 
 ```bash
-firefox --kiosk http://YOUR_BEACON_URL
+docker compose pull
+docker compose up -d
 ```
 
-### iPad Guided Access
+To inspect logs:
 
-1. Open Abbai Flow in Safari
-2. Triple-click the side button to enable Guided Access
-3. Tap **Start** — the iPad is now locked to Safari
-4. To exit, triple-click the side button and enter your passcode
-
----
-
-## Multi-display setup
-
-You can run Abbai Flow on multiple displays simultaneously. Each display:
-
-- Connects to the same Home Assistant instance
-- Shows the same calendar events (since they come from HA)
-- Has its own independent localStorage (family members, chores, theme preference)
-- Can be configured with different themes or family names
-
-### Example: Kitchen + Living Room
-
-1. Set up a Fire tablet in the kitchen with the Skylight theme
-2. Set up a Raspberry Pi + monitor in the living room with the Midnight theme
-3. Both connect to the same HA URL and show the same calendars
-
----
-
-## Performance optimization
-
-### For tablets
-
-- **Disable animations**: If the tablet is low-powered, some browsers allow disabling CSS animations via `prefers-reduced-motion`
-- **Reduce photo resolution**: Resize photos to 1920x1080 before adding them to the photo directory
-- **Increase refresh intervals**: In development, you can modify the refresh intervals (events: 5 min, weather: 10 min, grocery: 2 min) to reduce API calls
-
-### For Raspberry Pi
-
-- **Use Chromium**: It performs better than Firefox on ARM
-- **Disable GPU compositing** if you see rendering artifacts: `--disable-gpu`
-- **Allocate more GPU memory**: In `config.txt`, set `gpu_mem=128` or higher
-- **Use a lightweight window manager**: `openbox` is sufficient — no need for a full desktop environment
-
-### General
-
-- Abbai Flow's production build is a static site served by `serve`. It has minimal server overhead.
-- The main resource consumption is in the browser (JavaScript, DOM rendering, WebSocket connection).
-- Network usage is minimal: WebSocket messages for state changes, REST API calls for photos and grocery data.
-- The health check (`wget` every 30 seconds) has negligible impact.
-
----
+```bash
+docker compose logs -f abbai-flow
+```
 
 ## Troubleshooting
 
-### Container does not start
+### The container cannot connect to Home Assistant
 
-1. Check Docker logs: `docker logs beacon`
-2. Verify `HA_TOKEN` is a valid, non-expired Home Assistant long-lived access token
-3. Verify `HA_URL` is reachable from the Docker container
+Check that `HA_URL` is reachable from inside the container and that `HA_TOKEN` is valid. If Home Assistant uses a private certificate authority, configure the server's CA trust before connecting.
 
-### Abbai Flow loads but shows "Demo Mode"
+### The page does not load through the reverse proxy
 
-This means Abbai Flow could not connect to Home Assistant. Check:
+Confirm the container is healthy at `http://<server-address>:3000` first, then check the proxy target and TLS configuration.
 
-1. `BEACON_MODE` is set to `standalone`
-2. `HA_URL` is correct and reachable from the Abbai Flow container
-3. `HA_TOKEN` is valid and the HA instance is running
+### The display does not stay awake
 
-### Display goes to sleep / screen turns off
-
-This is controlled by the device's OS, not by Abbai Flow. Disable screen timeout:
-
-- **Android**: Settings > Display > Screen timeout > Never (or use Fully Kiosk's "Keep Screen On")
-- **iPad**: Settings > Display & Brightness > Auto-Lock > Never
-- **Linux**: `xset s off && xset -dpms`
+Disable the operating system's sleep timer or use its kiosk mode. Abbai Flow can move the screen saver clock to reduce static image retention, but it cannot override device power settings.

@@ -40,7 +40,7 @@ The dashboard is your family's home screen. At a glance you see:
 
 ![Dashboard — desktop](images/dashboard-desktop.png)
 
-The sidebar on the left is the standard Home Assistant navigation. Abbai Flow's own sidebar runs vertically inside the add-on panel with icons for every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
+Abbai Flow's sidebar provides access to every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
 
 ### Mobile (390 x 844)
 
@@ -132,7 +132,7 @@ Each row is one meal, in breakfast → lunch → dinner → snack order:
 
 **Where the data comes from:**
 
-- Abbai Flow stores the plan as a `beacon_meal_plans` array in its data store (the Home Assistant add-on keeps it server-side; the standalone build keeps it in the browser). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
+- Abbai Flow stores the plan as a `beacon_meal_plans` array in its data store (Docker deployments persist it on the server; browser-only runs keep it locally). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
 - Meals are **written by a sync, not typed into Abbai Flow**. AnyList plans go through `scripts/sync-meals.ts`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
 - The dashboard re-reads the store every 5 minutes, so a sync shows up without reloading the page.
 
@@ -218,7 +218,7 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 
 **Key sections:**
 
-- **Theme** -- choose from 8+ themes (Skylight, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
+- **Theme** -- choose from 8+ themes (Light, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
 - **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
 - **List Providers** -- configure AnyList, HA Shopping List, or local list storage.
@@ -270,7 +270,7 @@ Abbai Flow ships with 8+ built-in themes:
 
 | Theme          | Style                                         |
 | -------------- | --------------------------------------------- |
-| Skylight       | Clean, bright, modern (default)               |
+| Light          | Clean, bright, modern (default)               |
 | Midnight       | Dark blue with warm accents                   |
 | Midnight Light | Light variant of Midnight                     |
 | Nord           | Cool arctic tones from the Nord palette       |

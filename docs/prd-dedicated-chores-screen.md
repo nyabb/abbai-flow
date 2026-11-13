@@ -92,4 +92,4 @@ These are not requirements for the current chores milestone:
 - Claiming needs no parent PIN; approving or declining a chore/reward requires a valid Abbai Flow parent PIN.
 - Abbai Flow never infers parent privileges from ChoreOps button presence and never logs a PIN value.
 - The UI remains functional with WebSocket updates and with the REST polling fallback.
-- `npm run build` and the focused ChoreOps/family tests pass, and `beacon/src/` stays synchronized with `src/`.
+- `npm run build` and the focused ChoreOps/family tests pass against the root `src/` tree.

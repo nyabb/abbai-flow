@@ -48,8 +48,8 @@ see [Grocery](/docs/features/grocery/) for the sensor setup.
 
 ## Storage and refresh
 
-- Entries live under `beacon_meal_plans` in Abbai Flow's data store: server-side in the Home
-  Assistant add-on, in browser storage for the standalone build.
+- Entries live under `beacon_meal_plans` in Abbai Flow's data store: server-side in Docker
+  deployments, in browser storage for browser-only runs.
 - Each entry looks like
   `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "abc123" }`.
 - `meal_type` is one of `Breakfast`, `Lunch`, `Dinner` or `Snack`; `recipe_id` is optional.
