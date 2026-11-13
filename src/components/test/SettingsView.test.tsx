@@ -111,6 +111,16 @@ describe('SettingsView', () => {
     }
   });
 
+  it('shows the build version in About', () => {
+    renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Over' }));
+
+    const versionRow = [...document.querySelectorAll<HTMLElement>('.settings-about-row')].find(
+      (row) => row.querySelector('.settings-about-label')?.textContent === 'Versie',
+    );
+    expect(versionRow?.querySelector('.settings-about-value')?.textContent).toBe(__APP_VERSION__);
+  });
+
   it('passes a control change through to the settings updater', () => {
     const { onUpdateSettings } = renderSettings();
 

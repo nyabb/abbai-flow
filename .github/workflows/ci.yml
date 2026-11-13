@@ -19,6 +19,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify package version exists in changelog
+        run: npm run changelog:verify
+
       - name: Type check
         run: npm run typecheck
 

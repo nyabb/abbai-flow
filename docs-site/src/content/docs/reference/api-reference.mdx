@@ -442,7 +442,7 @@ interface Abbai FlowConfig {
 
 For each property, the first non-empty value wins:
 
-1. `window.__BEACON_CONFIG__[property]` (runtime injection by `run.sh`)
+1. `window.__ABBAI_FLOW_CONFIG__[property]` (runtime injection by the Docker server)
 2. `import.meta.env.VITE_[PROPERTY]` (Vite build-time environment)
 3. Hard-coded default
 

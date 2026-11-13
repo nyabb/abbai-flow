@@ -12,9 +12,6 @@ Open Abbai Flow at:
 http://<abbai-flow-host>:3000/display
 ```
 
-Under Home Assistant ingress the path is preserved, so
-`…/api/hassio_ingress/<token>/display` works too.
-
 `/display` is detection, not routing: the app has no router, so it reads the path
 once on boot. It is deliberately **not** the `?display=` query parameter — that
 one already means "lock this device to one family member" (kid display).
@@ -23,7 +20,7 @@ A kiosk launch line for Raspberry Pi OS with Chromium:
 
 ```
 chromium-browser --kiosk --incognito --noerrdialogs --disable-infobars \
-  --check-for-update-interval=31536000 http://beacon.local:3000/display
+  --check-for-update-interval=31536000 http://abbai-flow.local:3000/display
 ```
 
 `--incognito` avoids a stale profile after power cuts; the app keeps nothing in

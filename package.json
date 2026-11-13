@@ -1,14 +1,15 @@
 {
   "name": "abbai-flow",
-  "version": "2.0.0",
+  "version": "2.7.2",
   "private": true,
   "type": "module",
-  "description": "Abbai Flow — a family organisation and gamification platform: routines, missions, chores, rewards and everyday family life, with a Home Assistant add-on and a standalone server.",
+  "description": "A self-hosted family dashboard for calendars, routines, chores, rewards, and everyday family life, with Home Assistant integration.",
   "scripts": {
     "dev": "vite",
     "build": "tsc && tsc -p tsconfig.scripts.json && npm run build:server && vite build",
     "build:server": "tsc -p tsconfig.server.json",
     "typecheck": "tsc && tsc -p tsconfig.scripts.json",
+    "changelog:verify": "node scripts/verify-changelog.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

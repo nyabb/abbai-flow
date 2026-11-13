@@ -35,10 +35,10 @@ Once you have a Pi + monitor, the kiosk setup is:
 
 ```bash
 # 1. Install Raspberry Pi OS with Desktop
-# 2. Install Abbai Flow add-on in Home Assistant
+# 2. Start Abbai Flow with Docker on your server
 # 3. Create kiosk script:
 
-cat > ~/beacon-kiosk.sh << 'EOF'
+cat > ~/abbai-flow-kiosk.sh << 'EOF'
 #!/bin/bash
 sleep 5
 unclutter -idle 3 -root &
@@ -52,17 +52,17 @@ chromium-browser \
   --no-first-run \
   --start-fullscreen \
   --disable-pinch \
-  'http://YOUR-HA-URL/bc015843_beacon'
+  'http://abbai-flow.local:3000/display'
 EOF
-chmod +x ~/beacon-kiosk.sh
+chmod +x ~/abbai-flow-kiosk.sh
 
 # 4. Auto-start on boot:
 mkdir -p ~/.config/autostart
-cat > ~/.config/autostart/beacon-kiosk.desktop << EOF
+cat > ~/.config/autostart/abbai-flow-kiosk.desktop << EOF
 [Desktop Entry]
 Type=Application
 Name=Abbai Flow Kiosk
-Exec=/home/$USER/beacon-kiosk.sh
+Exec=/home/$USER/abbai-flow-kiosk.sh
 EOF
 ```
 
@@ -71,7 +71,7 @@ EOF
 | Size | Use Case | Recommended |
 |------|----------|-------------|
 | 10-11" | Kitchen counter, bedside | Amazon Fire HD 10, iPad |
-| 15-16" | Wall mount, Skylight replacement | WIMAXIT 15.6" portable touch (~$130) |
+| 15-16" | Wall-mounted family display | WIMAXIT 15.6" portable touch (~$130) |
 | 21-22" | Wall mount, family hub | **ASUS VT229H 21.5" touch (~$219)** |
 | 24"+ | Large wall display, living room | Dell P2418HT 23.8" touch (~$250) |
 

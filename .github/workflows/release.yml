@@ -26,6 +26,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify current package version in changelog
+        run: npm run changelog:verify
+
       - name: Release
         id: semantic
         env:

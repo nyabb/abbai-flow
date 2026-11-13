@@ -16,7 +16,7 @@
 
 ### Positioning
 
-Abbai Flow is an open-source, self-hosted family dashboard designed for wall-mounted displays in smart homes. It replaces expensive commercial products like Skylight ($650+) with a free, privacy-respecting alternative that runs on commodity hardware. Abbai Flow integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to give families a single glanceable view of their day.
+Abbai Flow is an open-source, self-hosted family dashboard designed for wall-mounted displays in smart homes. It runs on commodity hardware and integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to give families a single glanceable view of their day.
 
 ### Personality
 

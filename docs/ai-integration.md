@@ -12,7 +12,7 @@ Abbai Flow supports three approaches for voice and AI control, ranging from a si
 
 ## Voice API
 
-Abbai Flow's server exposes a built-in REST endpoint for natural-language commands. It uses simple keyword matching (no LLM required) and runs entirely on the add-on container.
+Abbai Flow's server exposes a built-in REST endpoint for natural-language commands. It uses simple keyword matching (no LLM required) and runs in the Docker container.
 
 ### Endpoint
 
@@ -46,12 +46,12 @@ Content-Type: application/json
 
 ```bash
 # Add an item
-curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "add eggs to the grocery list"}'
 
 # Complete a chore
-curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "mark dishes as done"}'
 ```
@@ -68,7 +68,7 @@ curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
 The voice API automatically finds the best media player: it prefers one that is currently playing, then paused, then falls back to the first available.
 
 ```bash
-curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "set volume to 40"}'
 ```
@@ -82,7 +82,7 @@ curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
 Valid views: `dashboard`, `calendar`, `grocery`, `chores`, `music`, `photos`, `settings`.
 
 ```bash
-curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "show the calendar"}'
 ```
@@ -95,7 +95,7 @@ curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
 | `what's the weather` / `weather today` | Returns current weather |
 
 ```bash
-curl -X POST http://<abbai-flow-host>:8099/beacon-action/voice \
+curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
   -H 'Content-Type: application/json' \
   -d '{"text": "what'\''s on my calendar"}'
 ```
@@ -117,7 +117,7 @@ The MCP (Model Context Protocol) server exposes Abbai Flow's features as structu
 Add the Abbai Flow MCP server to your client's configuration. For Claude Code:
 
 ```bash
-claude mcp add beacon -- node /path/to/beacon/mcp-server.cjs
+claude mcp add abbai-flow -- node /path/to/abbai-flow/mcp-server.cjs
 ```
 
 Or add it to your MCP config file (`mcp-config.json`):
@@ -125,9 +125,9 @@ Or add it to your MCP config file (`mcp-config.json`):
 ```json
 {
   "mcpServers": {
-    "beacon": {
+    "abbai-flow": {
       "command": "node",
-      "args": ["beacon/mcp-server.cjs"],
+      "args": ["abbai-flow/mcp-server.cjs"],
       "env": {
         "SUPERVISOR_TOKEN": "your-long-lived-access-token",
         "HA_URL": "http://supervisor/core"
@@ -284,10 +284,10 @@ Run the included install script on your HA machine:
 
 ```bash
 # Auto-detect HA config directory
-beacon/scripts/install-voice-intents.sh
+abbai-flow/scripts/install-voice-intents.sh
 
 # Or specify it explicitly
-beacon/scripts/install-voice-intents.sh /config
+abbai-flow/scripts/install-voice-intents.sh /config
 ```
 
 This copies two files into your HA config:
