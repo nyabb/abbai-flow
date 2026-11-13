@@ -371,7 +371,10 @@ export function ChorePlanner({
     }
     return map;
   }, [choreOps.data, members]);
-  const getTask = (id: string | null) => data.tasks.find((task) => task.id === id) ?? null;
+  const getTask = (id: string | null) =>
+    data.tasks.find((task) => task.id === id) ??
+    view.allTasks.find((task) => task.id === id) ??
+    null;
   const selectedTask = getTask(selectedTaskId);
   const memberFor = (id: string | null) => data.members.find((member) => member.id === id) ?? null;
   /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
@@ -469,6 +472,7 @@ export function ChorePlanner({
           );
           if (task) approveTask(task);
         }}
+        onMoreStep={(taskId) => openActions(taskId)}
       />
     );
   };
@@ -608,14 +612,19 @@ export function ChorePlanner({
     const mine = data.tasks.filter(
       (task) => task.routineId === routine.id && task.memberId === memberId,
     );
+    const allMine = view.allTasks.filter(
+      (task) => task.routineId === routine.id && task.memberId === memberId,
+    );
     const names = [...order];
-    for (const task of mine) {
+    for (const task of allMine) {
       if (!names.some((name) => normaliseName(name) === normaliseName(task.name))) {
         names.push(task.name);
       }
     }
     return names.map((name) => {
       const rows = mine.filter((task) => normaliseName(task.name) === normaliseName(name));
+      const editRows = allMine.filter((task) => normaliseName(task.name) === normaliseName(name));
+      const editTask = editRows.find((task) => rows.some((row) => row.id === task.id)) ?? editRows[0];
       const actionableTask = rows.find((task) => {
         const status = taskStatus(task);
         return (
@@ -627,6 +636,7 @@ export function ChorePlanner({
       return {
         name,
         ...(actionableTask ? { taskId: actionableTask.id } : {}),
+        ...(editTask ? { editTaskId: editTask.id } : {}),
         done: rows.length > 0 && rows.every((task) => taskStatus(task) === 'completed'),
         open: rows.some((task) => !['completed', 'expired'].includes(taskStatus(task))),
         awaiting: rows.some((task) => task.awaitingReview && taskStatus(task) !== 'completed'),

@@ -85,6 +85,8 @@ export interface RoutineStep {
   name: string;
   /** ChoreOps task to complete directly from the routine list. */
   taskId?: string;
+  /** ChoreOps task whose edit/delete actions are available from this step. */
+  editTaskId?: string;
   /** Already ticked off today. */
   done: boolean;
   /** Still waiting to be done. */
@@ -114,6 +116,8 @@ export interface RoutineRowProps {
   onCompleteStep?: (taskId: string) => void;
   /** Parent sign-off for a step that is waiting for review (PIN-gated by the caller). */
   onApproveStep?: (stepName: string) => void;
+  /** Open the same edit/delete sheet used by a standalone chore row. */
+  onMoreStep?: (taskId: string) => void;
 }
 
 /**
@@ -139,6 +143,7 @@ export function RoutineRow({
   busyTaskId,
   onCompleteStep,
   onApproveStep,
+  onMoreStep,
 }: RoutineRowProps) {
   const doneCount = steps.filter((step) => step.done).length;
   /* The bar sits next to "3/3", so it must track steps done. The time-of-day
@@ -219,6 +224,16 @@ export function RoutineRow({
                   onClick={() => onApproveStep(step.name)}
                 >
                   {copy.approveCompletion}
+                </button>
+              )}
+              {step.editTaskId && onMoreStep && (
+                <button
+                  type="button"
+                  className="planner-step-more"
+                  aria-label={`${copy.action}: ${step.name}`}
+                  onClick={() => onMoreStep(step.editTaskId!)}
+                >
+                  {'\u22ef'}
                 </button>
               )}
               <span className="planner-sr-only">{step.done ? copy.done : copy.openTodo}</span>

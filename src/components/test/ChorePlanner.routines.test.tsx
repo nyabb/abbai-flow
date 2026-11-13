@@ -154,6 +154,42 @@ describe('ChorePlanner routines', () => {
     expect(zara.textContent).toContain('Ochtendroutine');
   });
 
+  it('opens the normal edit and delete actions from a routine step', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
+      (element) => element.textContent?.includes('Tanden poetsen'),
+    )!;
+
+    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
+
+    expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
+  });
+
+  it('can open the action sheet for a daily routine chore completed yesterday', () => {
+    const base = routineState();
+    mocks.state.current = {
+      ...base,
+      chores: base.chores.map((chore) =>
+        chore.name === 'Tanden poetsen'
+          ? {
+              ...chore,
+              status: 'completed',
+              lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+            }
+          : chore,
+      ),
+    };
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
+      (element) => element.textContent?.includes('Tanden poetsen'),
+    )!;
+
+    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
+
+    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
+  });
+
   it('opens the missions overview from the routines section', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const missions = column(container, 'Zara').querySelector<HTMLButtonElement>(
@@ -177,7 +213,7 @@ describe('ChorePlanner routines', () => {
     const step = [...container.querySelectorAll<HTMLElement>('.planner-step')].find((element) =>
       element.textContent?.includes('Tanden poetsen'),
     )!;
-    fireEvent.click(within(step).getByRole('button', { name: /Tanden poetsen/ }));
+    fireEvent.click(step.querySelector<HTMLButtonElement>('.planner-step-action')!);
 
     fireEvent.click(
       container.querySelector<HTMLButtonElement>('.planner-sheet--confirm .planner-primary')!,
