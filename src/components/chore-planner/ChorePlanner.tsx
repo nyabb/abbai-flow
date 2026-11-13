@@ -1876,7 +1876,7 @@ export function ChorePlanner({
             )}{' '}
             {modal === 'actions' && selectedTask && (
               <ActionsSheet
-                completed={taskStatus(selectedTask) === 'completed'}
+                completed={taskStatus(selectedTask) === 'completed' && !selectedTask.inRoutine}
                 copy={c}
                 confirmingDelete={confirmingDelete}
                 onApprove={
