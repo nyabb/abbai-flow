@@ -1,3 +1,10 @@
+## [2.7.2](https://github.com/nyabb/abbai-flow/compare/v2.7.1...v2.7.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* show edit action for routine chores ([ada8d6e](https://github.com/nyabb/abbai-flow/commit/ada8d6edeb5d9f5343d1a46478674d61b0ffbe73))
+
 ## [2.7.1](https://github.com/nyabb/abbai-flow/compare/v2.7.0...v2.7.1) (2026-11-13)
 
 
