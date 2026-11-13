@@ -1,3 +1,10 @@
+## [2.7.1](https://github.com/nyabb/abbai-flow/compare/v2.7.0...v2.7.1) (2026-11-13)
+
+
+### Bug Fixes
+
+* allow editing completed routine chores ([e447325](https://github.com/nyabb/abbai-flow/commit/e4473253e4d31a4b507a2ad349bd2ff1ffd9f87d))
+
 # [2.7.0](https://github.com/nyabb/abbai-flow/compare/v2.6.0...v2.7.0) (2026-11-13)
 
 
