@@ -338,7 +338,7 @@ export function useChoreOps(): UseChoreOpsResult {
         const ids = entry.unique_id.slice(prefix.length).match(
           /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
         );
-        return ids?.at(-1) ?? null;
+        return ids && ids.length > 0 ? ids[ids.length - 1] : null;
       } catch {
         return null;
       }
