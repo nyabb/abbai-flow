@@ -689,6 +689,7 @@ export const pt: Record<TranslationKey, string> = {
   'planner.everyone': 'Todos',
   'planner.anyone': 'Quem chegar primeiro',
   'planner.freeTask': 'Livre para qualquer pessoa',
+  'planner.claimModeEditUnavailable': 'O ChoreOps não permite alterar aqui o modo de reivindicação. Altere-o no ChoreOps e depois edite os responsáveis aqui.',
   'planner.frequency': 'Frequência',
   'planner.daily': 'Diária',
   'planner.weekly': 'Semanal',

@@ -693,6 +693,7 @@ export const en = {
   'planner.everyone': 'Everyone',
   'planner.anyone': 'Anyone (first)',
   'planner.freeTask': 'Free for anyone to claim',
+  'planner.claimModeEditUnavailable': 'ChoreOps does not allow changing a chore’s claim mode through this update. Change it in ChoreOps, then edit assignees here.',
   'planner.frequency': 'Frequency',
   'planner.daily': 'Daily',
   'planner.weekly': 'Weekly',

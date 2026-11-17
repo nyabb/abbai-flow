@@ -695,6 +695,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.everyone': 'Tutti',
   'planner.anyone': 'Il primo che arriva',
   'planner.freeTask': 'Libera per chiunque',
+  'planner.claimModeEditUnavailable': 'ChoreOps non consente di modificare qui la modalità di assegnazione. Cambiala in ChoreOps, poi modifica qui gli assegnatari.',
   'planner.frequency': 'Frequenza',
   'planner.daily': 'Giornaliera',
   'planner.weekly': 'Settimanale',

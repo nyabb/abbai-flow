@@ -679,6 +679,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.everyone': '모두',
   'planner.anyone': '먼저 하는 사람',
   'planner.freeTask': '누구나 선택 가능',
+  'planner.claimModeEditUnavailable': 'ChoreOps에서는 여기서 선택 방식을 변경할 수 없습니다. ChoreOps에서 방식을 바꾼 뒤 여기서 담당자를 수정하세요.',
   'planner.frequency': '반복',
   'planner.daily': '매일',
   'planner.weekly': '매주',
