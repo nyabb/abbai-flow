@@ -736,6 +736,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Rückgängig gemacht',
   'planner.action': 'Aktionen',
   'planner.sure': 'Wirklich löschen?',
+  'planner.renameUnavailable': 'Diese Aufgabe konnte zum Umbenennen nicht gefunden werden. Aktualisiere die Aufgaben und versuche es erneut.',
   'planner.renameLocked': 'Umbenennen ist nur in ChoreOps möglich.',
   'planner.create': 'Aufgabe erstellen',
   'planner.noFail': 'Speichern fehlgeschlagen, bitte erneut versuchen',

@@ -1033,7 +1033,21 @@ export function ChorePlanner({
         choreOps.data?.chores.find(
           (item) => item.name.trim().toLowerCase() === task.name.trim().toLowerCase(),
         ) ?? null;
-      setForm(formFromLiveTask(task, chore));
+      const nextForm = formFromLiveTask(task, chore);
+      if (chore) {
+        const assignedNames = new Set(
+          (chore.assignedUserNames ?? []).map((name) => normaliseName(name)),
+        );
+        nextForm.free =
+          normaliseName(chore.completionCriteria ?? '') === 'shared_first' ||
+          assignedNames.has(normaliseName(CHOREOPS_ALL_USERS));
+        nextForm.memberIds = nextForm.free
+          ? []
+          : Array.from(userNameByMemberId.entries())
+              .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
+              .map(([memberId]) => memberId);
+      }
+      setForm(nextForm);
       dispatchOverlay({ type: 'open-form', editingId: task.id });
     });
   };
@@ -1069,11 +1083,15 @@ export function ChorePlanner({
      * whose label Abbai Flow cannot see never wipes that label. Clearing the field
      * sends `[]`, which is how a routine is removed again.
      */
-    const currentLabel = (
-      choreOps.data?.chores.find(
-        (item) => item.name.trim().toLowerCase() === form.name.trim().toLowerCase(),
-      )?.labels?.[0] ?? ''
-    ).trim();
+    const originalTask = editingId ? getTask(editingId) : null;
+    const originalName = originalTask?.name ?? form.name;
+    const originalChore =
+      editingId
+        ? choreOps.data?.chores.find(
+            (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
+          ) ?? null
+        : null;
+    const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
     const nextLabel = form.liveLabel.trim();
     const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
     const schedule = {
@@ -1096,10 +1114,27 @@ export function ChorePlanner({
     try {
       setSaving(true);
       if (editingId) {
+        const renamed = normaliseName(originalName) !== normaliseName(form.name);
+        let choreId: string | undefined;
+        if (renamed) {
+          const resolvedId = originalChore?.statusEntityId && choreOps.resolveChoreId
+            ? await choreOps.resolveChoreId(originalChore.statusEntityId)
+            : null;
+          if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
+          choreId = resolvedId;
+        }
+        const completionCriteria = form.free
+          ? 'shared_first'
+          : normaliseName(originalChore?.completionCriteria ?? '') === 'shared_first'
+            ? 'independent'
+            : undefined;
         await choreOps.updateChore({
           ...schedule,
           name: form.name,
+          targetName: originalName,
+          choreId,
           assignedUserNames: userNames,
+          completionCriteria,
           points: form.points,
           windowOffset: form.liveWindow,
           reminderOffset: form.liveReminder,
@@ -1126,6 +1161,23 @@ export function ChorePlanner({
        * (with an order ChoreOps cannot store). A cleared label removes it again.
        */
       const taskName = form.name.trim();
+      if (editingId && currentLabel) {
+        const movedOrRenamed =
+          normaliseName(currentLabel) !== normaliseName(nextLabel) ||
+          normaliseName(originalName) !== normaliseName(taskName);
+        if (movedOrRenamed) {
+          const owner = meta.routines.find((routine) =>
+            routine.taskNames.some((name) => normaliseName(name) === normaliseName(originalName)),
+          );
+          if (owner) {
+            await plannerMeta.runOp({
+              type: 'removeRoutineTask',
+              id: owner.id,
+              taskName: originalName,
+            });
+          }
+        }
+      }
       if (nextLabel) {
         const routine = (await plannerMeta.runOp({
           type: 'upsertRoutine',
@@ -1135,17 +1187,6 @@ export function ChorePlanner({
           await plannerMeta.runOp({
             type: 'addRoutineTask',
             id: routine.id,
-            taskName,
-          });
-        }
-      } else if (editingId && currentLabel) {
-        const owner = meta.routines.find((routine) =>
-          routine.taskNames.some((name) => normaliseName(name) === normaliseName(taskName)),
-        );
-        if (owner) {
-          await plannerMeta.runOp({
-            type: 'removeRoutineTask',
-            id: owner.id,
             taskName,
           });
         }

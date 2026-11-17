@@ -723,6 +723,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.undoneToast': '元に戻しました',
   'planner.action': '操作',
   'planner.sure': '本当に削除しますか？',
+  'planner.renameUnavailable': '名前を変更するタスクを特定できませんでした。家事を更新して、もう一度お試しください。',
   'planner.renameLocked': '名前の変更は ChoreOps でのみ可能です。',
   'planner.create': 'タスクを作成',
   'planner.noFail': '保存できませんでした。もう一度お試しください',

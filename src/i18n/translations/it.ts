@@ -736,6 +736,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Annullato',
   'planner.action': 'Azioni',
   'planner.sure': 'Eliminare davvero?',
+  'planner.renameUnavailable': 'Impossibile identificare questa faccenda per rinominarla. Aggiorna le faccende e riprova.',
   'planner.renameLocked': 'La rinomina è possibile solo in ChoreOps.',
   'planner.create': 'Crea attività',
   'planner.noFail': 'Salvataggio non riuscito, riprova',
