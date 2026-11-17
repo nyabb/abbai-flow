@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -80,6 +80,10 @@ import {
   toastWith,
   type FormValue,
 } from './form';
+import {
+  initialPlannerOverlay,
+  plannerOverlayReducer,
+} from './overlay-state';
 
 /**
  * The planner is one board: a column per family member plus a column of chores
@@ -158,24 +162,9 @@ export function ChorePlanner({
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
   const [screen, setScreen] = useState<Screen>('board');
-  const [modal, setModal] = useState<
-    | 'form'
-    | 'actions'
-    | 'claim'
-    | 'award'
-    | 'filter'
-    | 'goals'
-    | 'reward-form'
-    | 'reward-actions'
-    | 'assign'
-    | 'reward-given'
-    | 'create'
-    | null
-  >(null);
+  const [overlay, dispatchOverlay] = useReducer(plannerOverlayReducer, initialPlannerOverlay);
+  const modal = overlay.type === 'closed' ? null : overlay.type;
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
-  const [actionsOpenedFromRoutine, setActionsOpenedFromRoutine] = useState(false);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   /**
    * Chore the child tapped, waiting for "are you sure?".
@@ -201,14 +190,8 @@ export function ChorePlanner({
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [todayMemberId, setTodayMemberId] = useState<string | null>(null);
-  /** Child whose goals sheet is open, if any. */
-  const [goalsMemberId, setGoalsMemberId] = useState<string | null>(null);
-  /** Free chore whose "who is taking it?" sheet is open. */
-  const [claimTaskId, setClaimTaskId] = useState<string | null>(null);
   /** Child whose detail page is open (the board is the overview). */
   const [childMemberId, setChildMemberId] = useState<string | null>(null);
-  /** Chore just ticked: which goal should its points go to? */
-  const [awardTaskId, setAwardTaskId] = useState<string | null>(null);
   /** Members hidden from the board, and the child whose mission run is open. */
   const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
   /** Routines paused comes from the shared metadata, not from this device. */
@@ -234,14 +217,6 @@ export function ChorePlanner({
     cost: number;
     memberIds: string[];
   }>({ name: '', cost: 10, memberIds: [] });
-  /** Name of the reward being edited; `null` means the form creates a new one. */
-  const [editingReward, setEditingReward] = useState<string | null>(null);
-  const [selectedReward, setSelectedReward] = useState<ChoreOpsReward | null>(null);
-  /** Reward whose explicit point allocation sheet is open. */
-  const [assigningReward, setAssigningReward] = useState<ChoreOpsReward | null>(null);
-  /** Reward just paid out; the sheet asks "use again" or "delete". */
-  const [givenReward, setGivenReward] = useState<{ name: string } | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   /**
    * Reward progress (saving → achieved → given). Shared through beacon-store:
    * ChoreOps owns the definition and the deduction, not the pursuit.
@@ -358,10 +333,7 @@ export function ChorePlanner({
   };
 
   const openActions = (taskId: string, fromRoutine = false) => {
-    setSelectedTaskId(taskId);
-    setActionsOpenedFromRoutine(fromRoutine);
-    setConfirmingDelete(false);
-    setModal('actions');
+    dispatchOverlay({ type: 'open-actions', taskId, fromRoutine });
   };
 
   /** Planner member id → ChoreOps user name, for writing back to ChoreOps. */
@@ -377,8 +349,17 @@ export function ChorePlanner({
     data.tasks.find((task) => task.id === id) ??
     view.allTasks.find((task) => task.id === id) ??
     null;
-  const selectedTask = getTask(selectedTaskId);
   const memberFor = (id: string | null) => data.members.find((member) => member.id === id) ?? null;
+  const editingId = overlay.type === 'form' ? overlay.editingId : null;
+  const editingReward = overlay.type === 'reward-form' ? overlay.editingReward : null;
+  const actionsOverlay = overlay.type === 'actions' ? overlay : null;
+  const selectedTask = actionsOverlay ? getTask(actionsOverlay.taskId) : null;
+  const claimTask = overlay.type === 'claim' ? getTask(overlay.taskId) : null;
+  const awardTask = overlay.type === 'award' ? getTask(overlay.taskId) : null;
+  const goalsMember = overlay.type === 'goals' ? memberFor(overlay.memberId) : null;
+  const selectedReward = overlay.type === 'reward-actions' ? overlay.reward : null;
+  const assigningReward = overlay.type === 'assign' ? overlay.reward : null;
+  const givenReward = overlay.type === 'reward-given' ? { name: overlay.name } : null;
   /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
   const rewards = choreOps.data?.rewards ?? [];
   const memberByName = (name: string | null) =>
@@ -510,8 +491,7 @@ export function ChorePlanner({
           if (pursuit) giveReward(pursuit);
         }}
         onMore={() => {
-          setSelectedReward(reward);
-          setModal('reward-actions');
+          dispatchOverlay({ type: 'open-reward-actions', reward });
         }}
       />
     );
@@ -702,8 +682,7 @@ export function ChorePlanner({
 
   /** Open the "who is taking this?" sheet for a free chore. */
   const openClaim = (task: PlannerTask) => {
-    setClaimTaskId(task.id);
-    setModal('claim');
+    dispatchOverlay({ type: 'open-claim', taskId: task.id });
   };
 
   /** The routines that belong to one child (ChoreOps groups them by label). */
@@ -739,8 +718,6 @@ export function ChorePlanner({
    * The award sheet asks where the earned points should go as soon as a chore is ticked.
    * We do the same: complete the chore, then offer this child's goals.
    */
-  const awardTask = getTask(awardTaskId);
-
   /**
    * How far through its part of the day a routine is: the reference app puts a
    * small time bar on every routine row.
@@ -765,10 +742,8 @@ export function ChorePlanner({
 
   /** Open the goal sheet of one child, where their rewards live. */
   const openGoals = (memberId: string) => {
-    setGoalsMemberId(memberId);
-    setModal('goals');
+    dispatchOverlay({ type: 'open-goals', memberId });
   };
-  const goalsMember = memberFor(goalsMemberId);
   const goalsUserName = goalsMember ? (userNameByMemberId.get(goalsMember.id) ?? null) : null;
   const goalsLedgerHistory =
     rewardLedgerHistory?.userName === goalsUserName ? rewardLedgerHistory.entries : [];
@@ -794,7 +769,6 @@ export function ChorePlanner({
       current = false;
     };
   }, [modal, goalsUserName, choreOps.available]);
-  const claimTask = getTask(claimTaskId);
   const childMember = memberFor(childMemberId);
   const childUserName = childMember ? (userNameByMemberId.get(childMember.id) ?? null) : null;
   const childHistoryEntities = useMemo<ChoreOpsChoreHistoryEntity[]>(() => {
@@ -1018,7 +992,6 @@ export function ChorePlanner({
   };
 
   const openNewForm = (kind: 'chore' | 'routine' = 'chore') => {
-    setEditingId(null);
     // A routine is a chore that repeats daily and belongs to a named routine.
     setForm(
       kind === 'routine'
@@ -1031,7 +1004,7 @@ export function ChorePlanner({
           }
         : emptyForm(now),
     );
-    setModal('form');
+    dispatchOverlay({ type: 'open-form' });
   };
 
   /* Quick add's "chore"/"routine" entries land here: the token changes once per
@@ -1048,22 +1021,20 @@ export function ChorePlanner({
    * header create menu starts empty and lets the parent pick who gets it.
    */
   const startRewardForm = (memberId?: string) => {
-    setEditingReward(null);
     setRewardForm({ name: '', cost: 10, memberIds: memberId ? [memberId] : [] });
-    setModal('reward-form');
+    dispatchOverlay({ type: 'open-reward-form' });
   };
 
   const openEditForm = (task: PlannerTask) => {
-    if (hasParentPin) setModal(null);
+    if (hasParentPin) dispatchOverlay({ type: 'close' });
     requestPin(c.edit, task.name, () => {
       // ChoreOps is the source of truth: prefill from its own record of the chore.
       const chore =
         choreOps.data?.chores.find(
           (item) => item.name.trim().toLowerCase() === task.name.trim().toLowerCase(),
         ) ?? null;
-      setEditingId(task.id);
       setForm(formFromLiveTask(task, chore));
-      setModal('form');
+      dispatchOverlay({ type: 'open-form', editingId: task.id });
     });
   };
 
@@ -1146,7 +1117,7 @@ export function ChorePlanner({
           reminderOffset: form.liveReminder,
         });
       }
-      setModal(null);
+      dispatchOverlay({ type: 'close' });
       showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
 
       /*
@@ -1191,7 +1162,7 @@ export function ChorePlanner({
   const removeTask = async (task: PlannerTask) => {
     try {
       await choreOps.deleteChore(task.name);
-      setModal(null);
+      dispatchOverlay({ type: 'close' });
       showToast(toastWith(c.removedToast, task.name));
     } catch (err) {
       showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -1213,7 +1184,7 @@ export function ChorePlanner({
         try {
           setSaving(true);
           await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
-          setModal(null);
+          dispatchOverlay({ type: 'close' });
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -1238,7 +1209,7 @@ export function ChorePlanner({
           cost: rewardForm.cost,
           assignedUserNames: userNames,
         });
-        setModal(null);
+        dispatchOverlay({ type: 'close' });
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -1261,8 +1232,7 @@ export function ChorePlanner({
       try {
         setSaving(true);
         await choreOps.deleteReward(reward.name);
-        setGivenReward(null);
-        setModal(null);
+        dispatchOverlay({ type: 'close' });
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
         showToast(err instanceof Error ? err.message : c.noFail, 'error');
@@ -1293,8 +1263,7 @@ export function ChorePlanner({
    */
   const openAssign = (reward: ChoreOpsReward) => {
     if (!rewardState(reward).canAdd) return;
-    setAssigningReward(reward);
-    setModal('assign');
+    dispatchOverlay({ type: 'open-assign', reward });
   };
 
   /**
@@ -1379,8 +1348,10 @@ export function ChorePlanner({
                 normaliseName(item.name) === normaliseName(redemption.reward) &&
                 normaliseName(item.assignee) === normaliseName(redemption.user),
             ) ?? null;
-          setGivenReward({ name: definition?.name ?? redemption.rewardLabel });
-          setModal('reward-given');
+          dispatchOverlay({
+            type: 'open-reward-given',
+            name: definition?.name ?? redemption.rewardLabel,
+          });
         } catch (err) {
           showToast(err instanceof Error ? err.message : c.noFail, 'error');
         } finally {
@@ -1394,8 +1365,7 @@ export function ChorePlanner({
   const reuseGivenReward = () => {
     if (!givenReward) return;
     const name = givenReward.name;
-    setGivenReward(null);
-    setModal(null);
+    dispatchOverlay({ type: 'close' });
     showToast(toastWith(c.rewardReset, name));
   };
 
@@ -1705,7 +1675,7 @@ export function ChorePlanner({
           {screen === 'board' && (
             <button
               className="planner-icon-button"
-              onClick={() => setModal('filter')}
+              onClick={() => dispatchOverlay({ type: 'open-filter' })}
               aria-label={c.filter}
               aria-expanded={filterOpen}
             >
@@ -1715,7 +1685,7 @@ export function ChorePlanner({
           {(screen === 'board' || screen === 'child') && (
             <button
               className="planner-add"
-              onClick={() => setModal('create')}
+              onClick={() => dispatchOverlay({ type: 'open-create' })}
               aria-label={t('omniAdd.quickAdd')}
             >
               <Plus />
@@ -1847,45 +1817,45 @@ export function ChorePlanner({
             }}
           />
         )}
-      {modal && (
-        <div className="planner-backdrop" onClick={() => setModal(null)}>
+      {overlay.type !== 'closed' && (
+        <div className="planner-backdrop" onClick={() => dispatchOverlay({ type: 'close' })}>
           <section
-            className={`planner-sheet ${modal === 'form' ? 'planner-sheet--form' : ''}`}
+            className={`planner-sheet ${overlay.type === 'form' ? 'planner-sheet--form' : ''}`}
             role="dialog"
             aria-modal="true"
             onClick={(event) => event.stopPropagation()}
           >
             <button
               className="planner-sheet-close"
-              onClick={() => setModal(null)}
+              onClick={() => dispatchOverlay({ type: 'close' })}
               aria-label={c.cancel}
             >
               <X />
             </button>{' '}
-            {modal === 'form' && (
+            {overlay.type === 'form' && (
               <ChoreEditor
                 form={form}
                 setForm={setForm}
                 members={data.members}
-                editingId={editingId}
+                editingId={overlay.editingId}
                 saving={saving}
                 copy={c}
                 t={t}
                 routineNames={meta.routines.map((routine) => routine.name)}
-                onCancel={() => setModal(null)}
+                onCancel={() => dispatchOverlay({ type: 'close' })}
                 onSave={() => void saveForm()}
               />
             )}{' '}
-            {modal === 'actions' && selectedTask && (
+            {actionsOverlay && selectedTask && (
               <ActionsSheet
-                completed={taskStatus(selectedTask) === 'completed' && !actionsOpenedFromRoutine}
+                completed={taskStatus(selectedTask) === 'completed' && !actionsOverlay.fromRoutine}
                 copy={c}
-                confirmingDelete={confirmingDelete}
+                confirmingDelete={actionsOverlay.confirmingDelete}
                 onApprove={
                   selectedTask.awaitingReview && selectedTask.actions?.approve
                     ? () => {
                         const task = selectedTask;
-                        setModal(null);
+                        dispatchOverlay({ type: 'close' });
                         // Signing off is a parent action: it awards the points,
                         // so it goes through the PIN, never through the child row.
                         approveTask(task);
@@ -1897,16 +1867,16 @@ export function ChorePlanner({
                   const task = selectedTask;
                   // With a parent PIN on file, the PIN itself is the confirmation.
                   if (hasParentPin) {
-                    setModal(null);
+                    dispatchOverlay({ type: 'close' });
                     requestPin(c.remove, task.name, () => void removeTask(task));
                     return;
                   }
-                  if (confirmingDelete) void removeTask(task);
-                  else setConfirmingDelete(true);
+                  if (actionsOverlay.confirmingDelete) void removeTask(task);
+                  else dispatchOverlay({ type: 'confirm-delete' });
                 }}
               />
             )}{' '}
-            {modal === 'award' && awardTask && (
+            {awardTask && (
               <AwardSheet
                 task={awardTask}
                 copy={c}
@@ -1914,15 +1884,12 @@ export function ChorePlanner({
                 spendable={spendableFor(memberFor(awardTask.memberId))}
                 rewards={rewardsForMember(awardTask.memberId)}
                 rewardState={rewardState}
-                onClose={() => setModal(null)}
+                onClose={() => dispatchOverlay({ type: 'close' })}
                 onAssign={(reward) => openAssign(reward)}
-                onNewGoal={() => {
-                  if (awardTask.memberId) startRewardForm(awardTask.memberId);
-                  else setModal('reward-form');
-                }}
+                onNewGoal={() => startRewardForm(awardTask.memberId ?? undefined)}
               />
             )}{' '}
-            {modal === 'filter' && (
+            {overlay.type === 'filter' && (
               <FilterSheet
                 members={data.members}
                 routines={data.routines}
@@ -1937,17 +1904,17 @@ export function ChorePlanner({
                   )
                 }
                 onToggleRoutine={toggleRoutinePaused}
-                onClose={() => setModal(null)}
+                onClose={() => dispatchOverlay({ type: 'close' })}
               />
             )}{' '}
-            {modal === 'claim' && claimTask && (
+            {claimTask && (
               <ClaimSheet
                 task={claimTask}
                 options={claimOptionsFor(claimTask)}
                 memberFor={memberFor}
                 copy={c}
                 onClaim={(option) => {
-                  setModal(null);
+                  dispatchOverlay({ type: 'close' });
                   void runLiveAction(
                     option.id,
                     option.actions!.claim!,
@@ -1955,10 +1922,10 @@ export function ChorePlanner({
                     c.claimedToast,
                   );
                 }}
-                onClose={() => setModal(null)}
+                onClose={() => dispatchOverlay({ type: 'close' })}
               />
             )}{' '}
-            {modal === 'goals' && goalsMember && (
+            {goalsMember && (
               <GoalsSheet
                 member={goalsMember}
                 rewards={rewardsForMember(goalsMember.id)}
@@ -1987,7 +1954,7 @@ export function ChorePlanner({
                 }
               />
             )}{' '}
-            {modal === 'create' && (
+            {overlay.type === 'create' && (
               <CreateSheet
                 copy={c}
                 onChore={() => openNewForm('chore')}
@@ -1997,25 +1964,20 @@ export function ChorePlanner({
                 }
               />
             )}{' '}
-            {modal === 'assign' && assigningReward && (
+            {assigningReward && (
               <AssignPointsSheet
                 reward={assigningReward}
                 allocated={rewardState(assigningReward).allocated}
                 spendable={spendableFor(memberByName(assigningReward.assignee))}
                 copy={c}
-                onCancel={() => {
-                  setAssigningReward(null);
-                  setModal(null);
-                }}
+                onCancel={() => dispatchOverlay({ type: 'close' })}
                 onAssign={(amount) => {
-                  const reward = assigningReward;
-                  setAssigningReward(null);
-                  setModal(null);
-                  assignReward(reward, amount);
+                  dispatchOverlay({ type: 'close' });
+                  assignReward(assigningReward, amount);
                 }}
               />
             )}{' '}
-            {modal === 'reward-given' && givenReward && (
+            {givenReward && (
               <RewardGivenSheet
                 rewardName={givenReward.name}
                 copy={c}
@@ -2023,30 +1985,32 @@ export function ChorePlanner({
                 onDelete={deleteGivenReward}
               />
             )}{' '}
-            {modal === 'reward-actions' && selectedReward && (
+            {selectedReward && (
               <RewardActionsSheet
                 copy={c}
                 onEditCost={() => {
-                  setEditingReward(selectedReward.name);
                   setRewardForm({
                     name: selectedReward.name,
                     cost: Math.round(selectedReward.cost),
                     memberIds: [],
                   });
-                  setModal('reward-form');
+                  dispatchOverlay({
+                    type: 'open-reward-form',
+                    editingReward: selectedReward.name,
+                  });
                 }}
                 onDelete={() => void removeReward(selectedReward)}
               />
             )}{' '}
-            {modal === 'reward-form' && (
+            {overlay.type === 'reward-form' && (
               <RewardFormSheet
                 rewardForm={rewardForm}
                 setRewardForm={setRewardForm}
-                editingReward={editingReward}
+                editingReward={overlay.editingReward}
                 members={data.members}
                 saving={saving}
                 copy={c}
-                onCancel={() => setModal(null)}
+                onCancel={() => dispatchOverlay({ type: 'close' })}
                 onSave={() => void saveReward()}
               />
             )}
@@ -2068,8 +2032,7 @@ export function ChorePlanner({
               task?.memberId &&
               rewardsForMember(task.memberId).length > 0
             ) {
-              setAwardTaskId(task.id);
-              setModal('award');
+              dispatchOverlay({ type: 'open-award', taskId: task.id });
             }
           }}
         />
