@@ -41,6 +41,24 @@ describe('buildUpdateChorePayload', () => {
     });
   });
 
+  it('sends ChoreOps the stable chore ID, new name, and all-users sentinel', () => {
+    const payload = buildUpdateChorePayload({
+      entryId: 'e1',
+      choreId: '023e4567-e89b-12d3-a456-426614174000',
+      name: 'Tafel dekken',
+      assignedUserNames: ['*'],
+    });
+
+    expect(payload).toEqual({
+      config_entry_id: 'e1',
+      id: '023e4567-e89b-12d3-a456-426614174000',
+      name: 'Tafel dekken',
+      assignment_action: 'replace',
+      assigned_user_names: ['*'],
+    });
+    // ChoreOps resolves this request sentinel to all assignable user IDs.
+  });
+
   it('does not send the create-only completion rule on updates', () => {
     const payload = buildUpdateChorePayload({
       entryId: 'e1',

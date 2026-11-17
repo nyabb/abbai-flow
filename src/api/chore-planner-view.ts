@@ -9,7 +9,7 @@
  * from its entities, and people are rendered with Abbai Flow family settings
  * (photo, avatar, colour, display name) joined by `choreops_user` or name.
  */
-import { resolveMemberForUser } from './choreops';
+import { isChoreOpenToAnyone, resolveMemberForUser } from './choreops';
 import {
   emptyMeta,
   findRoutine,
@@ -154,9 +154,17 @@ export function choreAudience(
 ): PlannerTaskAudience {
   const criteria = (chore.completionCriteria ?? '').trim().toLowerCase();
   if (criteria === 'shared_first') {
+    if (!isChoreOpenToAnyone(chore)) return 'member';
     return STILL_UP_FOR_GRABS.test(chore.status) ? 'anyone' : 'member';
   }
-  if (criteria === 'shared_all') return 'everyone';
+  if (criteria === 'shared_all') {
+    const assignedCount = new Set(
+      (chore.assignedUserNames ?? [])
+        .map((name) => name.trim().toLowerCase())
+        .filter(Boolean),
+    ).size;
+    return assignedCount === 1 ? 'member' : 'everyone';
+  }
 
   const assigned = new Set(
     (chore.assignedUserNames ?? []).map((name) => name.trim().toLowerCase()).filter(Boolean),
@@ -231,7 +239,7 @@ export function buildChorePlannerView(
           completedAt: chore.lastCompleted ?? undefined,
           audience: choreAudience(chore, users.length),
           // Kept regardless of status: see `freeForAll` on PlannerTask.
-          freeForAll: (chore.completionCriteria ?? '').trim().toLowerCase() === 'shared_first',
+          freeForAll: isChoreOpenToAnyone(chore),
           awaitingReview,
           autoApprove: chore.autoApprove ?? false,
           actions: chore.actions,

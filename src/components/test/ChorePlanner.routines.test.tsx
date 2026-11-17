@@ -8,8 +8,10 @@ import { PLANNER_META_KEY } from '../../api/planner-meta';
 
 const mocks = vi.hoisted(() => ({
   pressButton: vi.fn(async () => {}),
+  createChore: vi.fn(async (..._args: unknown[]) => {}),
   updateChore: vi.fn(async (..._args: unknown[]) => {}),
   deleteChore: vi.fn(async () => {}),
+  resolveChoreId: vi.fn(async () => '023e4567-e89b-12d3-a456-426614174000'),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -22,11 +24,12 @@ vi.mock('../../hooks/useChoreOps', () => ({
     refresh: () => {},
     pressButton: mocks.pressButton,
     claimChore: async () => {},
-    createChore: async () => {},
+    createChore: mocks.createChore,
     updateChore: mocks.updateChore,
     createReward: async () => {},
     deleteReward: async () => {},
     deleteChore: mocks.deleteChore,
+    resolveChoreId: mocks.resolveChoreId,
     approveReward: async () => {},
   }),
 }));
@@ -44,6 +47,7 @@ function member(overrides: Partial<FamilyMember>): FamilyMember {
 
 const PARENT = member({ id: 'p1', name: 'Papa', role: 'parent', pin: '0123' });
 const ZARA = member({ id: 'c1', name: 'Zara', choreops_user: 'Zara' });
+const MAYA = member({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
 
 /**
  * One child with a two-step morning routine and one standalone chore.
@@ -65,7 +69,8 @@ function routineState(): ChoreOpsState {
     ],
     chores: [
       {
-        id: 'status:zara::tanden-poetsen',
+        id: 'status:zara::tanden poetsen',
+        statusEntityId: 'sensor.zara_choreops_chore_status_tanden_poetsen',
         name: 'Tanden poetsen',
         icon: 'mdi:tooth',
         status: 'pending',
@@ -75,11 +80,14 @@ function routineState(): ChoreOpsState {
         canClaim: true,
         canApprove: false,
         frequency: 'daily',
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
         labels: ['Ochtendroutine'],
-        actions: { claim: 'button.zara_claim_tanden' },
+        actions: { claim: 'button.zara_choreops_claim_chore_tanden_poetsen' },
       },
       {
         id: 'status:zara::aankleden',
+        statusEntityId: 'sensor.zara_choreops_chore_status_aankleden',
         name: 'Aankleden',
         icon: 'mdi:tshirt',
         status: 'pending',
@@ -89,20 +97,25 @@ function routineState(): ChoreOpsState {
         canClaim: true,
         canApprove: false,
         frequency: 'daily',
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
         labels: ['Ochtendroutine'],
-        actions: { claim: 'button.zara_claim_aankleden' },
+        actions: { claim: 'button.zara_choreops_claim_chore_aankleden' },
       },
       {
         id: 'status:zara::afwassen',
+        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
         name: 'Afwassen',
         icon: 'mdi:silverware',
         status: 'pending',
         assignee: 'Zara',
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
         points: 3,
         dueDate: null,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.zara_claim_afwassen' },
+        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
       },
     ],
     rewards: [],
@@ -140,8 +153,10 @@ describe('ChorePlanner routines', () => {
   beforeEach(() => {
     localStorage.clear();
     mocks.pressButton.mockClear();
+    mocks.createChore.mockClear();
     mocks.updateChore.mockClear();
     mocks.deleteChore.mockClear();
+    mocks.resolveChoreId.mockClear();
     mocks.state.current = routineState();
   });
 
@@ -264,6 +279,143 @@ describe('ChorePlanner routines', () => {
     expect(mocks.pressButton).not.toHaveBeenCalled();
   });
 
+  it('recreates a chore when changing to the create-only shared-first claim rule', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const row = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
+      (element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
+    )!;
+
+    fireEvent.click(row.querySelector<HTMLButtonElement>('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    const free = await waitFor(() => {
+      const input = container.querySelector<HTMLInputElement>('.planner-check-label input');
+      expect(input).not.toBeNull();
+      return input!;
+    });
+    fireEvent.click(free);
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledTimes(1));
+    const temporaryName = mocks.updateChore.mock.calls[0][0].name;
+    expect(mocks.resolveChoreId).toHaveBeenCalledWith(
+      'sensor.zara_choreops_chore_status_afwassen',
+    );
+    expect(temporaryName).toMatch(/^__abbai_flow_recreate_/);
+    expect(mocks.createChore).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Afwassen',
+        assignedUserNames: ['*'],
+        completionCriteria: 'shared_first',
+        points: 3,
+        frequency: 'none',
+        labels: [],
+      }),
+    );
+    expect(mocks.deleteChore).toHaveBeenCalledWith(temporaryName);
+    expect(mocks.updateChore.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.createChore.mock.invocationCallOrder[0],
+    );
+    expect(mocks.createChore.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.deleteChore.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('restores the original chore name if replacement creation fails', async () => {
+    mocks.createChore.mockRejectedValueOnce(new Error('Create failed'));
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const row = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
+      (element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
+    )!;
+
+    fireEvent.click(row.querySelector<HTMLButtonElement>('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    fireEvent.click(await waitFor(() => container.querySelector<HTMLInputElement>(
+      '.planner-check-label input',
+    )!));
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(2));
+    const temporaryName = mocks.updateChore.mock.calls[0][0].name;
+    expect(mocks.updateChore.mock.calls[1][0]).toMatchObject({
+      name: 'Afwassen',
+      targetName: temporaryName,
+      choreId: '023e4567-e89b-12d3-a456-426614174000',
+    });
+    expect(mocks.deleteChore).not.toHaveBeenCalled();
+  });
+
+  it('uses native assignment update when a shared-first chore is limited to one child', async () => {
+    const base = routineState();
+    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
+    const shared = {
+      ...afwassen,
+      id: 'status:zara::afwassen',
+      statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+      completionCriteria: 'shared_first',
+      assignedUserNames: ['Zara', 'Maya'],
+    };
+    mocks.state.current = {
+      ...base,
+      users: [
+        ...base.users,
+        {
+          name: 'Maya',
+          slug: 'maya',
+          points: 10,
+          dueToday: 1,
+          claimed: 0,
+          approved: 0,
+          completedToday: 0,
+        },
+      ],
+      chores: [
+        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
+        shared,
+        {
+          ...shared,
+          id: 'status:maya::afwassen',
+          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
+          assignee: 'Maya',
+          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
+        },
+      ],
+      pointsByUser: { ...base.pointsByUser, maya: 10 },
+    };
+
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const freeRow = [...column(container, 'Vrij te pakken').querySelectorAll<HTMLElement>('.planner-row')]
+      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
+    fireEvent.click(freeRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    const zaraChoice = await waitFor(() => {
+      const button = [...container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button')]
+        .find((item) => item.textContent?.includes('Zara'));
+      expect(button).toBeTruthy();
+      return button!;
+    });
+    fireEvent.click(zaraChoice);
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
+    expect(mocks.updateChore.mock.calls[0][0]).toMatchObject({
+      name: 'Afwassen',
+      assignedUserNames: ['Zara'],
+    });
+    expect(mocks.createChore).not.toHaveBeenCalled();
+    expect(mocks.deleteChore).not.toHaveBeenCalled();
+  });
+
   it('opens the missions overview from the routines section', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const missions = column(container, 'Zara').querySelector<HTMLButtonElement>(
@@ -293,7 +445,9 @@ describe('ChorePlanner routines', () => {
       container.querySelector<HTMLButtonElement>('.planner-sheet--confirm .planner-primary')!,
     );
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_tanden'),
+      expect(mocks.pressButton).toHaveBeenCalledWith(
+        'button.zara_choreops_claim_chore_tanden_poetsen',
+      ),
     );
   });
 
@@ -410,7 +564,9 @@ describe('ChorePlanner routines', () => {
         'Tanden poetsen',
       ),
     );
-    expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_aankleden');
+    expect(mocks.pressButton).toHaveBeenCalledWith(
+      'button.zara_choreops_claim_chore_aankleden',
+    );
   });
 
   it('leaves a paused routine out of the mission run', async () => {

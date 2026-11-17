@@ -1,11 +1,13 @@
 /**
  * ChoreOps (HA custom integration) data shapes.
  *
- * Verified against a live ChoreOps 1.6.0 instance. ChoreOps does NOT expose
- * per-chore status sensors; per-chore data lives in the `chores` attribute of
- * each user's `purpose_dashboard_helper` sensor. Every ChoreOps entity carries
- * a `purpose` attribute, which is the reliable discovery key (entity_id
- * patterns are slugified user names and therefore not stable).
+ * ChoreOps exposes one `purpose_chore_status` sensor per assigned user and
+ * chore. Its state is the per-user chore status, and its attributes include
+ * the chore name, assigned user names, completion criteria, recurrence,
+ * labels, and action button entity IDs. Dashboard-helper rows provide
+ * lightweight grouping metadata and can be split into separate shard sensors.
+ * Every ChoreOps entity carries a `purpose` attribute, which is the reliable
+ * discovery key (entity_id patterns are not stable).
  */
 
 /** Minimal HA state shape as returned by HomeAssistantClient.getStates(). */
@@ -40,6 +42,15 @@ export interface ChoreOpsChore {
   applicableDays?: string[];
   /** ChoreOps labels; Abbai Flow groups daily chores into routines by label. */
   labels?: string[];
+  /** ChoreOps create-only options retained when an edit must recreate a chore. */
+  customInterval?: number | null;
+  customIntervalUnit?: string | null;
+  approvalReset?: string | null;
+  pendingClaims?: string | null;
+  overdueHandling?: string | null;
+  claimLockUntilWindow?: boolean;
+  notificationChannel?: string | null;
+  notificationImportance?: string | null;
   /**
    * ISO timestamp of the last completion. Daily chores reset at midnight, so
    * this is what tells a "done today" card apart from yesterday's.

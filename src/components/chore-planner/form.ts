@@ -31,6 +31,7 @@ export const FREQUENCY_KEY: Record<ChoreOpsFrequency, TranslationKey> = {
   yearly: 'planner.freq.yearly',
   custom: 'planner.freq.custom',
   custom_from_complete: 'planner.freq.custom_from_complete',
+  custom_from_complete_date_only: 'planner.freq.custom_from_complete',
   week_end: 'planner.freq.week_end',
   month_end: 'planner.freq.month_end',
   quarter_end: 'planner.freq.quarter_end',
@@ -147,6 +148,9 @@ export function formFromLiveTask(task: PlannerTask, chore: ChoreOpsChore | null)
     ...base,
     points: chore?.points ?? base.points,
     liveFrequency: (chore?.frequency as ChoreOpsFrequency | null) ?? 'none',
+    liveInterval: chore?.customInterval ?? 1,
+    liveIntervalUnit:
+      (chore?.customIntervalUnit as ChoreOpsIntervalUnit | null) ?? 'days',
     liveWeekdays: days
       .map((day) => DAY_KEYS.indexOf(day as (typeof DAY_KEYS)[number]))
       .filter((index) => index >= 0),

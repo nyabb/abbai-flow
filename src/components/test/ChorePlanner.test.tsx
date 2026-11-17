@@ -80,11 +80,13 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
         icon: 'mdi:silverware',
         status: 'pending',
         assignee: 'Zara',
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
         points: 3,
         dueDate: null,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.zara_claim_afwassen' },
+        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
       },
     ],
     rewards: [
@@ -208,7 +210,8 @@ describe('ChorePlanner anyone chores', () => {
   function anyoneState(zaraStatus: string, mayaStatus: string): ChoreOpsState {
     const base = choreOpsState();
     const row = (name: string, status: string) => ({
-      id: `status:${name.toLowerCase()}::tafeldekken`,
+      id: `status:${name.toLowerCase()}::tafel dekken`,
+      statusEntityId: `sensor.${name.toLowerCase()}_choreops_chore_status_tafel_dekken`,
       name: 'Tafel dekken',
       icon: 'mdi:silverware',
       status,
@@ -219,7 +222,9 @@ describe('ChorePlanner anyone chores', () => {
       assignedUserNames: ['Maya', 'Zara'],
       canClaim: true,
       canApprove: false,
-      actions: { claim: `button.${name.toLowerCase()}_claim_tafeldekken` },
+      actions: {
+        claim: `button.${name.toLowerCase()}_choreops_claim_chore_tafel_dekken`,
+      },
     });
 
     return {
@@ -514,7 +519,7 @@ describe('ChorePlanner completion confirmation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_choreops_claim_chore_afwassen'),
     );
     // The toast names what happened — this was finishing, not claiming.
     await waitFor(() =>
@@ -575,7 +580,7 @@ describe('ChorePlanner completion confirmation', () => {
     );
 
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_claim_afwassen'),
+      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_choreops_claim_chore_afwassen'),
     );
     await waitFor(() =>
       expect(container.querySelector('.planner-toast')?.textContent).toBe('Geclaimd · Afwassen'),
@@ -595,15 +600,15 @@ describe('ChorePlanner completion confirmation', () => {
           ...choreOpsState().chores[0],
           id: 'status:zara::afdrogen',
           name: 'Afdrogen',
-          actions: { claim: 'button.zara_claim_afdrogen' },
+          actions: { claim: 'button.zara_choreops_claim_chore_afdrogen' },
         },
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
     for (const [label, entityId] of [
-      ['Afwassen', 'button.zara_claim_afwassen'],
-      ['Afdrogen', 'button.zara_claim_afdrogen'],
+      ['Afwassen', 'button.zara_choreops_claim_chore_afwassen'],
+      ['Afdrogen', 'button.zara_choreops_claim_chore_afdrogen'],
     ] as const) {
       const row = [...container.querySelectorAll<HTMLElement>('.planner-row')].find((element) =>
         element.textContent?.includes(label),
@@ -678,7 +683,7 @@ describe('ChorePlanner board', () => {
           assignee: 'Zara',
           frequency: 'daily',
           labels: ['Ochtendroutine'],
-          actions: { claim: 'button.zara_claim_kamer_opruimen' },
+          actions: { claim: 'button.zara_choreops_claim_chore_kamer_opruimen' },
         },
       ],
     };

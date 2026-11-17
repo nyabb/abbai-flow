@@ -208,7 +208,9 @@ export function ChoreEditor({
         </div>
       )}
       {showSchedule &&
-        (form.liveFrequency === 'custom' || form.liveFrequency === 'custom_from_complete') && (
+        (form.liveFrequency === 'custom' ||
+          form.liveFrequency === 'custom_from_complete' ||
+          form.liveFrequency === 'custom_from_complete_date_only') && (
           <>
             <label className="planner-field">
               {c.interval}
