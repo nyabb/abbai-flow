@@ -19,8 +19,10 @@
  */
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import { HomeAssistantClient } from '../api/homeassistant';
-import { callHaService, getAllEntityStates, hasToken } from '../api/ha-rest';
+import type { HAEntityRegistryEntry } from '../api/homeassistant';
+import { callAbbaiAction, callHaService, getAllEntityStates, hasToken } from '../api/ha-rest';
 import { useHomeAssistant } from './useHomeAssistant';
+import { usesServerProxy } from '../utils/ha-env';
 import {
   normalizeChoreOps,
   purposeOf,
@@ -69,6 +71,8 @@ export interface UseChoreOpsResult {
   createChore: (input: Omit<CreateChoreInput, 'entryId'>) => Promise<void>;
   /** Change an existing chore (assignees, schedule, points, times). */
   updateChore: (input: Omit<UpdateChoreInput, 'entryId'>) => Promise<void>;
+  /** Resolve a chore's internal ChoreOps ID from one of its status entities. */
+  resolveChoreId?: (statusEntityId: string) => Promise<string | null>;
   /** Create a reward for one or more ChoreOps users. */
   createReward: (input: Omit<CreateRewardInput, 'entryId'>) => Promise<void>;
   /** Change a reward's price. */
@@ -307,6 +311,41 @@ export function useChoreOps(): UseChoreOpsResult {
     void loadViaRest();
   }, [client, connected]);
 
+  const resolveChoreId = useCallback(
+    async (statusEntityId: string): Promise<string | null> => {
+      const entryId = snapshot.data?.entryId;
+      if (!entryId || !statusEntityId) return null;
+
+      try {
+        let entry: HAEntityRegistryEntry | null = null;
+        const activeClient = client();
+        if (activeClient && connected) {
+          entry = await activeClient.getEntityRegistryEntry(statusEntityId);
+        } else if (usesServerProxy()) {
+          const response = (await callAbbaiAction('/beacon-action/entity-registry', {
+            entity_id: statusEntityId,
+          })) as { entry?: HAEntityRegistryEntry | null } | null;
+          entry = response?.entry ?? null;
+        }
+
+        if (!entry || entry.platform !== 'choreops') return null;
+        const prefix = `${entryId}_`;
+        if (!entry.unique_id.startsWith(prefix)) return null;
+
+        // ChoreOps builds status entity unique IDs from the config entry,
+        // assignee UUID, chore UUID and a sensor suffix. The final UUID is the
+        // stable chore ID accepted by update_chore, including after a rename.
+        const ids = entry.unique_id.slice(prefix.length).match(
+          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+        );
+        return ids?.at(-1) ?? null;
+      } catch {
+        return null;
+      }
+    },
+    [client, connected],
+  );
+
   /**
    * Pull the new ChoreOps state right after a write.
    *
@@ -512,6 +551,7 @@ export function useChoreOps(): UseChoreOpsResult {
       claimChore,
       createChore,
       updateChore,
+      resolveChoreId,
       createReward,
       updateReward,
       deleteReward,
@@ -525,6 +565,7 @@ export function useChoreOps(): UseChoreOpsResult {
       claimChore,
       createChore,
       updateChore,
+      resolveChoreId,
       createReward,
       updateReward,
       deleteReward,

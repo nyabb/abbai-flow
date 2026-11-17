@@ -729,6 +729,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Teruggedraaid',
   'planner.action': 'Acties',
   'planner.sure': 'Zeker weten?',
+  'planner.renameUnavailable': 'Dit karweitje kon niet worden gevonden om te hernoemen. Vernieuw de lijst en probeer het opnieuw.',
   'planner.renameLocked': 'Naam wijzigen kan alleen in ChoreOps.',
   'planner.create': 'Taakje aanmaken',
   'planner.noFail': 'Niet gelukt, probeer opnieuw',

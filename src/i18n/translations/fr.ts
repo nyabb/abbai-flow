@@ -740,6 +740,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Annulé',
   'planner.action': 'Actions',
   'planner.sure': 'Supprimer vraiment ?',
+  'planner.renameUnavailable': 'Impossible d’identifier cette tâche pour la renommer. Actualisez les tâches puis réessayez.',
   'planner.renameLocked': 'Renommer n’est possible que dans ChoreOps.',
   'planner.create': 'Créer une tâche',
   'planner.noFail': 'Enregistrement impossible, réessaie',

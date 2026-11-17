@@ -732,6 +732,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Deshecho',
   'planner.action': 'Acciones',
   'planner.sure': '¿Eliminar de verdad?',
+  'planner.renameUnavailable': 'No se pudo identificar esta tarea para cambiarle el nombre. Actualiza las tareas e inténtalo de nuevo.',
   'planner.renameLocked': 'Solo se puede renombrar en ChoreOps.',
   'planner.create': 'Crear tarea',
   'planner.noFail': 'No se pudo guardar, inténtalo de nuevo',

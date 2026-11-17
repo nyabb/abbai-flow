@@ -144,11 +144,11 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
 export interface UpdateChoreInput {
   /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
   entryId: string | null;
-  /**
-   * The chore's current ChoreOps name. This is the only handle ChoreOps
-   * publishes, so renames are not possible — the service needs the internal
-   * chore id for that, which no entity attribute exposes.
-   */
+  /** ChoreOps internal ID, when resolved from the Home Assistant entity registry. */
+  choreId?: string;
+  /** Current chore name used as the lookup key when no `choreId` is available. */
+  targetName?: string;
+  /** New chore name, or the current name when no rename is requested. */
   name: string;
   /** Replaces the full assignee list when given. */
   assignedUserNames?: string[];
@@ -156,6 +156,8 @@ export interface UpdateChoreInput {
   description?: string;
   /** Replaces the label list when given; drives the routines grouping. */
   labels?: string[];
+  /** Changes the completion rule when requested. */
+  completionCriteria?: ChoreOpsCompletionCriteria;
   frequency?: string;
   customInterval?: number;
   customIntervalUnit?: ChoreOpsIntervalUnit;
@@ -181,9 +183,17 @@ export interface UpdateChoreInput {
  */
 export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string, unknown> | null {
   const name = input.name.trim();
-  if (!input.entryId || !name) return null;
+  const targetName = (input.targetName ?? name).trim();
+  if (!input.entryId || !name || (!input.choreId && !targetName)) return null;
+  // Without an internal ID ChoreOps interprets `name` as the lookup key and
+  // ignores it as an update field. Never accidentally turn a rename into a
+  // failed lookup against the new name.
+  if (!input.choreId && targetName !== name) return null;
 
-  const payload: Record<string, unknown> = { config_entry_id: input.entryId, name };
+  const payload: Record<string, unknown> = {
+    config_entry_id: input.entryId,
+    ...(input.choreId ? { id: input.choreId, name } : { name: targetName }),
+  };
 
   if (input.assignedUserNames) {
     const users = Array.from(
@@ -198,6 +208,7 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description !== undefined) payload.description = input.description.trim();
+  if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
   if (input.labels) {
     // An empty array is meaningful: it clears the labels (and with them the
     // routine grouping). Only a missing property means "leave them alone".

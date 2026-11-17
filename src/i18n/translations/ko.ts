@@ -720,6 +720,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.undoneToast': '되돌림',
   'planner.action': '작업',
   'planner.sure': '정말 삭제할까요?',
+  'planner.renameUnavailable': '이 집안일의 이름을 변경할 수 없습니다. 집안일 목록을 새로고침한 뒤 다시 시도하세요.',
   'planner.renameLocked': '이름 변경은 ChoreOps에서만 가능합니다.',
   'planner.create': '집안일 만들기',
   'planner.noFail': '저장하지 못했습니다. 다시 시도하세요',

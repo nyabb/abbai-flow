@@ -734,6 +734,7 @@ export const en = {
   'planner.undoneToast': 'Undone',
   'planner.action': 'Actions',
   'planner.sure': 'Delete for sure?',
+  'planner.renameUnavailable': 'Could not identify this chore for renaming. Refresh the chores and try again.',
   'planner.renameLocked': 'Renaming is only possible in ChoreOps.',
   'planner.create': 'Create chore',
   'planner.noFail': 'Could not save, try again',

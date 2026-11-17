@@ -19,7 +19,7 @@ export interface ChoreEditorProps {
   form: FormValue;
   setForm: Dispatch<SetStateAction<FormValue>>;
   members: PlannerMember[];
-  /** Present when editing; the name cannot be changed in ChoreOps. */
+  /** Present when editing an existing chore. */
   editingId: string | null;
   saving: boolean;
   copy: PlannerCopy;
@@ -64,10 +64,8 @@ export function ChoreEditor({
         <input
           autoFocus
           value={form.name}
-          disabled={Boolean(editingId)}
           onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))}
         />
-        {editingId && <small className="planner-hint">{c.renameLocked}</small>}
       </label>
       <label className="planner-field">
         {c.points}

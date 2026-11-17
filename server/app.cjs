@@ -653,6 +653,46 @@ async function handleCalendarEventAction(req, res, config) {
   }
 }
 
+/** POST /beacon-action/entity-registry { entity_id } */
+async function handleEntityRegistryLookup(req, res, config) {
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method not allowed' });
+    return;
+  }
+  if (!hasJsonContentType(req)) {
+    sendJson(res, 415, { error: 'Expected application/json' });
+    return;
+  }
+
+  const { value, error } = await readJsonObject(req);
+  if (error) {
+    sendJson(res, error.status, { error: error.message });
+    return;
+  }
+
+  const { entity_id } = value;
+  if (typeof entity_id !== 'string' || !/^[a-z0-9_]+\.[a-z0-9_]+$/i.test(entity_id)) {
+    sendJson(res, 400, { error: 'Invalid entity_id' });
+    return;
+  }
+
+  try {
+    const entry = await haWsCommand(config, {
+      type: 'config/entity_registry/get',
+      entity_id,
+    });
+    if (!entry || entry.platform !== 'choreops' || typeof entry.unique_id !== 'string') {
+      sendJson(res, 200, { entry: null });
+      return;
+    }
+    sendJson(res, 200, {
+      entry: { entity_id: entry.entity_id, unique_id: entry.unique_id, platform: entry.platform },
+    });
+  } catch (err) {
+    sendJson(res, 502, { error: err.message, code: err.code || null });
+  }
+}
+
 /**
  * Read a single JSON document without reparsing failures.
  * Returns `null` for "not stored yet" and throws a typed error otherwise.
@@ -1328,6 +1368,7 @@ async function route(req, res, config) {
     url === '/beacon-action/voice' ||
     url === '/beacon-action/service' ||
     url === '/beacon-action/calendar-event' ||
+    url === '/beacon-action/entity-registry' ||
     url.startsWith('/beacon-data/') ||
     url.startsWith('/api/');
 
@@ -1347,6 +1388,10 @@ async function route(req, res, config) {
     }
     if (url === '/beacon-action/calendar-event') {
       await handleCalendarEventAction(req, res, config);
+      return;
+    }
+    if (url === '/beacon-action/entity-registry') {
+      await handleEntityRegistryLookup(req, res, config);
       return;
     }
     if (url.startsWith('/beacon-data/')) {
