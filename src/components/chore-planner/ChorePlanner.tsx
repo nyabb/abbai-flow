@@ -1038,14 +1038,18 @@ export function ChorePlanner({
         const assignedNames = new Set(
           (chore.assignedUserNames ?? []).map((name) => normaliseName(name)),
         );
-        nextForm.free =
+        const anyone =
           normaliseName(chore.completionCriteria ?? '') === 'shared_first' ||
           assignedNames.has(normaliseName(CHOREOPS_ALL_USERS));
-        nextForm.memberIds = nextForm.free
-          ? []
-          : Array.from(userNameByMemberId.entries())
-              .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
-              .map(([memberId]) => memberId);
+        if (anyone) {
+          nextForm.free = true;
+          nextForm.memberIds = [];
+        } else if (chore.assignedUserNames?.length) {
+          nextForm.free = false;
+          nextForm.memberIds = Array.from(userNameByMemberId.entries())
+            .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
+            .map(([memberId]) => memberId);
+        }
       }
       setForm(nextForm);
       dispatchOverlay({ type: 'open-form', editingId: task.id });
