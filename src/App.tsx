@@ -46,6 +46,11 @@ import { I18nContext, createI18n } from './i18n';
 
 const config = getConfig();
 
+type EventDialogState =
+  | { type: 'closed' }
+  | { type: 'create'; prefillDate: string | null; prefillTime: string | null }
+  | { type: 'edit'; event: CalendarEvent };
+
 export function App() {
   const auth = useHaAuth();
   const { client, connected } = useHomeAssistant();
@@ -105,10 +110,11 @@ export function App() {
     () => events.filter((event) => !hiddenCalendars.has(event.calendarId)),
     [events, hiddenCalendars],
   );
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [prefillDate, setPrefillDate] = useState<string | null>(null);
-  const [prefillTime, setPrefillTime] = useState<string | null>(null);
+  const [eventDialog, setEventDialog] = useState<EventDialogState>({ type: 'closed' });
+  const selectedEvent = eventDialog.type === 'edit' ? eventDialog.event : null;
+  const showModal = eventDialog.type !== 'closed';
+  const prefillDate = eventDialog.type === 'create' ? eventDialog.prefillDate : null;
+  const prefillTime = eventDialog.type === 'create' ? eventDialog.prefillTime : null;
   const [activeView, setActiveView] = useState<SidebarView>(() => {
     // A dedicated display device points its browser at /display (or ?display=1
     // when the app is served under a Home Assistant ingress path that already
@@ -234,24 +240,19 @@ export function App() {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    setSelectedEvent(event);
-    setPrefillDate(null);
-    setPrefillTime(null);
-    setShowModal(true);
+    setEventDialog({ type: 'edit', event });
   }, []);
 
   const handleSlotClick = useCallback((date: string, hour: number) => {
-    setSelectedEvent(null);
-    setPrefillDate(date);
-    setPrefillTime(`${String(hour).padStart(2, '0')}:00`);
-    setShowModal(true);
+    setEventDialog({
+      type: 'create',
+      prefillDate: date,
+      prefillTime: `${String(hour).padStart(2, '0')}:00`,
+    });
   }, []);
 
   const handleCloseModal = useCallback(() => {
-    setShowModal(false);
-    setSelectedEvent(null);
-    setPrefillDate(null);
-    setPrefillTime(null);
+    setEventDialog({ type: 'closed' });
   }, []);
 
   const handleSaveEvent = useCallback(
@@ -412,11 +413,12 @@ export function App() {
   );
 
   const handleAddEvent = useCallback(() => {
-    setSelectedEvent(null);
     // Default new events to the day currently selected on the dashboard.
-    setPrefillDate(activeView === 'dashboard' ? format(dashboardDate, 'yyyy-MM-dd') : null);
-    setPrefillTime(null);
-    setShowModal(true);
+    setEventDialog({
+      type: 'create',
+      prefillDate: activeView === 'dashboard' ? format(dashboardDate, 'yyyy-MM-dd') : null,
+      prefillTime: null,
+    });
   }, [activeView, dashboardDate]);
 
   const handleChangeView = useCallback((view: SidebarView) => {
