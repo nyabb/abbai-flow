@@ -682,6 +682,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.everyone': '全員',
   'planner.anyone': '早い者勝ち',
   'planner.freeTask': '誰でも受けられる',
+  'planner.claimModeEditUnavailable': 'ChoreOpsでは、ここから取得モードを変更できません。ChoreOpsでモードを変更してから、ここで担当者を編集してください。',
   'planner.frequency': '繰り返し',
   'planner.daily': '毎日',
   'planner.weekly': '毎週',

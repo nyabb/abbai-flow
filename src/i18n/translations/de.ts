@@ -695,6 +695,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.everyone': 'Alle',
   'planner.anyone': 'Wer zuerst kommt',
   'planner.freeTask': 'Für alle frei zu übernehmen',
+  'planner.claimModeEditUnavailable': 'ChoreOps kann den Zuweisungsmodus hier nicht ändern. Ändere ihn in ChoreOps und bearbeite danach hier die Zuständigkeiten.',
   'planner.frequency': 'Wiederholung',
   'planner.daily': 'Täglich',
   'planner.weekly': 'Wöchentlich',

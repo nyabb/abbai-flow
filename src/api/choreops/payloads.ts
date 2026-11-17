@@ -156,8 +156,6 @@ export interface UpdateChoreInput {
   description?: string;
   /** Replaces the label list when given; drives the routines grouping. */
   labels?: string[];
-  /** Changes the completion rule when requested. */
-  completionCriteria?: ChoreOpsCompletionCriteria;
   frequency?: string;
   customInterval?: number;
   customIntervalUnit?: ChoreOpsIntervalUnit;
@@ -177,6 +175,8 @@ export interface UpdateChoreInput {
  * Only the fields the caller actually resolved are included, so editing one
  * property never resets the others. Returns `null` without a config entry or a
  * chore name, since ChoreOps needs one to find the chore.
+ *
+ * ChoreOps only accepts `completion_criteria` on creation, not updates.
  *
  * Note: ChoreOps rejects a schedule change with "The requested changes require
  * a future due date", so callers must send `dueDate` alongside `frequency`.
@@ -208,7 +208,6 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     payload.points = Math.max(0, Math.round(input.points));
   }
   if (input.description !== undefined) payload.description = input.description.trim();
-  if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
   if (input.labels) {
     // An empty array is meaningful: it clears the labels (and with them the
     // routine grouping). Only a missing property means "leave them alone".

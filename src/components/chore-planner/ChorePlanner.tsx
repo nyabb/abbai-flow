@@ -1095,6 +1095,20 @@ export function ChorePlanner({
             (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
           ) ?? null
         : null;
+    if (editingId && originalChore) {
+      const assignedNames = (originalChore.assignedUserNames ?? []).map((name) =>
+        normaliseName(name),
+      );
+      const originalCriteria = normaliseName(originalChore.completionCriteria ?? '');
+      const originalFree =
+        originalCriteria === 'shared_first' ||
+        assignedNames.includes(normaliseName(CHOREOPS_ALL_USERS));
+      const claimModeKnown = Boolean(originalCriteria || assignedNames.length > 0);
+      if (claimModeKnown && form.free !== originalFree) {
+        showToast(t('planner.claimModeEditUnavailable'), 'error');
+        return;
+      }
+    }
     const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
     const nextLabel = form.liveLabel.trim();
     const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
@@ -1127,18 +1141,12 @@ export function ChorePlanner({
           if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
           choreId = resolvedId;
         }
-        const completionCriteria = form.free
-          ? 'shared_first'
-          : normaliseName(originalChore?.completionCriteria ?? '') === 'shared_first'
-            ? 'independent'
-            : undefined;
         await choreOps.updateChore({
           ...schedule,
           name: form.name,
           targetName: originalName,
           choreId,
           assignedUserNames: userNames,
-          completionCriteria,
           points: form.points,
           windowOffset: form.liveWindow,
           reminderOffset: form.liveReminder,

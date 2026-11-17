@@ -41,6 +41,16 @@ describe('buildUpdateChorePayload', () => {
     });
   });
 
+  it('does not send the create-only completion rule on updates', () => {
+    const payload = buildUpdateChorePayload({
+      entryId: 'e1',
+      name: 'Afwassen',
+      assignedUserNames: ['Maya'],
+    });
+
+    expect(payload).not.toHaveProperty('completion_criteria');
+  });
+
   it('sends schedule fields together with the due date ChoreOps requires', () => {
     const payload = buildUpdateChorePayload({
       entryId: 'e1',

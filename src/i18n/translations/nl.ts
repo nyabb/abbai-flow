@@ -688,6 +688,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.everyone': 'Iedereen',
   'planner.anyone': 'Wie het eerst is',
   'planner.freeTask': 'Vrij te pakken door iedereen',
+  'planner.claimModeEditUnavailable': 'ChoreOps kan de claimmodus niet via deze wijziging aanpassen. Wijzig dit in ChoreOps en pas daarna hier de toegewezen kinderen aan.',
   'planner.frequency': 'Frequentie',
   'planner.daily': 'Dagelijks',
   'planner.weekly': 'Wekelijks',
