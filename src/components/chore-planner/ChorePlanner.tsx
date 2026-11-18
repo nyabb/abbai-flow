@@ -4,6 +4,7 @@ import {
   Check,
   ChevronDown,
   Clock3,
+  Copy,
   Eye,
   EyeOff,
   Filter,
@@ -41,6 +42,7 @@ import {
 } from '../../api/reward-redemptions';
 import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
+import { HomeAssistantServiceError } from '../../api/ha-rest';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
@@ -121,6 +123,16 @@ function sameDays(left: string[] | undefined, right: string[]): boolean {
   const normalize = (days: string[]) =>
     Array.from(new Set(days.map((day) => day.trim().toLowerCase()))).sort();
   return JSON.stringify(normalize(left ?? [])) === JSON.stringify(normalize(right));
+}
+
+function errorDiagnosticText(error: unknown): string {
+  if (error instanceof HomeAssistantServiceError) return error.details;
+  if (error instanceof Error) {
+    const attachedDetails = (error as Error & { details?: unknown }).details;
+    if (typeof attachedDetails === 'string') return attachedDetails;
+    return error.stack ?? `${error.name}: ${error.message}`;
+  }
+  return typeof error === 'string' ? error : String(error);
 }
 
 /**
@@ -211,6 +223,8 @@ export function ChorePlanner({
   const [saving, setSaving] = useState(false);
   /** Bottom-right notification: green for "done", red for "that failed". */
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  const [errorCopied, setErrorCopied] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [goalCelebration, setGoalCelebration] = useState(false);
   const [privacy, setPrivacy] = useState(false);
@@ -862,7 +876,35 @@ export function ChorePlanner({
   /** The filter sheet doubles as the board's filter state indicator. */
   const filterOpen = modal === 'filter';
 
-  const showToast = (message: string, kind: ToastKind = 'success') => setToast({ message, kind });
+  const showToast = (
+    message: string,
+    kind: ToastKind = 'success',
+    details?: string,
+  ) => {
+    setToast({ message, kind });
+    if (kind === 'error') {
+      setErrorDetails(details ?? message);
+      setErrorCopied(false);
+    }
+  };
+
+  const showError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : c.noFail;
+    showToast(message, 'error', errorDiagnosticText(error));
+  };
+
+  const copyErrorDetails = async () => {
+    if (!errorDetails) return;
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(errorDetails);
+      setErrorCopied(true);
+    } catch {
+      // The prompt keeps the complete text available on browsers that block
+      // clipboard access (including some mobile WebViews).
+      window.prompt(c.errorDetailsTitle, errorDetails);
+    }
+  };
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
     try {
@@ -953,7 +995,7 @@ export function ChorePlanner({
         advanceMission();
       }
     } catch (err) {
-      showToast(err instanceof Error ? err.message : c.noFail, 'error');
+      showError(err);
     } finally {
       /* Must clear on success too: leaving it set made `completeTask` bail out
          for every later card, so a second chore only worked after a reload. */
@@ -1271,7 +1313,16 @@ export function ChorePlanner({
             } catch (restoreError) {
               const createMessage = createError instanceof Error ? createError.message : c.noFail;
               const restoreMessage = restoreError instanceof Error ? restoreError.message : c.noFail;
-              throw new Error(`${createMessage}. Could not restore the original chore: ${restoreMessage}`);
+              const failure = new Error(
+                `${createMessage}. Could not restore the original chore: ${restoreMessage}`,
+              ) as Error & { details?: string };
+              failure.details = [
+                'Replacement create request failed:',
+                errorDiagnosticText(createError),
+                'Original chore restore request failed:',
+                errorDiagnosticText(restoreError),
+              ].join('\n\n');
+              throw failure;
             }
             throw createError;
           }
@@ -1280,12 +1331,14 @@ export function ChorePlanner({
             await choreOps.deleteChore(temporaryName);
           } catch (deleteError) {
             const rollbackErrors: string[] = [];
+            const rollbackDetails: string[] = [];
             try {
               await choreOps.deleteChore(form.name.trim());
             } catch (rollbackError) {
               rollbackErrors.push(
                 `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
               );
+              rollbackDetails.push(errorDiagnosticText(rollbackError));
             }
             try {
               await choreOps.updateChore({
@@ -1297,10 +1350,22 @@ export function ChorePlanner({
               rollbackErrors.push(
                 `could not restore the original name: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
               );
+              rollbackDetails.push(errorDiagnosticText(restoreError));
             }
             const deleteMessage = deleteError instanceof Error ? deleteError.message : c.noFail;
             if (rollbackErrors.length) {
-              throw new Error(`${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`);
+              const failure = new Error(
+                `${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`,
+              ) as Error & { details?: string };
+              failure.details = [
+                'Delete request failed:',
+                errorDiagnosticText(deleteError),
+                ...rollbackDetails.flatMap((details, index) => [
+                  `Rollback request ${index + 1} failed:`,
+                  details,
+                ]),
+              ].join('\n\n');
+              throw failure;
             }
             throw deleteError;
           }
@@ -1360,7 +1425,7 @@ export function ChorePlanner({
     } catch (err) {
       // ChoreOps replies with the exact reason (e.g. "The requested changes
       // require a future due date"); show it verbatim in the red toast.
-      showToast(err instanceof Error ? err.message : c.noFail, 'error');
+      showError(err);
     } finally {
       setSaving(false);
     }
@@ -1372,7 +1437,7 @@ export function ChorePlanner({
       dispatchOverlay({ type: 'close' });
       showToast(toastWith(c.removedToast, task.name));
     } catch (err) {
-      showToast(err instanceof Error ? err.message : c.noFail, 'error');
+      showError(err);
     }
   };
 
@@ -1394,7 +1459,7 @@ export function ChorePlanner({
           dispatchOverlay({ type: 'close' });
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail, 'error');
+          showError(err);
         } finally {
           setSaving(false);
         }
@@ -1419,7 +1484,7 @@ export function ChorePlanner({
         dispatchOverlay({ type: 'close' });
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
       } catch (err) {
-        showToast(err instanceof Error ? err.message : c.noFail, 'error');
+        showError(err);
       } finally {
         setSaving(false);
       }
@@ -1442,7 +1507,7 @@ export function ChorePlanner({
         dispatchOverlay({ type: 'close' });
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
-        showToast(err instanceof Error ? err.message : c.noFail, 'error');
+        showError(err);
       } finally {
         setSaving(false);
       }
@@ -1560,7 +1625,7 @@ export function ChorePlanner({
             name: definition?.name ?? redemption.rewardLabel,
           });
         } catch (err) {
-          showToast(err instanceof Error ? err.message : c.noFail, 'error');
+          showError(err);
         } finally {
           setSaving(false);
         }
@@ -1934,6 +1999,35 @@ export function ChorePlanner({
         <div className="planner-offline-banner" role="alert">
           {c.offline}
         </div>
+      )}
+      {errorDetails && (
+        <section
+          className="planner-error-details"
+          role="alert"
+          aria-labelledby="planner-error-details-title"
+        >
+          <div className="planner-error-details__header">
+            <h2 id="planner-error-details-title">{c.errorDetailsTitle}</h2>
+            <div className="planner-error-details__actions">
+              <button type="button" onClick={() => void copyErrorDetails()}>
+                {errorCopied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
+                <span>{errorCopied ? c.errorDetailsCopied : c.copyErrorDetails}</span>
+              </button>
+              <button
+                type="button"
+                className="planner-error-details__close"
+                aria-label={t('common.close')}
+                onClick={() => {
+                  setErrorDetails(null);
+                  setErrorCopied(false);
+                }}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+          <pre tabIndex={0}>{errorDetails}</pre>
+        </section>
       )}
       {screen === 'board' && (
         <ChoreBoard

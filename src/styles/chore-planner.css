@@ -1772,6 +1772,128 @@
   text-align: center;
   pointer-events: none;
 }
+
+/* Persistent, selectable diagnostics for failed Home Assistant actions. */
+.planner-error-details {
+  position: fixed;
+  z-index: 320;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(760px, calc(100vw - 24px));
+  max-height: min(72vh, 640px);
+  max-height: min(72dvh, 640px);
+  padding: 14px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  border: 1px solid var(--color-error);
+  border-radius: 15px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
+}
+
+.planner-error-details__header,
+.planner-error-details__actions {
+  display: flex;
+  align-items: center;
+}
+
+.planner-error-details__header {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.planner-error-details__header h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.planner-error-details__actions {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.planner-error-details__actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--planner-line);
+  border-radius: 9px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.planner-error-details__actions button:focus-visible {
+  outline: 3px solid var(--planner-accent);
+  outline-offset: 2px;
+}
+
+.planner-error-details__actions svg {
+  width: 17px;
+  height: 17px;
+}
+
+.planner-error-details__actions .planner-error-details__close {
+  width: 38px;
+  padding: 7px;
+}
+
+.planner-error-details pre {
+  max-height: min(52vh, 480px);
+  max-height: min(52dvh, 480px);
+  margin: 0;
+  padding: 12px;
+  overflow: auto;
+  border-radius: 9px;
+  color: var(--planner-ink);
+  background: var(--planner-soft);
+  font: 0.78rem/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+@media (max-width: 640px) {
+  .planner-error-details {
+    top: max(8px, env(safe-area-inset-top));
+    width: calc(100vw - 16px);
+    max-height: 74vh;
+    max-height: 74dvh;
+    padding: 11px;
+  }
+
+  .planner-error-details__header h2 {
+    font-size: 0.9375rem;
+  }
+
+  .planner-error-details__actions button {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 0.8125rem;
+  }
+
+  .planner-error-details__actions .planner-error-details__close {
+    width: 36px;
+  }
+
+  .planner-error-details pre {
+    max-height: 56dvh;
+    padding: 10px;
+    font-size: 0.72rem;
+  }
+}
+
 /* Dark theme keeps the same geometry; only the palette changes. */
 .planner-toast {
   position: fixed;
