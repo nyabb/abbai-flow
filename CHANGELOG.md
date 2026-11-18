@@ -1,3 +1,10 @@
+## [2.7.4](https://github.com/nyabb/abbai-flow/compare/v2.7.3...v2.7.4) (2026-11-18)
+
+
+### Bug Fixes
+
+* prevent chore assignee edits from resending schedule ([bdbe097](https://github.com/nyabb/abbai-flow/commit/bdbe097d7ee4717a71e42801a48eea270261a19f))
+
 ## [2.7.3](https://github.com/nyabb/abbai-flow/compare/v2.7.2...v2.7.3) (2026-11-18)
 
 
