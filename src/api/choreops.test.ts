@@ -107,7 +107,7 @@ describe('buildCreateChorePayload', () => {
     expect(custom).not.toHaveProperty('applicable_days');
   });
 
-  it('preserves create_chore options that ChoreOps exposes for a replacement chore', () => {
+  it('maps replacement chore options to ChoreOps create_chore service fields', () => {
     const payload = buildCreateChorePayload({
       entryId: 'entry-1',
       name: 'Tanden poetsen',
@@ -135,10 +135,10 @@ describe('buildCreateChorePayload', () => {
     expect(payload).toMatchObject({
       completion_criteria: 'shared_first',
       icon: 'mdi:tooth',
-      approval_reset: 'at_midnight_once',
+      approval_reset_type: 'at_midnight_once',
       pending_claims: 'hold_pending',
       overdue_handling: 'at_due_date',
-      claim_lock_until_window: true,
+      chore_claim_lock_until_window: true,
       notification_channel: 'mobile_app',
       notification_importance: 'normal',
       custom_interval: 3,
@@ -148,6 +148,8 @@ describe('buildCreateChorePayload', () => {
       due_reminder_offset: '30m',
       auto_approve: true,
     });
+    expect(payload).not.toHaveProperty('approval_reset');
+    expect(payload).not.toHaveProperty('claim_lock_until_window');
   });
 });
 
