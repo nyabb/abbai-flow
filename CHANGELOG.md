@@ -1,3 +1,10 @@
+## [2.7.3](https://github.com/nyabb/abbai-flow/compare/v2.7.2...v2.7.3) (2026-11-18)
+
+
+### Bug Fixes
+
+* recreate chores for create-only claim mode edits ([043e63b](https://github.com/nyabb/abbai-flow/commit/043e63b8c69334b722f1609feb3bc90adad53f70))
+
 ## [2.7.2](https://github.com/nyabb/abbai-flow/compare/v2.7.1...v2.7.2) (2026-11-13)
 
 
