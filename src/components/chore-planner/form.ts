@@ -158,7 +158,10 @@ export function formFromLiveTask(task: PlannerTask, chore: ChoreOpsChore | null)
     liveAutoApprove: chore?.autoApprove ?? false,
     liveDescription: chore?.description ?? '',
     liveLabel: chore?.labels?.[0] ?? '',
-    deadlineAt: chore?.dueDate ? localDateTime(new Date(chore.dueDate)) : base.deadlineAt,
+    // A live ChoreOps chore without a due date must stay date-less in the
+    // editor. `base.deadlineAt` is a planner fallback and must not be sent back
+    // to ChoreOps as though the user had set a due date.
+    deadlineAt: chore?.dueDate ? localDateTime(new Date(chore.dueDate)) : '',
   };
 }
 

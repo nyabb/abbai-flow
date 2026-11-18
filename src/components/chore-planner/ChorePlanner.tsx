@@ -28,6 +28,7 @@ import type {
 import { fetchChoreOpsRewardHistory } from '../../api/choreops-ledger';
 import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
 import {
+  formatChoreOpsOffset,
   isChoreOpenToAnyone,
   resolveMemberForUser,
   CHOREOPS_ALL_USERS,
@@ -100,6 +101,27 @@ type Screen = 'board' | 'child' | 'missions' | 'mission' | 'closing';
 type ToastKind = 'success' | 'error';
 
 const PAUSED_ROUTINES_KEY = 'beacon_paused_routines';
+
+function sameMinute(left: string | null | undefined, right: string | null | undefined): boolean {
+  const minute = (value: string | null | undefined): number | null => {
+    if (!value) return null;
+    const timestamp = new Date(value).getTime();
+    return Number.isFinite(timestamp) ? Math.floor(timestamp / 60_000) : null;
+  };
+  return minute(left) === minute(right);
+}
+
+function sameNames(left: string[] | undefined, right: string[]): boolean {
+  const normalize = (names: string[]) =>
+    Array.from(new Set(names.map((name) => normaliseName(name)))).sort();
+  return JSON.stringify(normalize(left ?? [])) === JSON.stringify(normalize(right));
+}
+
+function sameDays(left: string[] | undefined, right: string[]): boolean {
+  const normalize = (days: string[]) =>
+    Array.from(new Set(days.map((day) => day.trim().toLowerCase()))).sort();
+  return JSON.stringify(normalize(left ?? [])) === JSON.stringify(normalize(right));
+}
 
 /**
  * Routines paused on this device before pause state moved into the shared
@@ -1132,6 +1154,50 @@ export function ChorePlanner({
       // The first ChoreOps label groups daily chores into a named routine.
       labels,
     };
+    const frequencyChanged = Boolean(
+      originalChore && frequency !== (originalChore.frequency ?? 'none'),
+    );
+    const intervalChanged = Boolean(
+      originalChore &&
+        (form.liveInterval !== (originalChore.customInterval ?? 1) ||
+          form.liveIntervalUnit !== (originalChore.customIntervalUnit ?? 'days')),
+    );
+    const requestedDays = schedule.applicableDays ?? [];
+    const daysChanged = Boolean(
+      originalChore &&
+        ((frequency === 'weekly' || originalChore.frequency === 'weekly') &&
+          !sameDays(originalChore.applicableDays, requestedDays)),
+    );
+    const dueDateChanged = Boolean(
+      originalChore &&
+        !sameMinute(schedule.dueDate, originalChore.dueDate),
+    );
+    const currentWindow = formatChoreOpsOffset(originalChore?.windowOffset);
+    const windowChanged = Boolean(originalChore && form.liveWindow.trim() !== currentWindow);
+    const updateSchedule = {
+      // ChoreOps treats these as real schedule edits. Leave unchanged schedule
+      // fields out of an assignee-only update, especially `due_date`: sensors
+      // can publish an overdue date and the editor may otherwise replay it.
+      ...(frequencyChanged ? { frequency: schedule.frequency } : {}),
+      ...(frequencyChanged || intervalChanged
+        ? {
+            customInterval: schedule.customInterval,
+            customIntervalUnit: schedule.customIntervalUnit,
+          }
+        : {}),
+      ...(frequencyChanged || daysChanged
+        ? { applicableDays: frequency === 'weekly' ? requestedDays : [] }
+        : {}),
+      ...(dueDateChanged && schedule.dueDate ? { dueDate: schedule.dueDate } : {}),
+      ...(originalChore && form.liveDescription !== (originalChore.description ?? '')
+        ? { description: form.liveDescription }
+        : {}),
+      ...(originalChore && form.liveAutoApprove !== Boolean(originalChore.autoApprove)
+        ? { autoApprove: form.liveAutoApprove }
+        : {}),
+      ...(windowChanged ? { windowOffset: form.liveWindow } : {}),
+      ...(labels !== undefined ? { labels } : {}),
+    };
     try {
       setSaving(true);
       if (editingId) {
@@ -1146,14 +1212,17 @@ export function ChorePlanner({
         }
         if (!recreateForClaimModeChange) {
           await choreOps.updateChore({
-            ...schedule,
+            ...updateSchedule,
             name: form.name,
             targetName: originalName,
             choreId,
-            assignedUserNames: userNames,
-            points: form.points,
-            windowOffset: form.liveWindow,
-            reminderOffset: form.liveReminder,
+            ...(!originalChore || !sameNames(originalChore.assignedUserNames, userNames)
+              ? { assignedUserNames: userNames }
+              : {}),
+            ...(!originalChore || form.points !== originalChore.points
+              ? { points: form.points }
+              : {}),
+            ...(form.liveReminder.trim() ? { reminderOffset: form.liveReminder } : {}),
           });
         } else {
           const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -1174,7 +1243,14 @@ export function ChorePlanner({
               icon: originalChore?.icon ?? undefined,
               customInterval: form.liveInterval,
               customIntervalUnit: form.liveIntervalUnit,
-              dueDate: schedule.dueDate ?? originalChore?.dueDate ?? undefined,
+              dueDate: (() => {
+                if (dueDateChanged) return schedule.dueDate;
+                const existingDueDate = originalChore?.dueDate;
+                if (existingDueDate && new Date(existingDueDate).getTime() > Date.now()) {
+                  return existingDueDate;
+                }
+                return undefined;
+              })(),
               windowOffset: form.liveWindow,
               reminderOffset: form.liveReminder || undefined,
               autoApprove: form.liveAutoApprove,
