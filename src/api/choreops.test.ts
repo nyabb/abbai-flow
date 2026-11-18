@@ -106,14 +106,52 @@ describe('buildCreateChorePayload', () => {
     expect(custom).toMatchObject({ custom_interval: 2, custom_interval_unit: 'weeks' });
     expect(custom).not.toHaveProperty('applicable_days');
   });
+
+  it('preserves create_chore options that ChoreOps exposes for a replacement chore', () => {
+    const payload = buildCreateChorePayload({
+      entryId: 'entry-1',
+      name: 'Tanden poetsen',
+      assignedUserNames: ['*'],
+      completionCriteria: 'shared_first',
+      icon: 'mdi:tooth',
+      points: 5,
+      description: 'Voor het ontbijt',
+      labels: ['Ochtendroutine'],
+      frequency: 'custom_from_complete_date_only',
+      customInterval: 3,
+      customIntervalUnit: 'weeks',
+      dueDate: '2026-11-30T07:00:00.000Z',
+      windowOffset: '1h',
+      reminderOffset: '30m',
+      autoApprove: true,
+      approvalReset: 'at_midnight_once',
+      pendingClaims: 'hold_pending',
+      overdueHandling: 'at_due_date',
+      claimLockUntilWindow: true,
+      notificationChannel: 'mobile_app',
+      notificationImportance: 'normal',
+    });
+
+    expect(payload).toMatchObject({
+      completion_criteria: 'shared_first',
+      icon: 'mdi:tooth',
+      approval_reset: 'at_midnight_once',
+      pending_claims: 'hold_pending',
+      overdue_handling: 'at_due_date',
+      claim_lock_until_window: true,
+      notification_channel: 'mobile_app',
+      notification_importance: 'normal',
+      custom_interval: 3,
+      custom_interval_unit: 'weeks',
+      due_date: '2026-11-30T07:00:00.000Z',
+      due_window_offset: '1h',
+      due_reminder_offset: '30m',
+      auto_approve: true,
+    });
+  });
 });
 
-/**
- * The dashboard helper's `chores` attribute is empty whenever nothing is due,
- * so the chores screen had nothing to render even though ChoreOps publishes a
- * claim/approve/disapprove button per chore. The list is built from those
- * buttons now; these tests pin that down.
- */
+/** ChoreOps returns per-user status sensors and action buttons as HA entities. */
 
 const btn = (purpose: string, user: string, chore: string, id: string) => ({
   entity_id: id,
@@ -122,7 +160,7 @@ const btn = (purpose: string, user: string, chore: string, id: string) => ({
 });
 
 describe('normalizeChoreOps — per-chore buttons', () => {
-  it('lists chores from the action buttons even with no dashboard-helper items', () => {
+  it('joins the ChoreOps status sensor with its separate action button entities', () => {
     const result = normalizeChoreOps([
       {
         entity_id: 'sensor.maya_choreops_points',
@@ -132,7 +170,38 @@ describe('normalizeChoreOps — per-chore buttons', () => {
       {
         entity_id: 'sensor.maya_choreops_ui_dashboard_helper',
         state: 'ok',
-        attributes: { purpose: 'purpose_dashboard_helper', user_name: 'Maya', chores: [] },
+        attributes: {
+          purpose: 'purpose_dashboard_helper',
+          user_name: 'Maya',
+          chores: [
+            {
+              eid: 'sensor.maya_choreops_chore_status_stofzuigen_beneden',
+              name: 'Stofzuigen beneden',
+              state: 'pending',
+              labels: [],
+              primary_group: 'other',
+              is_today_am: null,
+            },
+          ],
+        },
+      },
+      {
+        entity_id: 'sensor.maya_choreops_chore_status_stofzuigen_beneden',
+        state: 'pending',
+        attributes: {
+          purpose: 'purpose_chore_status',
+          user_name: 'Maya',
+          chore_name: 'Stofzuigen beneden',
+          assigned_user_names: ['Maya'],
+          completion_criteria: 'independent',
+          default_points: 4,
+          recurring_frequency: 'weekly',
+          applicable_days: ['sat'],
+          labels: [],
+          can_claim: true,
+          can_approve: false,
+          claim_button_eid: 'button.maya_choreops_claim_chore_stofzuigenbe_beneden',
+        },
       },
       btn(
         'purpose_button_chore_claim',
@@ -140,30 +209,23 @@ describe('normalizeChoreOps — per-chore buttons', () => {
         'Stofzuigen beneden',
         'button.maya_choreops_claim_chore_stofzuigenbe_beneden',
       ),
-      btn(
-        'purpose_button_chore_approve',
-        'Maya',
-        'Stofzuigen beneden',
-        'button.maya_choreops_approve_chore_stofzuigenbe_beneden',
-      ),
-      btn(
-        'purpose_button_chore_disapprove',
-        'Maya',
-        'Stofzuigen beneden',
-        'button.maya_choreops_disapprove_chore_stofzuigenbe_beneden',
-      ),
     ]);
 
     expect(result.chores).toHaveLength(1);
     expect(result.chores[0]).toMatchObject({
       name: 'Stofzuigen beneden',
+      status: 'pending',
       assignee: 'Maya',
+      statusEntityId: 'sensor.maya_choreops_chore_status_stofzuigen_beneden',
+      assignedUserNames: ['Maya'],
+      completionCriteria: 'independent',
+      frequency: 'weekly',
+      applicableDays: ['sat'],
+      points: 4,
       canClaim: true,
-      canApprove: true,
+      canApprove: false,
       actions: {
         claim: 'button.maya_choreops_claim_chore_stofzuigenbe_beneden',
-        approve: 'button.maya_choreops_approve_chore_stofzuigenbe_beneden',
-        disapprove: 'button.maya_choreops_disapprove_chore_stofzuigenbe_beneden',
       },
     });
     expect(result.available).toBe(true);
@@ -197,7 +259,16 @@ describe('normalizeChoreOps — per-chore buttons', () => {
         attributes: {
           purpose: 'purpose_dashboard_helper',
           user_name: 'Maya',
-          chores: [{ eid: 'e-1', name: 'Afwassen', status: 'claimed', icon: '\u{1F37D}' }],
+          chores: [
+            {
+              eid: 'sensor.maya_choreops_chore_status_afwassen',
+              name: 'Afwassen',
+              state: 'claimed',
+              labels: [{ id: 'keuken', name: 'Keuken' }],
+              primary_group: 'today',
+              is_today_am: false,
+            },
+          ],
         },
       },
       btn(
@@ -210,9 +281,8 @@ describe('normalizeChoreOps — per-chore buttons', () => {
 
     expect(result.chores).toHaveLength(1);
     expect(result.chores[0]).toMatchObject({
-      id: 'e-1',
+      id: 'sensor.maya_choreops_chore_status_afwassen',
       status: 'claimed',
-      icon: '\u{1F37D}',
       actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
     });
   });
@@ -248,11 +318,7 @@ describe('normalizeChoreOps — per-chore buttons', () => {
   });
 });
 
-/**
- * `sensor.system_choreops_<chore>_global_status` (purpose_shared_chore) is the
- * only household-wide chore inventory: it exists whether or not the chore is
- * assigned, and it carries the points value the buttons lack.
- */
+/** A shared-criteria chore also has a global sensor with its shared state. */
 describe('normalizeChoreOps � shared chore records', () => {
   const sharedChore = (name: string, assignees: string[], extra: Record<string, unknown> = {}) => ({
     entity_id: `sensor.system_choreops_${name.toLowerCase().replace(/\s+/g, '_')}_global_status`,
@@ -261,6 +327,7 @@ describe('normalizeChoreOps � shared chore records', () => {
       purpose: 'purpose_shared_chore',
       chore_name: name,
       assigned_user_names: assignees,
+      completion_criteria: 'shared_all',
       default_points: 2,
       icon: 'mdi:vacuum-outline',
       ...extra,
@@ -337,18 +404,10 @@ describe('normalizeChoreOps � shared chore records', () => {
 });
 
 describe('normalizeChoreOps — per-user chore status', () => {
-  it('uses the per-user status sensor as the chore status', () => {
-    // The shared-chore sensor lags behind; the per-user one is authoritative.
+  it('normalizes ChoreOps per-user status sensor attributes used by chore editing', () => {
+    // These are the attributes exposed by AssigneeChoreStatusSensor in
+    // ChoreOps: display names and criteria are metadata, not service inputs.
     const result = normalizeChoreOps([
-      {
-        entity_id: 'sensor.system_choreops_bed_opmaken_global_status',
-        state: 'due',
-        attributes: {
-          purpose: 'purpose_shared_chore',
-          chore_name: 'Bed opmaken',
-          assigned_user_names: ['Nova'],
-        },
-      },
       {
         entity_id: 'sensor.nova_choreops_chore_status_bed_opmaken',
         state: 'claimed',
@@ -356,8 +415,31 @@ describe('normalizeChoreOps — per-user chore status', () => {
           purpose: 'purpose_chore_status',
           user_name: 'Nova',
           chore_name: 'Bed opmaken',
+          assigned_user_names: ['Nova'],
+          completion_criteria: 'independent',
+          default_points: 3,
+          recurring_frequency: 'custom_from_complete_date_only',
+          applicable_days: [],
+          labels: ['Ochtendroutine'],
+          custom_frequency_interval: 3,
+          custom_frequency_unit: 'weeks',
+          approval_reset_type: 'at_midnight_once',
+          approval_reset_pending_claim_action: 'hold_pending',
+          overdue_handling_type: 'at_due_date',
+          claim_lock_until_window: true,
+          notification_channel: 'mobile_app',
+          notification_importance: 'normal',
+          can_claim: false,
+          can_approve: false,
+          claim_button_eid: 'button.nova_choreops_claim_chore_bed_opmaken',
         },
       },
+      btn(
+        'purpose_button_chore_claim',
+        'Nova',
+        'Bed opmaken',
+        'button.nova_choreops_claim_chore_bed_opmaken',
+      ),
     ]);
 
     expect(result.chores).toHaveLength(1);
@@ -365,7 +447,68 @@ describe('normalizeChoreOps — per-user chore status', () => {
       name: 'Bed opmaken',
       status: 'claimed',
       statusEntityId: 'sensor.nova_choreops_chore_status_bed_opmaken',
+      assignee: 'Nova',
+      assignedUserNames: ['Nova'],
+      completionCriteria: 'independent',
+      frequency: 'custom_from_complete_date_only',
+      labels: ['Ochtendroutine'],
+      customInterval: 3,
+      customIntervalUnit: 'weeks',
+      approvalReset: 'at_midnight_once',
+      pendingClaims: 'hold_pending',
+      overdueHandling: 'at_due_date',
+      claimLockUntilWindow: true,
+      notificationChannel: 'mobile_app',
+      notificationImportance: 'normal',
+      canClaim: false,
+      canApprove: false,
+      actions: { claim: 'button.nova_choreops_claim_chore_bed_opmaken' },
     });
+  });
+
+  it('normalizes the shared-first criteria and full assignee list ChoreOps returns', () => {
+    const makeStatus = (user: string, state: string) => ({
+      entity_id: `sensor.${user.toLowerCase()}_choreops_chore_status_tafel_dekken`,
+      state,
+      attributes: {
+        purpose: 'purpose_chore_status',
+        user_name: user,
+        chore_name: 'Tafel dekken',
+        assigned_user_names: ['Maya', 'Nova'],
+        completion_criteria: 'shared_first',
+        default_points: 5,
+        recurring_frequency: 'none',
+        applicable_days: [],
+        labels: [],
+        can_claim: true,
+        can_approve: false,
+        claim_button_eid: `button.${user.toLowerCase()}_choreops_claim_chore_tafel_dekken`,
+      },
+    });
+
+    const result = normalizeChoreOps([
+      makeStatus('Maya', 'pending'),
+      makeStatus('Nova', 'pending'),
+      btn(
+        'purpose_button_chore_claim',
+        'Maya',
+        'Tafel dekken',
+        'button.maya_choreops_claim_chore_tafel_dekken',
+      ),
+      btn(
+        'purpose_button_chore_claim',
+        'Nova',
+        'Tafel dekken',
+        'button.nova_choreops_claim_chore_tafel_dekken',
+      ),
+    ]);
+
+    expect(result.chores).toHaveLength(2);
+    expect(result.chores.map((chore) => chore.assignee).sort()).toEqual(['Maya', 'Nova']);
+    expect(result.chores.every((chore) => chore.assignedUserNames?.join(',') === 'Maya,Nova'))
+      .toBe(true);
+    expect(result.chores.every((chore) => chore.completionCriteria === 'shared_first'))
+      .toBe(true);
   });
 
   it('adds a card for a status sensor whose buttons have not been seen yet', () => {

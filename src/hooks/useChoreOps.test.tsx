@@ -43,13 +43,41 @@ const STATES = [
       user_name: 'Maya',
       chores: [
         {
-          eid: 'chore-1',
+          eid: 'sensor.maya_choreops_chore_status_brush_your_teeth',
           name: 'Brush your teeth',
-          status: 'due',
-          icon: '\u{1FAA5}',
-          claim_button_eid: 'button.maya_choreops_claim_brush',
+          state: 'due',
+          labels: [{ id: 'morning', name: 'Morning' }],
+          primary_group: 'today',
+          is_today_am: true,
         },
       ],
+    },
+  },
+  {
+    entity_id: 'sensor.maya_choreops_chore_status_brush_your_teeth',
+    state: 'due',
+    attributes: {
+      purpose: 'purpose_chore_status',
+      user_name: 'Maya',
+      chore_name: 'Brush your teeth',
+      assigned_user_names: ['Maya'],
+      completion_criteria: 'independent',
+      default_points: 5,
+      recurring_frequency: 'daily',
+      applicable_days: [],
+      labels: ['morning'],
+      can_claim: true,
+      can_approve: false,
+      claim_button_eid: 'button.maya_choreops_claim_chore_brush_your_teeth',
+    },
+  },
+  {
+    entity_id: 'button.maya_choreops_claim_chore_brush_your_teeth',
+    state: 'unknown',
+    attributes: {
+      purpose: 'purpose_button_chore_claim',
+      user_name: 'Maya',
+      chore_name: 'Brush your teeth',
     },
   },
   {
@@ -91,7 +119,12 @@ describe('useChoreOps', () => {
     expect(result.current.data?.users[0]).toMatchObject({ name: 'Maya', points: 42 });
     expect(result.current.data?.chores[0]).toMatchObject({
       name: 'Brush your teeth',
-      actions: { claim: 'button.maya_choreops_claim_brush' },
+      statusEntityId: 'sensor.maya_choreops_chore_status_brush_your_teeth',
+      assignedUserNames: ['Maya'],
+      completionCriteria: 'independent',
+      frequency: 'daily',
+      labels: ['morning'],
+      actions: { claim: 'button.maya_choreops_claim_chore_brush_your_teeth' },
     });
     // HA person photos must survive normalisation, or the member picker offers
     // no photo import.

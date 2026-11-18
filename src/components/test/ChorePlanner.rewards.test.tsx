@@ -73,15 +73,18 @@ function state(): ChoreOpsState {
     chores: [
       {
         id: 'status:zara::afwassen',
+        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
         name: 'Afwassen',
         icon: null,
         status: 'pending',
         assignee: 'Zara',
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
         points: 0,
         dueDate: null,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.zara_claim_afwassen' },
+        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
       },
     ],
     rewards: [

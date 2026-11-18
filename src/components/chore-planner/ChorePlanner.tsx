@@ -27,7 +27,11 @@ import type {
 } from '../../api/choreops-chore-history';
 import { fetchChoreOpsRewardHistory } from '../../api/choreops-ledger';
 import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
-import { resolveMemberForUser, CHOREOPS_ALL_USERS } from '../../api/choreops';
+import {
+  isChoreOpenToAnyone,
+  resolveMemberForUser,
+  CHOREOPS_ALL_USERS,
+} from '../../api/choreops';
 import {
   activeRedemption,
   activeRedemptions,
@@ -1038,9 +1042,7 @@ export function ChorePlanner({
         const assignedNames = new Set(
           (chore.assignedUserNames ?? []).map((name) => normaliseName(name)),
         );
-        const anyone =
-          normaliseName(chore.completionCriteria ?? '') === 'shared_first' ||
-          assignedNames.has(normaliseName(CHOREOPS_ALL_USERS));
+        const anyone = isChoreOpenToAnyone(chore);
         if (anyone) {
           nextForm.free = true;
           nextForm.memberIds = [];
@@ -1095,19 +1097,18 @@ export function ChorePlanner({
             (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
           ) ?? null
         : null;
+    let recreateForClaimModeChange = false;
     if (editingId && originalChore) {
       const assignedNames = (originalChore.assignedUserNames ?? []).map((name) =>
         normaliseName(name),
       );
       const originalCriteria = normaliseName(originalChore.completionCriteria ?? '');
-      const originalFree =
-        originalCriteria === 'shared_first' ||
-        assignedNames.includes(normaliseName(CHOREOPS_ALL_USERS));
       const claimModeKnown = Boolean(originalCriteria || assignedNames.length > 0);
-      if (claimModeKnown && form.free !== originalFree) {
-        showToast(t('planner.claimModeEditUnavailable'), 'error');
-        return;
-      }
+      const effectiveCriteria = originalCriteria || 'independent';
+      recreateForClaimModeChange = claimModeKnown && (
+        (form.free && effectiveCriteria !== 'shared_first') ||
+        (!form.free && effectiveCriteria === 'shared_first' && form.memberIds.length > 1)
+      );
     }
     const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
     const nextLabel = form.liveLabel.trim();
@@ -1115,7 +1116,9 @@ export function ChorePlanner({
     const schedule = {
       frequency,
       customInterval:
-        frequency === 'custom' || frequency === 'custom_from_complete'
+        frequency === 'custom' ||
+        frequency === 'custom_from_complete' ||
+        frequency === 'custom_from_complete_date_only'
           ? form.liveInterval
           : undefined,
       customIntervalUnit: form.liveIntervalUnit,
@@ -1134,23 +1137,98 @@ export function ChorePlanner({
       if (editingId) {
         const renamed = normaliseName(originalName) !== normaliseName(form.name);
         let choreId: string | undefined;
-        if (renamed) {
+        if (renamed || recreateForClaimModeChange) {
           const resolvedId = originalChore?.statusEntityId && choreOps.resolveChoreId
             ? await choreOps.resolveChoreId(originalChore.statusEntityId)
             : null;
           if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
           choreId = resolvedId;
         }
-        await choreOps.updateChore({
-          ...schedule,
-          name: form.name,
-          targetName: originalName,
-          choreId,
-          assignedUserNames: userNames,
-          points: form.points,
-          windowOffset: form.liveWindow,
-          reminderOffset: form.liveReminder,
-        });
+        if (!recreateForClaimModeChange) {
+          await choreOps.updateChore({
+            ...schedule,
+            name: form.name,
+            targetName: originalName,
+            choreId,
+            assignedUserNames: userNames,
+            points: form.points,
+            windowOffset: form.liveWindow,
+            reminderOffset: form.liveReminder,
+          });
+        } else {
+          const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+          await choreOps.updateChore({
+            name: temporaryName,
+            targetName: originalName,
+            choreId,
+          });
+
+          try {
+            await choreOps.createChore({
+              ...schedule,
+              name: form.name,
+              assignedUserNames: userNames,
+              completionCriteria: form.free ? 'shared_first' : 'independent',
+              points: form.points,
+              labels: labels ?? originalChore?.labels ?? [],
+              icon: originalChore?.icon ?? undefined,
+              customInterval: form.liveInterval,
+              customIntervalUnit: form.liveIntervalUnit,
+              dueDate: schedule.dueDate ?? originalChore?.dueDate ?? undefined,
+              windowOffset: form.liveWindow,
+              reminderOffset: form.liveReminder || undefined,
+              autoApprove: form.liveAutoApprove,
+              approvalReset: originalChore?.approvalReset,
+              pendingClaims: originalChore?.pendingClaims,
+              overdueHandling: originalChore?.overdueHandling,
+              claimLockUntilWindow: originalChore?.claimLockUntilWindow,
+              notificationChannel: originalChore?.notificationChannel,
+              notificationImportance: originalChore?.notificationImportance,
+            });
+          } catch (createError) {
+            try {
+              await choreOps.updateChore({
+                name: originalName,
+                targetName: temporaryName,
+                choreId,
+              });
+            } catch (restoreError) {
+              const createMessage = createError instanceof Error ? createError.message : c.noFail;
+              const restoreMessage = restoreError instanceof Error ? restoreError.message : c.noFail;
+              throw new Error(`${createMessage}. Could not restore the original chore: ${restoreMessage}`);
+            }
+            throw createError;
+          }
+
+          try {
+            await choreOps.deleteChore(temporaryName);
+          } catch (deleteError) {
+            const rollbackErrors: string[] = [];
+            try {
+              await choreOps.deleteChore(form.name.trim());
+            } catch (rollbackError) {
+              rollbackErrors.push(
+                `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
+              );
+            }
+            try {
+              await choreOps.updateChore({
+                name: originalName,
+                targetName: temporaryName,
+                choreId,
+              });
+            } catch (restoreError) {
+              rollbackErrors.push(
+                `could not restore the original name: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
+              );
+            }
+            const deleteMessage = deleteError instanceof Error ? deleteError.message : c.noFail;
+            if (rollbackErrors.length) {
+              throw new Error(`${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`);
+            }
+            throw deleteError;
+          }
+        }
       } else {
         await choreOps.createChore({
           ...schedule,

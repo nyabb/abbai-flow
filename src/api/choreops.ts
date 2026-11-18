@@ -35,11 +35,7 @@ export const CHOREOPS_PURPOSE = {
   dashboardHelper: 'purpose_dashboard_helper',
   systemHelper: 'purpose_system_dashboard_helper',
   rewardStatus: 'purpose_reward_status',
-  /**
-   * One `sensor.system_choreops_<chore>_global_status` per chore, assigned or
-   * not. This is the only complete, household-wide chore inventory: it carries
-   * `chore_name`, `assigned_user_names`, `default_points` and the live status.
-   */
+  /** Global state sensor for chores whose completion criteria are shared. */
   sharedChore: 'purpose_shared_chore',
   /** `sensor.<user>_choreops_chore_status_<chore>`: the real per-user status. */
   choreStatus: 'purpose_chore_status',
@@ -49,12 +45,7 @@ export const CHOREOPS_PURPOSE = {
   pendingRewardApprovals: 'purpose_sensor_rewards_pending_approval_extra',
 } as const;
 
-/**
- * Per-chore action buttons (verified on ChoreOps 1.6.0). Each chore/user pair
- * gets its own `button` entity carrying `user_name` and `chore_name`, so these
- * are the only *complete* inventory of chores â€” the dashboard helper's `chores`
- * attribute is emptied whenever nothing is due, which left the screen blank.
- */
+/** Chore action button entities identify their user and chore by attributes. */
 const CHORE_BUTTON_PURPOSES: Record<string, ChoreOpsActionKind> = {
   purpose_button_chore_claim: 'claim',
   purpose_button_chore_approve: 'approve',
@@ -75,6 +66,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function purposeOf(entity: ChoreOpsEntityState): string | null {
   const purpose = entity.attributes.purpose;
   return typeof purpose === 'string' ? purpose : null;
+}
+
+/**
+ * A shared-first chore with exactly one assigned user behaves like that user's
+ * chore. Keeping it in the assigned mode lets update_chore change assignees
+ * without requiring a create-only completion_criteria change.
+ */
+export function isChoreOpenToAnyone(
+  chore: Pick<ChoreOpsChore, 'completionCriteria' | 'assignedUserNames'>,
+): boolean {
+  const criteria = (chore.completionCriteria ?? '').trim().toLowerCase();
+  const assignedUsers = new Set(
+    (chore.assignedUserNames ?? []).map((name) => name.trim().toLowerCase()).filter(Boolean),
+  );
+  if (assignedUsers.has('*')) return true;
+  return criteria === 'shared_first' && assignedUsers.size !== 1;
 }
 
 function str(source: Record<string, unknown>, key: string): string | null {
@@ -202,9 +209,9 @@ function normalizeReward(entity: ChoreOpsEntityState): ChoreOpsReward | null {
 /**
  * Build the normalized ChoreOps view from a full HA state snapshot.
  *
- * Chore and reward lists are built from the per-action `button` entities, which
- * ChoreOps always publishes per user. The dashboard helper's `chores` attribute
- * is used as enrichment (icon, status, points) when it happens to be populated.
+ * ChoreOps publishes per-assignee status sensors, optional global sensors for
+ * shared chores, dashboard-helper rows, and action buttons as separate HA
+ * entities. The parser joins those records by user and chore name.
  */
 export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState {
   const usersBySlug = new Map<string, ChoreOpsUser>();
@@ -225,8 +232,16 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       dueDate: string | null;
       description: string | null;
       frequency: string | null;
+      customInterval: number | null;
+      customIntervalUnit: string | null;
       applicableDays: string[];
       windowOffset: string | null;
+      approvalReset: string | null;
+      pendingClaims: string | null;
+      overdueHandling: string | null;
+      claimLockUntilWindow: boolean;
+      notificationChannel: string | null;
+      notificationImportance: string | null;
       autoApprove: boolean;
       assignedUserNames: string[];
       completionCriteria: string | null;
@@ -365,10 +380,18 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
           dueDate: str(entity.attributes, 'due_date') ?? str(entity.attributes, 'available_at'),
           description: str(entity.attributes, 'description'),
           frequency: str(entity.attributes, 'recurring_frequency'),
+          customInterval: num(entity.attributes, 'custom_frequency_interval'),
+          customIntervalUnit: str(entity.attributes, 'custom_frequency_unit'),
           applicableDays: stringList(entity.attributes, 'applicable_days'),
           labels: stringList(entity.attributes, 'labels'),
           lastCompleted: str(entity.attributes, 'last_completed'),
           windowOffset: str(entity.attributes, 'chore_due_window_offset'),
+          approvalReset: str(entity.attributes, 'approval_reset_type'),
+          pendingClaims: str(entity.attributes, 'approval_reset_pending_claim_action'),
+          overdueHandling: str(entity.attributes, 'overdue_handling_type'),
+          claimLockUntilWindow: flag(entity.attributes, 'claim_lock_until_window'),
+          notificationChannel: str(entity.attributes, 'notification_channel'),
+          notificationImportance: str(entity.attributes, 'notification_importance'),
           autoApprove: flag(entity.attributes, 'auto_approve'),
           assignedUserNames: stringList(entity.attributes, 'assigned_user_names'),
           completionCriteria: str(entity.attributes, 'completion_criteria'),
@@ -390,7 +413,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       continue;
     }
 
-    // Per-chore action buttons: the authoritative chore inventory.
+    // Action button entities add callable actions to their user/chore record.
     const choreKind = CHORE_BUTTON_PURPOSES[purpose];
     if (choreKind) {
       available = true;
@@ -450,9 +473,9 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
   const pointsByUser: Record<string, number> = {};
   for (const user of users) pointsByUser[user.name.trim().toLowerCase()] = user.points;
 
-  // Merge: the dashboard helper knows the extra details (icon/status/points) but
-  // only lists chores that are due; the buttons know every chore but carry no
-  // metadata. Buttons win on actions, helper items win on presentation.
+  // Merge ChoreOps' entity families: shared sensors and dashboard-helper rows
+  // provide presentation data, buttons provide action IDs, and per-user status
+  // sensors provide authoritative status and chore metadata.
   const choreMap = new Map<string, ChoreOpsChore>();
   for (const chore of sharedChores) {
     choreMap.set(choreKey(chore.assignee, chore.name), chore);
@@ -495,8 +518,16 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.dueDate = record.dueDate ?? existing.dueDate;
       existing.description = record.description ?? existing.description;
       existing.frequency = record.frequency ?? existing.frequency;
+      existing.customInterval = record.customInterval ?? existing.customInterval;
+      existing.customIntervalUnit = record.customIntervalUnit ?? existing.customIntervalUnit;
       if (record.applicableDays.length > 0) existing.applicableDays = record.applicableDays;
       existing.windowOffset = record.windowOffset ?? existing.windowOffset;
+      existing.approvalReset = record.approvalReset ?? existing.approvalReset;
+      existing.pendingClaims = record.pendingClaims ?? existing.pendingClaims;
+      existing.overdueHandling = record.overdueHandling ?? existing.overdueHandling;
+      existing.claimLockUntilWindow = record.claimLockUntilWindow;
+      existing.notificationChannel = record.notificationChannel ?? existing.notificationChannel;
+      existing.notificationImportance = record.notificationImportance ?? existing.notificationImportance;
       existing.autoApprove = record.autoApprove;
       if (record.assignedUserNames.length > 0) {
         existing.assignedUserNames = record.assignedUserNames;
@@ -504,8 +535,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.completionCriteria = record.completionCriteria ?? existing.completionCriteria;
       if (record.labels.length > 0) existing.labels = record.labels;
       existing.lastCompleted = record.lastCompleted ?? existing.lastCompleted;
-      if (record.canClaim) existing.canClaim = true;
-      if (record.canApprove) existing.canApprove = true;
+      existing.canClaim = record.canClaim;
+      existing.canApprove = record.canApprove;
       continue;
     }
     choreMap.set(key, {
@@ -519,8 +550,16 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       dueDate: record.dueDate,
       description: record.description,
       frequency: record.frequency,
+      customInterval: record.customInterval,
+      customIntervalUnit: record.customIntervalUnit,
       applicableDays: record.applicableDays,
       windowOffset: record.windowOffset,
+      approvalReset: record.approvalReset,
+      pendingClaims: record.pendingClaims,
+      overdueHandling: record.overdueHandling,
+      claimLockUntilWindow: record.claimLockUntilWindow,
+      notificationChannel: record.notificationChannel,
+      notificationImportance: record.notificationImportance,
       autoApprove: record.autoApprove,
       assignedUserNames: record.assignedUserNames,
       completionCriteria: record.completionCriteria,

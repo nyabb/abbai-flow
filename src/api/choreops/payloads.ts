@@ -22,6 +22,7 @@ export const CHOREOPS_FREQUENCIES = [
   'yearly',
   'custom',
   'custom_from_complete',
+  'custom_from_complete_date_only',
   'week_end',
   'month_end',
   'quarter_end',
@@ -68,6 +69,14 @@ export interface CreateChoreInput {
    * an open task.
    */
   completionCriteria?: ChoreOpsCompletionCriteria | null;
+  /** Existing icon and workflow policy when recreating an edited chore. */
+  icon?: string | null;
+  approvalReset?: string | null;
+  pendingClaims?: string | null;
+  overdueHandling?: string | null;
+  claimLockUntilWindow?: boolean;
+  notificationChannel?: string | null;
+  notificationImportance?: string | null;
   points?: number | null;
   description?: string | null;
   /**
@@ -114,6 +123,17 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
   };
 
   if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
+  if (input.icon !== undefined) payload.icon = input.icon;
+  if (input.approvalReset) payload.approval_reset = input.approvalReset;
+  if (input.pendingClaims) payload.pending_claims = input.pendingClaims;
+  if (input.overdueHandling) payload.overdue_handling = input.overdueHandling;
+  if (typeof input.claimLockUntilWindow === 'boolean') {
+    payload.claim_lock_until_window = input.claimLockUntilWindow;
+  }
+  if (input.notificationChannel) payload.notification_channel = input.notificationChannel;
+  if (input.notificationImportance) {
+    payload.notification_importance = input.notificationImportance;
+  }
   if (typeof input.points === 'number' && Number.isFinite(input.points)) {
     payload.points = Math.max(0, Math.round(input.points));
   }
@@ -124,7 +144,11 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
   if (createLabels.length > 0) payload.labels = createLabels;
   if (input.frequency) payload.frequency = input.frequency;
 
-  if (input.frequency === 'custom' && input.customInterval) {
+  if (
+    ['custom', 'custom_from_complete', 'custom_from_complete_date_only'].includes(
+      input.frequency ?? '',
+    ) && input.customInterval
+  ) {
     payload.custom_interval = Math.max(1, Math.round(input.customInterval));
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
   }
@@ -217,7 +241,9 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
 
   if (
     input.customInterval &&
-    (input.frequency === 'custom' || input.frequency === 'custom_from_complete')
+    ['custom', 'custom_from_complete', 'custom_from_complete_date_only'].includes(
+      input.frequency ?? '',
+    )
   ) {
     payload.custom_interval = Math.max(1, Math.round(input.customInterval));
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
