@@ -65,29 +65,19 @@ function getHaToken() {
 /** Keep Home Assistant's validation detail when a service call is rejected. */
 async function responseErrorDetail(res: Response): Promise<string> {
   const raw = (await res.text()).trim();
-  if (!raw) return res.statusText;
+  if (!raw) return res.statusText || `HTTP ${res.status}`;
 
   try {
     const body: unknown = JSON.parse(raw);
     if (typeof body === 'string') return body;
-    if (body && typeof body === 'object') {
-      const record = body as Record<string, unknown>;
-      for (const key of ['message', 'error', 'detail']) {
-        const value = record[key];
-        if (typeof value === 'string' && value.trim()) return value.trim();
-        if (value && typeof value === 'object') {
-          const nested = value as Record<string, unknown>;
-          if (typeof nested.message === 'string' && nested.message.trim()) {
-            return nested.message.trim();
-          }
-        }
-      }
-    }
+    // Keep the full structured response. HA error bodies often contain useful
+    // validation context outside the first `message` field.
+    return JSON.stringify(body, null, 2) ?? raw;
   } catch {
     // Some HA versions return plain text on errors.
   }
 
-  return raw.slice(0, 500);
+  return raw;
 }
 
 /**
@@ -95,6 +85,14 @@ async function responseErrorDetail(res: Response): Promise<string> {
  */
 export function setHaToken(token: string) {
   _haToken = token;
+}
+
+/** A service error with the request and full response ready to display/copy. */
+export class HomeAssistantServiceError extends Error {
+  constructor(message: string, readonly details: string) {
+    super(message);
+    this.name = 'HomeAssistantServiceError';
+  }
 }
 
 /**
@@ -136,26 +134,69 @@ export async function callHaService(
   data?: Record<string, unknown>,
   returnResponse = false,
 ): Promise<unknown> {
+  const serviceData = data ?? {};
+  const servicePath = `/api/services/${domain}/${service}${returnResponse ? '?return_response' : ''}`;
+  const proxy = usesServerProxy();
+  const proxyPayload = {
+    domain,
+    service,
+    data: serviceData,
+    return_response: returnResponse,
+  };
+
+  const wrapError = (error: unknown): HomeAssistantServiceError => {
+    if (error instanceof HomeAssistantServiceError) return error;
+    const message = error instanceof Error ? error.message : String(error);
+    const details = [
+      'Home Assistant service call failed',
+      `Service: ${domain}.${service}`,
+      '',
+      `Client request: POST ${proxy ? '/beacon-action/service' : servicePath}`,
+      'Client request payload:',
+      JSON.stringify(proxy ? proxyPayload : serviceData, null, 2),
+      ...(proxy
+        ? [
+            '',
+            `Forwarded Home Assistant request: POST ${servicePath}`,
+            'Home Assistant service payload:',
+            JSON.stringify(serviceData, null, 2),
+          ]
+        : []),
+      '',
+      'Error response:',
+      message,
+      ...(error instanceof Error && error.stack ? ['', 'Stack:', error.stack] : []),
+    ].join('\n');
+    return new HomeAssistantServiceError(message, details);
+  };
+
   // In add-on mode, route through the dedicated service endpoint
   // (HA ingress proxy can mangle POST bodies on /api/* paths)
-  if (usesServerProxy()) {
-    const base = getBaseUrl();
-    const res = await fetch(`${base}/beacon-action/service`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain, service, data: data ?? {}, return_response: returnResponse }),
-    });
-    if (!res.ok) {
-      throw new Error(`Service call ${res.status}: ${await responseErrorDetail(res)}`);
+  if (proxy) {
+    try {
+      const base = getBaseUrl();
+      const res = await fetch(`${base}/beacon-action/service`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(proxyPayload),
+      });
+      if (!res.ok) {
+        throw new Error(`Service call ${res.status}: ${await responseErrorDetail(res)}`);
+      }
+      return await res.json();
+    } catch (error) {
+      throw wrapError(error);
     }
-    return res.json();
   }
 
-  const qs = returnResponse ? '?return_response' : '';
-  return haFetch(`/api/services/${domain}/${service}${qs}`, {
-    method: 'POST',
-    body: JSON.stringify(data ?? {}),
-  });
+  try {
+    return await haFetch(servicePath, {
+      method: 'POST',
+      body: JSON.stringify(serviceData),
+    });
+  } catch (error) {
+    throw wrapError(error);
+  }
 }
 
 /**
