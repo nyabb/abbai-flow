@@ -124,11 +124,11 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
 
   if (input.completionCriteria) payload.completion_criteria = input.completionCriteria;
   if (input.icon !== undefined) payload.icon = input.icon;
-  if (input.approvalReset) payload.approval_reset = input.approvalReset;
+  if (input.approvalReset) payload.approval_reset_type = input.approvalReset;
   if (input.pendingClaims) payload.pending_claims = input.pendingClaims;
   if (input.overdueHandling) payload.overdue_handling = input.overdueHandling;
   if (typeof input.claimLockUntilWindow === 'boolean') {
-    payload.claim_lock_until_window = input.claimLockUntilWindow;
+    payload.chore_claim_lock_until_window = input.claimLockUntilWindow;
   }
   if (input.notificationChannel) payload.notification_channel = input.notificationChannel;
   if (input.notificationImportance) {
