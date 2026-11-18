@@ -1,3 +1,10 @@
+## [2.8.1](https://github.com/nyabb/abbai-flow/compare/v2.8.0...v2.8.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* support assigning chores to multiple children ([19723bc](https://github.com/nyabb/abbai-flow/commit/19723bc763f6e05f1a4c874b36f6626bdea09fd8))
+
 # [2.8.0](https://github.com/nyabb/abbai-flow/compare/v2.7.4...v2.8.0) (2026-11-18)
 
 
