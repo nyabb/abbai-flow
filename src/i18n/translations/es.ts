@@ -797,7 +797,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.tab.free': 'Tareas libres',
   'planner.setGoal': 'Fijar un objetivo',
   'planner.claimWho': '¿Quién lo hace?',
-  'planner.openChild': 'Abrir',
+  'planner.openChild': 'Ver detalles',
   'planner.filter': 'Filtrar',
   'planner.filterTitle': '¿Qué quieres ver?',
   'planner.awardTitle': '¿A dónde van estos puntos?',

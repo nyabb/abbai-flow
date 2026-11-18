@@ -801,7 +801,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.tab.free': 'Attività libere',
   'planner.setGoal': 'Imposta un obiettivo',
   'planner.claimWho': 'Chi se ne occupa?',
-  'planner.openChild': 'Aprire',
+  'planner.openChild': 'Mostra dettagli',
   'planner.filter': 'Filtra',
   'planner.filterTitle': 'Cosa vuoi vedere?',
   'planner.awardTitle': 'Dove vanno questi punti?',

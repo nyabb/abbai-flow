@@ -796,7 +796,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.tab.free': 'Vrije taakjes',
   'planner.setGoal': 'Stel een doel in',
   'planner.claimWho': 'Wie pakt dit op?',
-  'planner.openChild': 'Openen',
+  'planner.openChild': 'Details bekijken',
   'planner.filter': 'Filteren',
   'planner.filterTitle': 'Wat wil je zien?',
   'planner.awardTitle': 'Waar wil je de punten aan koppelen?',

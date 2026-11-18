@@ -1019,7 +1019,7 @@ describe('ChorePlanner board', () => {
 
       const actions = container.querySelector<HTMLElement>('.planner-mobile-actions')!;
       expect(actions).not.toBeNull();
-      fireEvent.click(within(actions).getByRole('button', { name: /Openen/ }));
+      fireEvent.click(within(actions).getByRole('button', { name: /Details bekijken/ }));
 
       expect(container.querySelector('.planner-detail')).not.toBeNull();
       expect(container.querySelector('.planner-detail')!.textContent).toContain('Zara');

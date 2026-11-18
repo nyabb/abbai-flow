@@ -785,7 +785,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.tab.free': '자유 할 일',
   'planner.setGoal': '목표 설정',
   'planner.claimWho': '누가 할까요?',
-  'planner.openChild': '열기',
+  'planner.openChild': '상세 보기',
   'planner.filter': '필터',
   'planner.filterTitle': '무엇을 볼까요?',
   'planner.awardTitle': '이 포인트는 어디로 갈까요?',
