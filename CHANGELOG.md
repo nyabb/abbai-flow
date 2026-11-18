@@ -1,3 +1,10 @@
+# [2.8.0](https://github.com/nyabb/abbai-flow/compare/v2.7.4...v2.8.0) (2026-11-18)
+
+
+### Features
+
+* clarify mobile child details action ([06c060f](https://github.com/nyabb/abbai-flow/commit/06c060f4edf51bee7886f2be8728ef173174c1de))
+
 ## [2.7.4](https://github.com/nyabb/abbai-flow/compare/v2.7.3...v2.7.4) (2026-11-18)
 
 
