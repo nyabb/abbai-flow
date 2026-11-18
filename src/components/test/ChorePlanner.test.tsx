@@ -734,9 +734,7 @@ describe('ChorePlanner board', () => {
   it('opens a child’s detail page from their column header', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
-    fireEvent.click(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
-    );
+    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!);
 
     const detail = container.querySelector('.planner-detail')!;
     expect(detail).not.toBeNull();
@@ -789,7 +787,9 @@ describe('ChorePlanner board', () => {
     ]);
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!);
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
     await waitFor(() => expect(container.textContent).toContain('Afwassen eerder'));
     expect(mocks.fetchChoreHistory).toHaveBeenCalledWith([
       {
@@ -799,21 +799,25 @@ describe('ChorePlanner board', () => {
       },
     ]);
 
-    const history = container.querySelector<HTMLElement>('.planner-detail')!;
-    const range = within(history).getByLabelText('Periode');
-    const completedSection = [...history.querySelectorAll<HTMLElement>('.planner-detail-section')].find(
-      (section) => section.querySelector('h3')?.textContent?.includes('Voltooide taakjes'),
-    )!;
-    const historyNames = () =>
-      [...completedSection.querySelectorAll('.planner-reward-copy strong')].map(
+    const changeHistoryRange = (value: 'twoDays' | 'week') => {
+      const history = container.querySelector<HTMLElement>('.planner-detail')!;
+      fireEvent.change(within(history).getByLabelText('Periode'), { target: { value } });
+    };
+    const historyNames = () => {
+      const history = container.querySelector<HTMLElement>('.planner-detail');
+      const completedSection = [
+        ...(history?.querySelectorAll<HTMLElement>('.planner-detail-section') ?? []),
+      ].find((section) => section.querySelector('h3')?.textContent?.includes('Voltooide taakjes'));
+      return [...(completedSection?.querySelectorAll('.planner-reward-copy strong') ?? [])].map(
         (item) => item.textContent,
       );
+    };
 
-    fireEvent.change(range, { target: { value: 'twoDays' } });
-    expect(historyNames()).toEqual(['Afwassen vandaag']);
+    changeHistoryRange('twoDays');
+    await waitFor(() => expect(historyNames()).toEqual(['Afwassen vandaag']));
 
-    fireEvent.change(range, { target: { value: 'week' } });
-    expect(historyNames()).toEqual(['Afwassen vandaag', 'Afwassen eerder']);
+    changeHistoryRange('week');
+    await waitFor(() => expect(historyNames()).toEqual(['Afwassen vandaag', 'Afwassen eerder']));
   });
 
   /*

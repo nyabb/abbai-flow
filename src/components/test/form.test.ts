@@ -86,6 +86,24 @@ describe('planner form helpers', () => {
     expect(DAY_KEYS[form.liveWeekdays[1]]).toBe('wed');
   });
 
+  it('keeps the due date blank when ChoreOps has not set one', () => {
+    const form = formFromLiveTask(makeTask(), {
+      id: 'x',
+      name: 'Afwassen',
+      icon: null,
+      status: 'pending',
+      assignee: 'Zara',
+      points: 5,
+      canClaim: true,
+      canApprove: false,
+      frequency: 'none',
+      dueDate: null,
+      actions: {},
+    } as never);
+
+    expect(form.deadlineAt).toBe('');
+  });
+
   it('creates an empty form anchored on the given day', () => {
     const form = emptyForm(new Date('2026-03-04T12:00:00.000Z'));
     expect(form.name).toBe('');

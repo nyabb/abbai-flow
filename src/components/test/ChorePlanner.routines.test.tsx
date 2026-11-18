@@ -271,9 +271,10 @@ describe('ChorePlanner routines', () => {
     expect(update).toMatchObject({
       name: 'Tanden poetsen',
       labels: [],
-      frequency: 'daily',
-      points: 5,
     });
+    expect(update).not.toHaveProperty('frequency');
+    expect(update).not.toHaveProperty('dueDate');
+    expect(update).not.toHaveProperty('points');
     expect(update).not.toHaveProperty('status');
     expect(update).not.toHaveProperty('lastCompleted');
     expect(mocks.pressButton).not.toHaveBeenCalled();
@@ -322,6 +323,133 @@ describe('ChorePlanner routines', () => {
     expect(mocks.createChore.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.deleteChore.mock.invocationCallOrder[0],
     );
+  });
+
+  it('recreates an anyone chore as independent when assigning it to everyone', async () => {
+    const base = routineState();
+    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
+    const shared = {
+      ...afwassen,
+      id: 'status:zara::afwassen',
+      statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+      completionCriteria: 'shared_first',
+      assignedUserNames: ['Zara', 'Maya'],
+    };
+    mocks.state.current = {
+      ...base,
+      users: [
+        ...base.users,
+        {
+          name: 'Maya',
+          slug: 'maya',
+          points: 10,
+          dueToday: 1,
+          claimed: 0,
+          approved: 0,
+          completedToday: 0,
+        },
+      ],
+      chores: [
+        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
+        shared,
+        {
+          ...shared,
+          id: 'status:maya::afwassen',
+          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
+          assignee: 'Maya',
+          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
+        },
+      ],
+      pointsByUser: { ...base.pointsByUser, maya: 10 },
+    };
+
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const freeRow = [...column(container, 'Vrij te pakken').querySelectorAll<HTMLElement>('.planner-row')]
+      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
+    fireEvent.click(freeRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    await waitFor(() => expect(container.querySelector('.planner-member-picker')).not.toBeNull());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Iedereen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledTimes(1));
+    expect(mocks.createChore).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Afwassen',
+        assignedUserNames: ['Zara', 'Maya'],
+        completionCriteria: 'independent',
+      }),
+    );
+    expect(mocks.deleteChore).toHaveBeenCalledWith(
+      expect.stringMatching(/^__abbai_flow_recreate_/),
+    );
+  });
+
+  it('updates an everyone chore natively when narrowing to one child', async () => {
+    const base = routineState();
+    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
+    const assignedToBoth = {
+      ...afwassen,
+      id: 'status:zara::afwassen',
+      completionCriteria: 'independent',
+      assignedUserNames: ['Zara', 'Maya'],
+    };
+    mocks.state.current = {
+      ...base,
+      users: [
+        ...base.users,
+        {
+          name: 'Maya',
+          slug: 'maya',
+          points: 10,
+          dueToday: 1,
+          claimed: 0,
+          approved: 0,
+          completedToday: 0,
+        },
+      ],
+      chores: [
+        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
+        assignedToBoth,
+        {
+          ...assignedToBoth,
+          id: 'status:maya::afwassen',
+          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
+          assignee: 'Maya',
+          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
+        },
+      ],
+      pointsByUser: { ...base.pointsByUser, maya: 10 },
+    };
+
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const zaraRow = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')]
+      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
+    fireEvent.click(zaraRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    await waitFor(() => expect(container.querySelector('.planner-member-picker')).not.toBeNull());
+
+    const mayaChoice = [...container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button')]
+      .find((button) => button.textContent?.includes('Maya'))!;
+    fireEvent.click(mayaChoice);
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+
+    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
+    expect(mocks.updateChore.mock.calls[0][0]).toMatchObject({
+      name: 'Afwassen',
+      assignedUserNames: ['Zara'],
+    });
+    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('frequency');
+    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('dueDate');
+    expect(mocks.createChore).not.toHaveBeenCalled();
+    expect(mocks.deleteChore).not.toHaveBeenCalled();
   });
 
   it('restores the original chore name if replacement creation fails', async () => {
@@ -412,6 +540,8 @@ describe('ChorePlanner routines', () => {
       name: 'Afwassen',
       assignedUserNames: ['Zara'],
     });
+    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('frequency');
+    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('dueDate');
     expect(mocks.createChore).not.toHaveBeenCalled();
     expect(mocks.deleteChore).not.toHaveBeenCalled();
   });

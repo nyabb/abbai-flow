@@ -248,7 +248,7 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     payload.custom_interval = Math.max(1, Math.round(input.customInterval));
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
   }
-  if (input.applicableDays?.length) {
+  if (input.applicableDays !== undefined) {
     payload.applicable_days = input.applicableDays.filter((day): day is ChoreOpsWeekday =>
       CHOREOPS_WEEKDAYS.includes(day as ChoreOpsWeekday),
     );

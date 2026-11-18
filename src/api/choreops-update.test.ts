@@ -104,6 +104,16 @@ describe('buildUpdateChorePayload', () => {
     expect(withReminder).toMatchObject({ due_reminder_offset: '30m' });
   });
 
+  it('can clear weekly applicable days with the native update service', () => {
+    expect(
+      buildUpdateChorePayload({
+        entryId: 'e1',
+        name: 'Afwassen',
+        applicableDays: [],
+      }),
+    ).toMatchObject({ applicable_days: [] });
+  });
+
   it('sends the custom interval only for custom repeats', () => {
     const custom = buildUpdateChorePayload({
       entryId: 'e1',
