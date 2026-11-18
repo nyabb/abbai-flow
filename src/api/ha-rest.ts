@@ -62,6 +62,34 @@ function getHaToken() {
   return _haToken;
 }
 
+/** Keep Home Assistant's validation detail when a service call is rejected. */
+async function responseErrorDetail(res: Response): Promise<string> {
+  const raw = (await res.text()).trim();
+  if (!raw) return res.statusText;
+
+  try {
+    const body: unknown = JSON.parse(raw);
+    if (typeof body === 'string') return body;
+    if (body && typeof body === 'object') {
+      const record = body as Record<string, unknown>;
+      for (const key of ['message', 'error', 'detail']) {
+        const value = record[key];
+        if (typeof value === 'string' && value.trim()) return value.trim();
+        if (value && typeof value === 'object') {
+          const nested = value as Record<string, unknown>;
+          if (typeof nested.message === 'string' && nested.message.trim()) {
+            return nested.message.trim();
+          }
+        }
+      }
+    }
+  } catch {
+    // Some HA versions return plain text on errors.
+  }
+
+  return raw.slice(0, 500);
+}
+
 /**
  * Set the HA token dynamically (e.g. from ingress token request).
  */
@@ -91,7 +119,9 @@ export async function haFetch(path: string, options?: RequestInit): Promise<unkn
     ...options,
     headers,
   });
-  if (!res.ok) throw new Error(`HA API ${res.status}: ${res.statusText}`);
+  if (!res.ok) {
+    throw new Error(`HA API ${res.status}: ${await responseErrorDetail(res)}`);
+  }
   const text = await res.text();
   return text ? JSON.parse(text) : null;
 }
@@ -115,7 +145,9 @@ export async function callHaService(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ domain, service, data: data ?? {}, return_response: returnResponse }),
     });
-    if (!res.ok) throw new Error(`Service call ${res.status}: ${res.statusText}`);
+    if (!res.ok) {
+      throw new Error(`Service call ${res.status}: ${await responseErrorDetail(res)}`);
+    }
     return res.json();
   }
 

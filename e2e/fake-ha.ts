@@ -24,8 +24,11 @@ export interface FakeReward {
 }
 
 export interface FakeChore {
+  id: string;
   userName: string;
   name: string;
+  assignedUserNames: string[];
+  completionCriteria: string;
   points: number;
   status: string;
 }
@@ -44,7 +47,15 @@ export interface FakeSeed {
     pendingClaims?: number;
     status?: string;
   }>;
-  chores?: Array<{ user: string; name: string; points?: number; status?: string }>;
+  chores?: Array<{
+    user: string;
+    name: string;
+    points?: number;
+    status?: string;
+    id?: string;
+    assignedUsers?: string[];
+    completionCriteria?: string;
+  }>;
 }
 
 interface EntityState {
@@ -98,6 +109,7 @@ export class FakeHa {
   private rewards: FakeReward[] = [];
   private chores: FakeChore[] = [];
   private calls: FakeServiceCall[] = [];
+  private nextChoreId = 1;
 
   private constructor(server: http.Server) {
     this.server = server;
@@ -129,12 +141,20 @@ export class FakeHa {
       pendingClaims: reward.pendingClaims ?? 0,
       status: reward.status ?? 'available',
     }));
-    this.chores = (seed.chores ?? []).map((chore) => ({
-      userName: chore.user,
-      name: chore.name,
-      points: chore.points ?? 0,
-      status: chore.status ?? 'pending',
-    }));
+    this.nextChoreId = 1;
+    this.chores = (seed.chores ?? []).flatMap((chore, index) => {
+      const assignedUserNames = chore.assignedUsers ?? [chore.user];
+      const id = chore.id ?? `fake-chore-${index + 1}-${slug(chore.name)}`;
+      return assignedUserNames.map((userName) => ({
+        id,
+        userName,
+        name: chore.name,
+        assignedUserNames,
+        completionCriteria: chore.completionCriteria ?? 'independent',
+        points: chore.points ?? 0,
+        status: chore.status ?? 'pending',
+      }));
+    });
     this.calls = [];
   }
 
@@ -198,8 +218,9 @@ export class FakeHa {
           purpose: 'purpose_chore_status',
           user_name: chore.userName,
           chore_name: chore.name,
+          completion_criteria: chore.completionCriteria,
           default_points: chore.points,
-          assigned_user_names: [chore.userName],
+          assigned_user_names: chore.assignedUserNames,
           can_claim: chore.status !== 'completed',
           can_approve: false,
           friendly_name: chore.name,
@@ -308,6 +329,59 @@ export class FakeHa {
     }
 
     if (domain !== 'choreops') return;
+
+    if (service === 'update_chore') {
+      const id = String(data.id ?? '');
+      const name = String(data.name ?? '').trim();
+      const existing = this.chores.find(
+        (chore) => (id && chore.id === id) || (!id && chore.name === name),
+      );
+      if (!existing) return;
+
+      const choreId = existing.id;
+      const matching = this.chores.filter((chore) => chore.id === choreId);
+      const assignedUserNames = Array.isArray(data.assigned_user_names)
+        ? data.assigned_user_names.map((user) => String(user))
+        : existing.assignedUserNames;
+      const nextName = name || existing.name;
+      this.chores = this.chores.filter((chore) => chore.id !== choreId);
+      this.chores.push(
+        ...assignedUserNames.map((userName) => {
+          const previous = matching.find((chore) => chore.userName === userName) ?? existing;
+          return { ...previous, userName, name: nextName, assignedUserNames };
+        }),
+      );
+      return;
+    }
+
+    if (service === 'create_chore') {
+      const name = String(data.name ?? '').trim();
+      const assignedUserNames = Array.isArray(data.assigned_user_names)
+        ? data.assigned_user_names.map((user) => String(user))
+        : [];
+      const id = `fake-created-chore-${this.nextChoreId++}`;
+      this.chores.push(
+        ...assignedUserNames.map((userName) => ({
+          id,
+          userName,
+          name,
+          assignedUserNames,
+          completionCriteria: String(data.completion_criteria ?? 'independent'),
+          points: Number(data.points ?? 0),
+          status: 'pending',
+        })),
+      );
+      return;
+    }
+
+    if (service === 'delete_chore') {
+      const id = String(data.id ?? '');
+      const name = String(data.name ?? '').trim();
+      this.chores = this.chores.filter((chore) =>
+        id ? chore.id !== id : chore.name !== name,
+      );
+      return;
+    }
 
     if (service === 'create_reward') {
       const name = String(data.name ?? '').trim();

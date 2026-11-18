@@ -1598,13 +1598,11 @@
 .planner-mobile-member.is-active {
   color: var(--planner-ink);
   background: var(--planner-accent-soft);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--planner-accent) 48%, transparent);
 }
 
 .planner-mobile-member.is-active .planner-mobile-avatar {
-  box-shadow:
-    0 0 0 2px var(--planner-surface),
-    0 0 0 4px var(--planner-accent);
+  outline: 2px solid var(--planner-accent);
+  outline-offset: 2px;
 }
 
 /* Same 26px chip as the member picker and the column header. `MemberAvatar`
