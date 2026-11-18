@@ -788,7 +788,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.tab.free': 'フリータスク',
   'planner.setGoal': '目標を設定',
   'planner.claimWho': 'だれがやりますか？',
-  'planner.openChild': '開く',
+  'planner.openChild': '詳細を見る',
   'planner.filter': 'しぼりこむ',
   'planner.filterTitle': 'なにを表示しますか？',
   'planner.awardTitle': 'このポイントはどこへ？',

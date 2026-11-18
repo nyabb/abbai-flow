@@ -1597,8 +1597,14 @@
 
 .planner-mobile-member.is-active {
   color: var(--planner-ink);
-  background: var(--planner-surface);
-  box-shadow: 0 2px 9px rgba(38, 51, 47, 0.08);
+  background: var(--planner-accent-soft);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--planner-accent) 48%, transparent);
+}
+
+.planner-mobile-member.is-active .planner-mobile-avatar {
+  box-shadow:
+    0 0 0 2px var(--planner-surface),
+    0 0 0 4px var(--planner-accent);
 }
 
 /* Same 26px chip as the member picker and the column header. `MemberAvatar`
@@ -1632,10 +1638,7 @@
   border-bottom: 1px solid var(--planner-soft);
 }
 
-/*
- * Phones had no way into a child's detail page and no mission button at all:
- * the tabs only switched panels. This row puts both next to the tabs.
- */
+/* This action opens the selected child's full detail page. */
 .planner-mobile-actions {
   display: flex;
   flex: 0 0 auto;

@@ -801,7 +801,7 @@ export const en = {
   'planner.tab.free': 'Free chores',
   'planner.setGoal': 'Set a goal',
   'planner.claimWho': 'Who is taking this?',
-  'planner.openChild': 'Open',
+  'planner.openChild': 'Show details',
   'planner.filter': 'Filter',
   'planner.filterTitle': 'What do you want to see?',
   'planner.awardTitle': 'Where should these points go?',
