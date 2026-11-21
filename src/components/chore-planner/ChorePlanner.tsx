@@ -2087,8 +2087,13 @@ export function ChorePlanner({
         <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
           {Array.from({ length: Math.max(2, Math.min(data.members.length || 3, 4)) }, (_, index) => (
             <section className="planner-loading-column" key={index} aria-hidden="true">
-              <LoadingPlaceholder lines={1} className="loading-placeholder--compact" widths={[64]} />
-              <LoadingPlaceholder lines={3} widths={[91, 76, 58]} />
+              <LoadingPlaceholder
+                label={t('planner.loading')}
+                lines={1}
+                className="loading-placeholder--compact"
+                widths={[64]}
+              />
+              <LoadingPlaceholder label={t('planner.loading')} lines={3} widths={[91, 76, 58]} />
             </section>
           ))}
         </div>
