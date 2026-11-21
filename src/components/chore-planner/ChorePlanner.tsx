@@ -2125,6 +2125,7 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
+          onNewGoal={startRewardForm}
         />
       )}{' '}
       {screen === 'child' && childMember && (

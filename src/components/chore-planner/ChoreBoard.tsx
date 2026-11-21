@@ -27,7 +27,7 @@ export interface ChoreBoardProps {
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
-  /** A member's goals, rendered inline in the phone layout's Doelen tab. */
+  /** A member's goals, rendered inline in the board and phone Doelen tab. */
   renderGoals: (memberId: string) => React.ReactNode;
   copy: PlannerCopy;
   onOpenChild: (memberId: string) => void;
@@ -36,6 +36,7 @@ export interface ChoreBoardProps {
   /** Open the missions overview (the mission screen's back destination). */
   onOpenMissions: (memberId: string) => void;
   onNewChore: () => void;
+  onNewGoal: (memberId: string) => void;
 }
 
 export function ChoreBoard({
@@ -54,6 +55,7 @@ export function ChoreBoard({
   onStartMissions,
   onOpenMissions,
   onNewChore,
+  onNewGoal,
 }: ChoreBoardProps) {
   /*
    * A phone cannot show four columns side by side -- they become slivers. The
@@ -252,6 +254,18 @@ export function ChoreBoard({
               ) : (
                 routines.map((routine) => routineRow(routine, member.id))
               )}
+
+              <div className="planner-section-head">
+                <h2>{c.goals}</h2>
+                <button
+                  type="button"
+                  className="planner-section-action"
+                  onClick={() => onNewGoal(member.id)}
+                >
+                  <Plus aria-hidden="true" /> {c.setGoal}
+                </button>
+              </div>
+              {renderGoals(member.id)}
             </div>
           </section>
         );

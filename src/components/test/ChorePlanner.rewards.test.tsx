@@ -134,7 +134,7 @@ function rewardRow(container: HTMLElement, name = 'Schermtijd') {
  * sheet. The reward row intentionally has no Assign button: points reach a
  * goal through the award sheet after a chore is ticked.
  */
-function assign(container: HTMLElement, name: string, amount: number) {
+async function assign(container: HTMLElement, name: string, amount: number) {
   const backdrop = container.querySelector<HTMLElement>('.planner-backdrop');
   if (backdrop) fireEvent.click(backdrop);
 
@@ -151,6 +151,7 @@ function assign(container: HTMLElement, name: string, amount: number) {
   const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.change(within(sheet).getByRole('spinbutton'), { target: { value: String(amount) } });
   fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+  await waitFor(() => expect(container.querySelector('.planner-backdrop')).toBeNull());
   openRewards(container);
 }
 
@@ -248,7 +249,7 @@ describe('reward lifecycle', () => {
     openRewards(container);
 
     // 1. The child explicitly chooses how much to put towards the goal.
-    assign(container, 'Schermtijd', 20);
+    await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
     // Nothing has been handed over, so ChoreOps was not touched.
@@ -267,7 +268,7 @@ describe('reward lifecycle', () => {
     expect(mocks.deleteReward).not.toHaveBeenCalled();
 
     // 4. The same reward can be pursued again.
-    assign(container, 'Schermtijd', 20);
+    await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(mocks.approveReward).toHaveBeenCalledTimes(1);
   });
@@ -291,9 +292,9 @@ describe('reward lifecycle', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assign(container, 'Schermtijd', 7);
+    await assign(container, 'Schermtijd', 7);
     await waitFor(() => expect(rewardRow(container, 'Schermtijd').textContent).toContain('7 / 20'));
-    assign(container, 'Snack', 3);
+    await assign(container, 'Snack', 3);
     await waitFor(() => expect(rewardRow(container, 'Snack').textContent).toContain('3 / 10'));
     // 25 points minus the 10 promised leaves 15 spendable on the board.
     expect(container.querySelector('.planner-col-points')?.textContent).toContain('15');
@@ -303,7 +304,7 @@ describe('reward lifecycle', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assign(container, 'Schermtijd', 20);
+    await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     await approvePayout(container);
     fireEvent.click(screen.getByRole('button', { name: 'Verwijderen' }));
@@ -316,7 +317,7 @@ describe('reward lifecycle', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assign(container, 'Schermtijd', 20);
+    await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
 
     // Paying out is the only path to "given" and it always asks for the PIN.

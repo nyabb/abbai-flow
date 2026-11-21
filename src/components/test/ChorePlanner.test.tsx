@@ -287,7 +287,7 @@ describe('ChorePlanner anyone chores', () => {
  * Complete the (zero-point) chore, open the award sheet and choose an explicit
  * amount for the reward through the post-chore award sheet.
  */
-function assignReward(container: HTMLElement, amount: number) {
+async function assignReward(container: HTMLElement, amount: number) {
   const backdrop = container.querySelector<HTMLElement>('.planner-backdrop');
   if (backdrop) fireEvent.click(backdrop);
 
@@ -304,6 +304,7 @@ function assignReward(container: HTMLElement, amount: number) {
   const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.change(within(sheet).getByRole('spinbutton'), { target: { value: String(amount) } });
   fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
+  await waitFor(() => expect(container.querySelector('.planner-backdrop')).toBeNull());
   openRewards(container);
 }
 
@@ -313,6 +314,14 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     mocks.createReward.mockClear();
     mocks.approveReward.mockClear();
     localStorage.clear();
+  });
+
+  it('shows a child\'s rewards on the chores board without opening their profile', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+    const zara = column(container, 'Zara');
+
+    expect(zara.textContent).toContain('Afwassen');
+    expect(zara.textContent).toContain('Schermtijd');
   });
 
   it('lists rewards and lets Zara allocate points already in her savings pot', async () => {
@@ -362,7 +371,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assignReward(container, 20);
+    await assignReward(container, 20);
 
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
@@ -378,7 +387,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assignReward(container, 20);
+    await assignReward(container, 20);
 
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.querySelector('.planner-pin-input')).toBeNull();
@@ -392,7 +401,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assignReward(container, 25);
+    await assignReward(container, 25);
 
     // Zara has 25 and the goal wants 40, so the explicit 25 stays open.
     await waitFor(() => expect(container.textContent).toContain('25 / 40'));
@@ -407,7 +416,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    assignReward(container, 20);
+    await assignReward(container, 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
 
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
@@ -424,7 +433,8 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
-    fireEvent.click(screen.getByRole('button', { name: /Stel een doel in/ }));
+    const goalsSheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+    fireEvent.click(within(goalsSheet).getByRole('button', { name: /Stel een doel in/ }));
 
     const nameInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[0];
     const costInput = container.querySelectorAll<HTMLInputElement>('.planner-field input')[1];
