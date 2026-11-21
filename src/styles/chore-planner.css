@@ -94,6 +94,46 @@
   box-shadow: 0 12px 28px color-mix(in srgb, var(--planner-band-2) 28%, transparent);
 }
 
+.planner-loading-board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 16px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 18px clamp(16px, 2vw, 28px) 96px;
+}
+
+.planner-loading-column {
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  min-height: 260px;
+  padding: 20px;
+  border: 1px solid var(--planner-line);
+  border-radius: 22px;
+  background: var(--planner-surface);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--planner-ink) 5%, transparent);
+}
+
+@media (max-width: 900px) {
+  .planner-loading-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .planner-loading-board {
+    grid-template-columns: 1fr;
+    padding: 14px 16px 100px;
+  }
+
+  .planner-loading-column {
+    min-height: 190px;
+  }
+}
+
 /* Small line above the page title (today's date), like a hero. */
 .planner-header-copy {
   display: grid;
@@ -1927,30 +1967,48 @@
 }
 .planner-confetti {
   position: fixed;
-  z-index: 30;
-  inset: 30% 20%;
-  display: flex;
-  justify-content: center;
+  z-index: 100;
+  inset: 0;
+  overflow: hidden;
   pointer-events: none;
 }
 .planner-confetti i {
   position: absolute;
-  width: 9px;
-  height: 15px;
+  top: -8%;
+  left: var(--confetti-x);
+  width: 12px;
+  height: 18px;
   border-radius: 2px;
   background: hsl(calc(var(--confetti-index) * 41), 50%, 62%);
-  animation: planner-confetti-fall 1.15s ease-out both;
+  animation: planner-confetti-fall 1.9s cubic-bezier(0.2, 0.68, 0.3, 1) var(--confetti-delay) both;
   transform: rotate(calc(var(--confetti-index) * 29deg));
 }
 .planner-confetti i:nth-child(3n) {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
 }
+.planner-confetti--goal::before {
+  position: absolute;
+  inset: 15% 10%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--color-brand) 20%, transparent),
+    transparent 68%
+  );
+  animation: planner-goal-glow 1.4s ease-out both;
+  content: '';
+}
+.planner-confetti--chore i {
+  width: 13px;
+  height: 20px;
+  animation-duration: 2.1s;
+}
 .planner-confetti--goal i {
-  width: 15px;
-  height: 21px;
-  animation-duration: 1.7s;
+  width: 17px;
+  height: 24px;
+  animation-duration: 2.45s;
 }
 
 @keyframes planner-check-spring {
@@ -1974,7 +2032,21 @@
   }
   100% {
     opacity: 0;
-    transform: translateY(180px) rotate(240deg);
+    transform: translateY(100dvh) rotate(240deg);
+  }
+}
+
+@keyframes planner-goal-glow {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
   }
 }
 

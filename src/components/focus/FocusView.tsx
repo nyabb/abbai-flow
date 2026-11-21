@@ -11,6 +11,7 @@ import { useTranslation } from '../../i18n';
 import { RoutineCard } from './RoutineCard';
 import { FocusChores } from './FocusChores';
 import { pickRoutine, getTimeOfDay } from './period';
+import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 
 interface FocusViewProps {
   memberId: string;
@@ -60,6 +61,13 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
    * wall display would otherwise claim someone else's chore and pay out points.
    */
   const [confirmChoreId, setConfirmChoreId] = useState<string | null>(null);
+  const [pendingChoreId, setPendingChoreId] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState(false);
+  useEffect(() => {
+    if (!celebration) return;
+    const timer = setTimeout(() => setCelebration(false), 2100);
+    return () => clearTimeout(timer);
+  }, [celebration]);
   const handleClockTap = () => {
     const timestamp = Date.now();
     taps.current = [...taps.current.filter((prev) => timestamp - prev < 3000), timestamp];
@@ -122,7 +130,10 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   );
 
   return (
-    <div className="focus-view" style={{ '--focus-accent': member.color } as CSSProperties}>
+    <div
+      className={`focus-view ${settings.reducedMotion ? 'focus-view--reduce-motion' : ''}`}
+      style={{ '--focus-accent': member.color } as CSSProperties}
+    >
       <header className="focus-header">
         <div className="focus-member">
           <span
@@ -145,7 +156,13 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
       </header>
 
       <main className="focus-body">
-        {allDone ? (
+        {choreOps.loading && !choreOps.data ? (
+          <LoadingPlaceholder
+            label={t('planner.loading')}
+            lines={5}
+            className="loading-placeholder--screen"
+          />
+        ) : allDone ? (
           <div className="focus-celebration">
             <div className="focus-celebration-emoji">🎉</div>
             <div className="focus-celebration-title">All done — great job!</div>
@@ -218,6 +235,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
               <button
                 type="button"
                 className="settings-btn"
+                disabled={pendingChoreId === confirmChore.id}
                 onClick={() => setConfirmChoreId(null)}
               >
                 {t('common.cancel')}
@@ -225,18 +243,49 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
               <button
                 type="button"
                 className="settings-btn settings-btn--primary"
+                disabled={pendingChoreId === confirmChore.id}
+                aria-busy={pendingChoreId === confirmChore.id}
                 onClick={() => {
                   const chore = choreOps.data?.chores.find((c) => c.id === confirmChore.id);
                   // ChoreOps has no un-complete action: ticking claims or approves.
                   const buttonEid = chore?.actions.claim ?? chore?.actions.approve;
-                  if (buttonEid) void choreOps.pressButton(buttonEid);
-                  setConfirmChoreId(null);
+                  if (!buttonEid) {
+                    setConfirmChoreId(null);
+                    return;
+                  }
+                  setPendingChoreId(confirmChore.id);
+                  void choreOps
+                    .pressButton(buttonEid)
+                    .then(() => {
+                      if (confirmIsDone) setCelebration(true);
+                      setConfirmChoreId(null);
+                    })
+                    .catch(() => undefined)
+                    .finally(() => setPendingChoreId(null));
                 }}
               >
+                {pendingChoreId === confirmChore.id && <ActivitySpinner />}
                 {t('chores.confirm')}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {celebration && (
+        <div className="planner-confetti planner-confetti--chore" aria-hidden="true">
+          {Array.from({ length: 36 }, (_, index) => (
+            <i
+              key={index}
+              style={
+                {
+                  '--confetti-index': index,
+                  '--confetti-x': `${(index * 37) % 100}%`,
+                  '--confetti-delay': `${(index % 8) * 0.045}s`,
+                } as CSSProperties
+              }
+            />
+          ))}
         </div>
       )}
 

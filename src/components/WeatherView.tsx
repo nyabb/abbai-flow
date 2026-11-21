@@ -5,6 +5,7 @@ import { weatherIcon, conditionLabel } from '../types/weather-icons';
 import { haFetch, callHaService, hasToken } from '../api/ha-rest';
 import { getConfig } from '../config';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface ForecastItem {
   datetime: string;
@@ -174,7 +175,13 @@ export function WeatherView() {
   if (loading && !current) {
     return (
       <div className="weather-view">
-        <div className="weather-loading">{t('weatherView.loading')}</div>
+        <div className="weather-loading">
+          <LoadingPlaceholder
+            label={t('weatherView.loading')}
+            lines={5}
+            className="loading-placeholder--screen"
+          />
+        </div>
       </div>
     );
   }
@@ -308,7 +315,13 @@ export function WeatherView() {
                 </button>
               </div>
               {hourlyLoading ? (
-                <div className="weather-hourly-loading">{t('weatherView.loadingHourly')}</div>
+                <div className="weather-hourly-loading">
+                  <LoadingPlaceholder
+                    label={t('weatherView.loadingHourly')}
+                    lines={4}
+                    className="loading-placeholder--compact"
+                  />
+                </div>
               ) : hoursForSelectedDay.length === 0 ? (
                 <div className="weather-hourly-empty">{t('weatherView.noHourlyData')}</div>
               ) : (

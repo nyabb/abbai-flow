@@ -13,6 +13,7 @@ import type { PlannerMember } from '../../api/chore-planner-model';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
+import { ActivitySpinner } from '../LoadingPlaceholder';
 import { DAY_KEYS, FREQUENCY_KEY, UNIT_KEY, type FormValue } from './form';
 
 export interface ChoreEditorProps {
@@ -286,6 +287,7 @@ export function ChoreEditor({
         </button>
         <button
           className="planner-primary"
+          aria-busy={saving}
           disabled={
             !form.name.trim() ||
             (!form.memberIds.length && !form.free) ||
@@ -295,7 +297,8 @@ export function ChoreEditor({
           }
           onClick={onSave}
         >
-          {saving ? '\u2026' : editingId ? c.save : c.create}
+          {saving && <ActivitySpinner className="activity-spinner--small" />}
+          {editingId ? c.save : c.create}
         </button>
       </footer>
     </>

@@ -4,6 +4,7 @@ import { DashboardCardProps } from '../../types/dashboard-cards';
 import { AnyListClient } from '../../api/anylist';
 import { callHaService } from '../../api/ha-rest';
 import { useTranslation } from '../../i18n';
+import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 
 interface TodoItem {
   uid: string;
@@ -140,6 +141,7 @@ export function ShoppingCard({ config }: DashboardCardProps) {
           className="dash-shopping-add-btn"
           disabled={!inputValue.trim() || submitting}
           aria-label={t('dashboard.shoppingAddItem')}
+          aria-busy={submitting}
           style={{
             padding: '6px 10px',
             border: 'none',
@@ -152,15 +154,17 @@ export function ShoppingCard({ config }: DashboardCardProps) {
             justifyContent: 'center',
           }}
         >
-          <Plus size={16} />
+          {submitting ? <ActivitySpinner /> : <Plus size={16} />}
         </button>
       </form>
 
       {/* Items list */}
       {loading && items.length === 0 ? (
-        <div style={{ padding: '12px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-          {t('dashboard.shoppingLoading')}
-        </div>
+        <LoadingPlaceholder
+          label={t('dashboard.shoppingLoading')}
+          lines={3}
+          className="loading-placeholder--list"
+        />
       ) : uncheckedItems.length === 0 ? (
         <div style={{ padding: '12px 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
           {t('dashboard.shoppingEmpty')}

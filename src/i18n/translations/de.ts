@@ -202,6 +202,9 @@ export const de: Record<TranslationKey, string> = {
   'settings.general.sunday': 'Sonntag',
   'settings.general.monday': 'Montag',
   'settings.general.languageLabel': 'Sprache / Region',
+  'settings.general.debugModeLabel': 'Debugmodus',
+  'settings.general.debugModeSublabel': 'Vollständige Anfrage- und Fehlerdetails im Aufgabenplaner anzeigen.',
+  'settings.display.ingressUrlUnavailable': 'Eine teilbare Display-URL ist innerhalb von Home Assistant nicht verfügbar. Öffne Abbai Flow auf dem Zielbildschirm und wähle „Auf diesem Gerät verwenden“.',
   'settings.general.dashboardLayoutTitle': 'Übersichtslayout',
   'settings.general.dashboardLayoutDesc': 'Lege fest, wie deine Übersicht aufgebaut ist.',
   'settings.general.layoutLabel': 'Layout',
@@ -665,6 +668,7 @@ export const de: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Aufgaben & Routinen',
+  'planner.loading': 'Aufgaben und Routinen werden geladen...',
   'planner.shortTitle': 'Aufgaben',
   'planner.today': 'Heute',
   'planner.weather': 'Wetter',

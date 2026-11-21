@@ -200,6 +200,9 @@ export const ko: Record<TranslationKey, string> = {
   'settings.general.sunday': '일요일',
   'settings.general.monday': '월요일',
   'settings.general.languageLabel': '언어 / 지역',
+  'settings.general.debugModeLabel': '디버그 모드',
+  'settings.general.debugModeSublabel': '집안일 플래너에 요청 및 오류 세부 정보를 표시합니다.',
+  'settings.display.ingressUrlUnavailable': 'Home Assistant 내에서는 공유 가능한 디스플레이 URL을 사용할 수 없습니다. 대상 화면에서 Abbai Flow를 열고 “이 기기에서 사용”을 선택하세요.',
   'settings.general.dashboardLayoutTitle': '대시보드 레이아웃',
   'settings.general.dashboardLayoutDesc': '대시보드 구성 방식을 선택하세요.',
   'settings.general.layoutLabel': '레이아웃',
@@ -650,6 +653,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': '집안일과 루틴',
+  'planner.loading': '집안일과 루틴을 불러오는 중...',
   'planner.shortTitle': '집안일',
   'planner.today': '오늘',
   'planner.weather': '날씨',

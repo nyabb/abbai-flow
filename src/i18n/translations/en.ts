@@ -205,6 +205,9 @@ export const en = {
   'settings.general.sunday': 'Sunday',
   'settings.general.monday': 'Monday',
   'settings.general.languageLabel': 'Language / Locale',
+  'settings.general.debugModeLabel': 'Debug Mode',
+  'settings.general.debugModeSublabel': 'Show full request and error details in the chore planner.',
+  'settings.display.ingressUrlUnavailable': 'A shareable display URL is unavailable inside Home Assistant. Open Abbai Flow on the target screen and choose “Use on This Device”.',
   'settings.general.dashboardLayoutTitle': 'Dashboard Layout',
   'settings.general.dashboardLayoutDesc': 'Choose how your dashboard is organized.',
   'settings.general.layoutLabel': 'Layout',
@@ -664,6 +667,7 @@ export const en = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Chores & Routines',
+  'planner.loading': 'Loading chores and routines...',
   'planner.shortTitle': 'Chores',
   'planner.today': 'Today',
   'planner.weather': 'Weather',

@@ -25,6 +25,7 @@ import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
+import { ActivitySpinner } from '../LoadingPlaceholder';
 
 /** What is set aside for a reward and what the goal still needs. */
 export interface RewardState {
@@ -477,6 +478,7 @@ export interface AssignPointsSheetProps {
   allocated: number;
   /** What the child can still spend right now. */
   spendable: number;
+  saving: boolean;
   copy: PlannerCopy;
   onCancel: () => void;
   onAssign: (amount: number) => void;
@@ -494,6 +496,7 @@ export function AssignPointsSheet({
   reward,
   allocated,
   spendable,
+  saving,
   copy: c,
   onCancel,
   onAssign,
@@ -532,9 +535,11 @@ export function AssignPointsSheet({
         </button>
         <button
           className="planner-primary"
-          disabled={!valid}
+          aria-busy={saving}
+          disabled={!valid || saving}
           onClick={() => onAssign(Math.round(amount))}
         >
+          {saving && <ActivitySpinner className="activity-spinner--small" />}
           {c.assign}
         </button>
       </footer>
@@ -683,6 +688,7 @@ export function RewardFormSheet({
         </button>
         <button
           className="planner-primary"
+          aria-busy={saving}
           disabled={
             saving ||
             rewardForm.cost < 1 ||
@@ -690,7 +696,8 @@ export function RewardFormSheet({
           }
           onClick={onSave}
         >
-          {saving ? '\u2026' : c.save}
+          {saving && <ActivitySpinner className="activity-spinner--small" />}
+          {c.save}
         </button>
       </footer>
     </>

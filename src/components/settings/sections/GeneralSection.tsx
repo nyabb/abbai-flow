@@ -101,6 +101,16 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             />
           </div>
         )}
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.general.debugModeLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.general.debugModeSublabel')}</div>
+          </div>
+          <Toggle
+            checked={settings.debugMode}
+            onChange={(v) => onUpdateSettings({ debugMode: v })}
+          />
+        </div>
       </div>
 
       <h2 className="settings-section-title" style={{ marginTop: 32 }}>

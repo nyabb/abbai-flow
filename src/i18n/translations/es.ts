@@ -201,6 +201,9 @@ export const es: Record<TranslationKey, string> = {
   'settings.general.sunday': 'Domingo',
   'settings.general.monday': 'Lunes',
   'settings.general.languageLabel': 'Idioma / Configuración regional',
+  'settings.general.debugModeLabel': 'Modo de depuración',
+  'settings.general.debugModeSublabel': 'Mostrar detalles completos de solicitudes y errores en el planificador de tareas.',
+  'settings.display.ingressUrlUnavailable': 'No hay una URL de pantalla compartible dentro de Home Assistant. Abre Abbai Flow en la pantalla de destino y elige «Usar en este dispositivo».',
   'settings.general.dashboardLayoutTitle': 'Diseño del panel',
   'settings.general.dashboardLayoutDesc': 'Elige cómo se organiza tu panel.',
   'settings.general.layoutLabel': 'Diseño',
@@ -662,6 +665,7 @@ export const es: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Tareas y rutinas',
+  'planner.loading': 'Cargando tareas y rutinas...',
   'planner.shortTitle': 'Tareas',
   'planner.today': 'Hoy',
   'planner.weather': 'Tiempo',
