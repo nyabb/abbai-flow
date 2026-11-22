@@ -89,7 +89,7 @@ type Screen = 'board' | 'child' | 'missions' | 'mission' | 'closing';
 /** Outcome shown in the bottom-right notification. */
 type ToastKind = 'success' | 'error';
 
-const PAUSED_ROUTINES_KEY = 'beacon_paused_routines';
+const PAUSED_ROUTINES_KEY = 'abbai_flow_paused_routines';
 
 /**
  * Routines paused on this device before pause state moved into the shared
@@ -226,7 +226,7 @@ export function ChorePlanner({
   const [livePinError, setLivePinError] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   /**
-   * Reward progress (saving → achieved → given). Shared through beacon-store:
+   * Reward progress (saving → achieved → given). Shared through abbai-flow-store:
    * ChoreOps owns the definition and the deduction, not the pursuit.
    */
   const rewardsState = useRewardRedemptions();
@@ -1246,10 +1246,6 @@ export function ChorePlanner({
           </h1>
         </div>
         <div className="planner-header-actions">
-          {/* The reference puts the wall clock in the header band. */}
-          {screen === 'board' && (
-            <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
-          )}
           {screen === 'board' && (
             <button
               className="planner-icon-button"
@@ -1299,6 +1295,10 @@ export function ChorePlanner({
           >
             {soundEnabled ? <Volume2 /> : <VolumeX />}
           </button>
+          {/* Keep the wall clock at the far edge, after the header actions. */}
+          {screen === 'board' && (
+            <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
+          )}
         </div>
       </header>
       {!online && (

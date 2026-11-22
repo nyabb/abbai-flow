@@ -193,7 +193,7 @@ export function useCalendarEvents(
    * HomeAssistantClient is available (standalone mode, direct browser WS
    * connection), this calls its createEvent method directly. Otherwise
    * (add-on/proxy mode, no browser-side token) it routes through the add-on
-   * server's /beacon-action/calendar-event bridge, which opens the WS
+   * server's /abbai-flow/action/calendar-event bridge, which opens the WS
    * connection server-side using SUPERVISOR_TOKEN.
    *
    * Many calendar providers don't support event creation at all
@@ -221,7 +221,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.createEvent(calendarId, event);
         } else {
-          await callAbbaiAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/abbai-flow/action/calendar-event', {
             op: 'create',
             entity_id: calendarId,
             event: toWsEventPayload(event),
@@ -244,7 +244,7 @@ export function useCalendarEvents(
    * (standalone mode, direct browser WS connection), this calls its
    * updateEvent method directly. Otherwise (add-on/proxy mode, no
    * browser-side token) it routes through the add-on server's
-   * /beacon-action/calendar-event bridge, which opens the WS connection
+   * /abbai-flow/action/calendar-event bridge, which opens the WS connection
    * server-side using SUPERVISOR_TOKEN.
    *
    * Many calendar providers don't support event updates at all
@@ -271,7 +271,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.updateEvent(calendarId, uid, event);
         } else {
-          await callAbbaiAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/abbai-flow/action/calendar-event', {
             op: 'update',
             entity_id: calendarId,
             uid,
@@ -297,7 +297,7 @@ export function useCalendarEvents(
         if (client?.isConnected) {
           await client.deleteEvent(calendarId, uid);
         } else {
-          await callAbbaiAction('/beacon-action/calendar-event', {
+          await callAbbaiAction('/abbai-flow/action/calendar-event', {
             op: 'delete',
             entity_id: calendarId,
             uid,

@@ -138,7 +138,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* --- Main Layout (sidebar + content grid) --- */
-.beacon {
+.abbai-flow {
   /* 100vh is taller than the visible area on phones (browser chrome), which
      pushed the bottom tab bars off-screen. dvh tracks what is really visible. */
   height: 100vh;
@@ -149,56 +149,56 @@ a:focus:not(:focus-visible) {
 }
 
 /* Sidebar LEFT (default) */
-.beacon--sidebar-left {
+.abbai-flow--sidebar-left {
   grid-template-columns: var(--sidebar-width) 1fr;
 }
 
-.beacon--sidebar-left .beacon-main {
+.abbai-flow--sidebar-left .abbai-flow-main {
   grid-column: 2;
 }
 
-.beacon--sidebar-left .sidebar {
+.abbai-flow--sidebar-left .sidebar {
   grid-column: 1;
   border-right: 1px solid var(--border-subtle);
   border-left: none;
 }
 
 /* Sidebar RIGHT */
-.beacon--sidebar-right {
+.abbai-flow--sidebar-right {
   grid-template-columns: 1fr var(--sidebar-width);
 }
 
-.beacon--sidebar-right .beacon-main {
+.abbai-flow--sidebar-right .abbai-flow-main {
   grid-column: 1;
 }
 
-.beacon--sidebar-right .sidebar {
+.abbai-flow--sidebar-right .sidebar {
   grid-column: 2;
   border-left: 1px solid var(--border-subtle);
   border-right: none;
 }
 
 /* Sidebar BOTTOM */
-.beacon--sidebar-bottom {
+.abbai-flow--sidebar-bottom {
   grid-template-columns: 1fr;
   padding-bottom: var(--mobile-tab-bar-height, 72px);
 }
 
-.beacon--sidebar-bottom .beacon-main {
+.abbai-flow--sidebar-bottom .abbai-flow-main {
   grid-column: 1;
 }
 
-.beacon--sidebar-bottom .mobile-tab-bar {
+.abbai-flow--sidebar-bottom .mobile-tab-bar {
   display: flex;
 }
 
 /* Kiosk Mode (Settings > Display): no Sidebar is rendered at all, so no
    column needs to be reserved for it — single full-width column. */
-.beacon--kiosk {
+.abbai-flow--kiosk {
   grid-template-columns: 1fr;
 }
 
-.beacon-main {
+.abbai-flow-main {
   display: flex;
   flex-direction: column;
   overflow: clip;
@@ -212,17 +212,17 @@ a:focus:not(:focus-visible) {
 }
 
 /* The calendar body fills the remaining space */
-.beacon-body {
+.abbai-flow-body {
   flex: 1;
   min-height: 0;
 }
 
 /* Ensure views take full height even on mobile */
-.beacon-main > .settings-view,
-.beacon-main > .grocery-view,
-.beacon-main > .music-view,
-.beacon-main > .dashboard,
-.beacon-main > .photo-frame {
+.abbai-flow-main > .settings-view,
+.abbai-flow-main > .grocery-view,
+.abbai-flow-main > .music-view,
+.abbai-flow-main > .dashboard,
+.abbai-flow-main > .photo-frame {
   flex: 1;
   min-height: 0;
 }
@@ -232,7 +232,7 @@ a:focus:not(:focus-visible) {
    `translateY(0)`) it becomes the containing block for `position: fixed`, so
    dialogs inside it were anchored to the view instead of the viewport —
    off-centre, and half below the screen on phones. */
-.beacon-main > * {
+.abbai-flow-main > * {
   animation: view-enter 250ms ease;
 }
 
@@ -327,13 +327,13 @@ a:focus:not(:focus-visible) {
 }
 
 /* Active indicator on the correct edge based on sidebar position */
-.beacon--sidebar-left .sidebar-icon--active::before {
+.abbai-flow--sidebar-left .sidebar-icon--active::before {
   right: -8px;
   left: auto;
   border-radius: 3px 0 0 3px;
 }
 
-.beacon--sidebar-right .sidebar-icon--active::before {
+.abbai-flow--sidebar-right .sidebar-icon--active::before {
   left: -8px;
   right: auto;
   border-radius: 0 3px 3px 0;
@@ -353,7 +353,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* --- Header (simplified — nav moved to sidebar) --- */
-.beacon-header {
+.abbai-flow-header {
   flex-shrink: 0;
   height: var(--header-height);
   display: flex;
@@ -463,7 +463,7 @@ a:focus:not(:focus-visible) {
 }
 
 /* --- Calendar Body --- */
-.beacon-body {
+.abbai-flow-body {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -473,12 +473,12 @@ a:focus:not(:focus-visible) {
 }
 
 /* --- Two-column layout (calendar + sidebar) --- */
-.beacon-body--two-col {
+.abbai-flow-body--two-col {
   flex-direction: row;
   gap: 0;
 }
 
-.beacon-body--two-col .beacon-body-calendar {
+.abbai-flow-body--two-col .abbai-flow-body-calendar {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -1278,12 +1278,12 @@ a:focus:not(:focus-visible) {
 }
 
 /* FAB position depends on sidebar side -- default right */
-.beacon--sidebar-left .btn--fab,
-.beacon--sidebar-bottom .btn--fab {
+.abbai-flow--sidebar-left .btn--fab,
+.abbai-flow--sidebar-bottom .btn--fab {
   right: 24px;
 }
 
-.beacon--sidebar-right .btn--fab {
+.abbai-flow--sidebar-right .btn--fab {
   right: 24px;
 }
 
@@ -1374,18 +1374,18 @@ a:focus:not(:focus-visible) {
  * space -- a taller form (adding a task) keeps its footer, and therefore its Save
  * button, above the bar instead of underneath it.
  *
- * The tab bar is shown by `.beacon--compact` (see the `.beacon--compact
+ * The tab bar is shown by `.abbai-flow--compact` (see the `.abbai-flow--compact
  * .mobile-tab-bar { display: flex }` rule), not by the sidebar position, so
- * matching on `beacon--sidebar-bottom` alone never applied. Both are covered:
+ * matching on `abbai-flow--sidebar-bottom` alone never applied. Both are covered:
  * kiosk mode drops the sidebar class entirely.
  */
-.beacon--compact .modal-overlay,
-.beacon--sidebar-bottom .modal-overlay {
+.abbai-flow--compact .modal-overlay,
+.abbai-flow--sidebar-bottom .modal-overlay {
   padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
 }
 
-.beacon--compact .modal-overlay .modal,
-.beacon--sidebar-bottom .modal-overlay .modal {
+.abbai-flow--compact .modal-overlay .modal,
+.abbai-flow--sidebar-bottom .modal-overlay .modal {
   max-height: 100%;
 }
 
@@ -1876,14 +1876,14 @@ a:focus:not(:focus-visible) {
   }
 
   /* --- Layout: remove sidebar column, add bottom padding for tab bar --- */
-  .beacon {
+  .abbai-flow {
     grid-template-columns: 1fr !important;
     padding-bottom: var(--mobile-tab-bar-height);
   }
 
-  .beacon .beacon-main,
-  .beacon--sidebar-left .beacon-main,
-  .beacon--sidebar-right .beacon-main {
+  .abbai-flow .abbai-flow-main,
+  .abbai-flow--sidebar-left .abbai-flow-main,
+  .abbai-flow--sidebar-right .abbai-flow-main {
     grid-column: 1 !important;
   }
 
@@ -1892,7 +1892,7 @@ a:focus:not(:focus-visible) {
     display: none;
   }
 
-  .beacon-body--two-col {
+  .abbai-flow-body--two-col {
     flex-direction: column;
   }
 
@@ -1909,7 +1909,7 @@ a:focus:not(:focus-visible) {
   }
 
   /* --- Header: simplified on mobile --- */
-  .beacon-header {
+  .abbai-flow-header {
     padding: 0 12px;
     height: 48px;
   }
@@ -1931,7 +1931,7 @@ a:focus:not(:focus-visible) {
   }
 
   /* --- Calendar body spacing --- */
-  .beacon-body {
+  .abbai-flow-body {
     padding: 8px 8px 0;
   }
 
@@ -2123,12 +2123,12 @@ a:focus:not(:focus-visible) {
     font-size: 1rem;
   }
 
-  .beacon-header {
+  .abbai-flow-header {
     padding: 0 8px;
     height: 44px;
   }
 
-  .beacon-body {
+  .abbai-flow-body {
     padding: 4px 4px 0;
   }
 
@@ -2206,28 +2206,28 @@ a:focus:not(:focus-visible) {
 /* Abbai Flow sidebar should show alongside HA's sidebar.
    The ingress iframe already gets the space after HA's sidebar,
    so Abbai Flow's sidebar just needs to be slightly narrower. */
-.beacon--ingress {
+.abbai-flow--ingress {
   --sidebar-width: 52px;
 }
 
-.beacon--ingress.beacon--sidebar-left {
+.abbai-flow--ingress.abbai-flow--sidebar-left {
   grid-template-columns: 52px 1fr;
 }
 
-.beacon--ingress.beacon--sidebar-right {
+.abbai-flow--ingress.abbai-flow--sidebar-right {
   grid-template-columns: 1fr 52px;
 }
 
 /* On very narrow viewports in ingress (phone), switch to bottom tabs */
 /* compact sidebar hiding is handled via inline style in component */
 
-.beacon--compact {
+.abbai-flow--compact {
   grid-template-columns: 1fr !important;
   --sidebar-width: 0px;
   padding-bottom: var(--mobile-tab-bar-height, 72px);
 }
 
-.beacon--compact .mobile-tab-bar {
+.abbai-flow--compact .mobile-tab-bar {
   display: flex;
 }
 

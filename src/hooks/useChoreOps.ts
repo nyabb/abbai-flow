@@ -322,7 +322,7 @@ export function useChoreOps(): UseChoreOpsResult {
         if (activeClient && connected) {
           entry = await activeClient.getEntityRegistryEntry(statusEntityId);
         } else if (usesServerProxy()) {
-          const response = (await callAbbaiAction('/beacon-action/entity-registry', {
+          const response = (await callAbbaiAction('/abbai-flow/action/entity-registry', {
             entity_id: statusEntityId,
           })) as { entry?: HAEntityRegistryEntry | null } | null;
           entry = response?.entry ?? null;

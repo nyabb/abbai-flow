@@ -7,7 +7,7 @@
  * the first thing anyone reads is "what day is it", so that numeral carries the
  * largest type on the screen and the title is sized to sit beside it.
  *
- * Reuses `.beacon-header` so it inherits the active skin's band gradient.
+ * Reuses `.abbai-flow-header` so it inherits the active skin's band gradient.
  */
 import type { ReactNode } from 'react';
 import { format } from 'date-fns';
@@ -54,7 +54,7 @@ export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }
   const { t } = useTranslation();
 
   return (
-    <header className="beacon-header page-header page-header--hero">
+    <header className="abbai-flow-header page-header page-header--hero">
       <HeaderDate date={date} />
 
       <div className="page-header-main">

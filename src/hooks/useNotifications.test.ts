@@ -50,7 +50,7 @@ describe('useNotifications', () => {
     expect(notificationSpy).toHaveBeenCalledTimes(1);
     expect(notificationSpy).toHaveBeenCalledWith(
       'Test event',
-      expect.objectContaining({ tag: 'beacon-event-e1' }),
+      expect.objectContaining({ tag: 'abbai-flow-event-e1' }),
     );
   });
 

@@ -70,7 +70,7 @@ describe('AppearanceSection', () => {
 
     expect(onUpdateSettings).toHaveBeenCalledWith({ themeId: 'dracula' });
     // useTheme persists the choice so a reload keeps the theme.
-    expect(localStorage.getItem('beacon-theme')).toBe('dracula');
+    expect(localStorage.getItem('abbai-flow-theme')).toBe('dracula');
   });
 
   it('hides the dark-mode window while automatic dark mode is off', () => {

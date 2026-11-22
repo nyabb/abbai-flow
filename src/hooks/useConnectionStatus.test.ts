@@ -29,10 +29,10 @@ describe('useConnectionStatus', () => {
   });
 
   it('separates "Abbai Flow down" from "HA down"', async () => {
-    const beacon = renderHook(() =>
+    const app = renderHook(() =>
       useConnectionStatus({ haConnected: true, probe: async () => false }),
     );
-    await waitFor(() => expect(beacon.result.current.state).toBe('beacon-down'));
+    await waitFor(() => expect(app.result.current.state).toBe('app-down'));
 
     const ha = renderHook(() =>
       useConnectionStatus({ haConnected: false, probe: async () => true }),
@@ -54,7 +54,7 @@ describe('useConnectionStatus', () => {
     const { result } = renderHook(() =>
       useConnectionStatus({ haConnected: true, probe: async () => reachable }),
     );
-    await waitFor(() => expect(result.current.state).toBe('beacon-down'));
+    await waitFor(() => expect(result.current.state).toBe('app-down'));
 
     reachable = true;
     await act(async () => {
@@ -70,7 +70,7 @@ describe('useConnectionStatus', () => {
     const { result } = renderHook(() =>
       useConnectionStatus({ haConnected: true, probe: async () => reachable }),
     );
-    await waitFor(() => expect(result.current.state).toBe('beacon-down'));
+    await waitFor(() => expect(result.current.state).toBe('app-down'));
 
     reachable = true;
     await act(async () => setOnline(true));
@@ -93,7 +93,7 @@ describe('useConnectionStatus', () => {
       }),
     );
 
-    await waitFor(() => expect(result.current.state).toBe('beacon-down'));
+    await waitFor(() => expect(result.current.state).toBe('app-down'));
   });
 
   it('rechecks on demand', async () => {

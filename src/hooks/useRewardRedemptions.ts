@@ -2,7 +2,7 @@
  * Reward redemption state: what each child is saving for, what is waiting for a
  * parent, and what has been given.
  *
- * Storage is `beacon-store`, i.e. the add-on server when running as an add-on
+ * Storage is `abbai-flow-store`, i.e. the add-on server when running as an add-on
  * and localStorage in dev — so progress is shared across devices instead of
  * living on one phone. A save that never reached the server is reported.
  */

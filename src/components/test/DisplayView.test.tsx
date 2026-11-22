@@ -152,7 +152,7 @@ describe('DisplayView', () => {
   it.each([
     ['online', 'display.connection.online'],
     ['ha-down', 'display.connection.haDown'],
-    ['beacon-down', 'display.connection.beaconDown'],
+    ['app-down', 'display.connection.appDown'],
     ['offline', 'display.connection.offline'],
   ] as const)('names the %s connection state', (state, key) => {
     renderDisplay({ connection: state });

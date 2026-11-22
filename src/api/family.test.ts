@@ -26,14 +26,14 @@ describe('FamilyStore.syncChoreOpsMembers', () => {
       pin: '0123',
       choreops_user: 'Maya',
     };
-    localStorage.setItem('beacon_family_members', JSON.stringify([linkedMember]));
+    localStorage.setItem('abbai_flow_family_members', JSON.stringify([linkedMember]));
 
     const store = new FamilyStore();
     expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(true);
     expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(false);
 
     const members = JSON.parse(
-      localStorage.getItem('beacon_family_members') ?? '[]',
+      localStorage.getItem('abbai_flow_family_members') ?? '[]',
     ) as FamilyMember[];
     expect(members).toHaveLength(1);
     expect(members[0]).toMatchObject({
@@ -55,6 +55,6 @@ describe('FamilyStore.syncChoreOpsMembers', () => {
     const store = new FamilyStore();
 
     expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(false);
-    expect(localStorage.getItem('beacon_family_members')).toBeNull();
+    expect(localStorage.getItem('abbai_flow_family_members')).toBeNull();
   });
 });

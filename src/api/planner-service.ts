@@ -7,13 +7,13 @@
  * operation with the same shared rules, serialises concurrent mutations per
  * document, deduplicates retries by idempotency key and writes the file
  * atomically. In **standalone / dev** there is no server, so the identical
- * reducer runs locally and `beacon-store` persists it.
+ * reducer runs locally and `abbai-flow-store` persists it.
  *
  * Either way the caller gets the resulting document back, so the UI renders what
  * was actually stored instead of assuming its own optimistic version.
  */
 import { applyPlannerOp, type PlannerOp, type PlannerTarget } from './planner-rules';
-import { loadData, saveData } from './beacon-store';
+import { loadData, saveData } from './abbai-flow-store';
 import {
   loadPlannerMeta,
   PLANNER_META_KEY,
@@ -128,7 +128,7 @@ export const mutateRedemptions = (op: PlannerOp) => mutatePlanner<Redemption[]>(
 
 /**
  * Fallback document for callers that need a synchronous first paint: the local
- * cache, exactly as `beacon-store` stores it.
+ * cache, exactly as `abbai-flow-store` stores it.
  */
 export async function loadTargetDocument<T>(target: PlannerTarget): Promise<T> {
   const raw = await loadData<unknown>(target === 'meta' ? PLANNER_META_KEY : REDEMPTIONS_KEY, null);

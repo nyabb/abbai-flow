@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { getConfig } from '../config';
-import { loadDataSync, loadServerData, saveData } from '../api/beacon-store';
+import { loadDataSync, loadServerData, saveData } from '../api/abbai-flow-store';
 import { setDebugCaptureEnabled } from '../api/debug-log';
 
 // ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ export interface AbbaiSettings {
 // Defaults
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY = 'beacon-settings';
+const STORAGE_KEY = 'abbai-flow-settings';
 
 function buildDefaults(): AbbaiSettings {
   const config = getConfig();
@@ -270,7 +270,12 @@ export function useSettings() {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key?.startsWith('beacon')) {
+        if (
+          key?.startsWith('abbai-flow-') ||
+          key?.startsWith('abbai_flow_') ||
+          key?.startsWith('beacon-') ||
+          key?.startsWith('beacon_')
+        ) {
           keysToRemove.push(key);
         }
       }

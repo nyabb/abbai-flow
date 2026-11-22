@@ -42,8 +42,17 @@ export default defineConfig(({ mode }) => {
               secure: false,
               ws: true,
             },
+            '/abbai-flow/music': {
+              target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
+              changeOrigin: false,
+            },
           }
-        : undefined,
+        : {
+            '/abbai-flow/music': {
+              target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
+              changeOrigin: false,
+            },
+          },
     },
     base: './',
     define: {

@@ -27,7 +27,7 @@
 - **Grocery & Shopping Lists** -- AnyList, Home Assistant Shopping List, and local list support
 - **Task / Todo Lists** -- Home Assistant todo entities and local task lists with dashboard integration
 - **Chore Tracking** -- Assign chores, track streaks, and celebrate completions with a family leaderboard
-- **Music Controls** -- Control Music Assistant, Home Assistant media players, and browse playlists from the display
+- **Music Controls** -- Control Spotify through Encore and Soloist, plus Home Assistant media players
 - **Photo Slideshow** -- Display family photos between interactions
 - **Timer / Countdown** -- On-screen timer for cooking, homework, and more
 - **Screen Saver** -- Automatic screen saver with clock overlay
@@ -73,6 +73,8 @@ services:
     environment:
       HA_URL: https://homeassistant.local:8123
       HA_TOKEN: ${HA_TOKEN}
+      ENCORE_TOKEN: ${ENCORE_TOKEN:-}
+      ENCORE_URL: ${ENCORE_URL:-ws://host.docker.internal:8095/}
     volumes: ['abbai-flow-data:/data']
 
 volumes:
@@ -97,6 +99,8 @@ then kept in the browser.
 | `PORT` | `3000` | Port the container listens on |
 | `HA_URL` | — | Home Assistant base URL |
 | `HA_TOKEN` | — | Long-lived access token |
+| `ENCORE_TOKEN` | — | Optional Encore bearer token for the Spotify integration; stays on the server |
+| `ENCORE_URL` | `ws://host.docker.internal:8095/` | Optional Encore WebSocket URL (the verified Docker network address) |
 | `DATA_DIR` | `/data` | Where persisted documents are stored |
 
 Everything else — themes, family members, chores, routines, rewards, calendar

@@ -5,7 +5,7 @@
  * at the dashboard: the countdown store fires the event, this module makes the
  * noise, and the preference is shared.
  */
-const SOUND_STORAGE_KEY = 'beacon-timer-sound';
+const SOUND_STORAGE_KEY = 'abbai-flow-timer-sound';
 
 export type SoundName = 'beep' | 'chime' | 'alarm' | 'kitchen' | 'gentle';
 

@@ -3,8 +3,8 @@ import { themes, getTheme, type Theme } from '../styles/themes';
 
 export type ThemeMode = 'auto' | string; // 'auto' or a theme id
 
-const THEME_STORAGE_KEY = 'beacon-theme';
-const AUTO_DARK_THEME_KEY = 'beacon-auto-dark-theme';
+const THEME_STORAGE_KEY = 'abbai-flow-theme';
+const AUTO_DARK_THEME_KEY = 'abbai-flow-auto-dark-theme';
 const DARK_START_HOUR = 19; // 7 PM
 const LIGHT_START_HOUR = 6; // 6 AM
 
@@ -85,7 +85,7 @@ export function applyStoredTheme(): void {
   // Also check the settings object for themeId (useSettings stores it there)
   let themeId = storedId;
   try {
-    const settingsRaw = localStorage.getItem('beacon-settings');
+    const settingsRaw = localStorage.getItem('abbai-flow-settings');
     if (settingsRaw) {
       const parsed = JSON.parse(settingsRaw);
       if (parsed.themeId) themeId = parsed.themeId;

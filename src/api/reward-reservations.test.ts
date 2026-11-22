@@ -93,16 +93,16 @@ describe('reward reservation storage', () => {
   });
 
   it('ignores corrupt or unexpected payloads', () => {
-    store.set('beacon_reward_reservations', '{not json');
+    store.set('abbai_flow_reward_reservations', '{not json');
     expect(readRewardReservations()).toEqual([]);
 
-    store.set('beacon_reward_reservations', JSON.stringify([{ user: 'zara' }, null, 4]));
+    store.set('abbai_flow_reward_reservations', JSON.stringify([{ user: 'zara' }, null, 4]));
     expect(readRewardReservations()).toEqual([]);
   });
 
   it('clears the key once nothing is set aside', () => {
     writeRewardReservations([{ user: 'zara', reward: 'x', points: 1, at: 1 }]);
     writeRewardReservations([]);
-    expect(store.has('beacon_reward_reservations')).toBe(false);
+    expect(store.has('abbai_flow_reward_reservations')).toBe(false);
   });
 });

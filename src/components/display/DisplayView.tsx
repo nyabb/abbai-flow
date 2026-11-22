@@ -64,7 +64,7 @@ const NAV_TARGETS = [
 
 const CONNECTION_LABEL: Record<DisplayConnection, TranslationKey> = {
   online: 'display.connection.online',
-  'beacon-down': 'display.connection.beaconDown',
+  'app-down': 'display.connection.appDown',
   'ha-down': 'display.connection.haDown',
   offline: 'display.connection.offline',
 };

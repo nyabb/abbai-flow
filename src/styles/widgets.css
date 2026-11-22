@@ -558,7 +558,7 @@
 
 /* --- Responsive: Tablet < 768px --- */
 @media (max-width: 768px) {
-  /* Timer panel becomes bottom sheet (handled in beacon.css) */
+  /* Timer panel becomes bottom sheet (handled in abbai-flow.css) */
 
   .timer-btn {
     width: 48px;

@@ -3,6 +3,8 @@ import { getHaResourceUrl } from '../api/ha-rest';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, ChevronDown } from 'lucide-react';
 import { MediaPlayer } from '../types/music';
 import { useTranslation } from '../i18n';
+import { useEncoreMusic } from '../hooks/useEncoreMusic';
+import { SpotifyMusicPanel } from './SpotifyMusicPanel';
 
 interface MusicViewProps {
   players: MediaPlayer[];
@@ -38,6 +40,8 @@ export function MusicView({
   onSetVolume,
 }: MusicViewProps) {
   const { t } = useTranslation();
+  const [source, setSource] = useState<'spotify' | 'ha'>('spotify');
+  const encore = useEncoreMusic();
 
   const player =
     activePlayer || players.find((p) => p.entity_id === selectedPlayerId) || players[0] || null;
@@ -72,150 +76,196 @@ export function MusicView({
 
   const [showPlayerDropdown, setShowPlayerDropdown] = useState(false);
 
+  const sourceTabs = (
+    <div className="music-source-tabs" role="tablist" aria-label={t('music.sourceTabs')}>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={source === 'spotify'}
+        className={source === 'spotify' ? 'is-active' : ''}
+        onClick={() => setSource('spotify')}
+      >
+        {t('music.spotify')}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={source === 'ha'}
+        className={source === 'ha' ? 'is-active' : ''}
+        onClick={() => setSource('ha')}
+      >
+        {t('music.homeAssistant')}
+      </button>
+    </div>
+  );
+
   // Empty state when no media players found.
   //
   // This *must* stay below every hook: `players` is populated asynchronously,
   // so returning early above them changed the hook count between renders and
   // made React throw "Rendered more hooks than during the previous render".
-  if (players.length === 0) {
+  if (players.length === 0 && source === 'ha') {
     return (
-      <div
-        className="music-view"
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
-          <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: 8 }}>
-            {t('music.noPlayers')}
-          </h2>
-          <p style={{ fontSize: '0.9rem' }}>{t('music.noPlayersDesc')}</p>
+      <div className="music-page">
+        {sourceTabs}
+        <div
+          className="music-view"
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 40 }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎵</div>
+            <h2 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: 8 }}>
+              {t('music.noPlayers')}
+            </h2>
+            <p style={{ fontSize: '0.9rem' }}>{t('music.noPlayersDesc')}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="music-view">
-      {/* Player selector */}
-      {players.length > 1 && (
-        <div className="music-player-selector">
-          <button
-            type="button"
-            className="music-player-selector-btn"
-            onClick={() => setShowPlayerDropdown(!showPlayerDropdown)}
-          >
-            <span>{player?.friendly_name || t('music.selectPlayer')}</span>
-            <ChevronDown size={16} />
-          </button>
-          {showPlayerDropdown && (
-            <div className="music-player-dropdown">
-              {players.map((p) => (
-                <button
-                  key={p.entity_id}
-                  type="button"
-                  className={`music-player-dropdown-item ${
-                    p.entity_id === player?.entity_id ? 'music-player-dropdown-item--active' : ''
-                  }`}
-                  onClick={() => {
-                    onSelectPlayer(p.entity_id);
-                    setShowPlayerDropdown(false);
-                  }}
-                >
-                  <span>{p.friendly_name}</span>
-                  {p.state === 'playing' && (
-                    <span className="music-player-dropdown-playing">{t('music.nowPlaying')}</span>
-                  )}
-                </button>
-              ))}
+    <div className="music-page">
+      {sourceTabs}
+      {source === 'spotify' ? (
+        <SpotifyMusicPanel
+          snapshot={encore.snapshot}
+          loading={encore.loading}
+          onControl={encore.control}
+        />
+      ) : (
+        <div className="music-view">
+          {/* Player selector */}
+          {players.length > 1 && (
+            <div className="music-player-selector">
+              <button
+                type="button"
+                className="music-player-selector-btn"
+                onClick={() => setShowPlayerDropdown(!showPlayerDropdown)}
+              >
+                <span>{player?.friendly_name || t('music.selectPlayer')}</span>
+                <ChevronDown size={16} />
+              </button>
+              {showPlayerDropdown && (
+                <div className="music-player-dropdown">
+                  {players.map((p) => (
+                    <button
+                      key={p.entity_id}
+                      type="button"
+                      className={`music-player-dropdown-item ${
+                        p.entity_id === player?.entity_id
+                          ? 'music-player-dropdown-item--active'
+                          : ''
+                      }`}
+                      onClick={() => {
+                        onSelectPlayer(p.entity_id);
+                        setShowPlayerDropdown(false);
+                      }}
+                    >
+                      <span>{p.friendly_name}</span>
+                      {p.state === 'playing' && (
+                        <span className="music-player-dropdown-playing">
+                          {t('music.nowPlaying')}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
+
+          {/* Album art */}
+          <div className="music-art-container">
+            {artSrc ? (
+              <img
+                className="music-art"
+                src={artSrc}
+                alt={player?.media_album_name || t('music.albumArt')}
+              />
+            ) : (
+              <div className="music-art music-art--placeholder">
+                <Volume2 size={64} strokeWidth={1} />
+              </div>
+            )}
+          </div>
+
+          {/* Track info */}
+          <div className="music-track-info">
+            <h2 className="music-track-title">
+              {player?.media_title || player?.app_name || t('music.nowPlaying')}
+            </h2>
+            <p className="music-track-artist">{player?.media_artist || ''}</p>
+            {player?.media_album_name && (
+              <p className="music-track-album">{player.media_album_name}</p>
+            )}
+          </div>
+
+          {/* Progress bar */}
+          <div className="music-progress">
+            <span className="music-progress-time">{formatTime(position)}</span>
+            <div className="music-progress-bar">
+              <div className="music-progress-fill" style={{ width: `${progress * 100}%` }} />
+            </div>
+            <span className="music-progress-time">{formatTime(duration)}</span>
+          </div>
+
+          {/* Playback controls */}
+          <div className="music-controls">
+            <button
+              type="button"
+              className="music-control-btn"
+              onClick={() => onPrevious(player?.entity_id)}
+              aria-label={t('music.previousTrack')}
+            >
+              <SkipBack size={28} />
+            </button>
+            <button
+              type="button"
+              className="music-control-btn music-control-btn--play"
+              onClick={() => (isPlaying ? onPause : onPlay)(player?.entity_id)}
+              aria-label={isPlaying ? t('music.pause') : t('music.play')}
+            >
+              {isPlaying ? <Pause size={32} /> : <Play size={32} />}
+            </button>
+            <button
+              type="button"
+              className="music-control-btn"
+              onClick={() => onNext(player?.entity_id)}
+              aria-label={t('music.nextTrack')}
+            >
+              <SkipForward size={28} />
+            </button>
+          </div>
+
+          {/* Volume slider */}
+          <div className="music-volume">
+            <button
+              type="button"
+              className="music-volume-btn"
+              onClick={() =>
+                onSetVolume(
+                  player?.is_volume_muted ? player.volume_level || 0.5 : 0,
+                  player?.entity_id,
+                )
+              }
+              aria-label={player?.is_volume_muted ? t('music.unmute') : t('music.mute')}
+            >
+              {player?.is_volume_muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+            </button>
+            <input
+              type="range"
+              className="music-volume-slider"
+              min={0}
+              max={1}
+              step={0.02}
+              value={player?.is_volume_muted ? 0 : (player?.volume_level ?? 0.5)}
+              onChange={(e) => onSetVolume(parseFloat(e.target.value), player?.entity_id)}
+              aria-label={t('music.volume')}
+            />
+          </div>
         </div>
       )}
-
-      {/* Album art */}
-      <div className="music-art-container">
-        {artSrc ? (
-          <img
-            className="music-art"
-            src={artSrc}
-            alt={player?.media_album_name || t('music.albumArt')}
-          />
-        ) : (
-          <div className="music-art music-art--placeholder">
-            <Volume2 size={64} strokeWidth={1} />
-          </div>
-        )}
-      </div>
-
-      {/* Track info */}
-      <div className="music-track-info">
-        <h2 className="music-track-title">
-          {player?.media_title || player?.app_name || t('music.nowPlaying')}
-        </h2>
-        <p className="music-track-artist">{player?.media_artist || ''}</p>
-        {player?.media_album_name && <p className="music-track-album">{player.media_album_name}</p>}
-      </div>
-
-      {/* Progress bar */}
-      <div className="music-progress">
-        <span className="music-progress-time">{formatTime(position)}</span>
-        <div className="music-progress-bar">
-          <div className="music-progress-fill" style={{ width: `${progress * 100}%` }} />
-        </div>
-        <span className="music-progress-time">{formatTime(duration)}</span>
-      </div>
-
-      {/* Playback controls */}
-      <div className="music-controls">
-        <button
-          type="button"
-          className="music-control-btn"
-          onClick={() => onPrevious(player?.entity_id)}
-          aria-label={t('music.previousTrack')}
-        >
-          <SkipBack size={28} />
-        </button>
-        <button
-          type="button"
-          className="music-control-btn music-control-btn--play"
-          onClick={() => (isPlaying ? onPause : onPlay)(player?.entity_id)}
-          aria-label={isPlaying ? t('music.pause') : t('music.play')}
-        >
-          {isPlaying ? <Pause size={32} /> : <Play size={32} />}
-        </button>
-        <button
-          type="button"
-          className="music-control-btn"
-          onClick={() => onNext(player?.entity_id)}
-          aria-label={t('music.nextTrack')}
-        >
-          <SkipForward size={28} />
-        </button>
-      </div>
-
-      {/* Volume slider */}
-      <div className="music-volume">
-        <button
-          type="button"
-          className="music-volume-btn"
-          onClick={() =>
-            onSetVolume(player?.is_volume_muted ? player.volume_level || 0.5 : 0, player?.entity_id)
-          }
-          aria-label={player?.is_volume_muted ? t('music.unmute') : t('music.mute')}
-        >
-          {player?.is_volume_muted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-        </button>
-        <input
-          type="range"
-          className="music-volume-slider"
-          min={0}
-          max={1}
-          step={0.02}
-          value={player?.is_volume_muted ? 0 : (player?.volume_level ?? 0.5)}
-          onChange={(e) => onSetVolume(parseFloat(e.target.value), player?.entity_id)}
-          aria-label={t('music.volume')}
-        />
-      </div>
     </div>
   );
 }

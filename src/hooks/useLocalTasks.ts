@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
-import { loadData, loadDataSync, saveData } from '../api/beacon-store';
+import { loadData, loadDataSync, saveData } from '../api/abbai-flow-store';
 
 /**
- * Built-in local task/todo list synced via beacon-store.
+ * Built-in local task/todo list synced via abbai-flow-store.
  * Server is source of truth in add-on mode; localStorage is offline cache.
  */
 
@@ -20,23 +20,40 @@ export interface LocalTaskList {
   name: string;
 }
 
-const STORAGE_KEY = 'beacon-local-tasks';
-const LISTS_KEY = 'beacon-local-task-lists';
+const STORAGE_KEY = 'abbai-flow-local-tasks';
+const LISTS_KEY = 'abbai-flow-local-task-lists';
 
 // Default built-in lists
 const DEFAULT_LISTS: LocalTaskList[] = [
-  { id: 'beacon-todo', name: 'To-Do' },
-  { id: 'beacon-shopping', name: 'Shopping List' },
+  { id: 'abbai-flow-todo', name: 'To-Do' },
+  { id: 'abbai-flow-shopping', name: 'Shopping List' },
 ];
+
+function canonicalListId(id: string): string {
+  return id.startsWith('beacon-') ? id.replace(/^beacon-/, 'abbai-flow-') : id;
+}
+
+/** Migrate identifiers embedded in older local task documents. */
+export function migrateLegacyLocalTaskIds(
+  lists: LocalTaskList[],
+  tasks: LocalTask[],
+): { lists: LocalTaskList[]; tasks: LocalTask[] } {
+  return {
+    lists: lists.map((list) => ({ ...list, id: canonicalListId(list.id) })),
+    tasks: tasks.map((task) => ({ ...task, listId: canonicalListId(task.listId) })),
+  };
+}
 
 export function useLocalTasks() {
   // Initialize with localStorage data immediately
-  const [lists, setLists] = useState<LocalTaskList[]>(() =>
-    loadDataSync<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS)
+  const [initial] = useState(() =>
+    migrateLegacyLocalTaskIds(
+      loadDataSync<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS),
+      loadDataSync<LocalTask[]>(STORAGE_KEY, []),
+    ),
   );
-  const [tasks, setTasks] = useState<LocalTask[]>(() =>
-    loadDataSync<LocalTask[]>(STORAGE_KEY, [])
-  );
+  const [lists, setLists] = useState<LocalTaskList[]>(initial.lists);
+  const [tasks, setTasks] = useState<LocalTask[]>(initial.tasks);
 
   /** Re-fetch tasks and lists from server. */
   const refresh = useCallback(async () => {
@@ -44,8 +61,9 @@ export function useLocalTasks() {
       loadData<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS),
       loadData<LocalTask[]>(STORAGE_KEY, []),
     ]);
-    setLists(serverLists);
-    setTasks(serverTasks);
+    const migrated = migrateLegacyLocalTaskIds(serverLists, serverTasks);
+    setLists(migrated.lists);
+    setTasks(migrated.tasks);
   }, []);
 
   // Fetch from server on mount
@@ -67,12 +85,19 @@ export function useLocalTasks() {
   }, [refresh]);
 
   // Persist on change
-  useEffect(() => { saveData(LISTS_KEY, lists); }, [lists]);
-  useEffect(() => { saveData(STORAGE_KEY, tasks); }, [tasks]);
-
-  const getTasksForList = useCallback((listId: string) => {
-    return tasks.filter(t => t.listId === listId);
+  useEffect(() => {
+    saveData(LISTS_KEY, lists);
+  }, [lists]);
+  useEffect(() => {
+    saveData(STORAGE_KEY, tasks);
   }, [tasks]);
+
+  const getTasksForList = useCallback(
+    (listId: string) => {
+      return tasks.filter((t) => t.listId === listId);
+    },
+    [tasks],
+  );
 
   const addTask = useCallback((listId: string, summary: string) => {
     const task: LocalTask = {
@@ -82,36 +107,38 @@ export function useLocalTasks() {
       listId,
       createdAt: new Date().toISOString(),
     };
-    setTasks(prev => [...prev, task]);
+    setTasks((prev) => [...prev, task]);
     return task;
   }, []);
 
   const toggleTask = useCallback((taskId: string) => {
-    setTasks(prev => prev.map(t =>
-      t.id === taskId
-        ? t.status === 'needs_action'
-          ? { ...t, status: 'completed', completedAt: new Date().toISOString() }
-          : { ...t, status: 'needs_action', completedAt: undefined }
-        : t
-    ));
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === taskId
+          ? t.status === 'needs_action'
+            ? { ...t, status: 'completed', completedAt: new Date().toISOString() }
+            : { ...t, status: 'needs_action', completedAt: undefined }
+          : t,
+      ),
+    );
   }, []);
 
   const removeTask = useCallback((taskId: string) => {
-    setTasks(prev => prev.filter(t => t.id !== taskId));
+    setTasks((prev) => prev.filter((t) => t.id !== taskId));
   }, []);
 
   const addList = useCallback((name: string) => {
     const list: LocalTaskList = {
-      id: `beacon-${Date.now()}`,
+      id: `abbai-flow-${Date.now()}`,
       name,
     };
-    setLists(prev => [...prev, list]);
+    setLists((prev) => [...prev, list]);
     return list;
   }, []);
 
   const removeList = useCallback((listId: string) => {
-    setLists(prev => prev.filter(l => l.id !== listId));
-    setTasks(prev => prev.filter(t => t.listId !== listId));
+    setLists((prev) => prev.filter((l) => l.id !== listId));
+    setTasks((prev) => prev.filter((t) => t.listId !== listId));
   }, []);
 
   return {

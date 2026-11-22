@@ -35,7 +35,7 @@ export interface TimerState {
   stopwatch: StopwatchState;
 }
 
-const STORAGE_KEY = 'beacon-timers';
+const STORAGE_KEY = 'abbai-flow-timers';
 
 export function emptyTimerState(): TimerState {
   return {

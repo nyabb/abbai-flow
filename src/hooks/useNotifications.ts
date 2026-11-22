@@ -54,7 +54,7 @@ export function useNotifications(
           new Notification(event.title, {
             body,
             icon: abbaiIcon,
-            tag: `beacon-event-${event.id}`,
+            tag: `abbai-flow-event-${event.id}`,
           });
         }
 

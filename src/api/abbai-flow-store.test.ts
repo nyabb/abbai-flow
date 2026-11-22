@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { saveData, loadData, PersistenceError } from './beacon-store';
+import { saveData, loadData, PersistenceError } from './abbai-flow-store';
 
 /**
  * Regression guard for a data-loss bug in proxy deployments (add-on and
@@ -31,11 +31,11 @@ describe('saveData', () => {
     );
     (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
-    await saveData('beacon_test_members', [{ id: '1', name: 'Natnael', pin: '1234' }]);
+    await saveData('abbai-flow-test-members', [{ id: '1', name: 'Natnael', pin: '1234' }]);
 
     expect(serverFinished).toBe(true);
     // And the local cache is already correct, so an immediate read is safe.
-    expect(JSON.parse(localStorage.getItem('beacon_test_members') ?? '[]')).toEqual([
+    expect(JSON.parse(localStorage.getItem('abbai-flow-test-members') ?? '[]')).toEqual([
       { id: '1', name: 'Natnael', pin: '1234' },
     ]);
   });
@@ -49,11 +49,13 @@ describe('saveData', () => {
     );
     (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
-    const result = await saveData('beacon_test_members', [{ id: '2' }]);
+    const result = await saveData('abbai-flow-test-members', [{ id: '2' }]);
     expect(result.cached).toBe(true);
     expect(result.persisted).toBe(false);
     expect(result.error).toBeInstanceOf(PersistenceError);
-    expect(JSON.parse(localStorage.getItem('beacon_test_members') ?? '[]')).toEqual([{ id: '2' }]);
+    expect(JSON.parse(localStorage.getItem('abbai-flow-test-members') ?? '[]')).toEqual([
+      { id: '2' },
+    ]);
   });
 
   it('reports a rejected server write instead of claiming success', async () => {
@@ -63,7 +65,7 @@ describe('saveData', () => {
     );
     (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
-    const result = await saveData('beacon_test_http', [{ id: '3' }]);
+    const result = await saveData('abbai-flow-test-http', [{ id: '3' }]);
     expect(result).toMatchObject({ cached: true, persisted: false });
     expect(result.error?.status).toBe(500);
   });
@@ -84,8 +86,8 @@ describe('saveData', () => {
     (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
     await Promise.all([
-      saveData('beacon_test_order', [{ id: 'first' }]),
-      saveData('beacon_test_order', [{ id: 'second' }]),
+      saveData('abbai-flow-test-order', [{ id: 'first' }]),
+      saveData('abbai-flow-test-order', [{ id: 'second' }]),
     ]);
 
     expect(bodies).toHaveLength(2);
@@ -93,7 +95,7 @@ describe('saveData', () => {
   });
 
   it('falls back to the cached document when the server read fails', async () => {
-    localStorage.setItem('beacon_test_members', JSON.stringify([{ id: 'cached' }]));
+    localStorage.setItem('abbai-flow-test-members', JSON.stringify([{ id: 'cached' }]));
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => {
@@ -102,6 +104,6 @@ describe('saveData', () => {
     );
     (window as { __ABBAI_FLOW_CONFIG__?: unknown }).__ABBAI_FLOW_CONFIG__ = {};
 
-    await expect(loadData('beacon_test_members', [])).resolves.toEqual([{ id: 'cached' }]);
+    await expect(loadData('abbai-flow-test-members', [])).resolves.toEqual([{ id: 'cached' }]);
   });
 });
