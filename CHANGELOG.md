@@ -1,3 +1,15 @@
+# [2.9.0](https://github.com/nyabb/abbai-flow/compare/v2.8.1...v2.9.0) (2026-11-22)
+
+
+### Bug Fixes
+
+* restore chore planner type check ([e478e90](https://github.com/nyabb/abbai-flow/commit/e478e909c3c5f37500a50e11009d10d2d328f41a))
+
+
+### Features
+
+* show rewards on chore board ([e8aede9](https://github.com/nyabb/abbai-flow/commit/e8aede9a915c5c4c8a9d61a140b7c67d70b834fa))
+
 ## [2.8.1](https://github.com/nyabb/abbai-flow/compare/v2.8.0...v2.8.1) (2026-11-18)
 
 

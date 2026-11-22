@@ -1,6 +1,6 @@
 {
   "name": "abbai-flow",
-  "version": "2.8.1",
+  "version": "2.9.0",
   "private": true,
   "type": "module",
   "description": "A self-hosted family dashboard for calendars, routines, chores, rewards, and everyday family life, with Home Assistant integration.",
