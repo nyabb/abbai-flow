@@ -7,9 +7,9 @@ import {
   Copy,
   Eye,
   EyeOff,
-  Filter,
   Plus,
   RotateCcw,
+  SlidersHorizontal,
   Volume2,
   VolumeX,
   X,
@@ -415,6 +415,18 @@ export function ChorePlanner({
     if (!userName) return [];
     const key = userName.trim().toLowerCase();
     return rewards.filter((reward) => (reward.assignee ?? '').trim().toLowerCase() === key);
+  };
+  /** All planner member IDs currently assigned to a reward definition. */
+  const memberIdsForReward = (name: string): string[] => {
+    const assignedNames = new Set(
+      rewards
+        .filter((reward) => normaliseName(reward.name) === normaliseName(name))
+        .map((reward) => normaliseName(reward.assignee))
+        .filter(Boolean),
+    );
+    return Array.from(userNameByMemberId.entries())
+      .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
+      .map(([memberId]) => memberId);
   };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
 
@@ -1467,7 +1479,7 @@ export function ChorePlanner({
   };
 
   /**
-   * Create a reward in ChoreOps for the chosen children.
+   * Create or update a reward in ChoreOps for the chosen children.
    *
    * ChoreOps publishes one reward entity per user, so `assigned_user_names` is
    * what makes the reward belong to that child — different kids can have
@@ -1476,11 +1488,20 @@ export function ChorePlanner({
   const saveReward = async () => {
     if (saving) return;
 
+    const userNames = rewardForm.memberIds
+      .map((id) => userNameByMemberId.get(id))
+      .filter((name): name is string => Boolean(name));
+    if (userNames.length === 0) return;
+
     if (editingReward) {
       const update = async () => {
         try {
           setSaving(true);
-          await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
+          await choreOps.updateReward({
+            name: editingReward,
+            cost: rewardForm.cost,
+            assignedUserNames: userNames,
+          });
           dispatchOverlay({ type: 'close' });
           showToast(`${c.savedToast} \u00b7 ${editingReward}`);
         } catch (err) {
@@ -1489,13 +1510,10 @@ export function ChorePlanner({
           setSaving(false);
         }
       };
-      requestPin(c.cost, editingReward, () => void update());
+      requestPin(c.edit, editingReward, () => void update());
       return;
     }
 
-    const userNames = rewardForm.memberIds
-      .map((id) => userNameByMemberId.get(id))
-      .filter((name): name is string => Boolean(name));
     if (!rewardForm.name.trim() || userNames.length === 0) return;
 
     const create = async () => {
@@ -1991,7 +2009,7 @@ export function ChorePlanner({
               aria-label={c.filter}
               aria-expanded={filterOpen}
             >
-              <Filter />
+              <SlidersHorizontal />
             </button>
           )}
           {(screen === 'board' || screen === 'child') && (
@@ -2359,11 +2377,11 @@ export function ChorePlanner({
             {selectedReward && (
               <RewardActionsSheet
                 copy={c}
-                onEditCost={() => {
+                onEdit={() => {
                   setRewardForm({
                     name: selectedReward.name,
                     cost: Math.round(selectedReward.cost),
-                    memberIds: [],
+                    memberIds: memberIdsForReward(selectedReward.name),
                   });
                   dispatchOverlay({
                     type: 'open-reward-form',

@@ -585,17 +585,17 @@ export function RewardGivenSheet({
 
 export interface RewardActionsSheetProps {
   copy: PlannerCopy;
-  onEditCost: () => void;
+  onEdit: () => void;
   onDelete: () => void;
 }
 
-export function RewardActionsSheet({ copy: c, onEditCost, onDelete }: RewardActionsSheetProps) {
+export function RewardActionsSheet({ copy: c, onEdit, onDelete }: RewardActionsSheetProps) {
   return (
     <>
       <h2>{c.action}</h2>
-      <button className="planner-destination" onClick={onEditCost}>
+      <button className="planner-destination" onClick={onEdit}>
         <Pencil />
-        <strong>{c.cost}</strong>
+        <strong>{c.edit}</strong>
       </button>
       <button className="planner-destination planner-danger" onClick={onDelete}>
         <Trash2 />
@@ -635,7 +635,7 @@ export function RewardFormSheet({
 }: RewardFormSheetProps) {
   return (
     <>
-      <h2>{editingReward ? c.cost : c.newReward}</h2>
+      <h2>{editingReward ? c.edit : c.newReward}</h2>
       <label className="planner-field">
         {c.name}
         <input
@@ -658,14 +658,17 @@ export function RewardFormSheet({
           }
         />
       </label>
-      {!editingReward && (
-        <fieldset className="planner-field">
-          <legend>{c.forWho}</legend>
-          <div className="planner-member-picker">
-            {members.map((member) => (
+      <fieldset className="planner-field">
+        <legend>{c.forWho}</legend>
+        <div className="planner-member-picker">
+          {members.map((member) => {
+            const selected = rewardForm.memberIds.includes(member.id);
+            return (
               <button
                 key={member.id}
-                className={rewardForm.memberIds.includes(member.id) ? 'is-selected' : ''}
+                type="button"
+                className={selected ? 'is-selected' : ''}
+                aria-pressed={selected}
                 onClick={() =>
                   setRewardForm((value) => ({
                     ...value,
@@ -678,10 +681,10 @@ export function RewardFormSheet({
                 <MemberAvatar member={member} />
                 {member.name}
               </button>
-            ))}
-          </div>
-        </fieldset>
-      )}
+            );
+          })}
+        </div>
+      </fieldset>
       <footer className="planner-sheet-footer">
         <button className="planner-ghost" onClick={onCancel}>
           {c.cancel}
@@ -692,7 +695,8 @@ export function RewardFormSheet({
           disabled={
             saving ||
             rewardForm.cost < 1 ||
-            (!editingReward && (!rewardForm.name.trim() || rewardForm.memberIds.length === 0))
+            rewardForm.memberIds.length === 0 ||
+            (!editingReward && !rewardForm.name.trim())
           }
           onClick={onSave}
         >
