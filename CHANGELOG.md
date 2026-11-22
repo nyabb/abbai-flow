@@ -1,3 +1,11 @@
+## [2.14.3](https://github.com/nyabb/abbai-flow/compare/v2.14.2...v2.14.3) (2026-11-22)
+
+
+### Bug Fixes
+
+* expose actionable Bluetooth connection errors ([1f79482](https://github.com/nyabb/abbai-flow/commit/1f79482ab8e31aa1677db3252923cfd44cfef856))
+* improve mobile Spotify search layout ([6c16017](https://github.com/nyabb/abbai-flow/commit/6c160173af0f2d53f51e576de7946692c97a4736))
+
 ## [2.14.2](https://github.com/nyabb/abbai-flow/compare/v2.14.1...v2.14.2) (2026-11-22)
 
 
