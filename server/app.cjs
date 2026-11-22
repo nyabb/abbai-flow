@@ -24,6 +24,7 @@ const { randomBytes } = require('crypto');
 const WebSocket = require('ws');
 const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
 const { handleEncoreMusicRequest } = require('./build/encore-http.js');
+const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1377,9 +1378,16 @@ function createApp(options) {
       token: options.encoreToken || '',
       url: options.encoreUrl || DEFAULT_ENCORE_URL,
     });
+  const spotifyCatalog =
+    options.spotifyCatalog ||
+    new SpotifyCatalog({
+      clientId: options.spotifyClientId || '',
+      clientSecret: options.spotifyClientSecret || '',
+      market: options.spotifyMarket || 'NL',
+    });
 
   const server = http.createServer((req, res) => {
-    void route(req, res, config, encore);
+    void route(req, res, config, encore, spotifyCatalog);
   });
 
   server.on('upgrade', (req, socket, head) => {
@@ -1391,7 +1399,7 @@ function createApp(options) {
   return { server, config, encore };
 }
 
-async function route(req, res, config, encore) {
+async function route(req, res, config, encore, spotifyCatalog) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
   const actionPath =
@@ -1423,7 +1431,13 @@ async function route(req, res, config, encore) {
 
   try {
     if (pathname.startsWith('/abbai-flow/music/')) {
-      await handleEncoreMusicRequest(req, res, encore, { sendJson, readJsonObject });
+      await handleEncoreMusicRequest(
+        req,
+        res,
+        encore,
+        { sendJson, readJsonObject },
+        spotifyCatalog,
+      );
       return;
     }
     if (actionPath === '/beacon-action/voice') {
@@ -1552,6 +1566,9 @@ function configFromEnv(env = process.env) {
     haWsUrl: env.HA_WS_URL || env.HA_WS_URL_OVERRIDE || undefined,
     encoreToken: env.ENCORE_TOKEN || '',
     encoreUrl: env.ENCORE_URL || DEFAULT_ENCORE_URL,
+    spotifyClientId: env.SPOTIFY_CLIENT_ID || '',
+    spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || '',
+    spotifyMarket: env.SPOTIFY_MARKET || 'NL',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())

@@ -636,6 +636,16 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyActivate': 'Apparaat activeren',
   'music.spotifyQueue': 'Hierna',
   'music.spotifyQueueEmpty': 'Geen volgende nummers',
+  'music.spotifySearch': 'Zoek op Spotify',
+  'music.spotifySearchPlaceholder': 'Nummers, artiesten of albums',
+  'music.spotifySearchSubmit': 'Zoeken',
+  'music.spotifySearching': 'Zoeken...',
+  'music.spotifySearchEmpty': 'Geen nummers gevonden',
+  'music.spotifySearchFailed': 'Zoeken op Spotify is mislukt. Probeer het opnieuw.',
+  'music.spotifySearchConfigure':
+    'Spotify zoeken vereist SPOTIFY_CLIENT_ID en SPOTIFY_CLIENT_SECRET op de server.',
+  'music.spotifySearchResults': 'Zoekresultaten',
+  'music.spotifyPlayTrack': 'Nummer afspelen',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'Geen lijsten beschikbaar',

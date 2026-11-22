@@ -640,6 +640,16 @@ export const es: Record<TranslationKey, string> = {
   'music.spotifyActivate': 'Activar dispositivo',
   'music.spotifyQueue': 'A continuación',
   'music.spotifyQueueEmpty': 'No hay canciones en cola',
+  'music.spotifySearch': 'Buscar en Spotify',
+  'music.spotifySearchPlaceholder': 'Canciones, artistas o álbumes',
+  'music.spotifySearchSubmit': 'Buscar',
+  'music.spotifySearching': 'Buscando...',
+  'music.spotifySearchEmpty': 'No se encontraron canciones',
+  'music.spotifySearchFailed': 'La búsqueda de Spotify falló. Inténtalo de nuevo.',
+  'music.spotifySearchConfigure':
+    'La búsqueda de Spotify necesita SPOTIFY_CLIENT_ID y SPOTIFY_CLIENT_SECRET en el servidor.',
+  'music.spotifySearchResults': 'Resultados de búsqueda',
+  'music.spotifyPlayTrack': 'Reproducir canción',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'No hay listas disponibles',

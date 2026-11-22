@@ -631,6 +631,16 @@ export const ja: Record<TranslationKey, string> = {
   'music.spotifyActivate': 'デバイスを有効化',
   'music.spotifyQueue': '次に再生',
   'music.spotifyQueueEmpty': '次の曲はありません',
+  'music.spotifySearch': 'Spotify を検索',
+  'music.spotifySearchPlaceholder': '曲、アーティスト、アルバム',
+  'music.spotifySearchSubmit': '検索',
+  'music.spotifySearching': '検索中...',
+  'music.spotifySearchEmpty': '曲が見つかりません',
+  'music.spotifySearchFailed': 'Spotify の検索に失敗しました。もう一度お試しください。',
+  'music.spotifySearchConfigure':
+    'Spotify 検索にはサーバーで SPOTIFY_CLIENT_ID と SPOTIFY_CLIENT_SECRET の設定が必要です。',
+  'music.spotifySearchResults': '検索結果',
+  'music.spotifyPlayTrack': '曲を再生',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': '利用可能なリストがありません',

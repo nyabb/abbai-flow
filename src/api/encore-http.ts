@@ -1,4 +1,5 @@
 import type { EncoreMusic, EncoreSnapshot } from './encore-music';
+import { SpotifyCatalog, SpotifyCatalogError } from './spotify-catalog';
 
 export interface EncoreHttpRequest {
   method?: string;
@@ -34,9 +35,40 @@ export async function handleEncoreMusicRequest(
   response: EncoreHttpResponse,
   encore: EncoreMusic,
   helpers: EncoreHttpHelpers,
+  catalog: SpotifyCatalog = new SpotifyCatalog(),
 ): Promise<boolean> {
   const pathname = (request.url || '/').split('?')[0];
   const method = request.method || 'GET';
+
+  if (pathname === '/abbai-flow/music/search') {
+    if (method !== 'GET') {
+      helpers.sendJson(response, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
+      return true;
+    }
+    const parameters = new URL(request.url || pathname, 'http://abbai-flow.local').searchParams;
+    let hasUnexpectedParameter = false;
+    parameters.forEach((_value, key) => {
+      if (key !== 'q') hasUnexpectedParameter = true;
+    });
+    if (hasUnexpectedParameter || parameters.getAll('q').length !== 1) {
+      helpers.sendJson(response, 400, { code: 'invalid_query', error: 'Invalid search request' });
+      return true;
+    }
+    try {
+      const tracks = await catalog.search(parameters.get('q'));
+      helpers.sendJson(response, 200, { tracks });
+    } catch (error) {
+      if (error instanceof SpotifyCatalogError) {
+        helpers.sendJson(response, error.status, { code: error.code, error: error.message });
+      } else {
+        helpers.sendJson(response, 502, {
+          code: 'unavailable',
+          error: 'Spotify search is temporarily unavailable',
+        });
+      }
+    }
+    return true;
+  }
 
   if (pathname === '/abbai-flow/music/state') {
     if (method !== 'GET') {
