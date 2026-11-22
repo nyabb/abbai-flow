@@ -1,3 +1,12 @@
+# [2.13.0](https://github.com/nyabb/abbai-flow/compare/v2.12.0...v2.13.0) (2026-11-22)
+
+
+### Features
+
+* add integration health logs ([49f9d07](https://github.com/nyabb/abbai-flow/commit/49f9d0754c0a783bb51fdcdb776cb29456247576))
+* add Spotify playlist library ([961705e](https://github.com/nyabb/abbai-flow/commit/961705ef5f51c4e7e2c551f5568c47333a631381))
+* improve mobile page navigation ([883bbdf](https://github.com/nyabb/abbai-flow/commit/883bbdf86a7ed2f3f7dd760be7a80b97a8753cee))
+
 # [2.12.0](https://github.com/nyabb/abbai-flow/compare/v2.11.0...v2.12.0) (2026-11-22)
 
 
