@@ -34,6 +34,7 @@ export interface UseSpotifyPlaylistsResult {
 
 const EMPTY_STATUS: SpotifyPlaylistStatus = {
   configured: false,
+  credentialsConfigured: false,
   authorized: false,
   redirectConfigured: false,
 };
@@ -82,15 +83,18 @@ export function useSpotifyPlaylists() {
     [playlists, selectedPlaylistId],
   );
 
-  const fetchPlaylists = useCallback(async (append = false) => {
-    const offset = append ? playlists.length : 0;
-    const page = await jsonRequest<SpotifyPlaylistPage<SpotifyPlaylist>>(
-      `/abbai-flow/music/library/playlists?offset=${offset}`,
-    );
-    setPlaylists((current) => (append ? [...current, ...page.items] : page.items));
-    setPlaylistsTotal(page.total);
-    return page.items;
-  }, [playlists.length]);
+  const fetchPlaylists = useCallback(
+    async (append = false) => {
+      const offset = append ? playlists.length : 0;
+      const page = await jsonRequest<SpotifyPlaylistPage<SpotifyPlaylist>>(
+        `/abbai-flow/music/library/playlists?offset=${offset}`,
+      );
+      setPlaylists((current) => (append ? [...current, ...page.items] : page.items));
+      setPlaylistsTotal(page.total);
+      return page.items;
+    },
+    [playlists.length],
+  );
 
   const fetchTracks = useCallback(async (playlistId: string, offset = 0, append = false) => {
     const requestId = ++trackRequest.current;
@@ -164,7 +168,10 @@ export function useSpotifyPlaylists() {
         { method: 'POST' },
       );
       const authorization = new URL(result.authorizationUrl);
-      if (authorization.protocol !== 'https:' || authorization.hostname !== 'accounts.spotify.com') {
+      if (
+        authorization.protocol !== 'https:' ||
+        authorization.hostname !== 'accounts.spotify.com'
+      ) {
         throw new Error('Spotify returned an invalid authorization address');
       }
       window.location.assign(authorization.toString());
@@ -177,13 +184,16 @@ export function useSpotifyPlaylists() {
     }
   }, []);
 
-  const selectPlaylist = useCallback((playlistId: string) => {
-    setSelectedPlaylistId(playlistId);
-    saveSelectedId(playlistId);
-    setTracks([]);
-    setTracksTotal(0);
-    void fetchTracks(playlistId);
-  }, [fetchTracks]);
+  const selectPlaylist = useCallback(
+    (playlistId: string) => {
+      setSelectedPlaylistId(playlistId);
+      saveSelectedId(playlistId);
+      setTracks([]);
+      setTracksTotal(0);
+      void fetchTracks(playlistId);
+    },
+    [fetchTracks],
+  );
 
   const loadMorePlaylists = useCallback(async () => {
     try {
@@ -228,29 +238,32 @@ export function useSpotifyPlaylists() {
     }
   }, []);
 
-  const addTrack = useCallback(async (playlistId: string, uri: string): Promise<PlaylistActionResult> => {
-    setWorking(true);
-    setError(null);
-    try {
-      await jsonRequest<{ accepted: boolean }>(
-        `/abbai-flow/music/library/playlists/${encodeURIComponent(playlistId)}/items`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uri }),
-        },
-      );
-      await fetchPlaylists();
-      if (selectedPlaylistId === playlistId) await fetchTracks(playlistId);
-      return { ok: true };
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message : 'Could not add song to playlist';
-      setError(message);
-      return { ok: false, error: message };
-    } finally {
-      setWorking(false);
-    }
-  }, [fetchPlaylists, fetchTracks, selectedPlaylistId]);
+  const addTrack = useCallback(
+    async (playlistId: string, uri: string): Promise<PlaylistActionResult> => {
+      setWorking(true);
+      setError(null);
+      try {
+        await jsonRequest<{ accepted: boolean }>(
+          `/abbai-flow/music/library/playlists/${encodeURIComponent(playlistId)}/items`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ uri }),
+          },
+        );
+        await fetchPlaylists();
+        if (selectedPlaylistId === playlistId) await fetchTracks(playlistId);
+        return { ok: true };
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : 'Could not add song to playlist';
+        setError(message);
+        return { ok: false, error: message };
+      } finally {
+        setWorking(false);
+      }
+    },
+    [fetchPlaylists, fetchTracks, selectedPlaylistId],
+  );
 
   return {
     status,

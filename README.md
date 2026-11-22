@@ -79,7 +79,11 @@ services:
       SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
       SPOTIFY_MARKET: ${SPOTIFY_MARKET:-NL}
       SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-}
+      # Optional direct Bluetooth control through the Raspberry Pi's BlueZ D-Bus.
+      # ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: unix:path=/run/dbus/system_bus_socket
     volumes: ['abbai-flow-data:/data']
+    # Optional direct Bluetooth control: mount the host socket into this service.
+    # - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
 
 volumes:
   abbai-flow-data:
@@ -98,18 +102,19 @@ then kept in the browser.
 
 ## Configuration
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `PORT` | `3000` | Port the container listens on |
-| `HA_URL` | — | Home Assistant base URL |
-| `HA_TOKEN` | — | Long-lived access token |
-| `ENCORE_TOKEN` | — | Optional Encore bearer token for the Spotify integration; stays on the server |
-| `ENCORE_URL` | `ws://host.docker.internal:8095/` | Optional Encore WebSocket URL (the verified Docker network address) |
-| `SPOTIFY_CLIENT_ID` | — | Optional Spotify Developer app ID for catalog search; server-side only |
-| `SPOTIFY_CLIENT_SECRET` | — | Optional Spotify Developer app secret for catalog search; server-side only |
-| `SPOTIFY_MARKET` | `NL` | Two-letter Spotify catalog market used for search results |
-| `SPOTIFY_REDIRECT_URI` | — | HTTPS Spotify OAuth callback registered in your Spotify Developer app; use `https://<your-app-host>/abbai-flow/music/oauth/callback` |
-| `DATA_DIR` | `/data` | Where persisted documents are stored |
+| Variable                            | Default                           | Description                                                                                                                                    |
+| ----------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                              | `3000`                            | Port the container listens on                                                                                                                  |
+| `HA_URL`                            | —                                 | Home Assistant base URL                                                                                                                        |
+| `HA_TOKEN`                          | —                                 | Long-lived access token                                                                                                                        |
+| `ENCORE_TOKEN`                      | —                                 | Optional Encore bearer token for the Spotify integration; stays on the server                                                                  |
+| `ENCORE_URL`                        | `ws://host.docker.internal:8095/` | Optional Encore WebSocket URL (the verified Docker network address)                                                                            |
+| `SPOTIFY_CLIENT_ID`                 | —                                 | Optional Spotify Developer app ID for catalog search; server-side only                                                                         |
+| `SPOTIFY_CLIENT_SECRET`             | —                                 | Optional Spotify Developer app secret for catalog search; server-side only                                                                     |
+| `SPOTIFY_MARKET`                    | `NL`                              | Two-letter Spotify catalog market used for search results                                                                                      |
+| `SPOTIFY_REDIRECT_URI`              | —                                 | HTTPS Spotify OAuth callback registered in your Spotify Developer app; use `https://<your-app-host>/abbai-flow/music/oauth/callback`           |
+| `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | —                                 | Optional host system D-Bus address for direct BlueZ device management; set to `unix:path=/run/dbus/system_bus_socket` when mounting the socket |
+| `DATA_DIR`                          | `/data`                           | Where persisted documents are stored                                                                                                           |
 
 Spotify search can use the app credentials above. Managing Spotify playlists
 also needs user authorization: set `SPOTIFY_REDIRECT_URI` to the exact HTTPS
@@ -117,6 +122,15 @@ callback URL registered under your Spotify Developer app's Redirect URIs. The
 Music page then provides a Connect Spotify account button. The resulting
 refresh token is stored server-side in the existing data directory with
 owner-only file permissions; it is never sent to browser code.
+
+Direct Bluetooth management is optional and does not use Snapcast or add a
+container. To discover, pair, connect, disconnect or forget devices from Music,
+mount the Raspberry Pi's `/run/dbus/system_bus_socket` into the Abbai Flow
+container and set `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` to
+`unix:path=/run/dbus/system_bus_socket`. The browser only talks to Abbai Flow's
+same-origin API; it never receives D-Bus access or a host token. Pairing makes
+the device available to the Pi. If Soloist does not select it automatically,
+choose the Bluetooth output in Encore's Audio Outputs page.
 
 Everything else — themes, family members, chores, routines, rewards, calendar
 sources, list providers — is configured through the Abbai Flow UI.
@@ -127,6 +141,9 @@ Use `docker logs abbai-flow` to see startup checks for Home Assistant
 authentication and discovered calendars, todo lists, ChoreOps entities, Grocy
 sensors, media players, weather, and media sources. Spotify logs report the
 Encore connection, Spotify login/device state, and catalog credential status.
+Bluetooth logs report whether host D-Bus access is configured, its connection
+and retry state, and whether a Bluetooth adapter is powered on. Logs do not
+include Spotify credentials, Bluetooth device addresses or pairing codes.
 These checks report connection state and counts; they do not print access
 tokens or client secrets. Google Photos is currently not implemented and is
 reported as unavailable.

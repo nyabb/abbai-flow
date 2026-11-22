@@ -21,6 +21,9 @@
   },
   "files": [
     "src/api/planner-rules.ts",
+    "src/api/bluetooth-types.ts",
+    "src/api/bluetooth-manager.ts",
+    "src/api/bluetooth-http.ts",
     "src/api/encore-http.ts",
     "src/api/encore-music.ts",
     "src/api/spotify-catalog.ts",

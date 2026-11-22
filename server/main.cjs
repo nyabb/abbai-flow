@@ -24,13 +24,14 @@ try {
   /* read-only or already present */
 }
 
-const { server, encore, verifySpotifyCatalog, verifySpotifyPlaylists } = createApp(config);
+const { server, encore, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = createApp(config);
 const integrationDiagnostics = startIntegrationDiagnostics(
   { ...config, customHaCaConfigured: Boolean(config.ca) },
   encore,
   {
     verifySpotifyCatalog,
     verifySpotifyPlaylists,
+    bluetooth,
   },
 );
 server.on('close', integrationDiagnostics.stop);

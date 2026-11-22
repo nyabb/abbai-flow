@@ -215,7 +215,8 @@ export const en = {
   'settings.general.languageLabel': 'Language / Locale',
   'settings.general.debugModeLabel': 'Debug Mode',
   'settings.general.debugModeSublabel': 'Show a global log of API calls, responses, and errors.',
-  'settings.display.ingressUrlUnavailable': 'A shareable display URL is unavailable inside Home Assistant. Open Abbai Flow on the target screen and choose “Use on This Device”.',
+  'settings.display.ingressUrlUnavailable':
+    'A shareable display URL is unavailable inside Home Assistant. Open Abbai Flow on the target screen and choose “Use on This Device”.',
   'settings.general.dashboardLayoutTitle': 'Dashboard Layout',
   'settings.general.dashboardLayoutDesc': 'Choose how your dashboard is organized.',
   'settings.general.layoutLabel': 'Layout',
@@ -629,9 +630,11 @@ export const en = {
   'music.spotifyStatusPlaying': 'Playing',
   'music.spotifyStatusPaused': 'Paused',
   'music.spotifyStatusBuffering': 'Buffering',
-  'music.spotifyConfigure': 'Set ENCORE_TOKEN in the server environment to connect Spotify through Encore.',
+  'music.spotifyConfigure':
+    'Set ENCORE_TOKEN in the server environment to connect Spotify through Encore.',
   'music.spotifyConnectionHelp': 'Encore is unavailable. Abbai Flow will reconnect automatically.',
-  'music.spotifyLoginHelp': 'Log in to Spotify through your Spotify app to start playback on the Soloist device.',
+  'music.spotifyLoginHelp':
+    'Log in to Spotify through your Spotify app to start playback on the Soloist device.',
   'music.spotifyDevice': 'Playback device',
   'music.spotifyRepeatContext': 'Repeat playlist',
   'music.spotifyRepeatTrack': 'Repeat track',
@@ -658,6 +661,8 @@ export const en = {
   'music.spotifyCreatePlaylist': 'Create playlist',
   'music.spotifyPlaylistConfigure':
     'Set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and SPOTIFY_REDIRECT_URI on the server to manage playlists.',
+  'music.spotifyPlaylistRedirectConfigure':
+    'Spotify app credentials are configured. Set SPOTIFY_REDIRECT_URI on the server to https://<your-app-host>/abbai-flow/music/oauth/callback and register that exact URL in your Spotify Developer app.',
   'music.spotifyPlaylistConnectHelp':
     'Connect your Spotify account to see, create and update your playlists.',
   'music.spotifyConnecting': 'Connecting to Spotify…',
@@ -682,6 +687,48 @@ export const en = {
   'music.spotifyNoPlaylistSelected': 'Choose a playlist',
   'music.spotifyPlaylistEmptyHelp': 'Your playlists and their songs will appear here.',
   'music.spotifyAddToPlaylist': 'Add to playlist',
+  'music.bluetoothTitle': 'Bluetooth devices',
+  'music.bluetoothDescription': 'Discover and connect nearby devices',
+  'music.bluetoothNotConfigured': 'Setup needed',
+  'music.bluetoothSetupRequired':
+    'To manage Raspberry Pi Bluetooth here, give the Abbai Flow container access to the host system D-Bus socket and set this server variable:',
+  'music.bluetoothSetupMount':
+    'Mount /run/dbus/system_bus_socket from the Raspberry Pi into the container. No extra Bluetooth or Snapcast container is needed.',
+  'music.bluetoothConnected': 'Bluetooth ready',
+  'music.bluetoothNoAdapter': 'No adapter found',
+  'music.bluetoothPoweredOff': 'powered off',
+  'music.bluetoothDisconnected': 'Bluetooth unavailable',
+  'music.bluetoothDisconnectedHelp':
+    'Check that Bluetooth is enabled on the host and the D-Bus socket is mounted.',
+  'music.bluetoothNoAdapterHelp': 'No Bluetooth adapter is visible to the host service.',
+  'music.bluetoothActionFailed': 'Bluetooth request failed. Please try again.',
+  'music.bluetoothScan': 'Scan for devices',
+  'music.bluetoothStopScan': 'Stop scanning',
+  'music.bluetoothTurnOn': 'Turn Bluetooth on',
+  'music.bluetoothTurnOff': 'Turn Bluetooth off',
+  'music.bluetoothPairingWith': 'Pair with {device}',
+  'music.bluetoothConfirmCode': 'Confirm that this code matches on the device: {code}',
+  'music.bluetoothEnterPin': 'Enter the PIN requested by the device.',
+  'music.bluetoothEnterPasskey': 'Enter the passkey requested by the device.',
+  'music.bluetoothAuthorizeService': 'Allow {device} to use Bluetooth service {service}?',
+  'music.bluetoothAuthorizeDevice': 'Allow this Bluetooth device to connect?',
+  'music.bluetoothPairingCode': 'PIN or passkey',
+  'music.bluetoothDecline': 'Decline',
+  'music.bluetoothSubmitCode': 'Send code',
+  'music.bluetoothConfirm': 'Confirm',
+  'music.bluetoothDeviceConnected': 'Connected',
+  'music.bluetoothDevicePaired': 'Paired',
+  'music.bluetoothDeviceAvailable': 'Available to pair',
+  'music.bluetoothDisconnectDevice': 'Disconnect {device}',
+  'music.bluetoothForgetDevice': 'Forget {device}',
+  'music.bluetoothDisconnect': 'Disconnect',
+  'music.bluetoothConnect': 'Connect',
+  'music.bluetoothPair': 'Pair',
+  'music.bluetoothScanning': 'Looking for nearby devices…',
+  'music.bluetoothNoDevices':
+    'No devices found yet. Start a scan to discover nearby Bluetooth devices.',
+  'music.bluetoothAudioRoutingNote':
+    'Pairing connects the Bluetooth device to the Raspberry Pi. Select it as Soloist’s audio output in Encore if audio does not switch automatically.',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'No lists available',
@@ -768,7 +815,8 @@ export const en = {
   'planner.everyone': 'Everyone',
   'planner.anyone': 'Anyone (first)',
   'planner.freeTask': 'Free for anyone to claim',
-  'planner.claimModeEditUnavailable': 'ChoreOps does not allow changing a chore’s claim mode through this update. Change it in ChoreOps, then edit assignees here.',
+  'planner.claimModeEditUnavailable':
+    'ChoreOps does not allow changing a chore’s claim mode through this update. Change it in ChoreOps, then edit assignees here.',
   'planner.frequency': 'Frequency',
   'planner.daily': 'Daily',
   'planner.weekly': 'Weekly',
@@ -810,7 +858,8 @@ export const en = {
   'planner.undoneToast': 'Undone',
   'planner.action': 'Actions',
   'planner.sure': 'Delete for sure?',
-  'planner.renameUnavailable': 'Could not identify this chore for renaming. Refresh the chores and try again.',
+  'planner.renameUnavailable':
+    'Could not identify this chore for renaming. Refresh the chores and try again.',
   'planner.renameLocked': 'Renaming is only possible in ChoreOps.',
   'planner.create': 'Create chore',
   'planner.noFail': 'Could not save, try again',

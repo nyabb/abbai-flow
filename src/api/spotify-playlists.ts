@@ -38,6 +38,7 @@ export interface SpotifyPlaylistPage<T> {
 
 export interface SpotifyPlaylistStatus {
   configured: boolean;
+  credentialsConfigured: boolean;
   authorized: boolean;
   redirectConfigured: boolean;
 }
@@ -179,11 +180,7 @@ function normalizeTrack(value: unknown): SpotifyPlaylistTrack | null {
 function validRedirectUri(value: string): boolean {
   try {
     const uri = new URL(value);
-    if (
-      uri.search ||
-      uri.hash ||
-      !uri.pathname.endsWith('/abbai-flow/music/oauth/callback')
-    ) {
+    if (uri.search || uri.hash || !uri.pathname.endsWith('/abbai-flow/music/oauth/callback')) {
       return false;
     }
     if (uri.protocol === 'https:') return true;
@@ -205,7 +202,12 @@ function tokenFromPayload(
   const accessToken = text(value.access_token);
   const refreshToken = text(value.refresh_token) || previous?.refreshToken || null;
   const expiresIn = value.expires_in;
-  if (!accessToken || !refreshToken || typeof expiresIn !== 'number' || !Number.isFinite(expiresIn)) {
+  if (
+    !accessToken ||
+    !refreshToken ||
+    typeof expiresIn !== 'number' ||
+    !Number.isFinite(expiresIn)
+  ) {
     return null;
   }
   return {
@@ -236,19 +238,23 @@ export class SpotifyPlaylistLibrary {
     this.redirectUri = options.redirectUri?.trim() || '';
     this.market = /^[A-Z]{2}$/.test(options.market || '') ? options.market! : 'NL';
     this.tokenStore = options.tokenStore;
-    this.createState = options.createState || (() => {
-      const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
-      return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-    });
+    this.createState =
+      options.createState ||
+      (() => {
+        const bytes = globalThis.crypto.getRandomValues(new Uint8Array(32));
+        return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+      });
     this.fetcher = options.fetcher || fetch;
     this.now = options.now || Date.now;
   }
 
   async status(): Promise<SpotifyPlaylistStatus> {
     await this.loadToken();
+    const credentialsConfigured = Boolean(this.clientId && this.clientSecret);
     const redirectConfigured = validRedirectUri(this.redirectUri);
     return {
-      configured: Boolean(this.clientId && this.clientSecret && redirectConfigured),
+      configured: credentialsConfigured && redirectConfigured,
+      credentialsConfigured,
       authorized: Boolean(this.token?.refreshToken),
       redirectConfigured,
     };
@@ -276,20 +282,36 @@ export class SpotifyPlaylistLibrary {
     return url.toString();
   }
 
-  async completeAuthorization(codeValue: unknown, stateValue: unknown, errorValue?: unknown): Promise<void> {
+  async completeAuthorization(
+    codeValue: unknown,
+    stateValue: unknown,
+    errorValue?: unknown,
+  ): Promise<void> {
     this.ensureConfigured();
     const code = typeof codeValue === 'string' ? codeValue : '';
     const state = typeof stateValue === 'string' ? stateValue : '';
     const expiresAt = this.pendingStates.get(state);
     this.pendingStates.delete(state);
     if (!state || expiresAt === undefined || expiresAt < this.now()) {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify authorization could not be verified');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify authorization could not be verified',
+      );
     }
     if (errorValue) {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify authorization was declined');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify authorization was declined',
+      );
     }
     if (!code || code.length > 2048) {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify authorization did not return a code');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify authorization did not return a code',
+      );
     }
 
     const response = await this.fetcher(SPOTIFY_TOKEN, {
@@ -306,21 +328,37 @@ export class SpotifyPlaylistLibrary {
       }),
       signal: AbortSignal.timeout(12_000),
     }).catch(() => {
-      throw new SpotifyPlaylistError('unavailable', 503, 'Spotify authorization is temporarily unavailable');
+      throw new SpotifyPlaylistError(
+        'unavailable',
+        503,
+        'Spotify authorization is temporarily unavailable',
+      );
     });
 
     if (!response.ok) {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify authorization could not be completed');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify authorization could not be completed',
+      );
     }
     let payload: unknown;
     try {
       payload = await response.json();
     } catch {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify returned an invalid authorization response');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify returned an invalid authorization response',
+      );
     }
     const next = tokenFromPayload(payload, undefined, this.now());
     if (!next) {
-      throw new SpotifyPlaylistError('authorization_failed', 400, 'Spotify returned an invalid authorization response');
+      throw new SpotifyPlaylistError(
+        'authorization_failed',
+        400,
+        'Spotify returned an invalid authorization response',
+      );
     }
     await this.saveToken(next);
   }
@@ -331,7 +369,11 @@ export class SpotifyPlaylistLibrary {
     const response = await this.spotifyRequest(`/me/playlists?${query}`);
     const payload = await this.jsonResponse(response);
     if (!isRecord(payload) || !Array.isArray(payload.items)) {
-      throw new SpotifyPlaylistError('unavailable', 502, 'Spotify returned an invalid playlist list');
+      throw new SpotifyPlaylistError(
+        'unavailable',
+        502,
+        'Spotify returned an invalid playlist list',
+      );
     }
     const items = payload.items
       .map(normalizePlaylist)
@@ -367,13 +409,21 @@ export class SpotifyPlaylistLibrary {
 
   async createPlaylist(nameValue: unknown): Promise<SpotifyPlaylist> {
     if (typeof nameValue !== 'string') {
-      throw new SpotifyPlaylistError('invalid_request', 400, 'Playlist name must be 1 to 100 characters');
+      throw new SpotifyPlaylistError(
+        'invalid_request',
+        400,
+        'Playlist name must be 1 to 100 characters',
+      );
     }
     const name = nameValue.trim();
     // Reject control characters before sending playlist names to Spotify.
     // eslint-disable-next-line no-control-regex
     if (!name || name.length > 100 || /[\r\n\u0000-\u001f\u007f]/.test(name)) {
-      throw new SpotifyPlaylistError('invalid_request', 400, 'Playlist name must be 1 to 100 characters');
+      throw new SpotifyPlaylistError(
+        'invalid_request',
+        400,
+        'Playlist name must be 1 to 100 characters',
+      );
     }
     const response = await this.spotifyRequest('/me/playlists', {
       method: 'POST',
@@ -394,7 +444,11 @@ export class SpotifyPlaylistLibrary {
         ? uriValue
         : null;
     if (!uri) {
-      throw new SpotifyPlaylistError('invalid_request', 400, 'Track URI must be a Spotify track URI');
+      throw new SpotifyPlaylistError(
+        'invalid_request',
+        400,
+        'Track URI must be a Spotify track URI',
+      );
     }
     await this.spotifyRequest(`/playlists/${playlistId}/items`, {
       method: 'POST',
@@ -418,7 +472,8 @@ export class SpotifyPlaylistLibrary {
       await this.loadingToken;
       return;
     }
-    this.loadingToken = this.tokenStore.load()
+    this.loadingToken = this.tokenStore
+      .load()
       .then((value) => {
         if (
           isRecord(value) &&
@@ -448,7 +503,11 @@ export class SpotifyPlaylistLibrary {
       try {
         await this.tokenStore.save(token);
       } catch {
-        throw new SpotifyPlaylistError('unavailable', 503, 'Spotify credentials could not be saved securely');
+        throw new SpotifyPlaylistError(
+          'unavailable',
+          503,
+          'Spotify credentials could not be saved securely',
+        );
       }
     }
     this.token = token;
@@ -461,7 +520,11 @@ export class SpotifyPlaylistLibrary {
       const offset = Number(value);
       if (Number.isSafeInteger(offset) && offset <= 100_000) return offset;
     }
-    throw new SpotifyPlaylistError('invalid_request', 400, 'Playlist offset must be from 0 to 100000');
+    throw new SpotifyPlaylistError(
+      'invalid_request',
+      400,
+      'Playlist offset must be from 0 to 100000',
+    );
   }
 
   private validatePlaylistId(value: unknown): string {
@@ -474,7 +537,11 @@ export class SpotifyPlaylistLibrary {
     this.ensureConfigured();
     await this.loadToken();
     if (!this.token?.refreshToken) {
-      throw new SpotifyPlaylistError('not_authorized', 401, 'Connect a Spotify account to manage playlists');
+      throw new SpotifyPlaylistError(
+        'not_authorized',
+        401,
+        'Connect a Spotify account to manage playlists',
+      );
     }
     if (!forceRefresh && this.token.accessToken && this.token.expiresAt > this.now() + 60_000) {
       return this.token.accessToken;
@@ -501,10 +568,17 @@ export class SpotifyPlaylistLibrary {
         'Content-Type': 'application/x-www-form-urlencoded',
         Accept: 'application/json',
       },
-      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: current.refreshToken }),
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: current.refreshToken,
+      }),
       signal: AbortSignal.timeout(12_000),
     }).catch(() => {
-      throw new SpotifyPlaylistError('unavailable', 503, 'Spotify authorization is temporarily unavailable');
+      throw new SpotifyPlaylistError(
+        'unavailable',
+        503,
+        'Spotify authorization is temporarily unavailable',
+      );
     });
     if (!response.ok) {
       if (response.status === 400 || response.status === 401) {
@@ -515,7 +589,12 @@ export class SpotifyPlaylistLibrary {
       throw this.responseError(response.status);
     }
     const token = tokenFromPayload(await this.jsonResponse(response), current, this.now());
-    if (!token) throw new SpotifyPlaylistError('unavailable', 502, 'Spotify returned an invalid token response');
+    if (!token)
+      throw new SpotifyPlaylistError(
+        'unavailable',
+        502,
+        'Spotify returned an invalid token response',
+      );
     return token;
   }
 
@@ -543,9 +622,12 @@ export class SpotifyPlaylistLibrary {
   }
 
   private responseError(status: number): SpotifyPlaylistError {
-    if (status === 401) return new SpotifyPlaylistError('not_authorized', 401, 'Reconnect your Spotify account');
-    if (status === 403) return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied playlist access');
-    if (status === 429) return new SpotifyPlaylistError('rate_limited', 429, 'Spotify is busy; try again shortly');
+    if (status === 401)
+      return new SpotifyPlaylistError('not_authorized', 401, 'Reconnect your Spotify account');
+    if (status === 403)
+      return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied playlist access');
+    if (status === 429)
+      return new SpotifyPlaylistError('rate_limited', 429, 'Spotify is busy; try again shortly');
     return new SpotifyPlaylistError('unavailable', 502, 'Spotify is temporarily unavailable');
   }
 

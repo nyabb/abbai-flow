@@ -210,8 +210,10 @@ export const nl: Record<TranslationKey, string> = {
   'settings.general.monday': 'Maandag',
   'settings.general.languageLabel': 'Taal / Regio',
   'settings.general.debugModeLabel': 'Debugmodus',
-  'settings.general.debugModeSublabel': 'Toon een algemeen logboek van API-aanroepen, antwoorden en fouten.',
-  'settings.display.ingressUrlUnavailable': 'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
+  'settings.general.debugModeSublabel':
+    'Toon een algemeen logboek van API-aanroepen, antwoorden en fouten.',
+  'settings.display.ingressUrlUnavailable':
+    'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
   'settings.general.dashboardLayoutTitle': 'Dashboardindeling',
   'settings.general.dashboardLayoutDesc': 'Kies hoe je dashboard is ingedeeld.',
   'settings.general.layoutLabel': 'Indeling',
@@ -624,8 +626,10 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyStatusPaused': 'Gepauzeerd',
   'music.spotifyStatusBuffering': 'Laden',
   'music.spotifyConfigure': 'Stel ENCORE_TOKEN in op de server om Spotify via Encore te verbinden.',
-  'music.spotifyConnectionHelp': 'Encore is niet bereikbaar. Abbai Flow probeert automatisch opnieuw te verbinden.',
-  'music.spotifyLoginHelp': 'Log in bij Spotify via de Spotify-app om af te spelen op het Soloist-apparaat.',
+  'music.spotifyConnectionHelp':
+    'Encore is niet bereikbaar. Abbai Flow probeert automatisch opnieuw te verbinden.',
+  'music.spotifyLoginHelp':
+    'Log in bij Spotify via de Spotify-app om af te spelen op het Soloist-apparaat.',
   'music.spotifyDevice': 'Afspeelapparaat',
   'music.spotifyRepeatContext': 'Playlist herhalen',
   'music.spotifyRepeatTrack': 'Nummer herhalen',
@@ -652,6 +656,8 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyCreatePlaylist': 'Afspeellijst maken',
   'music.spotifyPlaylistConfigure':
     'Stel SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET en SPOTIFY_REDIRECT_URI in op de server om afspeellijsten te beheren.',
+  'music.spotifyPlaylistRedirectConfigure':
+    'De Spotify-appgegevens zijn al ingesteld. Stel SPOTIFY_REDIRECT_URI op de server in op https://<app-host>/abbai-flow/music/oauth/callback en registreer exact die URL in je Spotify Developer-app.',
   'music.spotifyPlaylistConnectHelp':
     'Verbind je Spotify-account om je afspeellijsten te zien, maken en bewerken.',
   'music.spotifyConnecting': 'Verbinden met Spotify…',
@@ -676,6 +682,48 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyNoPlaylistSelected': 'Kies een afspeellijst',
   'music.spotifyPlaylistEmptyHelp': 'Je afspeellijsten en nummers verschijnen hier.',
   'music.spotifyAddToPlaylist': 'Toevoegen aan afspeellijst',
+  'music.bluetoothTitle': 'Bluetooth-apparaten',
+  'music.bluetoothDescription': 'Apparaten in de buurt zoeken en verbinden',
+  'music.bluetoothNotConfigured': 'Installatie nodig',
+  'music.bluetoothSetupRequired':
+    'Geef de Abbai Flow-container toegang tot de systeem-D-Bus-socket van de Raspberry Pi en stel deze servervariabele in om Bluetooth hier te beheren:',
+  'music.bluetoothSetupMount':
+    'Koppel /run/dbus/system_bus_socket van de Raspberry Pi aan de container. Een extra Bluetooth- of Snapcast-container is niet nodig.',
+  'music.bluetoothConnected': 'Bluetooth gereed',
+  'music.bluetoothNoAdapter': 'Geen adapter gevonden',
+  'music.bluetoothPoweredOff': 'uitgeschakeld',
+  'music.bluetoothDisconnected': 'Bluetooth niet beschikbaar',
+  'music.bluetoothDisconnectedHelp':
+    'Controleer of Bluetooth op de host is ingeschakeld en de D-Bus-socket is gekoppeld.',
+  'music.bluetoothNoAdapterHelp': 'De hostservice ziet geen Bluetooth-adapter.',
+  'music.bluetoothActionFailed': 'Bluetooth-opdracht mislukt. Probeer het opnieuw.',
+  'music.bluetoothScan': 'Apparaten zoeken',
+  'music.bluetoothStopScan': 'Zoeken stoppen',
+  'music.bluetoothTurnOn': 'Bluetooth inschakelen',
+  'music.bluetoothTurnOff': 'Bluetooth uitschakelen',
+  'music.bluetoothPairingWith': 'Koppelen met {device}',
+  'music.bluetoothConfirmCode': 'Controleer of deze code ook op het apparaat staat: {code}',
+  'music.bluetoothEnterPin': 'Voer de pincode van het apparaat in.',
+  'music.bluetoothEnterPasskey': 'Voer de toegangscode van het apparaat in.',
+  'music.bluetoothAuthorizeService': 'Mag {device} de Bluetooth-dienst {service} gebruiken?',
+  'music.bluetoothAuthorizeDevice': 'Mag dit Bluetooth-apparaat verbinden?',
+  'music.bluetoothPairingCode': 'Pincode of toegangscode',
+  'music.bluetoothDecline': 'Weigeren',
+  'music.bluetoothSubmitCode': 'Code versturen',
+  'music.bluetoothConfirm': 'Bevestigen',
+  'music.bluetoothDeviceConnected': 'Verbonden',
+  'music.bluetoothDevicePaired': 'Gekoppeld',
+  'music.bluetoothDeviceAvailable': 'Beschikbaar om te koppelen',
+  'music.bluetoothDisconnectDevice': '{device} verbreken',
+  'music.bluetoothForgetDevice': '{device} vergeten',
+  'music.bluetoothDisconnect': 'Verbreken',
+  'music.bluetoothConnect': 'Verbinden',
+  'music.bluetoothPair': 'Koppelen',
+  'music.bluetoothScanning': 'Apparaten in de buurt zoeken…',
+  'music.bluetoothNoDevices':
+    'Nog geen apparaten gevonden. Start een zoekopdracht om Bluetooth-apparaten in de buurt te vinden.',
+  'music.bluetoothAudioRoutingNote':
+    'Koppelen verbindt het apparaat met de Raspberry Pi. Kies het in Encore als Soloist-audio-uitvoer als het geluid niet automatisch overschakelt.',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'Geen lijsten beschikbaar',
@@ -764,7 +812,8 @@ export const nl: Record<TranslationKey, string> = {
   'planner.everyone': 'Iedereen',
   'planner.anyone': 'Wie het eerst is',
   'planner.freeTask': 'Vrij te pakken door iedereen',
-  'planner.claimModeEditUnavailable': 'ChoreOps kan de claimmodus niet via deze wijziging aanpassen. Wijzig dit in ChoreOps en pas daarna hier de toegewezen kinderen aan.',
+  'planner.claimModeEditUnavailable':
+    'ChoreOps kan de claimmodus niet via deze wijziging aanpassen. Wijzig dit in ChoreOps en pas daarna hier de toegewezen kinderen aan.',
   'planner.frequency': 'Frequentie',
   'planner.daily': 'Dagelijks',
   'planner.weekly': 'Wekelijks',
@@ -806,7 +855,8 @@ export const nl: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Teruggedraaid',
   'planner.action': 'Acties',
   'planner.sure': 'Zeker weten?',
-  'planner.renameUnavailable': 'Dit karweitje kon niet worden gevonden om te hernoemen. Vernieuw de lijst en probeer het opnieuw.',
+  'planner.renameUnavailable':
+    'Dit karweitje kon niet worden gevonden om te hernoemen. Vernieuw de lijst en probeer het opnieuw.',
   'planner.renameLocked': 'Naam wijzigen kan alleen in ChoreOps.',
   'planner.create': 'Taakje aanmaken',
   'planner.noFail': 'Niet gelukt, probeer opnieuw',

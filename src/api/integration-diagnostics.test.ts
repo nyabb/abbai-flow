@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { EncoreSnapshot } from './encore-music';
+import type { BluetoothSnapshot } from './bluetooth-types';
 import {
   startIntegrationDiagnostics,
   type IntegrationDiagnosticConfig,
@@ -51,6 +52,70 @@ function diagnosticsLogger() {
 }
 
 describe('integration startup diagnostics', () => {
+  it('logs Bluetooth connection changes without logging device addresses or credentials', async () => {
+    let onBluetoothSnapshot: ((value: BluetoothSnapshot) => void) | undefined;
+    const unsubscribeBluetooth = vi.fn();
+    const bluetooth = {
+      subscribe: (listener: (value: BluetoothSnapshot) => void) => {
+        onBluetoothSnapshot = listener;
+        listener({
+          configured: true,
+          connection: 'connecting',
+          adapter: null,
+          scanning: false,
+          devices: [],
+          challenge: null,
+          notice: null,
+          error: null,
+          updatedAt: 1,
+        });
+        return unsubscribeBluetooth;
+      },
+    };
+    const encore = { subscribe: () => vi.fn() };
+    const { entries, logger } = diagnosticsLogger();
+    const handle = startIntegrationDiagnostics(
+      config({ haToken: '', encoreToken: '', spotifyClientId: '', spotifyClientSecret: '' }),
+      encore as never,
+      { logger, fetcher: vi.fn<typeof fetch>(), bluetooth },
+    );
+    await handle.ready;
+    onBluetoothSnapshot?.({
+      configured: true,
+      connection: 'connected',
+      adapter: {
+        address: 'secret-device-address',
+        name: 'Abbai Bluetooth',
+        powered: true,
+        discovering: false,
+      },
+      scanning: false,
+      devices: [],
+      challenge: null,
+      notice: null,
+      error: null,
+      updatedAt: 2,
+    });
+    onBluetoothSnapshot?.({
+      configured: true,
+      connection: 'disconnected',
+      adapter: null,
+      scanning: false,
+      devices: [],
+      challenge: null,
+      notice: null,
+      error: 'The host Bluetooth service is unavailable',
+      updatedAt: 3,
+    });
+
+    expect(entries.join('\n')).toContain('Bluetooth: connecting to the host system D-Bus.');
+    expect(entries.join('\n')).toContain('Bluetooth adapter "Abbai Bluetooth" is powered on.');
+    expect(entries.join('\n')).toContain('Bluetooth: disconnected; reconnect will retry.');
+    expect(entries.join('\n')).not.toContain('secret-device-address');
+    handle.stop();
+    expect(unsubscribeBluetooth).toHaveBeenCalledOnce();
+  });
+
   it('checks HA and Spotify credentials, reports discovered integrations, and never logs secrets', async () => {
     let onEncoreSnapshot: ((value: EncoreSnapshot) => void) | undefined;
     const unsubscribe = vi.fn();
@@ -77,9 +142,7 @@ describe('integration startup diagnostics', () => {
         new Response(JSON.stringify({ message: 'API running' }), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(states), { status: 200 }))
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ children: [{}, {}] }), { status: 200 }),
-      );
+      .mockResolvedValueOnce(new Response(JSON.stringify({ children: [{}, {}] }), { status: 200 }));
     const verifySpotifyCatalog = vi.fn(async () => ({ ok: true }));
     const { entries, logger } = diagnosticsLogger();
 
@@ -105,7 +168,9 @@ describe('integration startup diagnostics', () => {
     );
     expect(entries.join('\n')).toContain('sensor.grocy_expiring_products=present but unavailable');
     expect(entries.join('\n')).toContain('Weather entity weather.home: available.');
-    expect(entries.join('\n')).toContain('Home Assistant media source: available (2 root item(s)).');
+    expect(entries.join('\n')).toContain(
+      'Home Assistant media source: available (2 root item(s)).',
+    );
     expect(entries.join('\n')).toContain('Spotify catalog search: credentials accepted.');
 
     onEncoreSnapshot?.(

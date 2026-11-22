@@ -72,6 +72,8 @@ async function startBeacon(overrides = {}) {
     allowedOrigins: overrides.allowedOrigins,
     ca: overrides.ca,
     spotifyPlaylists: overrides.spotifyPlaylists,
+    bluetooth: overrides.bluetooth,
+    bluetoothDbusAddress: overrides.bluetoothDbusAddress,
   });
   const port = await listen(server);
   return { server, port, dataDir: overrides.dataDir, close: () => close(server) };
@@ -672,16 +674,23 @@ test('configFromEnv reads the documented HA_URL and HA_TOKEN', () => {
     HA_URL: 'https://ha.example.com',
     HA_TOKEN: 'tok',
     SPOTIFY_REDIRECT_URI: 'https://abbai.example/abbai-flow/music/oauth/callback',
+    ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: 'unix:path=/run/dbus/system_bus_socket',
   });
   assert.equal(config.haBaseUrl, 'https://ha.example.com');
   assert.equal(config.haToken, 'tok');
   assert.equal(config.spotifyRedirectUri, 'https://abbai.example/abbai-flow/music/oauth/callback');
+  assert.equal(config.bluetoothDbusAddress, 'unix:path=/run/dbus/system_bus_socket');
 });
 
 test('Spotify playlist API is same-origin guarded and its OAuth callback returns to Music', async (t) => {
   const calls = [];
   const spotifyPlaylists = {
-    status: async () => ({ configured: true, authorized: false, redirectConfigured: true }),
+    status: async () => ({
+      configured: true,
+      credentialsConfigured: true,
+      authorized: false,
+      redirectConfigured: true,
+    }),
     beginAuthorization: async () => 'https://accounts.spotify.com/authorize',
     completeAuthorization: async (...args) => calls.push(args),
   };
@@ -690,7 +699,12 @@ test('Spotify playlist API is same-origin guarded and its OAuth callback returns
 
   const status = await request(app.port, { path: '/abbai-flow/music/library/status' });
   assert.equal(status.status, 200);
-  assert.deepEqual(status.json, { configured: true, authorized: false, redirectConfigured: true });
+  assert.deepEqual(status.json, {
+    configured: true,
+    credentialsConfigured: true,
+    authorized: false,
+    redirectConfigured: true,
+  });
 
   const denied = await request(app.port, {
     method: 'POST',
@@ -705,6 +719,49 @@ test('Spotify playlist API is same-origin guarded and its OAuth callback returns
   assert.equal(callback.status, 302);
   assert.equal(callback.headers.location, '/?view=music&spotify=connected');
   assert.deepEqual(calls, [['one-time-code', 'verified-state', null]]);
+});
+
+test('Bluetooth status is readable while Bluetooth controls remain same-origin guarded', async (t) => {
+  const calls = [];
+  const bluetooth = {
+    start() {},
+    stop() {},
+    getSnapshot: () => ({
+      configured: true,
+      connection: 'disconnected',
+      adapter: null,
+      scanning: false,
+      devices: [],
+      challenge: null,
+      notice: null,
+      error: 'The host Bluetooth service is unavailable',
+      updatedAt: 1,
+    }),
+    control: async (control) => calls.push(control),
+  };
+  const app = await startBeacon({ bluetooth });
+  t.after(() => app.close());
+
+  const state = await request(app.port, { path: '/abbai-flow/bluetooth/state' });
+  assert.equal(state.status, 200);
+  assert.equal(state.json.connection, 'disconnected');
+
+  const denied = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/bluetooth/control',
+    body: { action: 'scan' },
+    headers: { Origin: 'https://evil.example' },
+  });
+  assert.equal(denied.status, 403);
+  assert.deepEqual(calls, []);
+
+  const accepted = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/bluetooth/control',
+    body: { action: 'scan' },
+  });
+  assert.equal(accepted.status, 202);
+  assert.deepEqual(calls, [{ action: 'scan' }]);
 });
 
 test('configFromEnv keeps the add-on contract working', () => {
