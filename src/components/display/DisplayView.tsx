@@ -24,6 +24,7 @@ import { DisplayAgenda } from './DisplayAgenda';
 import { DisplayClock } from './DisplayClock';
 import { DisplayChores } from './DisplayChores';
 import { DisplayFamily } from './DisplayFamily';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { useNow } from './useNow';
 import { DEFAULT_DISPLAY_PANELS, type DisplayConnection, type DisplayPanelFlags } from './types';
 import type { CalendarEvent, WeatherData } from '../../types';
@@ -93,6 +94,7 @@ export function DisplayView({
         <DisplayClock timeFormat={timeFormat} />
 
         <div className="display-band-right">
+          <LanguageSwitcher />
           {show.weather && weather && (
             <div className="display-weather">
               <span className="display-weather-temp">

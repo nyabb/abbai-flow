@@ -49,7 +49,9 @@ describe('Sidebar bottom bar', () => {
     const onQuickAdd = vi.fn();
     const { container } = renderSidebar(onQuickAdd);
 
-    fireEvent.click(container.querySelectorAll('.mobile-tab')[3]);
+    const quickAdd = container.querySelectorAll('.mobile-tab')[3];
+    expect(quickAdd.querySelector('svg')).toHaveClass('lucide-plus');
+    fireEvent.click(quickAdd);
     expect(onQuickAdd).toHaveBeenCalledTimes(1);
   });
 });

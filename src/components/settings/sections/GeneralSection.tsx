@@ -1,10 +1,10 @@
 /**
- * General settings: family name, start view, time/week format, language,
- * browser-cache toggle and the dashboard layout presets.
+ * General settings: family name, start view, time/week format, browser-cache
+ * toggle and the dashboard layout presets. Language is changed from every
+ * page's header.
  */
 import { getConfig } from '../../../config';
 import { isAddOn } from '../../../utils/ha-env';
-import { LOCALE_OPTIONS } from '../../../i18n/locales';
 import type { AbbaiSettings } from '../../../hooks/useSettings';
 import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
@@ -69,20 +69,6 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             ]}
             onChange={(v) => onUpdateSettings({ weekStartsOn: Number(v) as 0 | 1 })}
           />
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">{t('settings.general.languageLabel')}</div>
-          <select
-            className="settings-select"
-            value={settings.locale}
-            onChange={(e) => onUpdateSettings({ locale: e.target.value })}
-          >
-            {LOCALE_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
         </div>
         {isAddOn() && (
           <div className="settings-row">

@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ChevronLeft } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { Clock } from './Clock';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 export interface PageHeaderProps {
   title: string;
@@ -76,6 +77,7 @@ export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }
 
       <div className="page-header-actions">
         {actions}
+        <LanguageSwitcher />
         {!hideClock && <Clock />}
       </div>
     </header>

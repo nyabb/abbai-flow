@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { DashboardCardProps } from '../../types/dashboard-cards';
 import { weatherIcon, conditionLabel } from '../../types/weather-icons';
 import { useTranslation } from '../../i18n';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 
 export function ClockWeatherCard({ context }: DashboardCardProps) {
   const { t, dateLocale } = useTranslation();
@@ -50,19 +51,22 @@ export function ClockWeatherCard({ context }: DashboardCardProps) {
           )}
         </div>
       </div>
-      {weather && (
-        <div
-          className={`dash-topbar-weather ${onWeatherClick ? 'dash-topbar-weather--clickable' : ''}`}
-          onClick={onWeatherClick}
-          role={onWeatherClick ? 'button' : undefined}
-          tabIndex={onWeatherClick ? 0 : undefined}
-          onKeyDown={onWeatherClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onWeatherClick(); } : undefined}
-        >
-          <span className="dash-topbar-weather-icon">{weatherIcon(weather.condition)}</span>
-          <span className="dash-topbar-weather-temp">{Math.round(weather.temperature)}°</span>
-          <span className="dash-topbar-weather-cond">{conditionLabel(weather.condition, t)}</span>
-        </div>
-      )}
+      <div className="dash-topbar-right">
+        <LanguageSwitcher />
+        {weather && (
+          <div
+            className={`dash-topbar-weather ${onWeatherClick ? 'dash-topbar-weather--clickable' : ''}`}
+            onClick={onWeatherClick}
+            role={onWeatherClick ? 'button' : undefined}
+            tabIndex={onWeatherClick ? 0 : undefined}
+            onKeyDown={onWeatherClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') onWeatherClick(); } : undefined}
+          >
+            <span className="dash-topbar-weather-icon">{weatherIcon(weather.condition)}</span>
+            <span className="dash-topbar-weather-temp">{Math.round(weather.temperature)}°</span>
+            <span className="dash-topbar-weather-cond">{conditionLabel(weather.condition, t)}</span>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

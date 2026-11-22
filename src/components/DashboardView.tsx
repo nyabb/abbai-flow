@@ -15,6 +15,7 @@ import { AgendaTodayCard } from './cards/AgendaTodayCard';
 import { AgendaWeekCard } from './cards/AgendaWeekCard';
 import { MenuCard } from './cards/MenuCard';
 import { TasksCard } from './cards/TasksCard';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import type { TaskmateUser } from '../types/taskmate';
 import { DashboardCard, DashboardCardContext, DashboardRegionLayout, TodoItem } from '../types/dashboard-cards';
 import { useTranslation } from '../i18n';
@@ -143,6 +144,7 @@ export function DashboardView({
     completedChoreIds,
     onToggleChore,
   };
+  const dashboardClockInTopbar = regions.topbar.some((card) => card.type === 'clock-weather');
 
   // The legacy composition deliberately bypasses cards, GridStack, persisted
   // widget layouts, and edit mode. This preserves the pre-modular dashboard
@@ -186,6 +188,11 @@ export function DashboardView({
           {editMode ? t('common.done') : t('dashboard.editDashboard')}
         </button>
         <div className="dash-topbar-region">
+          {!dashboardClockInTopbar && (
+            <div className="dashboard-language-row">
+              <LanguageSwitcher />
+            </div>
+          )}
           {(views.length > 1 || editMode) && (
             <DashboardViewTabs
               views={views}
@@ -232,6 +239,11 @@ export function DashboardView({
         {editMode ? t('common.done') : t('dashboard.editDashboard')}
       </button>
       <div className="dash-topbar-region">
+        {!dashboardClockInTopbar && (
+          <div className="dashboard-language-row">
+            <LanguageSwitcher />
+          </div>
+        )}
         {(views.length > 1 || editMode) && (
           <DashboardViewTabs
             views={views}

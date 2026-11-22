@@ -2,11 +2,10 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
-  ChevronDown,
   Clock3,
   Eye,
   EyeOff,
-  Plus,
+  ListPlus,
   RotateCcw,
   SlidersHorizontal,
   Volume2,
@@ -38,13 +37,13 @@ import {
   routineTaskOrder,
 } from '../../api/planner-meta';
 import { useTranslation } from '../../i18n';
-import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 import { usePlannerCopy } from './copy';
 import { RewardRow, RoutineRow, TaskRow, type RoutineStep } from './rows';
 import { HeaderDate } from '../PageHeader';
+import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
@@ -1260,27 +1259,12 @@ export function ChorePlanner({
             <button
               className="planner-add"
               onClick={() => dispatchOverlay({ type: 'open-create' })}
-              aria-label={t('omniAdd.quickAdd')}
+              aria-label={c.chooseWhat}
             >
-              <Plus />
+              <ListPlus />
             </button>
           )}
-          <span className="planner-language">
-            <select
-              className="planner-language-select"
-              value={locale}
-              onChange={(event) => onLocaleChange(event.target.value)}
-              aria-label={t('settings.general.languageLabel')}
-              title={t('settings.general.languageLabel')}
-            >
-              {LOCALE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown aria-hidden="true" />
-          </span>
+          <LanguageSwitcher variant="planner" locale={locale} onLocaleChange={onLocaleChange} />
           <button
             className="planner-icon-button"
             onClick={() => setPrivacy((value) => !value)}

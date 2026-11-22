@@ -6,6 +6,7 @@ import { callHaService, hasToken } from '../api/ha-rest';
 import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
 import { HeaderDate } from './PageHeader';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { Clock } from './Clock';
 import { ActivitySpinner, LoadingPlaceholder } from './LoadingPlaceholder';
 
@@ -299,6 +300,7 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
           <HeaderDate />
           <h1 className="page-header-title">{t('nav.grocery')}</h1>
           <div className="page-header-actions">
+            <LanguageSwitcher />
             <Clock />
           </div>
         </div>

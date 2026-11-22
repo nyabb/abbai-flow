@@ -20,6 +20,12 @@ describe('PageHeader', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Timer' })).toBeInTheDocument();
   });
 
+  it('makes the language selector available in the page header', () => {
+    renderHeader({ title: 'Timer' });
+
+    expect(screen.getByRole('combobox', { name: 'Taal / Regio' })).toBeInTheDocument();
+  });
+
   it('shows the subtitle when given one', () => {
     renderHeader({ title: 'Timer', subtitle: 'maandag 10 november' });
 

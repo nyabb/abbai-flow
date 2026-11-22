@@ -121,6 +121,15 @@
   gap: 16px;
 }
 
+.dash-topbar-right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
 .dash-topbar-time {
   font-family: var(--font-display);
   font-size: 3rem;

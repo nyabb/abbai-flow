@@ -67,7 +67,7 @@ test('moves a free shared chore to both children through ChoreOps create', async
     localStorage.setItem('beacon_family_members', JSON.stringify(members));
   }, FAMILY);
 
-  await page.route('**/beacon-action/entity-registry', async (route) => {
+  await page.route('**/abbai-flow/action/entity-registry', async (route) => {
     const { entity_id: entityId } = route.request().postDataJSON() as { entity_id: string };
     await route.fulfill({
       status: 200,
@@ -103,6 +103,7 @@ test('moves a free shared chore to both children through ChoreOps create', async
   await form.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect.poll(() => stack.fakeHa.serviceCalls('choreops.create_chore').length).toBe(1);
+  await expect.poll(() => stack.fakeHa.serviceCalls('choreops.delete_chore').length).toBe(1);
   const renameCall = stack.fakeHa.serviceCalls('choreops.update_chore')[0];
   const createCall = stack.fakeHa.serviceCalls('choreops.create_chore')[0];
   const deleteCall = stack.fakeHa.serviceCalls('choreops.delete_chore')[0];
