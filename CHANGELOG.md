@@ -1,3 +1,10 @@
+# [2.14.0](https://github.com/nyabb/abbai-flow/compare/v2.13.0...v2.14.0) (2026-11-22)
+
+
+### Features
+
+* add direct Bluetooth device management ([2b0e6e9](https://github.com/nyabb/abbai-flow/commit/2b0e6e9fb1fa69d38ef1c1dc8337d34eb621f1e9))
+
 # [2.13.0](https://github.com/nyabb/abbai-flow/compare/v2.12.0...v2.13.0) (2026-11-22)
 
 
