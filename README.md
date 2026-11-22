@@ -75,6 +75,9 @@ services:
       HA_TOKEN: ${HA_TOKEN}
       ENCORE_TOKEN: ${ENCORE_TOKEN:-}
       ENCORE_URL: ${ENCORE_URL:-ws://host.docker.internal:8095/}
+      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
+      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
+      SPOTIFY_MARKET: ${SPOTIFY_MARKET:-NL}
     volumes: ['abbai-flow-data:/data']
 
 volumes:
@@ -101,6 +104,9 @@ then kept in the browser.
 | `HA_TOKEN` | — | Long-lived access token |
 | `ENCORE_TOKEN` | — | Optional Encore bearer token for the Spotify integration; stays on the server |
 | `ENCORE_URL` | `ws://host.docker.internal:8095/` | Optional Encore WebSocket URL (the verified Docker network address) |
+| `SPOTIFY_CLIENT_ID` | — | Optional Spotify Developer app ID for catalog search; server-side only |
+| `SPOTIFY_CLIENT_SECRET` | — | Optional Spotify Developer app secret for catalog search; server-side only |
+| `SPOTIFY_MARKET` | `NL` | Two-letter Spotify catalog market used for search results |
 | `DATA_DIR` | `/data` | Where persisted documents are stored |
 
 Everything else — themes, family members, chores, routines, rewards, calendar

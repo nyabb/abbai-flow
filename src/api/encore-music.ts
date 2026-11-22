@@ -175,6 +175,11 @@ function normalizePlayback(value: JsonRecord): EncorePlayback {
 export function validateEncoreControl(action: unknown, value: unknown): string | null {
   const noValue = ['play', 'pause', 'previous', 'next', 'activate'];
   if (typeof action !== 'string') return 'Unsupported music control';
+  if (action === 'playTrack') {
+    return typeof value === 'string' && /^spotify:track:[A-Za-z0-9]+$/.test(value)
+      ? null
+      : 'Track URI must be a Spotify track URI';
+  }
   if (noValue.includes(action)) {
     return value === undefined ? null : 'This control does not accept a value';
   }
@@ -485,6 +490,9 @@ export class EncoreMusic {
 
     let sent = false;
     switch (action) {
+      case 'playTrack':
+        sent = this.sendCommand({ command: 'play', uri: value });
+        break;
       case 'play':
         sent = this.sendCommand({ command: 'play' });
         break;

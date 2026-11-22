@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { EncoreSnapshot } from '../api/encore-music';
+import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 
 const EMPTY_STATE: EncoreSnapshot = {
   configured: false,
@@ -80,5 +81,33 @@ export function useEncoreMusic() {
     }
   }, []);
 
-  return { snapshot, loading, control };
+  const search = useCallback(async (query: string) => {
+    try {
+      const response = await fetch(
+        '/abbai-flow/music/search?' + new URLSearchParams({ q: query }),
+        { headers: { Accept: 'application/json' } },
+      );
+      const result = (await response.json()) as {
+        tracks?: SpotifyCatalogTrack[];
+        code?: string;
+        error?: string;
+      };
+      if (!response.ok) {
+        return {
+          tracks: [] as SpotifyCatalogTrack[],
+          code: result.code,
+          error: result.error || 'Spotify search is unavailable',
+        };
+      }
+      return { tracks: result.tracks || [] };
+    } catch {
+      return {
+        tracks: [] as SpotifyCatalogTrack[],
+        code: 'unavailable',
+        error: 'Music service unavailable',
+      };
+    }
+  }, []);
+
+  return { snapshot, loading, control, search };
 }

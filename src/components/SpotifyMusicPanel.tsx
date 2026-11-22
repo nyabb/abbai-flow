@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
+  ChevronDown,
   ListMusic,
   Music2,
   Pause,
   Play,
   Repeat,
+  Search,
   Shuffle,
   SkipBack,
   SkipForward,
@@ -12,12 +14,18 @@ import {
   VolumeX,
 } from 'lucide-react';
 import type { EncorePlayback, EncoreRepeat, EncoreSnapshot } from '../api/encore-music';
+import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 import { useTranslation } from '../i18n';
 
 interface SpotifyMusicPanelProps {
   snapshot: EncoreSnapshot;
   loading: boolean;
   onControl: (action: string, value?: unknown) => Promise<{ ok: boolean; error?: string }>;
+  onSearch: (query: string) => Promise<{
+    tracks: SpotifyCatalogTrack[];
+    code?: string;
+    error?: string;
+  }>;
 }
 
 function formatTime(milliseconds: number | null | undefined): string {
@@ -35,11 +43,22 @@ function playbackPosition(playback: EncorePlayback): number {
   return Math.max(0, Math.min(anchor.positionMs + moving, duration ?? Number.MAX_SAFE_INTEGER));
 }
 
-export function SpotifyMusicPanel({ snapshot, loading, onControl }: SpotifyMusicPanelProps) {
+export function SpotifyMusicPanel({
+  snapshot,
+  loading,
+  onControl,
+  onSearch,
+}: SpotifyMusicPanelProps) {
   const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SpotifyCatalogTrack[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const [position, setPosition] = useState(0);
   const [positionDraft, setPositionDraft] = useState<number | null>(null);
   const [volumeDraft, setVolumeDraft] = useState<number | null>(null);
+  const [volumeExpanded, setVolumeExpanded] = useState(false);
   const [controlError, setControlError] = useState<string | null>(null);
   const previousVolume = useRef(35);
 
@@ -53,6 +72,27 @@ export function SpotifyMusicPanel({ snapshot, loading, onControl }: SpotifyMusic
     setControlError(null);
     const result = await onControl(action, value);
     if (!result.ok) setControlError(result.error || 'Control request failed');
+  };
+
+  const submitSearch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query || searching) return;
+    setSearching(true);
+    setSearchError(null);
+    setSearchResults([]);
+    setHasSearched(true);
+    try {
+      const result = await onSearch(query);
+      setSearchResults(result.tracks);
+      setSearchError(
+        result.code === 'not_configured' ? t('music.spotifySearchConfigure') : result.error || null,
+      );
+    } catch {
+      setSearchError(t('music.spotifySearchFailed'));
+    } finally {
+      setSearching(false);
+    }
   };
 
   useEffect(() => {
@@ -186,6 +226,66 @@ export function SpotifyMusicPanel({ snapshot, loading, onControl }: SpotifyMusic
         </div>
       )}
 
+      <section className="spotify-search" aria-label={t('music.spotifySearch')}>
+        <form className="spotify-search-form" onSubmit={(event) => void submitSearch(event)}>
+          <Search size={19} aria-hidden="true" />
+          <label className="sr-only" htmlFor="spotify-search-input">
+            {t('music.spotifySearch')}
+          </label>
+          <input
+            id="spotify-search-input"
+            type="search"
+            value={searchQuery}
+            maxLength={100}
+            placeholder={t('music.spotifySearchPlaceholder')}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+          <button type="submit" disabled={!searchQuery.trim() || searching}>
+            {searching ? t('music.spotifySearching') : t('music.spotifySearchSubmit')}
+          </button>
+        </form>
+        {searchError && (
+          <p className="spotify-search-message" role="alert">
+            {searchError}
+          </p>
+        )}
+        {hasSearched && !searching && !searchError && searchResults.length === 0 && (
+          <p className="spotify-search-message">{t('music.spotifySearchEmpty')}</p>
+        )}
+        {searchResults.length > 0 && (
+          <ul className="spotify-search-results" aria-label={t('music.spotifySearchResults')}>
+            {searchResults.map((track) => (
+              <li key={track.uri}>
+                {track.artworkUrl ? (
+                  <img src={track.artworkUrl} alt="" />
+                ) : (
+                  <span className="spotify-search-art">
+                    <Music2 size={18} />
+                  </span>
+                )}
+                <span className="spotify-search-copy">
+                  <strong>{track.title}</strong>
+                  <span>
+                    {track.artists.join(', ') || '—'}
+                    {track.album ? ` · ${track.album}` : ''}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  className="spotify-search-play"
+                  aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
+                  title={t('music.spotifyPlayTrack')}
+                  disabled={!canControl}
+                  onClick={() => void runControl('playTrack', track.uri)}
+                >
+                  <Play size={19} fill="currentColor" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <div className="spotify-main-layout">
         <div className="spotify-now-playing">
           <div className="spotify-art">
@@ -305,7 +405,7 @@ export function SpotifyMusicPanel({ snapshot, loading, onControl }: SpotifyMusic
               </button>
             )}
 
-            <div className="spotify-volume">
+            <div className={'spotify-volume' + (volumeExpanded ? ' is-expanded' : '')}>
               <button
                 type="button"
                 className="spotify-volume-mute"
@@ -329,6 +429,16 @@ export function SpotifyMusicPanel({ snapshot, loading, onControl }: SpotifyMusic
                 onChange={(event) => setVolumeDraft(Number(event.target.value))}
               />
               <span>{Math.round(volume)}%</span>
+              <button
+                type="button"
+                className="spotify-volume-expand"
+                aria-expanded={volumeExpanded}
+                aria-controls="spotify-volume"
+                onClick={() => setVolumeExpanded((expanded) => !expanded)}
+              >
+                {t('music.volume')}
+                <ChevronDown size={16} aria-hidden="true" />
+              </button>
             </div>
             {controlError && (
               <p className="spotify-control-error" role="alert">

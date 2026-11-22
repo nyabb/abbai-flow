@@ -629,6 +629,16 @@ export const ko: Record<TranslationKey, string> = {
   'music.spotifyActivate': '기기 활성화',
   'music.spotifyQueue': '다음 재생',
   'music.spotifyQueueEmpty': '대기 중인 트랙 없음',
+  'music.spotifySearch': 'Spotify 검색',
+  'music.spotifySearchPlaceholder': '노래, 아티스트 또는 앨범',
+  'music.spotifySearchSubmit': '검색',
+  'music.spotifySearching': '검색 중...',
+  'music.spotifySearchEmpty': '노래를 찾을 수 없습니다',
+  'music.spotifySearchFailed': 'Spotify 검색에 실패했습니다. 다시 시도해 주세요.',
+  'music.spotifySearchConfigure':
+    'Spotify 검색을 사용하려면 서버에 SPOTIFY_CLIENT_ID와 SPOTIFY_CLIENT_SECRET을 설정하세요.',
+  'music.spotifySearchResults': '검색 결과',
+  'music.spotifyPlayTrack': '트랙 재생',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': '사용 가능한 목록이 없습니다',

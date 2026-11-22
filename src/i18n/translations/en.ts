@@ -643,6 +643,16 @@ export const en = {
   'music.spotifyActivate': 'Activate device',
   'music.spotifyQueue': 'Up next',
   'music.spotifyQueueEmpty': 'No upcoming tracks',
+  'music.spotifySearch': 'Search Spotify',
+  'music.spotifySearchPlaceholder': 'Songs, artists or albums',
+  'music.spotifySearchSubmit': 'Search',
+  'music.spotifySearching': 'Searching...',
+  'music.spotifySearchEmpty': 'No songs found',
+  'music.spotifySearchFailed': 'Spotify search failed. Try again.',
+  'music.spotifySearchConfigure':
+    'Spotify search needs SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET configured on the server.',
+  'music.spotifySearchResults': 'Search results',
+  'music.spotifyPlayTrack': 'Play track',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'No lists available',

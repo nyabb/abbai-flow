@@ -185,11 +185,13 @@ describe('EncoreMusic', () => {
     });
 
     expect(music.control('seek', 30_000)).toEqual({ ok: true });
+    expect(music.control('playTrack', 'spotify:track:abc123')).toEqual({ ok: true });
     expect(music.control('volume', 55)).toEqual({ ok: true });
     expect(music.control('shuffle', true)).toEqual({ ok: true });
     expect(music.control('repeat', 'track')).toEqual({ ok: true });
     expect(sockets[0].sent.slice(2).map((frame) => JSON.parse(frame))).toEqual([
       { type: 'command', command: 'seek', position_ms: 30_000 },
+      { type: 'command', command: 'play', uri: 'spotify:track:abc123' },
       { type: 'command', command: 'set_volume', volume: 55 },
       { type: 'command', command: 'set_shuffle', enabled: true },
       { type: 'command', command: 'set_repeat_context', enabled: false },
@@ -207,6 +209,8 @@ describe('EncoreMusic', () => {
       ['shuffle', 'true'],
       ['repeat', 'playlist'],
       ['play', false],
+      ['playTrack', 'https://open.spotify.com/track/abc123'],
+      ['playTrack', 'spotify:playlist:abc123'],
       ['unknown', undefined],
     ];
 

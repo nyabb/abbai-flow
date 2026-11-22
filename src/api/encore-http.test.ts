@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EncoreMusic, type EncoreSnapshot } from './encore-music';
+import { SpotifyCatalog } from './spotify-catalog';
 import {
   handleEncoreMusicRequest,
   type EncoreHttpHelpers,
@@ -106,6 +107,51 @@ describe('Encore HTTP bridge', () => {
 
     expect(bridge.response.status).toBe(400);
     expect(bridge.response.chunks.join('')).toContain('integer from 0 to 100');
+  });
+
+  it('serves validated Spotify search results from the server-side catalog', async () => {
+    const encore = new EncoreMusic();
+    const track = {
+      uri: 'spotify:track:abc123',
+      title: 'Sample Song',
+      artists: ['Sample Artist'],
+      album: 'Sample Album',
+      artworkUrl: null,
+      durationMs: 180000,
+    };
+    const catalog = {
+      search: vi.fn(async (query: unknown) => (query === 'sample song' ? [track] : [])),
+    } as unknown as SpotifyCatalog;
+    const bridge = helpers();
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/search?q=sample%20song'),
+      bridge.response,
+      encore,
+      bridge,
+      catalog,
+    );
+
+    expect(catalog.search).toHaveBeenCalledWith('sample song');
+    expect(bridge.response.status).toBe(200);
+    expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({ tracks: [track] });
+  });
+
+  it('rejects malformed search requests before querying Spotify', async () => {
+    const encore = new EncoreMusic();
+    const catalog = { search: vi.fn() } as unknown as SpotifyCatalog;
+    const bridge = helpers();
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/search?q=song&q=other'),
+      bridge.response,
+      encore,
+      bridge,
+      catalog,
+    );
+
+    expect(bridge.response.status).toBe(400);
+    expect(catalog.search).not.toHaveBeenCalled();
   });
 
   it('streams state changes until the browser response closes', async () => {

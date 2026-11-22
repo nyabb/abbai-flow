@@ -132,6 +132,7 @@ export function MusicView({
           snapshot={encore.snapshot}
           loading={encore.loading}
           onControl={encore.control}
+          onSearch={encore.search}
         />
       ) : (
         <div className="music-view">
