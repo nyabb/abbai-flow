@@ -1,3 +1,10 @@
+## [2.14.1](https://github.com/nyabb/abbai-flow/compare/v2.14.0...v2.14.1) (2026-11-22)
+
+
+### Bug Fixes
+
+* restore chore action icon and add global language picker ([dc01843](https://github.com/nyabb/abbai-flow/commit/dc01843562f83e53115ec8370c21cee56786e917))
+
 # [2.14.0](https://github.com/nyabb/abbai-flow/compare/v2.13.0...v2.14.0) (2026-11-22)
 
 
