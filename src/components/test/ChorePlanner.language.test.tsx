@@ -72,6 +72,12 @@ describe('ChorePlanner language picker', () => {
     expect(onLocaleChange).toHaveBeenCalledWith('ja');
   });
 
+  it('uses the list-plus icon for the chores create and manage menu', () => {
+    const { container } = renderPlanner('nl', () => {});
+
+    expect(container.querySelector('.planner-add svg')).toHaveClass('lucide-list-plus');
+  });
+
   it('renders its copy in whatever language the app is set to', () => {
     const german = renderPlanner('de', () => {});
     expect(pageTitle(german.container)).toBe('Aufgaben & Routinen');

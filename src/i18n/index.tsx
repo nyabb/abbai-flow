@@ -33,7 +33,9 @@ const DICTIONARIES: Record<LangCode, Partial<Record<TranslationKey, string>>> = 
 
 export interface I18nValue {
   lang: LangCode;
+  locale: string;
   dateLocale: Locale;
+  onLocaleChange?: (locale: string) => void;
   t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }
 
@@ -46,12 +48,17 @@ function interpolate(template: string, vars?: Record<string, string | number>): 
 }
 
 /** Builds a translator + date-fns locale for a `AbbaiSettings.locale` value. */
-export function createI18n(locale: string): I18nValue {
+export function createI18n(
+  locale: string,
+  onLocaleChange?: (locale: string) => void,
+): I18nValue {
   const lang = langForLocale(locale);
   const dictionary = DICTIONARIES[lang];
   return {
     lang,
+    locale,
     dateLocale: dateFnsLocaleFor(locale),
+    onLocaleChange,
     t: (key, vars) => interpolate(dictionary[key] ?? en[key], vars),
   };
 }

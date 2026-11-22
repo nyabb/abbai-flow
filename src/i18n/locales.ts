@@ -38,8 +38,8 @@ export function langForLocale(locale: string): LangCode {
 /**
  * Every locale Abbai Flow can display, in the order they should be offered.
  *
- * This is the single list used by Settings > General **and** by the chores
- * header picker, so both always offer exactly the same languages.
+ * This is the single list used by every page header and the chores header, so
+ * every picker offers exactly the same languages.
  * Labels are endonyms (each language in its own script) on purpose: someone
  * looking for their language should recognise it without understanding the
  * current UI language.

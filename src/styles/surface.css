@@ -185,6 +185,58 @@ body {
   color: inherit;
 }
 
+.language-switcher {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+}
+
+.language-switcher-select {
+  appearance: none;
+  max-width: 154px;
+  min-height: 44px;
+  padding: 0 32px 0 12px;
+  border: 0;
+  border-radius: var(--skin-pill, 999px);
+  color: inherit;
+  background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.language-switcher-select:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
+}
+
+.language-switcher-select:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.language-switcher-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.language-switcher svg {
+  position: absolute;
+  right: 9px;
+  width: 15px;
+  height: 15px;
+  pointer-events: none;
+}
+
+.dashboard-language-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* --- Hero layout ----------------------------------------------------------
    The date block is the point of the band: on a wall display people glance at
    "what day is it" before anything else, so the day numeral is the largest
@@ -258,6 +310,13 @@ body {
    button, no date block, because a phone is held rather than glanced at from
    across a room. The day numeral is the first thing to go. */
 @media (max-width: 600px) {
+  .language-switcher-select {
+    max-width: 132px;
+    min-height: 42px;
+    padding-left: 10px;
+    font-size: 0.76rem;
+  }
+
   .page-header--hero {
     gap: 10px;
     min-height: var(--header-height);

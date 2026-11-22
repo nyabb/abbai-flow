@@ -11,7 +11,7 @@ import {
   Tv,
   CloudSun,
   MoreHorizontal,
-  ListPlus,
+  Plus,
   X,
 } from 'lucide-react';
 import abbaiIcon from '../assets/abbai-flow-icon.svg';
@@ -168,7 +168,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
               title={quickAddLabel}
               aria-label={quickAddLabel}
             >
-              <ListPlus size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
+              <Plus size={ICON_SIZE} strokeWidth={2} />
             </button>
           )}
           {navRight.map((item) => (
@@ -236,7 +236,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
             onClick={onQuickAdd}
             aria-label={quickAddLabel}
           >
-            <ListPlus size={ICON_SIZE + 6} strokeWidth={STROKE_WIDTH} />
+            <Plus size={ICON_SIZE + 6} strokeWidth={2} />
           </button>
         )}
         {mobileRight.map((item) => (

@@ -102,6 +102,14 @@ function renderDisplay(overrides: Partial<Parameters<typeof DisplayView>[0]> = {
 const panel = (name: string) => within(screen.getByRole('region', { name }));
 
 describe('DisplayView', () => {
+  it('keeps the language picker in the display header', () => {
+    renderDisplay();
+
+    expect(
+      screen.getByRole('combobox', { name: NL.t('settings.general.languageLabel') }),
+    ).toBeInTheDocument();
+  });
+
   it("shows today's date and the current time", () => {
     const { container } = renderDisplay();
 

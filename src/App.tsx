@@ -35,6 +35,7 @@ import { isDisplayUrl } from './display-route';
 import { useDisplayMode } from './hooks/useDisplayMode';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
+import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
@@ -68,7 +69,11 @@ export function App() {
     clearLocalStorage,
   } = useSettings();
 
-  const i18n = useMemo(() => createI18n(settings.locale), [settings.locale]);
+  const changeLocale = useCallback((locale: string) => updateSettings({ locale }), [updateSettings]);
+  const i18n = useMemo(
+    () => createI18n(settings.locale, changeLocale),
+    [settings.locale, changeLocale],
+  );
   const { t } = i18n;
 
   const { members, addMember, updateMember, removeMember, syncChoreOpsMembers } = useFamily();
@@ -720,7 +725,8 @@ export function App() {
                 createRequest={choreCreate}
               />
             ) : (
-              <div className="chores-empty" style={{ padding: 48 }}>
+              <div className="chores-empty chores-empty--disabled" style={{ padding: 48 }}>
+                <LanguageSwitcher />
                 {t('app.choresDisabled')}
               </div>
             )
