@@ -1,4 +1,5 @@
 import type { EncoreMusic, EncoreSnapshot } from './encore-music';
+import type { BluetoothSnapshot } from './bluetooth-types';
 
 export interface IntegrationDiagnosticConfig {
   haBaseUrl: string;
@@ -27,6 +28,9 @@ export interface IntegrationDiagnosticsOptions {
     authorized: boolean;
     redirectConfigured: boolean;
   }>;
+  bluetooth?: {
+    subscribe(listener: (snapshot: BluetoothSnapshot) => void): () => void;
+  };
 }
 
 export interface IntegrationDiagnosticsHandle {
@@ -44,8 +48,11 @@ const CHECK_TIMEOUT_MS = 8_000;
 function cleanLabel(value: string | null | undefined): string {
   // Remove control characters so configured labels cannot forge log lines.
   const normalized = value || '';
-  // eslint-disable-next-line no-control-regex
-  return normalized.replace(/[\r\n\u0000-\u001f\u007f]/g, ' ').trim().slice(0, 100);
+  return normalized
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+    .trim()
+    .slice(0, 100);
 }
 
 function describeEntity(states: HaState[], entityId: string): string {
@@ -123,6 +130,58 @@ function logEncoreStateChanges(
             (snapshot.auth.isActive
               ? 'is active for playback.'
               : 'is logged in but not active for playback.'),
+        );
+      }
+    }
+  });
+}
+
+function logBluetoothStateChanges(
+  logger: IntegrationDiagnosticLogger,
+  bluetooth: NonNullable<IntegrationDiagnosticsOptions['bluetooth']>,
+): () => void {
+  let lastConnection: BluetoothSnapshot['connection'] | null = null;
+  let lastAdapter: string | null = null;
+  let lastPowered: boolean | null = null;
+  let lastError: string | null = null;
+  let missingConfigurationLogged = false;
+
+  return bluetooth.subscribe((snapshot) => {
+    if (!snapshot.configured) {
+      if (!missingConfigurationLogged) {
+        logger.info(
+          '[Integration] Bluetooth: not configured; mount the host D-Bus socket and set ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS to enable device management.',
+        );
+        missingConfigurationLogged = true;
+      }
+      return;
+    }
+
+    if (snapshot.connection !== lastConnection) {
+      lastConnection = snapshot.connection;
+      if (snapshot.connection === 'connecting') {
+        logger.info('[Integration] Bluetooth: connecting to the host system D-Bus.');
+      } else if (snapshot.connection === 'connected') {
+        logger.info('[Integration] Bluetooth: host system D-Bus connected.');
+      } else if (snapshot.connection === 'disconnected') {
+        logger.warn('[Integration] Bluetooth: disconnected; reconnect will retry.');
+      }
+    }
+
+    if (snapshot.error && snapshot.error !== lastError) {
+      logger.warn('[Integration] Bluetooth: ' + cleanLabel(snapshot.error) + '.');
+    }
+    lastError = snapshot.error;
+
+    const adapterName = cleanLabel(snapshot.adapter?.name);
+    if (adapterName !== lastAdapter || snapshot.adapter?.powered !== lastPowered) {
+      lastAdapter = adapterName;
+      lastPowered = snapshot.adapter?.powered ?? null;
+      if (snapshot.adapter) {
+        logger[snapshot.adapter.powered ? 'info' : 'warn'](
+          '[Integration] Bluetooth adapter' +
+            (adapterName ? ` "${adapterName}"` : '') +
+            (snapshot.adapter.powered ? ' is powered on.' : ' is powered off.'),
         );
       }
     }
@@ -368,12 +427,21 @@ export function startIntegrationDiagnostics(
     `[Integration] Google Photos: not connected; Google Photos OAuth is not implemented in this build.`,
   );
 
-  const unsubscribe = logEncoreStateChanges(logger, encore);
+  const unsubscribeEncore = logEncoreStateChanges(logger, encore);
+  const unsubscribeBluetooth = options.bluetooth
+    ? logBluetoothStateChanges(logger, options.bluetooth)
+    : () => undefined;
   const ready = Promise.all([
     checkHomeAssistant(config, fetcher, logger),
     checkSpotifyCatalog(config, options.verifySpotifyCatalog, logger),
     checkSpotifyPlaylists(options.verifySpotifyPlaylists, logger),
   ]).then(() => undefined);
 
-  return { ready, stop: unsubscribe };
+  return {
+    ready,
+    stop() {
+      unsubscribeEncore();
+      unsubscribeBluetooth();
+    },
+  };
 }

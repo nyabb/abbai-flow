@@ -77,8 +77,7 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
       type="button"
       key={playlist.id}
       className={
-        'spotify-playlist-item' +
-        (library.selectedPlaylistId === playlist.id ? ' is-selected' : '')
+        'spotify-playlist-item' + (library.selectedPlaylistId === playlist.id ? ' is-selected' : '')
       }
       aria-current={library.selectedPlaylistId === playlist.id ? 'true' : undefined}
       onClick={() => library.selectPlaylist(playlist.id)}
@@ -155,7 +154,11 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
           </p>
         ) : !library.status.configured ? (
           <div className="spotify-library-placeholder">
-            <p>{t('music.spotifyPlaylistConfigure')}</p>
+            <p>
+              {library.status.credentialsConfigured
+                ? t('music.spotifyPlaylistRedirectConfigure')
+                : t('music.spotifyPlaylistConfigure')}
+            </p>
           </div>
         ) : !library.status.authorized ? (
           <div className="spotify-library-connect">
@@ -167,7 +170,10 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
         ) : (
           <>
             {creating && (
-              <form className="spotify-create-playlist" onSubmit={(event) => void createPlaylist(event)}>
+              <form
+                className="spotify-create-playlist"
+                onSubmit={(event) => void createPlaylist(event)}
+              >
                 <label htmlFor="spotify-playlist-name">{t('music.spotifyNewPlaylist')}</label>
                 <input
                   id="spotify-playlist-name"
@@ -272,9 +278,7 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
             ) : library.tracks.length === 0 ? (
               <p className="spotify-library-placeholder">{t('music.spotifyPlaylistEmpty')}</p>
             ) : (
-              <ol className="spotify-playlist-track-list">
-                {library.tracks.map(trackRow)}
-              </ol>
+              <ol className="spotify-playlist-track-list">{library.tracks.map(trackRow)}</ol>
             )}
             {library.tracks.length < library.tracksTotal && (
               <button
@@ -283,13 +287,17 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
                 disabled={library.tracksLoading}
                 onClick={library.loadMoreTracks}
               >
-                {library.tracksLoading ? t('music.spotifyPlaylistLoading') : t('music.spotifyLoadMore')}
+                {library.tracksLoading
+                  ? t('music.spotifyPlaylistLoading')
+                  : t('music.spotifyLoadMore')}
               </button>
             )}
           </>
         ) : (
           <div className="spotify-playlist-empty-state">
-            <span><ListMusic size={30} /></span>
+            <span>
+              <ListMusic size={30} />
+            </span>
             <h3>{t('music.spotifyNoPlaylistSelected')}</h3>
             <p>{t('music.spotifyPlaylistEmptyHelp')}</p>
           </div>

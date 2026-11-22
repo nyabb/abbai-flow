@@ -3,16 +3,33 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { I18nContext, createI18n } from '../../i18n';
 import type { EncoreSnapshot } from '../../api/encore-music';
+import type { BluetoothSnapshot } from '../../api/bluetooth-types';
 import type { UseSpotifyPlaylistsResult } from '../../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from '../SpotifyMusicPanel';
 
 const EN = createI18n('en-US');
+const BLUETOOTH: BluetoothSnapshot = {
+  configured: false,
+  connection: 'disabled',
+  adapter: null,
+  scanning: false,
+  devices: [],
+  challenge: null,
+  notice: null,
+  error: null,
+  updatedAt: 1,
+};
 
 function playlistLibrary(
   overrides: Partial<UseSpotifyPlaylistsResult> = {},
 ): UseSpotifyPlaylistsResult {
   return {
-    status: { configured: false, authorized: false, redirectConfigured: false },
+    status: {
+      configured: false,
+      credentialsConfigured: false,
+      authorized: false,
+      redirectConfigured: false,
+    },
     playlists: [],
     playlistsTotal: 0,
     selectedPlaylist: null,
@@ -59,6 +76,7 @@ function renderPanel(
   state: EncoreSnapshot,
   loading = false,
   onSearch = vi.fn(async () => ({ tracks: [] })),
+  library = playlistLibrary(),
 ) {
   return render(
     <I18nContext.Provider value={EN}>
@@ -67,7 +85,12 @@ function renderPanel(
         loading={loading}
         onControl={vi.fn(async () => ({ ok: true }))}
         onSearch={onSearch}
-        library={playlistLibrary()}
+        library={library}
+        bluetooth={{
+          snapshot: BLUETOOTH,
+          loading: false,
+          control: vi.fn(async () => ({ ok: true })),
+        }}
       />
     </I18nContext.Provider>,
   );
@@ -76,17 +99,39 @@ function renderPanel(
 describe('SpotifyMusicPanel connection states', () => {
   it('shows a connecting state while the initial server request is pending', () => {
     renderPanel(snapshot({ configured: false }), true);
-    expect(screen.getByRole('status')).toHaveTextContent('Connecting...');
+    expect(document.querySelector('.spotify-status')).toHaveTextContent('Connecting...');
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
   });
 
   it('explains a disconnected Encore connection and disables playback controls', () => {
     renderPanel(snapshot({ connection: 'disconnected', error: 'Encore connection lost' }));
-    expect(screen.getByRole('status')).toHaveTextContent('Abbai Flow unreachable');
+    expect(document.querySelector('.spotify-status')).toHaveTextContent('Abbai Flow unreachable');
     expect(screen.getByRole('alert')).toHaveTextContent(
       'Encore is unavailable. Abbai Flow will reconnect automatically.',
     );
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
+  });
+
+  it('asks only for the redirect URL when Spotify app credentials are already configured', () => {
+    renderPanel(
+      snapshot(),
+      false,
+      undefined,
+      playlistLibrary({
+        status: {
+          configured: false,
+          credentialsConfigured: true,
+          authorized: false,
+          redirectConfigured: false,
+        },
+      }),
+    );
+    expect(
+      screen.getByText(/Spotify app credentials are configured\. Set SPOTIFY_REDIRECT_URI/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET/),
+    ).not.toBeInTheDocument();
   });
 
   it('searches the catalog and plays a result through Encore', async () => {
@@ -116,6 +161,11 @@ describe('SpotifyMusicPanel connection states', () => {
           onSearch={onSearch}
           onControl={onControl}
           library={playlistLibrary()}
+          bluetooth={{
+            snapshot: BLUETOOTH,
+            loading: false,
+            control: vi.fn(async () => ({ ok: true })),
+          }}
         />
       </I18nContext.Provider>,
     );
@@ -180,7 +230,12 @@ describe('SpotifyMusicPanel connection states', () => {
     };
     const addTrack = vi.fn(async () => ({ ok: true }));
     const library = playlistLibrary({
-      status: { configured: true, authorized: true, redirectConfigured: true },
+      status: {
+        configured: true,
+        credentialsConfigured: true,
+        authorized: true,
+        redirectConfigured: true,
+      },
       playlists: [playlist],
       playlistsTotal: 1,
       selectedPlaylist: playlist,
@@ -210,6 +265,11 @@ describe('SpotifyMusicPanel connection states', () => {
           onControl={vi.fn(async () => ({ ok: true }))}
           onSearch={onSearch}
           library={library}
+          bluetooth={{
+            snapshot: BLUETOOTH,
+            loading: false,
+            control: vi.fn(async () => ({ ok: true })),
+          }}
         />
       </I18nContext.Provider>,
     );

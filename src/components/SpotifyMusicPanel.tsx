@@ -15,8 +15,10 @@ import {
   VolumeX,
 } from 'lucide-react';
 import type { EncorePlayback, EncoreRepeat, EncoreSnapshot } from '../api/encore-music';
+import type { BluetoothControl, BluetoothSnapshot } from '../api/bluetooth-types';
 import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 import { SpotifyPlaylistLibrary } from './SpotifyPlaylistLibrary';
+import { BluetoothDevicesPanel } from './BluetoothDevicesPanel';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
 
@@ -30,6 +32,11 @@ interface SpotifyMusicPanelProps {
     error?: string;
   }>;
   library: UseSpotifyPlaylistsResult;
+  bluetooth: {
+    snapshot: BluetoothSnapshot;
+    loading: boolean;
+    control: (control: BluetoothControl) => Promise<{ ok: boolean; error?: string }>;
+  };
 }
 
 function formatTime(milliseconds: number | null | undefined): string {
@@ -53,6 +60,7 @@ export function SpotifyMusicPanel({
   onControl,
   onSearch,
   library,
+  bluetooth,
 }: SpotifyMusicPanelProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -308,7 +316,11 @@ export function SpotifyMusicPanel({
                   </button>
                 </span>
                 {addingTrackUri === track.uri && (
-                  <div className="spotify-search-add-menu" role="group" aria-label={t('music.spotifyAddToPlaylist')}>
+                  <div
+                    className="spotify-search-add-menu"
+                    role="group"
+                    aria-label={t('music.spotifyAddToPlaylist')}
+                  >
                     {library.playlists.length === 0 ? (
                       <p>{t('music.spotifyNoPlaylists')}</p>
                     ) : (
@@ -534,6 +546,12 @@ export function SpotifyMusicPanel({
           )}
         </aside>
       </div>
+
+      <BluetoothDevicesPanel
+        snapshot={bluetooth.snapshot}
+        loading={bluetooth.loading}
+        onControl={bluetooth.control}
+      />
     </section>
   );
 }

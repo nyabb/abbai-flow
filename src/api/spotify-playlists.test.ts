@@ -67,7 +67,7 @@ describe('Spotify playlist library', () => {
     expect(authorizationUrl.searchParams.get('state')).toBe('state-nonce');
   });
 
-  it('rejects missing credentials and redirect URIs that do not use the callback route', async () => {
+  it('reports available app credentials separately from an invalid redirect URI', async () => {
     const missing = library(vi.fn<typeof fetch>(), tokenStore(null), {
       redirectUri: 'http://abbai.example/callback',
     });
@@ -77,6 +77,7 @@ describe('Spotify playlist library', () => {
     });
     await expect(missing.status()).resolves.toEqual({
       configured: false,
+      credentialsConfigured: true,
       authorized: false,
       redirectConfigured: false,
     });
@@ -84,22 +85,24 @@ describe('Spotify playlist library', () => {
 
   it('validates state, exchanges the code server-side, and stores refresh credentials privately', async () => {
     const storage = tokenStore(null);
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        jsonResponse({
-          access_token: USER_TOKEN,
-          refresh_token: REFRESH_TOKEN,
-          expires_in: 3600,
-        }),
-      );
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse({
+        access_token: USER_TOKEN,
+        refresh_token: REFRESH_TOKEN,
+        expires_in: 3600,
+      }),
+    );
     const service = library(fetcher, storage);
     await service.beginAuthorization();
 
-    await expect(service.completeAuthorization('auth-code', 'incorrect-state')).rejects.toMatchObject({
+    await expect(
+      service.completeAuthorization('auth-code', 'incorrect-state'),
+    ).rejects.toMatchObject({
       code: 'authorization_failed',
     });
-    await expect(service.completeAuthorization('auth-code', 'state-nonce')).resolves.toBeUndefined();
+    await expect(
+      service.completeAuthorization('auth-code', 'state-nonce'),
+    ).resolves.toBeUndefined();
 
     expect(fetcher).toHaveBeenCalledOnce();
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://accounts.spotify.com/api/token');
@@ -151,8 +154,12 @@ describe('Spotify playlist library', () => {
       total: 1,
       offset: 0,
     });
-    expect(fetcher.mock.calls[0]?.[0]).toBe('https://api.spotify.com/v1/me/playlists?limit=50&offset=0');
-    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({ Authorization: `Bearer ${USER_TOKEN}` });
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      'https://api.spotify.com/v1/me/playlists?limit=50&offset=0',
+    );
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({
+      Authorization: `Bearer ${USER_TOKEN}`,
+    });
     expect(JSON.stringify(fetcher.mock.calls[0])).not.toContain(REFRESH_TOKEN);
   });
 
@@ -178,12 +185,15 @@ describe('Spotify playlist library', () => {
         }),
       )
       .mockResolvedValueOnce(
-        jsonResponse({
-          id: OTHER_PLAYLIST_ID,
-          name: 'New private list',
-          public: false,
-          items: { total: 0 },
-        }, 201),
+        jsonResponse(
+          {
+            id: OTHER_PLAYLIST_ID,
+            name: 'New private list',
+            public: false,
+            items: { total: 0 },
+          },
+          201,
+        ),
       )
       .mockResolvedValueOnce(jsonResponse({ snapshot_id: 'new-snapshot' }, 201));
     const service = library(fetcher);
@@ -214,7 +224,9 @@ describe('Spotify playlist library', () => {
       name: 'New private list',
       public: false,
     });
-    expect(fetcher.mock.calls[2]?.[0]).toBe(`https://api.spotify.com/v1/playlists/${PLAYLIST_ID}/items`);
+    expect(fetcher.mock.calls[2]?.[0]).toBe(
+      `https://api.spotify.com/v1/playlists/${PLAYLIST_ID}/items`,
+    );
     expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({
       uris: ['spotify:track:track123'],
     });
@@ -225,7 +237,11 @@ describe('Spotify playlist library', () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
-        jsonResponse({ access_token: 'fresh-access-token', refresh_token: 'rotated-refresh-token', expires_in: 3600 }),
+        jsonResponse({
+          access_token: 'fresh-access-token',
+          refresh_token: 'rotated-refresh-token',
+          expires_in: 3600,
+        }),
       )
       .mockResolvedValueOnce(jsonResponse({ total: 0, items: [] }));
     const service = library(fetcher, storage);
@@ -233,7 +249,9 @@ describe('Spotify playlist library', () => {
     expect(result).toMatchObject({ items: [], total: 0 });
 
     expect(fetcher.mock.calls[0]?.[0]).toBe('https://accounts.spotify.com/api/token');
-    expect(fetcher.mock.calls[1]?.[1]?.headers).toMatchObject({ Authorization: 'Bearer fresh-access-token' });
+    expect(fetcher.mock.calls[1]?.[1]?.headers).toMatchObject({
+      Authorization: 'Bearer fresh-access-token',
+    });
     expect(storage.store.save).toHaveBeenCalledWith(
       expect.objectContaining({ refreshToken: 'rotated-refresh-token' }),
     );
@@ -244,9 +262,13 @@ describe('Spotify playlist library', () => {
     const fetcher = vi.fn<typeof fetch>();
     const service = library(fetcher);
     await expect(service.listPlaylists(-1)).rejects.toMatchObject({ code: 'invalid_request' });
-    await expect(service.getPlaylistItems('../private')).rejects.toMatchObject({ code: 'invalid_request' });
+    await expect(service.getPlaylistItems('../private')).rejects.toMatchObject({
+      code: 'invalid_request',
+    });
     await expect(service.createPlaylist('  ')).rejects.toMatchObject({ code: 'invalid_request' });
-    await expect(service.addTrack(PLAYLIST_ID, 'https://open.spotify.com/track/track123')).rejects.toMatchObject({
+    await expect(
+      service.addTrack(PLAYLIST_ID, 'https://open.spotify.com/track/track123'),
+    ).rejects.toMatchObject({
       code: 'invalid_request',
     });
     expect(fetcher).not.toHaveBeenCalled();
@@ -254,7 +276,9 @@ describe('Spotify playlist library', () => {
 
   it('clears an expired/revoked refresh token and asks the user to reconnect', async () => {
     const storage = tokenStore(storedToken(0));
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse({ error: 'invalid_grant' }, 400));
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ error: 'invalid_grant' }, 400));
     const service = library(fetcher, storage);
 
     await expect(service.listPlaylists()).rejects.toBeInstanceOf(SpotifyPlaylistError);

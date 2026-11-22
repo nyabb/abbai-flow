@@ -141,7 +141,12 @@ describe('Encore HTTP bridge', () => {
   it('exposes safe playlist status and library data through the application API', async () => {
     const encore = new EncoreMusic();
     const playlistService = {
-      status: vi.fn(async () => ({ configured: true, authorized: true, redirectConfigured: true })),
+      status: vi.fn(async () => ({
+        configured: true,
+        credentialsConfigured: true,
+        authorized: true,
+        redirectConfigured: true,
+      })),
       listPlaylists: vi.fn(async () => ({ items: [], total: 0, offset: 0 })),
     } as unknown as SpotifyPlaylistLibrary;
     const bridge = helpers();
@@ -157,10 +162,13 @@ describe('Encore HTTP bridge', () => {
     expect(bridge.response.status).toBe(200);
     expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({
       configured: true,
+      credentialsConfigured: true,
       authorized: true,
       redirectConfigured: true,
     });
-    expect(bridge.response.chunks.join('')).not.toMatch(/access_token|refresh_token|client_secret/i);
+    expect(bridge.response.chunks.join('')).not.toMatch(
+      /access_token|refresh_token|client_secret/i,
+    );
 
     const listBridge = helpers();
     await handleEncoreMusicRequest(
@@ -173,7 +181,11 @@ describe('Encore HTTP bridge', () => {
     );
     expect(playlistService.listPlaylists).toHaveBeenCalledWith('0');
     expect(listBridge.response.status).toBe(200);
-    expect(JSON.parse(listBridge.response.chunks.join(''))).toEqual({ items: [], total: 0, offset: 0 });
+    expect(JSON.parse(listBridge.response.chunks.join(''))).toEqual({
+      items: [],
+      total: 0,
+      offset: 0,
+    });
   });
 
   it('rejects unexpected playlist query parameters before calling Spotify', async () => {

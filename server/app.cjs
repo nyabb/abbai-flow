@@ -26,6 +26,8 @@ const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
 const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
+const { BluetoothManager } = require('./build/bluetooth-manager-runtime.js');
+const { handleBluetoothRequest } = require('./build/bluetooth-http.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1379,6 +1381,9 @@ function createApp(options) {
       token: options.encoreToken || '',
       url: options.encoreUrl || DEFAULT_ENCORE_URL,
     });
+  const bluetooth =
+    options.bluetooth ||
+    new BluetoothManager({ dbusAddress: options.bluetoothDbusAddress || '' });
   const spotifyCatalog =
     options.spotifyCatalog ||
     new SpotifyCatalog({
@@ -1429,19 +1434,31 @@ function createApp(options) {
   const verifySpotifyPlaylists = () => spotifyPlaylists.status();
 
   const server = http.createServer((req, res) => {
-    void route(req, res, config, encore, spotifyCatalog, spotifyPlaylists);
+    void route(req, res, config, encore, spotifyCatalog, spotifyPlaylists, bluetooth);
   });
 
   server.on('upgrade', (req, socket, head) => {
     handleUpgrade(req, socket, head, config);
   });
-  server.on('close', () => encore.stop());
+  server.on('close', () => {
+    encore.stop();
+    bluetooth.stop();
+  });
   encore.start();
+  bluetooth.start();
 
-  return { server, config, encore, verifySpotifyCatalog, spotifyPlaylists, verifySpotifyPlaylists };
+  return {
+    server,
+    config,
+    encore,
+    bluetooth,
+    verifySpotifyCatalog,
+    spotifyPlaylists,
+    verifySpotifyPlaylists,
+  };
 }
 
-async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists) {
+async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists, bluetooth) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
   const actionPath =
@@ -1465,6 +1482,7 @@ async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists)
     pathname.startsWith('/abbai-flow/data/') ||
     pathname.startsWith('/abbai-flow/music/control') ||
     pathname.startsWith('/abbai-flow/music/library/') ||
+    pathname.startsWith('/abbai-flow/bluetooth/control') ||
     url.startsWith('/api/');
 
   if (guarded && isMutation && !isAllowedOrigin(req, config.allowedOrigins)) {
@@ -1473,6 +1491,11 @@ async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists)
   }
 
   try {
+    if (pathname.startsWith('/abbai-flow/bluetooth/')) {
+      const handled = await handleBluetoothRequest(req, res, bluetooth, { sendJson, readJsonObject });
+      if (!handled) sendJson(res, 404, { error: 'Bluetooth route not found' });
+      return;
+    }
     if (pathname.startsWith('/abbai-flow/music/')) {
       if (pathname === '/abbai-flow/music/oauth/callback') {
         if (req.method !== 'GET') {
@@ -1638,6 +1661,7 @@ function configFromEnv(env = process.env) {
     haWsUrl: env.HA_WS_URL || env.HA_WS_URL_OVERRIDE || undefined,
     encoreToken: env.ENCORE_TOKEN || '',
     encoreUrl: env.ENCORE_URL || DEFAULT_ENCORE_URL,
+    bluetoothDbusAddress: env.ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS || '',
     spotifyClientId: env.SPOTIFY_CLIENT_ID || '',
     spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || '',
     spotifyMarket: env.SPOTIFY_MARKET || 'NL',

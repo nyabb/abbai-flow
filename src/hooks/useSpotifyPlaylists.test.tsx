@@ -5,7 +5,10 @@ import { useSpotifyPlaylists } from './useSpotifyPlaylists';
 const PLAYLIST_ID = '4q3zB8nVYk9m2H6wX1cR0P';
 
 function jsonResponse(value: unknown, status = 200): Response {
-  return new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } });
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
 afterEach(() => {
@@ -18,7 +21,14 @@ describe('useSpotifyPlaylists', () => {
     window.localStorage.setItem('abbai-flow.spotify.selected-playlist', PLAYLIST_ID);
     const fetcher = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse({ configured: true, authorized: true, redirectConfigured: true }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          configured: true,
+          credentialsConfigured: true,
+          authorized: true,
+          redirectConfigured: true,
+        }),
+      )
       .mockResolvedValueOnce(
         jsonResponse({
           total: 1,
@@ -84,7 +94,12 @@ describe('useSpotifyPlaylists', () => {
     const fetcher = vi.fn<typeof fetch>(async (input, init) => {
       const url = String(input);
       if (url === '/abbai-flow/music/library/status') {
-        return jsonResponse({ configured: true, authorized: true, redirectConfigured: true });
+        return jsonResponse({
+          configured: true,
+          credentialsConfigured: true,
+          authorized: true,
+          redirectConfigured: true,
+        });
       }
       if (url === '/abbai-flow/music/library/playlists?offset=0') {
         playlistListRequests += 1;
@@ -94,7 +109,10 @@ describe('useSpotifyPlaylists', () => {
       if (url === '/abbai-flow/music/library/playlists' && init?.method === 'POST') {
         return jsonResponse({ playlist }, 201);
       }
-      if (url === `/abbai-flow/music/library/playlists/${PLAYLIST_ID}/items` && init?.method === 'POST') {
+      if (
+        url === `/abbai-flow/music/library/playlists/${PLAYLIST_ID}/items` &&
+        init?.method === 'POST'
+      ) {
         return jsonResponse({ accepted: true }, 202);
       }
       if (url === `/abbai-flow/music/library/playlists/${PLAYLIST_ID}/items?offset=0`) {
@@ -134,15 +152,23 @@ describe('useSpotifyPlaylists', () => {
     expect(result.current.playlists).toHaveLength(1);
     expect(result.current.tracks[0]?.title).toBe('Song');
     const createCall = fetcher.mock.calls.find(
-      ([url, init]) => String(url) === '/abbai-flow/music/library/playlists' && init?.method === 'POST',
+      ([url, init]) =>
+        String(url) === '/abbai-flow/music/library/playlists' && init?.method === 'POST',
     );
     expect(JSON.parse(String(createCall?.[1]?.body))).toEqual({ name: 'Dinner music' });
   });
 
   it('does not request playlists before the Spotify account is authorized', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(
-      jsonResponse({ configured: true, authorized: false, redirectConfigured: true }),
-    );
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          configured: true,
+          credentialsConfigured: true,
+          authorized: false,
+          redirectConfigured: true,
+        }),
+      );
     vi.stubGlobal('fetch', fetcher);
 
     const { result } = renderHook(() => useSpotifyPlaylists());
