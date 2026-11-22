@@ -48,6 +48,7 @@ describe('Spotify catalog search', () => {
         artists: ['Sample Artist'],
         album: 'Sample Album',
         artworkUrl: 'https://img.test/cover.jpg',
+        spotifyUrl: 'https://open.spotify.com/track/abc123',
         durationMs: 188000,
       },
     ]);

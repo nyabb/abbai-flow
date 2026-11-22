@@ -7,6 +7,7 @@ export interface IntegrationDiagnosticConfig {
   spotifyClientId: string;
   spotifyClientSecret: string;
   spotifyMarket: string;
+  spotifyRedirectUri?: string;
   weatherEntity?: string;
   photoDirectory?: string;
   customHaCaConfigured?: boolean;
@@ -21,6 +22,11 @@ export interface IntegrationDiagnosticsOptions {
   fetcher?: typeof fetch;
   logger?: IntegrationDiagnosticLogger;
   verifySpotifyCatalog?: () => Promise<{ ok: boolean; code?: string }>;
+  verifySpotifyPlaylists?: () => Promise<{
+    configured: boolean;
+    authorized: boolean;
+    redirectConfigured: boolean;
+  }>;
 }
 
 export interface IntegrationDiagnosticsHandle {
@@ -316,6 +322,32 @@ async function checkSpotifyCatalog(
   }
 }
 
+async function checkSpotifyPlaylists(
+  verifier: IntegrationDiagnosticsOptions['verifySpotifyPlaylists'],
+  logger: IntegrationDiagnosticLogger,
+): Promise<void> {
+  if (!verifier) {
+    logger.warn('[Integration] Spotify playlists: status check is unavailable.');
+    return;
+  }
+  try {
+    const status = await verifier();
+    if (!status.configured) {
+      logger.warn(
+        '[Integration] Spotify playlists: not configured; set Spotify client credentials and a valid SPOTIFY_REDIRECT_URI.',
+      );
+    } else if (status.authorized) {
+      logger.info('[Integration] Spotify playlists: Spotify account authorization is available.');
+    } else {
+      logger.info(
+        '[Integration] Spotify playlists: configured; connect a Spotify account from the Music page to manage playlists.',
+      );
+    }
+  } catch {
+    logger.warn('[Integration] Spotify playlists: status check failed.');
+  }
+}
+
 /** Start non-blocking, secret-safe startup checks and Encore status logging. */
 export function startIntegrationDiagnostics(
   config: IntegrationDiagnosticConfig,
@@ -340,6 +372,7 @@ export function startIntegrationDiagnostics(
   const ready = Promise.all([
     checkHomeAssistant(config, fetcher, logger),
     checkSpotifyCatalog(config, options.verifySpotifyCatalog, logger),
+    checkSpotifyPlaylists(options.verifySpotifyPlaylists, logger),
   ]).then(() => undefined);
 
   return { ready, stop: unsubscribe };

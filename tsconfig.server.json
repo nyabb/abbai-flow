@@ -1,5 +1,5 @@
 {
-  "// why": "The server runtime image has no package.json, so the existing CommonJS server remains the runtime host. This config compiles the shared planner, Encore, Spotify catalog and integration diagnostics TypeScript modules into server/build for server/app.cjs to load.",
+  "// why": "The server runtime image has no package.json, so the existing CommonJS server remains the runtime host. This config compiles the shared planner, Encore, Spotify catalog, playlist OAuth and integration diagnostics TypeScript modules into server/build for server/app.cjs to load.",
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM"],
@@ -24,6 +24,7 @@
     "src/api/encore-http.ts",
     "src/api/encore-music.ts",
     "src/api/spotify-catalog.ts",
+    "src/api/spotify-playlists.ts",
     "src/api/integration-diagnostics.ts",
     "src/api/ws.d.ts"
   ]

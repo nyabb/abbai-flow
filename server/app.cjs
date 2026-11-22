@@ -25,6 +25,7 @@ const WebSocket = require('ws');
 const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
 const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
+const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1385,10 +1386,50 @@ function createApp(options) {
       clientSecret: options.spotifyClientSecret || '',
       market: options.spotifyMarket || 'NL',
     });
+  const spotifyTokenPath = path.join(config.dataDir, 'spotify-playlists-token.json');
+  const spotifyTokenStore = options.spotifyTokenStore || {
+    async load() {
+      try {
+        return JSON.parse(await fsp.readFile(spotifyTokenPath, 'utf8'));
+      } catch (error) {
+        if (error && error.code === 'ENOENT') return null;
+        throw error;
+      }
+    },
+    async save(token) {
+      const temporaryPath = `${spotifyTokenPath}.${randomBytes(8).toString('hex')}.tmp`;
+      try {
+        await fsp.mkdir(path.dirname(spotifyTokenPath), { recursive: true, mode: 0o700 });
+        await fsp.writeFile(temporaryPath, JSON.stringify(token), { encoding: 'utf8', mode: 0o600 });
+        await fsp.chmod(temporaryPath, 0o600);
+        await fsp.rename(temporaryPath, spotifyTokenPath);
+        await fsp.chmod(spotifyTokenPath, 0o600);
+      } catch {
+        await fsp.unlink(temporaryPath).catch(() => undefined);
+        throw new Error('Spotify token storage failed');
+      }
+    },
+    async clear() {
+      await fsp.unlink(spotifyTokenPath).catch((error) => {
+        if (!error || error.code !== 'ENOENT') throw error;
+      });
+    },
+  };
+  const spotifyPlaylists =
+    options.spotifyPlaylists ||
+    new SpotifyPlaylistLibrary({
+      clientId: options.spotifyClientId || '',
+      clientSecret: options.spotifyClientSecret || '',
+      redirectUri: options.spotifyRedirectUri || '',
+      market: options.spotifyMarket || 'NL',
+      tokenStore: spotifyTokenStore,
+      createState: options.createSpotifyState,
+    });
   const verifySpotifyCatalog = () => spotifyCatalog.verifyCredentials();
+  const verifySpotifyPlaylists = () => spotifyPlaylists.status();
 
   const server = http.createServer((req, res) => {
-    void route(req, res, config, encore, spotifyCatalog);
+    void route(req, res, config, encore, spotifyCatalog, spotifyPlaylists);
   });
 
   server.on('upgrade', (req, socket, head) => {
@@ -1397,10 +1438,10 @@ function createApp(options) {
   server.on('close', () => encore.stop());
   encore.start();
 
-  return { server, config, encore, verifySpotifyCatalog };
+  return { server, config, encore, verifySpotifyCatalog, spotifyPlaylists, verifySpotifyPlaylists };
 }
 
-async function route(req, res, config, encore, spotifyCatalog) {
+async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
   const actionPath =
@@ -1423,6 +1464,7 @@ async function route(req, res, config, encore, spotifyCatalog) {
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname.startsWith('/abbai-flow/music/control') ||
+    pathname.startsWith('/abbai-flow/music/library/') ||
     url.startsWith('/api/');
 
   if (guarded && isMutation && !isAllowedOrigin(req, config.allowedOrigins)) {
@@ -1432,12 +1474,41 @@ async function route(req, res, config, encore, spotifyCatalog) {
 
   try {
     if (pathname.startsWith('/abbai-flow/music/')) {
+      if (pathname === '/abbai-flow/music/oauth/callback') {
+        if (req.method !== 'GET') {
+          sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
+          return;
+        }
+        const parameters = new URL(url, 'http://abbai-flow.local').searchParams;
+        let outcome = 'error';
+        try {
+          await spotifyPlaylists.completeAuthorization(
+            parameters.get('code'),
+            parameters.get('state'),
+            parameters.get('error'),
+          );
+          outcome = 'connected';
+        } catch {
+          outcome = 'failed';
+        }
+        const callbackSuffix = '/abbai-flow/music/oauth/callback';
+        const basePath = pathname.endsWith(callbackSuffix)
+          ? pathname.slice(0, -callbackSuffix.length)
+          : '';
+        res.writeHead(302, {
+          Location: `${basePath}/?view=music&spotify=${outcome}`,
+          'Cache-Control': 'no-store',
+        });
+        res.end();
+        return;
+      }
       await handleEncoreMusicRequest(
         req,
         res,
         encore,
         { sendJson, readJsonObject },
         spotifyCatalog,
+        spotifyPlaylists,
       );
       return;
     }
@@ -1570,6 +1641,7 @@ function configFromEnv(env = process.env) {
     spotifyClientId: env.SPOTIFY_CLIENT_ID || '',
     spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || '',
     spotifyMarket: env.SPOTIFY_MARKET || 'NL',
+    spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI || '',
     weatherEntity: env.WEATHER_ENTITY || '',
     photoDirectory: env.PHOTO_DIRECTORY || '',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')

@@ -123,6 +123,7 @@ export function App() {
     // owns the path segment). This is read once on boot and never pushed back
     // into history, so the ingress base path stays intact.
     if (isDisplayUrl(window.location)) return 'display';
+    if (new URLSearchParams(window.location.search).get('view') === 'music') return 'music';
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';

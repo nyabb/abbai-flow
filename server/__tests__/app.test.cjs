@@ -71,6 +71,7 @@ async function startBeacon(overrides = {}) {
     haWsUrl: overrides.haWsUrl,
     allowedOrigins: overrides.allowedOrigins,
     ca: overrides.ca,
+    spotifyPlaylists: overrides.spotifyPlaylists,
   });
   const port = await listen(server);
   return { server, port, dataDir: overrides.dataDir, close: () => close(server) };
@@ -667,9 +668,43 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
 /* ------------------------------------------------------------------ */
 
 test('configFromEnv reads the documented HA_URL and HA_TOKEN', () => {
-  const config = configFromEnv({ HA_URL: 'https://ha.example.com', HA_TOKEN: 'tok' });
+  const config = configFromEnv({
+    HA_URL: 'https://ha.example.com',
+    HA_TOKEN: 'tok',
+    SPOTIFY_REDIRECT_URI: 'https://abbai.example/abbai-flow/music/oauth/callback',
+  });
   assert.equal(config.haBaseUrl, 'https://ha.example.com');
   assert.equal(config.haToken, 'tok');
+  assert.equal(config.spotifyRedirectUri, 'https://abbai.example/abbai-flow/music/oauth/callback');
+});
+
+test('Spotify playlist API is same-origin guarded and its OAuth callback returns to Music', async (t) => {
+  const calls = [];
+  const spotifyPlaylists = {
+    status: async () => ({ configured: true, authorized: false, redirectConfigured: true }),
+    beginAuthorization: async () => 'https://accounts.spotify.com/authorize',
+    completeAuthorization: async (...args) => calls.push(args),
+  };
+  const app = await startBeacon({ spotifyPlaylists });
+  t.after(() => app.close());
+
+  const status = await request(app.port, { path: '/abbai-flow/music/library/status' });
+  assert.equal(status.status, 200);
+  assert.deepEqual(status.json, { configured: true, authorized: false, redirectConfigured: true });
+
+  const denied = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/music/library/connect',
+    headers: { Origin: 'https://evil.example' },
+  });
+  assert.equal(denied.status, 403);
+
+  const callback = await request(app.port, {
+    path: '/abbai-flow/music/oauth/callback?code=one-time-code&state=verified-state',
+  });
+  assert.equal(callback.status, 302);
+  assert.equal(callback.headers.location, '/?view=music&spotify=connected');
+  assert.deepEqual(calls, [['one-time-code', 'verified-state', null]]);
 });
 
 test('configFromEnv keeps the add-on contract working', () => {
