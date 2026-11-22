@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && tsc -p tsconfig.scripts.json && npm run build:server && vite build",
-    "build:server": "tsc -p tsconfig.server.json && esbuild server/build/bluetooth-manager.js --bundle --platform=node --format=cjs --external:usocket --external:x11 --outfile=server/build/bluetooth-manager-runtime.js",
+    "build:server": "tsc -p tsconfig.server.json && esbuild server/build/bluetooth-runtime.js --bundle --platform=node --format=cjs --external:usocket --external:x11 --outfile=server/build/bluetooth-runtime-bundle.js",
     "typecheck": "tsc && tsc -p tsconfig.scripts.json",
     "changelog:verify": "node scripts/verify-changelog.mjs",
     "preview": "vite preview",

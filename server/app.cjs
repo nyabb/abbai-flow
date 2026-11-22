@@ -26,8 +26,7 @@ const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
 const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
-const { BluetoothManager } = require('./build/bluetooth-manager-runtime.js');
-const { handleBluetoothRequest } = require('./build/bluetooth-http.js');
+const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
