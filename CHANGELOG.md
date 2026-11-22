@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/nyabb/abbai-flow/compare/v2.10.0...v2.11.0) (2026-11-22)
+
+
+### Features
+
+* add Spotify music integration ([4bfbb29](https://github.com/nyabb/abbai-flow/commit/4bfbb29692345ed289980b73abee9db0ed2e8f4a))
+
 # [2.10.0](https://github.com/nyabb/abbai-flow/compare/v2.9.0...v2.10.0) (2026-11-22)
 
 
