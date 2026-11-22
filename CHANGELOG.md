@@ -1,3 +1,11 @@
+# [2.10.0](https://github.com/nyabb/abbai-flow/compare/v2.9.0...v2.10.0) (2026-11-22)
+
+
+### Features
+
+* add global debug console and planner inventory ([b6d3e2c](https://github.com/nyabb/abbai-flow/commit/b6d3e2c8f156ac20237512077a8e5e6d9bd2cde9))
+* allow reward reassignment and update filter control ([ecd4f7f](https://github.com/nyabb/abbai-flow/commit/ecd4f7fde86e05ca43e1c6fe1d00dae2e43b7f43))
+
 # [2.9.0](https://github.com/nyabb/abbai-flow/compare/v2.8.1...v2.9.0) (2026-11-22)
 
 
