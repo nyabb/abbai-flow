@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { DBusError } from 'dbus-next';
 import {
   BluetoothManager,
   validateBluetoothControl,
@@ -27,6 +28,7 @@ const DEVICE: BluetoothDeviceInfo = {
 const managers: BluetoothManager[] = [];
 afterEach(() => {
   managers.splice(0).forEach((manager) => manager.stop());
+  vi.restoreAllMocks();
 });
 
 function createManager(
@@ -166,6 +168,28 @@ describe('BluetoothManager', () => {
     await vi.waitFor(() => expect(test.manager.getSnapshot().connection).toBe('connected'));
     expect(connections).toBe(2);
     expect(test.manager.getSnapshot().error).toBeNull();
+  });
+
+  it('reports an unavailable speaker audio profile and logs a redacted BlueZ error', async () => {
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const test = createManager((platform) => {
+      platform.connectDevice = vi
+        .fn()
+        .mockRejectedValue(
+          new DBusError('org.bluez.Error.Failed', 'br-connection-profile-unavailable'),
+        );
+    });
+    test.manager.start();
+    await vi.waitFor(() => expect(test.manager.getSnapshot().connection).toBe('connected'));
+
+    await expect(test.manager.control({ action: 'connect', address: ADDRESS })).rejects.toThrow(
+      'The speaker Bluetooth audio profile is unavailable on the Raspberry Pi',
+    );
+
+    expect(warning).toHaveBeenCalledWith(
+      '[Integration] Bluetooth connect failed: org.bluez.Error.Failed: br-connection-profile-unavailable.',
+    );
+    expect(warning.mock.calls.flat().join(' ')).not.toContain(ADDRESS);
   });
 
   it('rejects malformed device addresses and extra control fields', () => {
