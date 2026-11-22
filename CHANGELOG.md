@@ -1,3 +1,10 @@
+## [2.14.2](https://github.com/nyabb/abbai-flow/compare/v2.14.1...v2.14.2) (2026-11-22)
+
+
+### Bug Fixes
+
+* bundle bluetooth manager with API handler ([d073796](https://github.com/nyabb/abbai-flow/commit/d07379620029b235ee17bb9dd22e0afd96318dbb))
+
 ## [2.14.1](https://github.com/nyabb/abbai-flow/compare/v2.14.0...v2.14.1) (2026-11-22)
 
 
