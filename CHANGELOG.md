@@ -1,3 +1,10 @@
+# [2.12.0](https://github.com/nyabb/abbai-flow/compare/v2.11.0...v2.12.0) (2026-11-22)
+
+
+### Features
+
+* add Spotify song search and mobile player layout ([01b0b7c](https://github.com/nyabb/abbai-flow/commit/01b0b7c56bea4de15105d871225682239a73c0d8))
+
 # [2.11.0](https://github.com/nyabb/abbai-flow/compare/v2.10.0...v2.11.0) (2026-11-22)
 
 
