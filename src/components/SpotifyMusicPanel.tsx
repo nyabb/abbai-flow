@@ -243,7 +243,7 @@ export function SpotifyMusicPanel({
       <section className="spotify-search" aria-label={t('music.spotifySearch')}>
         <form className="spotify-search-form" onSubmit={(event) => void submitSearch(event)}>
           <Search size={19} aria-hidden="true" />
-          <label className="sr-only" htmlFor="spotify-search-input">
+          <label className="spotify-search-label" htmlFor="spotify-search-input">
             {t('music.spotifySearch')}
           </label>
           <input

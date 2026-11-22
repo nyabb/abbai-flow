@@ -138,16 +138,54 @@ function proxyMethod(proxy: unknown, name: string, ...args: unknown[]): Promise<
 
 function safeBluetoothError(error: unknown): string {
   const message = error instanceof Error ? error.message : '';
-  if (/NotReady|not powered|powered off/i.test(message))
+  const type = isRecord(error) && typeof error.type === 'string' ? error.type : '';
+  const details = `${type} ${message}`;
+  if (/br-connection-profile-unavailable|audio profile.*unavailable/i.test(details))
+    return 'The speaker Bluetooth audio profile is unavailable on the Raspberry Pi';
+  if (/NotReady|not powered|powered off/i.test(details))
     return 'The Bluetooth adapter is turned off';
-  if (/AuthenticationRejected|Rejected|Canceled/i.test(message))
+  if (/AuthenticationRejected|AuthenticationFailed|Rejected|Canceled/i.test(details))
     return 'Bluetooth pairing was cancelled';
-  if (/AlreadyExists/i.test(message)) return 'This Bluetooth device is already paired';
-  if (/NotConnected/i.test(message)) return 'This Bluetooth device is not connected';
-  if (/NotAvailable|not available|NoReply|ServiceUnknown/i.test(message)) {
+  if (/AlreadyExists/i.test(details)) return 'This Bluetooth device is already paired';
+  if (/NotConnected/i.test(details)) return 'This Bluetooth device is not connected';
+  if (/InProgress|already in progress/i.test(details))
+    return 'A Bluetooth operation is already in progress';
+  if (/NotSupported|not supported/i.test(details))
+    return 'This Bluetooth device does not support that connection';
+  if (/NotAvailable|not available|NoReply|ServiceUnknown/i.test(details)) {
     return 'The host Bluetooth service is unavailable';
   }
+  if (type && /^[A-Za-z0-9_.]+$/.test(type)) {
+    return `Bluetooth could not complete that request (${type})`;
+  }
   return 'Bluetooth could not complete that request';
+}
+
+function safeBluetoothDiagnostic(error: unknown): string {
+  if (!isRecord(error)) return 'unknown Bluetooth error';
+
+  const type =
+    typeof error.type === 'string' && /^[A-Za-z0-9_.]+$/.test(error.type) ? error.type : '';
+  const rawMessage =
+    typeof error.text === 'string'
+      ? error.text
+      : typeof error.message === 'string'
+        ? error.message
+        : '';
+  const detailText = /(token|secret|passkey|pin|password|authorization|bearer)/i.test(rawMessage)
+    ? '[redacted error details]'
+    : rawMessage;
+  const message = detailText
+    // Redact device addresses and remove control characters before writing to logs.
+    .replace(/(?:[0-9a-f]{2}:){5}[0-9a-f]{2}/gi, '[device]')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+    .replace(/[^A-Za-z0-9 ._:-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 120);
+  const detail = [type, message].filter(Boolean).join(': ');
+  return detail || 'unknown Bluetooth error';
 }
 
 function deviceAddressFromPath(devicePath: string): string {
@@ -594,7 +632,10 @@ export class BluetoothManager {
       }
     } catch (error) {
       if (error instanceof BluetoothOperationError) throw error;
-      throw new BluetoothOperationError(safeBluetoothError(error));
+      const message = safeBluetoothError(error);
+      const diagnostic = safeBluetoothDiagnostic(error);
+      console.warn(`[Integration] Bluetooth ${control.action} failed: ${diagnostic}.`);
+      throw new BluetoothOperationError(message);
     }
   }
 
