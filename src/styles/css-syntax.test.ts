@@ -24,7 +24,7 @@ const sheets = readdirSync(stylesDir).filter((name) => name.endsWith('.css'));
  *
  * - `dark-theme.css`      — dark-mode overrides, superseded by the JS theme
  *                           engine in `hooks/useTheme` + `styles/themes/*.ts`.
- * - `theme-base.css`      — duplicate of the `:root` defaults in `beacon.css`.
+ * - `theme-base.css`      — duplicate of the `:root` defaults in `abbai-flow.css`.
  */
 const RETIRED_SHEETS = new Set(['dark-theme.css', 'theme-base.css']);
 

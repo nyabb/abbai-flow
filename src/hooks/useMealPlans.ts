@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { loadData } from '../api/beacon-store';
+import { loadData } from '../api/abbai-flow-store';
 import { MealPlanEntry, DayMenu } from '../types/meals';
 
-const STORAGE_KEY = 'beacon_meal_plans';
+const STORAGE_KEY = 'abbai_flow_meal_plans';
 const REFRESH_INTERVAL = 5 * 60 * 1000; // re-read store every 5 min
 
 /**
- * Reads meal plan entries from the beacon data store.
+ * Reads meal plan entries from the Abbai Flow storage.
  * Data is written externally (MCP sync, CLI script, etc.).
  */
 export function useMealPlans() {

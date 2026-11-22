@@ -20,7 +20,7 @@
 /* ---------------------------------------------------------------------------
    Tokens local to this layer
    --------------------------------------------------------------------------- */
-.beacon {
+.abbai-flow {
   --skin-card-radius: 22px;
   --skin-control-radius: 14px;
   --skin-band-radius: 26px;
@@ -48,12 +48,12 @@ body {
 
 /* ---------------------------------------------------------------------------
    Screen bands — the rounded gradient strip at the top of a view.
-   Real markup: Dashboard = header.dash-topbar, Calendar = header.beacon-header,
+   Real markup: Dashboard = header.dash-topbar, Calendar = header.abbai-flow-header,
    Lists/Tasks = .grocery-view-header. Chores has its own band in
    chore-planner.css (sand palette).
    --------------------------------------------------------------------------- */
 .dash-topbar,
-.beacon-header,
+.abbai-flow-header,
 .grocery-view-header {
   border-bottom: 0;
   border-radius: 0 0 var(--skin-band-radius) var(--skin-band-radius);
@@ -68,7 +68,7 @@ body {
   padding: 10px clamp(14px, 2.2vw, 36px) 16px;
 }
 
-.beacon-header {
+.abbai-flow-header {
   height: auto;
   min-height: var(--header-height);
   padding: 12px clamp(16px, 2.4vw, 40px) 16px;
@@ -102,8 +102,8 @@ body {
 }
 
 .dash-day-nav-btn,
-.beacon-header .icon-btn,
-.beacon-header .header-action {
+.abbai-flow-header .icon-btn,
+.abbai-flow-header .header-action {
   color: inherit;
   background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
   border: 0;
@@ -111,8 +111,8 @@ body {
 }
 
 .dash-day-nav-btn:hover,
-.beacon-header .icon-btn:hover,
-.beacon-header .header-action:hover {
+.abbai-flow-header .icon-btn:hover,
+.abbai-flow-header .header-action:hover {
   background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
 }
 
@@ -147,7 +147,7 @@ body {
 
 /* ---------------------------------------------------------------------------
    Page header — the shared band for views that have no topbar of their own
-   (Timer, Photos). Reuses `.beacon-header` so it picks up the skin gradient.
+   (Timer, Photos). Reuses `.abbai-flow-header` so it picks up the skin gradient.
    --------------------------------------------------------------------------- */
 .page-header {
   gap: 12px;
@@ -278,8 +278,8 @@ body {
 }
 
 /* A page that carries its own header: the band stays put and the view takes
-   whatever height is left, instead of `.beacon-main > *` each being 100%. */
-.beacon-main > .view-page {
+   whatever height is left, instead of `.abbai-flow-main > *` each being 100%. */
+.abbai-flow-main > .view-page {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -389,7 +389,7 @@ body {
    Responsive: phones keep the band smaller, wall displays get more air
    --------------------------------------------------------------------------- */
 @media (max-width: 640px) {
-  .beacon {
+  .abbai-flow {
     --skin-card-radius: 18px;
     --skin-band-radius: 20px;
   }
@@ -409,11 +409,11 @@ body {
     padding: 6px 10px;
     font-size: 0.8rem;
   }
-  .beacon-header {
+  .abbai-flow-header {
     min-height: 56px;
     padding: 10px 14px 12px;
   }
-  .beacon-header .header-date {
+  .abbai-flow-header .header-date {
     display: none;
   }
   .grocery-view-header {
@@ -428,7 +428,7 @@ body {
 }
 
 @media (min-width: 1440px) {
-  .beacon {
+  .abbai-flow {
     --skin-card-radius: 24px;
   }
   .grocery-view-list {

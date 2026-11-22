@@ -372,7 +372,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Toewijzen', exact: true }));
 
     await waitFor(() =>
-      expect(localStorage.getItem('beacon-reward-redemptions')).toContain('"points":10'),
+      expect(localStorage.getItem('abbai-flow-reward-redemptions')).toContain('"points":10'),
     );
     openRewards(container);
     const updatedRow = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find(
@@ -404,7 +404,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
     await waitFor(() =>
-      expect(localStorage.getItem('beacon-reward-redemptions')).toContain('schermtijd'),
+      expect(localStorage.getItem('abbai-flow-reward-redemptions')).toContain('schermtijd'),
     );
     // A reached goal is not a given reward: no ChoreOps deduction happened.
     expect(mocks.approveReward).not.toHaveBeenCalled();
@@ -683,6 +683,13 @@ describe('ChorePlanner board', () => {
     mocks.createReward.mockClear();
     mocks.fetchChoreHistory.mockReset();
     mocks.fetchChoreHistory.mockResolvedValue([]);
+  });
+
+  it('keeps the live clock at the far right after the header actions', () => {
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const actions = container.querySelector('.planner-header-actions');
+
+    expect(actions?.lastElementChild).toHaveClass('planner-header-clock');
   });
 
   it('shows a column per child plus the free-chore column, and no header rewards button', () => {

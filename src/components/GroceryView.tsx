@@ -106,7 +106,7 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
     };
 
     const grocery = merged.filter(
-      (l) => l.id === 'beacon-shopping' || (l.source === 'ha' && isGroceryHA(l.id, l.name)),
+      (l) => l.id === 'abbai-flow-shopping' || (l.source === 'ha' && isGroceryHA(l.id, l.name)),
     );
     const tasks = merged.filter((l) => !grocery.includes(l));
     return { groceryLists: grocery, taskLists: tasks };

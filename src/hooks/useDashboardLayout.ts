@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { loadData, loadDataSync, saveData } from '../api/beacon-store';
+import { loadData, loadDataSync, saveData } from '../api/abbai-flow-store';
 import { DashboardCard, DashboardLayoutView, DashboardRegionLayout, GridPosition } from '../types/dashboard-cards';
 
-const STORAGE_KEY = 'beacon-dashboard-layout';
+const STORAGE_KEY = 'abbai-flow-dashboard-layout';
 const DEFAULT_VIEW_ID = 'default-view';
 
 type DashboardPreset = 'default' | 'classic' | 'compact';

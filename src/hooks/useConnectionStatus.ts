@@ -4,7 +4,7 @@
  * On a wall display the difference matters to whoever walks past:
  *
  *   offline      the device itself has no network (router, wifi, DNS)
- *   beacon-down  the device has network but Abbai Flow's own server does not answer
+ *   app-down     the device has network but Abbai Flow's own server does not answer
  *   ha-down      Abbai Flow is up but Home Assistant is not reachable
  *   online       everything answered
  *
@@ -15,7 +15,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type ConnectionState = 'online' | 'beacon-down' | 'ha-down' | 'offline';
+export type ConnectionState = 'online' | 'app-down' | 'ha-down' | 'offline';
 
 export interface UseConnectionStatusOptions {
   /** Home Assistant reachability, as reported by the HA client. */
@@ -54,7 +54,7 @@ export function useConnectionStatus({
   probeIntervalMs = 15_000,
   probe = defaultProbe,
 }: UseConnectionStatusOptions): ConnectionStatus {
-  const [beaconReachable, setAbbaiReachable] = useState(true);
+  const [appReachable, setAbbaiReachable] = useState(true);
   const [offline, setOffline] = useState(browserOffline);
   const [tick, setTick] = useState(0);
   const [reconnected, setReconnected] = useState(false);
@@ -104,7 +104,7 @@ export function useConnectionStatus({
     document.addEventListener('visibilitychange', onVisible);
 
     const interval = setInterval(() => {
-      if (!beaconReachable) void run();
+      if (!appReachable) void run();
     }, probeIntervalMs);
 
     return () => {
@@ -112,12 +112,12 @@ export function useConnectionStatus({
       document.removeEventListener('visibilitychange', onVisible);
       clearInterval(interval);
     };
-  }, [offline, probe, probeIntervalMs, beaconReachable, tick]);
+  }, [offline, probe, probeIntervalMs, appReachable, tick]);
 
   const state: ConnectionState = offline
     ? 'offline'
-    : !beaconReachable
-      ? 'beacon-down'
+    : !appReachable
+      ? 'app-down'
       : !haConnected
         ? 'ha-down'
         : 'online';

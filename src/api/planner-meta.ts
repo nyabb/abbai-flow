@@ -10,9 +10,9 @@
  * The **rules** live in `planner-rules.ts` so the server bundle can run the exact
  * same code for `POST /api/planner/mutate`; this module re-exports them
  * with types and adds the bits that only make sense in the browser (persistence
- * through `beacon-store`, and the queries the views need).
+ * through `abbai-flow-store`, and the queries the views need).
  */
-import { loadData, loadDataSync, saveData, type PersistenceResult } from './beacon-store';
+import { loadData, loadDataSync, saveData, type PersistenceResult } from './abbai-flow-store';
 import {
   findRoutine as sharedFindRoutine,
   normaliseName as sharedNormaliseName,
@@ -48,8 +48,8 @@ export type {
   RoutineDefinition,
 } from './planner-rules';
 
-/** Storage key (also the `/beacon-data/:key` path segment). */
-export const PLANNER_META_KEY = 'beacon-planner-meta';
+/** Storage key (also the `/abbai-flow/data/:key` path segment). */
+export const PLANNER_META_KEY = 'abbai-flow-planner-meta';
 
 export const PLANNER_META_VERSION = 1;
 

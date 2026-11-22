@@ -6,10 +6,10 @@
  * device-local localStorage key.
  *
  * Deliberately NOT part of AbbaiSettings: settings sync across devices
- * via beacon-store, and the display assignment must stay per-device.
+ * via abbai-flow-store, and the display assignment must stay per-device.
  */
 
-const FOCUS_STORAGE_KEY = 'beacon_display_member';
+const FOCUS_STORAGE_KEY = 'abbai_flow_display_member';
 const FOCUS_URL_PARAM = 'display';
 
 export function getFocusMemberId(): string | null {

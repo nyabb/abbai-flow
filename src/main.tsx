@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './App';
 import './styles/tokens.css';
 import './styles/loading.css';
-import './styles/beacon.css';
+import './styles/abbai-flow.css';
 import './styles/family.css';
 import './styles/dashboard.css';
 import './styles/grocery.css';
@@ -26,8 +26,10 @@ import './styles/surface.css';
 import './styles/responsive.css';
 import { applyStoredTheme } from './hooks/useTheme';
 import { installDebugFetchCapture } from './api/debug-log';
+import { migrateLegacyStorageKeys } from './api/storage-migration';
 
 // Apply stored theme immediately (before first paint) to prevent flash
+migrateLegacyStorageKeys();
 applyStoredTheme();
 installDebugFetchCapture();
 

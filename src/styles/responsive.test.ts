@@ -67,7 +67,7 @@ describe('responsive layer', () => {
 
   it('only targets classes that exist somewhere', () => {
     // A class either has styling elsewhere or is applied from JS (state hooks
-    // like `beacon--reduce-motion` live only in this layer).
+    // like `abbai-flow--reduce-motion` live only in this layer).
     const missing = responsiveClasses().filter(
       (name) => !otherSheets.includes(`.${name}`) && !sources.includes(name),
     );

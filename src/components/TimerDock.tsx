@@ -62,7 +62,7 @@ export function TimerDock({ onOpen }: TimerDockProps) {
       // The band at the top of the view: a page header, the dashboard's topbar
       // or a role="banner" wrapper. Anything further down is page content.
       const candidates = Array.from(
-        document.querySelectorAll<HTMLElement>('.beacon-header, .planner-header, [role="banner"], header'),
+        document.querySelectorAll<HTMLElement>('.abbai-flow-header, .planner-header, [role="banner"], header'),
       ).filter((el) => {
         const rect = el.getBoundingClientRect();
         return rect.height > 24 && rect.top < 48 && rect.bottom < window.innerHeight / 2;

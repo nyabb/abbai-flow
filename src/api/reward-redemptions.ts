@@ -13,7 +13,7 @@
  * This module re-exports them with types and adds the
  * persistence and balance helpers the UI needs.
  */
-import { loadData, loadDataSync, saveData, type PersistenceResult } from './beacon-store';
+import { loadData, loadDataSync, saveData, type PersistenceResult } from './abbai-flow-store';
 import type { RewardReservation } from './reward-reservations';
 import {
   normaliseName as sharedNormaliseName,
@@ -32,7 +32,7 @@ export {
 
 export type { Redemption, RedemptionState } from './planner-rules';
 
-export const REDEMPTIONS_KEY = 'beacon-reward-redemptions';
+export const REDEMPTIONS_KEY = 'abbai-flow-reward-redemptions';
 
 /** Everything this child is saving for or waiting on. */
 export function activeRedemptions(

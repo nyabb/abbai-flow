@@ -26,7 +26,7 @@ describe('secure storage', () => {
   });
 
   it('returns null for a key that was never written', async () => {
-    await expect(getSecureItem('beacon_missing')).resolves.toBeNull();
+    await expect(getSecureItem('abbai_flow_missing')).resolves.toBeNull();
   });
 
   it('does not throw when storage refuses to read', async () => {

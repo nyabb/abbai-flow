@@ -141,14 +141,14 @@ input[type='range'] {
    would leave almost nothing for content, so the bands shrink and the content
    area is allowed to scroll instead of being clipped. */
 @media (orientation: landscape) and (max-height: 480px) {
-  .beacon-header,
+  .abbai-flow-header,
   .dash-topbar {
     min-height: 40px;
     padding-top: 2px;
     padding-bottom: 4px;
   }
 
-  .beacon-main {
+  .abbai-flow-main {
     overflow-y: auto;
   }
 
@@ -175,7 +175,7 @@ input[type='range'] {
     font-size: 1.0625rem;
   }
 
-  .beacon-header,
+  .abbai-flow-header,
   .dash-topbar {
     min-height: calc(var(--header-height) + 8px);
   }
@@ -196,7 +196,7 @@ input[type='range'] {
     padding-bottom: 10px;
   }
 
-  .beacon-header {
+  .abbai-flow-header {
     padding-top: 8px;
     padding-bottom: 10px;
   }
@@ -209,10 +209,10 @@ input[type='range'] {
    (some kiosk shells) and can be set per device.
    Durations collapse to near-zero rather than `none`, because a few views
    listen for transitionend/animationend to close a sheet or dismiss a toast. */
-.beacon--reduce-motion,
-.beacon--reduce-motion *,
-.beacon--reduce-motion *::before,
-.beacon--reduce-motion *::after,
+.abbai-flow--reduce-motion,
+.abbai-flow--reduce-motion *,
+.abbai-flow--reduce-motion *::before,
+.abbai-flow--reduce-motion *::after,
 .focus-view--reduce-motion,
 .focus-view--reduce-motion *,
 .focus-view--reduce-motion *::before,

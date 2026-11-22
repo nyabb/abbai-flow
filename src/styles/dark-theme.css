@@ -5,7 +5,7 @@
 
 /* --- Smooth transitions between themes --- */
 html[data-theme] body,
-html[data-theme] .beacon,
+html[data-theme] .abbai-flow,
 html[data-theme] .panel,
 html[data-theme] .week-day,
 html[data-theme] .forecast-day,

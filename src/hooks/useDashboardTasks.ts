@@ -126,7 +126,7 @@ export function useDashboardTasks(
 
   const items: DashboardTodoItem[] = useMemo(() => {
     const local: DashboardTodoItem[] = localTasks
-      .getTasksForList('beacon-todo')
+      .getTasksForList('abbai-flow-todo')
       .filter(
         (t) => t.status === 'needs_action' || (t.completedAt ? isToday(t.completedAt) : false),
       )
@@ -134,7 +134,7 @@ export function useDashboardTasks(
         uid: t.id,
         summary: t.summary,
         status: t.status,
-        listId: 'beacon-todo',
+        listId: 'abbai-flow-todo',
       }));
 
     const fromHa: DashboardTodoItem[] = [];
@@ -165,7 +165,7 @@ export function useDashboardTasks(
   const toggleItem = useCallback(
     async (uid: string, currentStatus: string, listId?: string) => {
       // Check if it's a local item
-      const localItem = localTasks.getTasksForList('beacon-todo').find((t) => t.id === uid);
+      const localItem = localTasks.getTasksForList('abbai-flow-todo').find((t) => t.id === uid);
       if (localItem) {
         localTasks.toggleTask(uid);
         return;

@@ -7,7 +7,7 @@
  */
 
 /** What the display should say about connectivity. */
-export type DisplayConnection = 'online' | 'beacon-down' | 'ha-down' | 'offline';
+export type DisplayConnection = 'online' | 'app-down' | 'ha-down' | 'offline';
 
 /** Which panels the display shows. Stored in settings so each device can choose. */
 export interface DisplayPanelFlags {

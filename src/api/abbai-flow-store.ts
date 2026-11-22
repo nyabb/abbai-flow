@@ -1,7 +1,7 @@
 /**
  * Unified read/write helper for Abbai Flow data persistence.
  *
- * Server (/beacon-data/:key) is the source of truth when running as an
+ * Server (/abbai-flow/data/:key) is the source of truth when running as an
  * HA add-on.  localStorage serves as an offline cache and as the primary
  * store during local development (no add-on server).
  */
@@ -57,7 +57,7 @@ export async function loadData<T>(key: string, fallback: T): Promise<T> {
   if (isAddOn()) {
     try {
       const base = getIngressBasePath();
-      const res = await fetch(`${base}/beacon-data/${key}`);
+      const res = await fetch(`${base}/abbai-flow/data/${key}`);
       if (res.ok) {
         const data = await res.json();
         if (data !== null) {
@@ -104,7 +104,7 @@ export async function loadServerData<T>(key: string): Promise<T | null> {
   if (!isAddOn()) return null;
   try {
     const base = getIngressBasePath();
-    const res = await fetch(`${base}/beacon-data/${key}`);
+    const res = await fetch(`${base}/abbai-flow/data/${key}`);
     if (!res.ok) return null;
     const data = await res.json();
     return data === null ? null : (data as T);
@@ -171,7 +171,7 @@ async function writeNow<T>(
   // localStorage. That silently reverted fresh edits — a parent's PIN never
   // survived saving, because useFamily's refresh raced the write.
   try {
-    const res = await fetch(`${base}/beacon-data/${key}`, {
+    const res = await fetch(`${base}/abbai-flow/data/${key}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: json,
@@ -196,7 +196,7 @@ async function writeNow<T>(
 
 /** Surface a failed server write once, without flooding the console. */
 function reportPersistenceFailure(error: PersistenceError): void {
-  const message = `[beacon-store] ${error.key} was only cached locally: ${error.message}`;
+  const message = `[abbai-flow-store] ${error.key} was only cached locally: ${error.message}`;
   if (error.status === null) {
     // Offline is expected on tablets; a single info line is enough.
     console.info(message);

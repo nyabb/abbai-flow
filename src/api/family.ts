@@ -7,16 +7,16 @@ import {
   RoutineTaskCompletion,
 } from '../types/family';
 import type { ChoreOpsUser } from '../types/choreops';
-import { loadData, loadDataSync, saveData } from './beacon-store';
+import { loadData, loadDataSync, saveData } from './abbai-flow-store';
 import { localDayKey } from './date-keys';
 
 const STORAGE_KEYS = {
-  members: 'beacon_family_members',
-  chores: 'beacon_chores',
-  completions: 'beacon_completions',
-  streaks: 'beacon_streaks',
-  routines: 'beacon_routines',
-  routine_completions: 'beacon_routine_completions',
+  members: 'abbai_flow_family_members',
+  chores: 'abbai_flow_chores',
+  completions: 'abbai_flow_completions',
+  streaks: 'abbai_flow_streaks',
+  routines: 'abbai_flow_routines',
+  routine_completions: 'abbai_flow_routine_completions',
 } as const;
 
 function generateId(): string {
@@ -26,7 +26,7 @@ function generateId(): string {
 /**
  * Family data store.
  *
- * Server (/beacon-data/) is the source of truth in add-on mode.
+ * Server (/abbai-flow/data/) is the source of truth in add-on mode.
  * localStorage is used as a sync cache and as the primary store
  * during local development.
  *

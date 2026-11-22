@@ -3,7 +3,7 @@ import { differenceInDays, parseISO, startOfDay, format } from 'date-fns';
 import { CalendarEvent } from '../types';
 import { useTranslation } from '../i18n';
 
-const STORAGE_KEY = 'beacon-countdown-events';
+const STORAGE_KEY = 'abbai-flow-countdown-events';
 
 interface CountdownEvent {
   id: string;

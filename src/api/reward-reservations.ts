@@ -35,7 +35,7 @@ export interface RewardCommitment {
   pendingClaims: number;
 }
 
-export const RESERVATIONS_STORAGE_KEY = 'beacon_reward_reservations';
+export const RESERVATIONS_STORAGE_KEY = 'abbai_flow_reward_reservations';
 
 export function normaliseKey(value: string | null | undefined): string {
   return (value ?? '').trim().toLowerCase();

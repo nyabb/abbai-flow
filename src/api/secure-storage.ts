@@ -10,10 +10,10 @@
  * app down.
  */
 export const StorageKeys = {
-  HA_URL: 'beacon_ha_url',
-  HA_TOKEN: 'beacon_ha_token',
-  HA_REFRESH_TOKEN: 'beacon_ha_refresh_token',
-  ONBOARDED: 'beacon_onboarded',
+  HA_URL: 'abbai_flow_ha_url',
+  HA_TOKEN: 'abbai_flow_ha_token',
+  HA_REFRESH_TOKEN: 'abbai_flow_ha_refresh_token',
+  ONBOARDED: 'abbai_flow_onboarded',
 } as const;
 
 /** Read a stored value, or `null` when it is absent or unreadable. */

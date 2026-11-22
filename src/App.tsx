@@ -646,7 +646,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`beacon ${settings.kioskMode ? 'beacon--kiosk' : `beacon--sidebar-${sidebarPos}`} ${isIngress ? 'beacon--ingress' : ''} ${compact ? 'beacon--compact' : ''} ${activeView === 'chores' ? 'beacon--chores' : ''} ${settings.reducedMotion ? ' beacon--reduce-motion' : ''}`}
+        className={`abbai-flow ${settings.kioskMode ? 'abbai-flow--kiosk' : `abbai-flow--sidebar-${sidebarPos}`} ${isIngress ? 'abbai-flow--ingress' : ''} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -674,7 +674,7 @@ export function App() {
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
-        <div className="beacon-main">
+        <div className="abbai-flow-main">
           {activeView === 'dashboard' ? (
             <>
               <DashboardView
@@ -823,8 +823,8 @@ export function App() {
               </div>
 
               {/* Calendar Body — two-column on desktop */}
-              <div className="beacon-body beacon-body--two-col">
-                <div className="beacon-body-calendar">
+              <div className="abbai-flow-body abbai-flow-body--two-col">
+                <div className="abbai-flow-body-calendar">
                   <WeekCalendar
                     events={events}
                     hiddenCalendars={hiddenCalendars}

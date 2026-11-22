@@ -1,13 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import { CalendarEvent, CalendarInfo } from '../types';
-import { loadData, loadDataSync, saveData } from '../api/beacon-store';
+import { loadData, loadDataSync, saveData } from '../api/abbai-flow-store';
 
 /**
- * Built-in local calendar synced via beacon-store.
+ * Built-in local calendar synced via abbai-flow-store.
  * Server is source of truth in add-on mode; localStorage is offline cache.
  */
 
-const EVENTS_KEY = 'beacon-local-events';
+const EVENTS_KEY = 'abbai-flow-local-events';
 const LOCAL_CAL_ID = 'beacon-local';
 const LOCAL_CAL_NAME = 'Abbai Flow';
 

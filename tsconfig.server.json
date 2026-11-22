@@ -1,11 +1,12 @@
 {
-  "// why": "The server runtime image has no package.json, so the backend stays CommonJS. This config compiles the shared planner rules (the one implementation) to `server/build/planner-rules.js`, which `server/app.cjs` requires. TypeScript is the only source language, so there is no hand-written .mjs/.cjs copy to drift.",
+  "// why": "The server runtime image has no package.json, so the existing CommonJS server remains the runtime host. This config compiles the shared planner rules and Encore modules from TypeScript into server/build for server/app.cjs to load.",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "DOM"],
     "module": "commonjs",
     "moduleResolution": "node",
     "moduleDetection": "force",
+    "esModuleInterop": true,
     "rootDir": "src/api",
     "outDir": "server/build",
     "strict": true,
@@ -18,5 +19,10 @@
     "skipLibCheck": true,
     "types": []
   },
-  "files": ["src/api/planner-rules.ts"]
+  "files": [
+    "src/api/planner-rules.ts",
+    "src/api/encore-http.ts",
+    "src/api/encore-music.ts",
+    "src/api/ws.d.ts"
+  ]
 }

@@ -8,7 +8,7 @@
 
    No animation beyond a colour transition — a screen that is on 24/7 should not
    repaint for decoration, and the reduced-motion preference is honoured in
-   beacon.css / responsive.css for the rest of the app.
+   abbai-flow.css / responsive.css for the rest of the app.
    ============================================================ */
 
 .display-view {
@@ -114,7 +114,7 @@
   background: var(--color-warning);
 }
 
-.display-connection--beacon-down .display-connection-dot,
+.display-connection--app-down .display-connection-dot,
 .display-connection--offline .display-connection-dot {
   background: var(--color-error);
 }

@@ -1,20 +1,20 @@
 /* Chores planner: the app sidebar stays visible, so the planner fills only the
    content column. No grid-template-columns or grid-column override here — the
-   sidebar layout in beacon.css owns those, and this file loads last. */
-.beacon--chores .beacon-main {
+   sidebar layout in abbai-flow.css owns those, and this file loads last. */
+.abbai-flow--chores .abbai-flow-main {
   width: 100%;
   min-width: 0;
   margin: 0;
   padding: 0;
 }
 
-.beacon--chores .now-playing-bar {
+.abbai-flow--chores .now-playing-bar {
   display: none !important;
 }
 
 /* The planner fills the grid row instead of forcing a full viewport height, so
    the bottom tab bar / sidebar padding cannot push it out of view. */
-.beacon--chores .chore-planner {
+.abbai-flow--chores .chore-planner {
   min-height: 0;
 }
 
@@ -137,7 +137,7 @@
 /* Small line above the page title (today's date), like a hero. */
 .planner-header-copy {
   display: grid;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   gap: 2px;
   min-width: 0;
 }
@@ -159,7 +159,10 @@
   display: flex;
   flex: 0 0 auto;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  margin-inline-start: auto;
+  text-align: right;
 }
 
 .planner-header .planner-eyebrow {

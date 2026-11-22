@@ -22,6 +22,8 @@ const fsp = require('fs/promises');
 const path = require('path');
 const { randomBytes } = require('crypto');
 const WebSocket = require('ws');
+const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
+const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -741,7 +743,12 @@ async function writeDataFile(filePath, contents) {
  * PUT  /beacon-data/:key  → write JSON body to storage
  */
 async function handleDataApi(req, res, config) {
-  const key = req.url.replace('/beacon-data/', '').replace(/[^a-zA-Z0-9_-]/g, '');
+  const pathname = (req.url || '').split('?')[0];
+  const canonical = pathname.startsWith('/abbai-flow/data/');
+  const prefix = canonical ? '/abbai-flow/data/' : '/beacon-data/';
+  const key = pathname.startsWith(prefix)
+    ? pathname.slice(prefix.length).replace(/[^a-zA-Z0-9_-]/g, '')
+    : '';
   if (!key) {
     sendJson(res, 400, { error: 'Missing key' });
     return;
@@ -751,7 +758,25 @@ async function handleDataApi(req, res, config) {
 
   if (req.method === 'GET') {
     try {
-      const data = await readDataFile(filePath);
+      let data = await readDataFile(filePath);
+      if (data === null && canonical) {
+        const legacyKey = key.startsWith('abbai-flow-')
+          ? key.replace(/^abbai-flow-/, 'beacon-')
+          : key.startsWith('abbai_flow_')
+            ? key.replace(/^abbai_flow_/, 'beacon_')
+            : null;
+        if (legacyKey) {
+          data = await readDataFile(path.join(config.dataDir, legacyKey + '.json'));
+          if (data !== null) {
+            try {
+              await fsp.mkdir(config.dataDir, { recursive: true });
+              await writeDataFile(filePath, JSON.stringify(data));
+            } catch {
+              // Keep serving the legacy document if copying it fails.
+            }
+          }
+        }
+      }
       sendJson(res, 200, data, { 'Cache-Control': 'no-store' });
     } catch (err) {
       sendJson(res, 500, {
@@ -1346,30 +1371,49 @@ function createApp(options) {
       return url.toString();
     })();
 
+  const encore =
+    options.encore ||
+    new EncoreMusic({
+      token: options.encoreToken || '',
+      url: options.encoreUrl || DEFAULT_ENCORE_URL,
+    });
+
   const server = http.createServer((req, res) => {
-    void route(req, res, config);
+    void route(req, res, config, encore);
   });
 
   server.on('upgrade', (req, socket, head) => {
     handleUpgrade(req, socket, head, config);
   });
+  server.on('close', () => encore.stop());
+  encore.start();
 
-  return { server, config };
+  return { server, config, encore };
 }
 
-async function route(req, res, config) {
+async function route(req, res, config, encore) {
   const url = req.url || '/';
+  const pathname = url.split('?')[0];
+  const actionPath =
+    {
+      '/abbai-flow/action/voice': '/beacon-action/voice',
+      '/abbai-flow/action/service': '/beacon-action/service',
+      '/abbai-flow/action/calendar-event': '/beacon-action/calendar-event',
+      '/abbai-flow/action/entity-registry': '/beacon-action/entity-registry',
+    }[pathname] || pathname;
 
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
   // Every state-changing endpoint goes through the origin guard — including
   // the generic `/api/*` proxy, which carries the server-side HA token and can
   // call arbitrary services.
   const guarded =
-    url === '/beacon-action/voice' ||
-    url === '/beacon-action/service' ||
-    url === '/beacon-action/calendar-event' ||
-    url === '/beacon-action/entity-registry' ||
-    url.startsWith('/beacon-data/') ||
+    actionPath === '/beacon-action/voice' ||
+    actionPath === '/beacon-action/service' ||
+    actionPath === '/beacon-action/calendar-event' ||
+    actionPath === '/beacon-action/entity-registry' ||
+    pathname.startsWith('/beacon-data/') ||
+    pathname.startsWith('/abbai-flow/data/') ||
+    pathname.startsWith('/abbai-flow/music/control') ||
     url.startsWith('/api/');
 
   if (guarded && isMutation && !isAllowedOrigin(req, config.allowedOrigins)) {
@@ -1378,23 +1422,27 @@ async function route(req, res, config) {
   }
 
   try {
-    if (url === '/beacon-action/voice') {
+    if (pathname.startsWith('/abbai-flow/music/')) {
+      await handleEncoreMusicRequest(req, res, encore, { sendJson, readJsonObject });
+      return;
+    }
+    if (actionPath === '/beacon-action/voice') {
       await handleVoiceAction(req, res, config);
       return;
     }
-    if (url === '/beacon-action/service') {
+    if (actionPath === '/beacon-action/service') {
       await handleServiceCall(req, res, config);
       return;
     }
-    if (url === '/beacon-action/calendar-event') {
+    if (actionPath === '/beacon-action/calendar-event') {
       await handleCalendarEventAction(req, res, config);
       return;
     }
-    if (url === '/beacon-action/entity-registry') {
+    if (actionPath === '/beacon-action/entity-registry') {
       await handleEntityRegistryLookup(req, res, config);
       return;
     }
-    if (url.startsWith('/beacon-data/')) {
+    if (pathname.startsWith('/beacon-data/') || pathname.startsWith('/abbai-flow/data/')) {
       await handleDataApi(req, res, config);
       return;
     }
@@ -1502,6 +1550,8 @@ function configFromEnv(env = process.env) {
     haToken: env.HA_TOKEN || env.SUPERVISOR_TOKEN || '',
     haBaseUrl: normaliseHaBaseUrl(env.HA_URL || env.HA_API_BASE_OVERRIDE),
     haWsUrl: env.HA_WS_URL || env.HA_WS_URL_OVERRIDE || undefined,
+    encoreToken: env.ENCORE_TOKEN || '',
+    encoreUrl: env.ENCORE_URL || DEFAULT_ENCORE_URL,
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())

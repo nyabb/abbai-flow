@@ -126,7 +126,7 @@ export async function haFetch(path: string, options?: RequestInit): Promise<unkn
 
 /**
  * Call a HA service via the REST API.
- * In add-on mode, uses /beacon-action/service to avoid ingress POST issues.
+ * In add-on mode, uses /abbai-flow/action/service to avoid ingress POST issues.
  */
 export async function callHaService(
   domain: string,
@@ -151,7 +151,7 @@ export async function callHaService(
       'Home Assistant service call failed',
       `Service: ${domain}.${service}`,
       '',
-      `Client request: POST ${proxy ? '/beacon-action/service' : servicePath}`,
+      `Client request: POST ${proxy ? '/abbai-flow/action/service' : servicePath}`,
       'Client request payload:',
       JSON.stringify(proxy ? proxyPayload : serviceData, null, 2),
       ...(proxy
@@ -175,7 +175,7 @@ export async function callHaService(
   if (proxy) {
     try {
       const base = getBaseUrl();
-      const res = await fetch(`${base}/beacon-action/service`, {
+      const res = await fetch(`${base}/abbai-flow/action/service`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(proxyPayload),
@@ -265,7 +265,7 @@ export class AbbaiActionError extends Error {
 }
 
 /**
- * POST to one of the add-on server's /beacon-action/* endpoints and return
+ * POST to one of the add-on server's /abbai-flow/action/* endpoints and return
  * the parsed JSON body — including on error responses, since those bridge
  * endpoints return `{ error, code }` bodies that callers need to inspect
  * (e.g. to detect HA's "not_supported" for calendars lacking event

@@ -90,7 +90,7 @@ describe('the stored sound preference', () => {
   });
 
   it('ignores a value it does not recognise', () => {
-    localStorage.setItem('beacon-timer-sound', 'airhorn');
+    localStorage.setItem('abbai-flow-timer-sound', 'airhorn');
     expect(getStoredSound()).toBe('chime');
   });
 });
