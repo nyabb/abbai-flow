@@ -112,6 +112,16 @@ then kept in the browser.
 Everything else — themes, family members, chores, routines, rewards, calendar
 sources, list providers — is configured through the Abbai Flow UI.
 
+### Integration logs
+
+Use `docker logs abbai-flow` to see startup checks for Home Assistant
+authentication and discovered calendars, todo lists, ChoreOps entities, Grocy
+sensors, media players, weather, and media sources. Spotify logs report the
+Encore connection, Spotify login/device state, and catalog credential status.
+These checks report connection state and counts; they do not print access
+tokens or client secrets. Google Photos is currently not implemented and is
+reported as unavailable.
+
 ## Why Abbai Flow?
 
 - **Free & open source** — no subscriptions, no cloud accounts, no vendor lock-in

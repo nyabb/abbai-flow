@@ -29,6 +29,9 @@ export interface SpotifyCatalogOptions {
   now?: () => number;
 }
 
+export type SpotifyCatalogVerification =
+  { ok: true } | { ok: false; code: SpotifyCatalogErrorCode };
+
 interface JsonRecord {
   [key: string]: unknown;
 }
@@ -150,6 +153,20 @@ export class SpotifyCatalog {
     }
 
     throw new SpotifyCatalogError('unavailable', 502, 'Spotify search is temporarily unavailable');
+  }
+
+  /** Verify the configured app credentials without returning its access token. */
+  async verifyCredentials(): Promise<SpotifyCatalogVerification> {
+    if (!this.configured) return { ok: false, code: 'not_configured' };
+    try {
+      await this.getToken();
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        code: error instanceof SpotifyCatalogError ? error.code : 'unavailable',
+      };
+    }
   }
 
   private async getToken(): Promise<string> {

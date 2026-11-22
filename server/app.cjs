@@ -1385,6 +1385,7 @@ function createApp(options) {
       clientSecret: options.spotifyClientSecret || '',
       market: options.spotifyMarket || 'NL',
     });
+  const verifySpotifyCatalog = () => spotifyCatalog.verifyCredentials();
 
   const server = http.createServer((req, res) => {
     void route(req, res, config, encore, spotifyCatalog);
@@ -1396,7 +1397,7 @@ function createApp(options) {
   server.on('close', () => encore.stop());
   encore.start();
 
-  return { server, config, encore };
+  return { server, config, encore, verifySpotifyCatalog };
 }
 
 async function route(req, res, config, encore, spotifyCatalog) {
@@ -1569,6 +1570,8 @@ function configFromEnv(env = process.env) {
     spotifyClientId: env.SPOTIFY_CLIENT_ID || '',
     spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || '',
     spotifyMarket: env.SPOTIFY_MARKET || 'NL',
+    weatherEntity: env.WEATHER_ENTITY || '',
+    photoDirectory: env.PHOTO_DIRECTORY || '',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())
