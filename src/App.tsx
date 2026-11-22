@@ -14,6 +14,7 @@ import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
 import { useSettings } from './hooks/useSettings';
 import { ChorePlanner } from './components/ChorePlanner';
+import { LoadingPlaceholder } from './components/LoadingPlaceholder';
 import { TimerAlarm } from './components/TimerAlarm';
 import { TimerDock } from './components/TimerDock';
 import { Sidebar, SidebarView } from './components/Sidebar';
@@ -582,7 +583,11 @@ export function App() {
           background: 'var(--bg-primary)',
         }}
       >
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+        <LoadingPlaceholder
+          label={t('app.connecting')}
+          lines={3}
+          className="loading-placeholder--screen"
+        />
       </div>
     );
   }
@@ -618,7 +623,11 @@ export function App() {
           background: 'var(--bg-primary)',
         }}
       >
-        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</div>
+        <LoadingPlaceholder
+          label={t('app.connecting')}
+          lines={3}
+          className="loading-placeholder--screen"
+        />
       </div>
     );
   }
@@ -680,6 +689,7 @@ export function App() {
               <ChorePlanner
                 members={members}
                 locale={settings.locale}
+                debugMode={settings.debugMode}
                 onLocaleChange={(locale) => updateSettings({ locale })}
                 createRequest={choreCreate}
               />

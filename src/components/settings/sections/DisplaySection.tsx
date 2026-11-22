@@ -7,6 +7,7 @@
  */
 import { useState } from 'react';
 import { buildFocusUrl } from '../../../focus';
+import { isIngress } from '../../../utils/ha-env';
 import type { AbbaiSettings } from '../../../hooks/useSettings';
 import type { TranslationKey } from '../../../i18n';
 import type { FamilyMember } from '../../../types/family';
@@ -267,7 +268,7 @@ export function DisplaySection({
                 {t('common.start')}
               </button>
             </div>
-            <div className="settings-row">
+            {!isIngress() ? <div className="settings-row">
               <div>
                 <div className="settings-row-label">{t('settings.display.displayUrlLabel')}</div>
                 <div className="settings-row-sublabel">
@@ -277,7 +278,7 @@ export function DisplaySection({
               <button type="button" className="settings-btn" onClick={copyFocusUrl}>
                 {copiedFocusUrl ? t('settings.display.copied') : t('settings.display.copyUrl')}
               </button>
-            </div>
+            </div> : <div className="settings-row-sublabel">{t('settings.display.ingressUrlUnavailable')}</div>}
           </>
         )}
       </div>

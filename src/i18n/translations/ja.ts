@@ -200,6 +200,9 @@ export const ja: Record<TranslationKey, string> = {
   'settings.general.sunday': '日曜日',
   'settings.general.monday': '月曜日',
   'settings.general.languageLabel': '言語 / 地域',
+  'settings.general.debugModeLabel': 'デバッグモード',
+  'settings.general.debugModeSublabel': '家事プランナーにリクエストとエラーの詳細を表示します。',
+  'settings.display.ingressUrlUnavailable': 'Home Assistant 内では共有可能なディスプレイ URL を使用できません。表示先の画面で Abbai Flow を開き、「このデバイスで使用」を選択してください。',
   'settings.general.dashboardLayoutTitle': 'ダッシュボードのレイアウト',
   'settings.general.dashboardLayoutDesc': 'ダッシュボードの構成方法を選択します。',
   'settings.general.layoutLabel': 'レイアウト',
@@ -653,6 +656,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'お手伝いとルーティン',
+  'planner.loading': 'お手伝いとルーティンを読み込み中...',
   'planner.shortTitle': 'お手伝い',
   'planner.today': '今日',
   'planner.weather': '天気',

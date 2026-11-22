@@ -57,6 +57,7 @@ import { useTranslation } from '../../i18n';
 import { LOCALE_OPTIONS } from '../../i18n/locales';
 import { normalizePin, type FamilyMember } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
+import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 import { usePlannerCopy } from './copy';
 import { RewardRow, RoutineRow, TaskRow, type RoutineStep } from './rows';
 import { HeaderDate } from '../PageHeader';
@@ -161,6 +162,7 @@ interface ChorePlannerProps {
    * e.g. from quick add. The token makes repeated requests distinct.
    */
   createRequest?: { kind: 'chore' | 'routine'; token: number };
+  debugMode?: boolean;
 }
 
 export function ChorePlanner({
@@ -168,6 +170,7 @@ export function ChorePlanner({
   locale,
   onLocaleChange,
   createRequest,
+  debugMode = false,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
   /**
@@ -225,8 +228,13 @@ export function ChorePlanner({
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [errorCopied, setErrorCopied] = useState(false);
-  const [confetti, setConfetti] = useState(false);
-  const [goalCelebration, setGoalCelebration] = useState(false);
+  useEffect(() => {
+    if (!debugMode) {
+      setErrorDetails(null);
+      setErrorCopied(false);
+    }
+  }, [debugMode]);
+  const [celebration, setCelebration] = useState<'chore' | 'goal' | null>(null);
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [todayMemberId, setTodayMemberId] = useState<string | null>(null);
@@ -325,15 +333,10 @@ export function ChorePlanner({
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    if (!confetti) return;
-    const timer = setTimeout(() => setConfetti(false), 1200);
+    if (!celebration) return;
+    const timer = setTimeout(() => setCelebration(null), celebration === 'goal' ? 2400 : 1800);
     return () => clearTimeout(timer);
-  }, [confetti]);
-  useEffect(() => {
-    if (!goalCelebration) return;
-    const timer = setTimeout(() => setGoalCelebration(false), 1800);
-    return () => clearTimeout(timer);
-  }, [goalCelebration]);
+  }, [celebration]);
 
   useEffect(() => {
     const goOnline = () => setOnline(true);
@@ -883,7 +886,7 @@ export function ChorePlanner({
   ) => {
     setToast({ message, kind });
     if (kind === 'error') {
-      setErrorDetails(details ?? message);
+      setErrorDetails(debugMode ? details ?? message : null);
       setErrorCopied(false);
     }
   };
@@ -896,14 +899,30 @@ export function ChorePlanner({
   const copyErrorDetails = async () => {
     if (!errorDetails) return;
     try {
-      if (!navigator.clipboard?.writeText) throw new Error('Clipboard API unavailable');
-      await navigator.clipboard.writeText(errorDetails);
-      setErrorCopied(true);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(errorDetails);
+        setErrorCopied(true);
+        return;
+      }
     } catch {
-      // The prompt keeps the complete text available on browsers that block
-      // clipboard access (including some mobile WebViews).
-      window.prompt(c.errorDetailsTitle, errorDetails);
+      // Fall through to the legacy copy path for insecure contexts and WebViews.
     }
+    const field = document.createElement('textarea');
+    field.value = errorDetails;
+    field.setAttribute('readonly', '');
+    field.style.position = 'fixed';
+    field.style.opacity = '0';
+    document.body.appendChild(field);
+    field.select();
+    field.setSelectionRange(0, field.value.length);
+    let copied = false;
+    try {
+      copied = document.execCommand('copy');
+    } finally {
+      field.remove();
+    }
+    if (copied) setErrorCopied(true);
+    else window.prompt(c.errorDetailsTitle, errorDetails);
   };
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
@@ -971,12 +990,18 @@ export function ChorePlanner({
   };
 
   /** Press a ChoreOps button and report the outcome, then re-read its entities. */
-  const runLiveAction = async (taskId: string, entityId: string, label: string, action: string) => {
+  const runLiveAction = async (
+    taskId: string,
+    entityId: string,
+    label: string,
+    action: string,
+    celebrate?: 'chore' | 'goal',
+  ) => {
     if (pendingTaskId) return;
     setPendingTaskId(taskId);
     try {
       await choreOps.pressButton(entityId);
-      setConfetti(true);
+      if (celebrate) setCelebration(celebrate);
       playCompletionSound();
       showToast(toastWith(action, label));
       if (screen === 'mission') {
@@ -1055,7 +1080,7 @@ export function ChorePlanner({
     requestPin(
       c.approveCompletion,
       task.name,
-      () => void runLiveAction(task.id, entityId, task.name, c.approved),
+      () => void runLiveAction(task.id, entityId, task.name, c.approved, 'chore'),
     );
   };
 
@@ -1548,7 +1573,7 @@ export function ChorePlanner({
    * "on hold" (partway) and "reached the goal" (fully covered) two different
    * states.
    */
-  const assignReward = (reward: ChoreOpsReward, amount: number) => {
+  const assignReward = async (reward: ChoreOpsReward, amount: number) => {
     const userName =
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
@@ -1565,14 +1590,29 @@ export function ChorePlanner({
     const give = Math.min(Math.round(amount), stillNeeded, owner ? spendableFor(owner) : 0);
     if (give <= 0) return;
 
-    void rewardsState.runOp({
-      type: 'addPoints',
-      user: userName,
-      reward: reward.name,
-      cost: reward.cost,
-      amount: give,
-    });
-    showToast(toastWith(c.assignedToast, reward.name));
+    setSaving(true);
+    try {
+      const result = await rewardsState.runOp({
+        type: 'addPoints',
+        user: userName,
+        reward: reward.name,
+        cost: reward.cost,
+        amount: give,
+      });
+      if (
+        result &&
+        typeof result === 'object' &&
+        'state' in result &&
+        result.state === 'awaiting_fulfilment' &&
+        already < reward.cost
+      ) {
+        setCelebration('goal');
+      }
+      showToast(toastWith(c.assignedToast, reward.name));
+      dispatchOverlay({ type: 'close' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   /** Give the points back -- the child changed their mind, or wants it again. */
@@ -1609,7 +1649,7 @@ export function ChorePlanner({
             by: approverName,
           });
           showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
-          setConfetti(true);
+          setCelebration('goal');
           /*
            * The goal is met and handed over. Ask the parent what happens to the
            * definition: save for it again from zero, or remove it altogether.
@@ -1813,7 +1853,7 @@ export function ChorePlanner({
           <span className="planner-check-label">{pillLabel(task, status)}</span>
           <span className="planner-check-icon" aria-hidden="true">
             {pendingTaskId === task.id ? (
-              <span className="planner-spinner" />
+              <ActivitySpinner />
             ) : status === 'completed' ? (
               <Check />
             ) : status === 'expired' ? (
@@ -2000,7 +2040,7 @@ export function ChorePlanner({
           {c.offline}
         </div>
       )}
-      {errorDetails && (
+      {debugMode && errorDetails && (
         <section
           className="planner-error-details"
           role="alert"
@@ -2026,10 +2066,39 @@ export function ChorePlanner({
               </button>
             </div>
           </div>
-          <pre tabIndex={0}>{errorDetails}</pre>
+          <pre
+            tabIndex={0}
+            role="button"
+            aria-label={c.copyErrorDetails}
+            onClick={() => void copyErrorDetails()}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                void copyErrorDetails();
+              }
+            }}
+            style={{ cursor: 'copy' }}
+          >
+            {errorDetails}
+          </pre>
         </section>
       )}
-      {screen === 'board' && (
+      {screen === 'board' && choreOps.loading && !choreOps.data && (
+        <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
+          {Array.from({ length: Math.max(2, Math.min(data.members.length || 3, 4)) }, (_, index) => (
+            <section className="planner-loading-column" key={index} aria-hidden="true">
+              <LoadingPlaceholder
+                label={t('planner.loading')}
+                lines={1}
+                className="loading-placeholder--compact"
+                widths={[64]}
+              />
+              <LoadingPlaceholder label={t('planner.loading')} lines={3} widths={[91, 76, 58]} />
+            </section>
+          ))}
+        </div>
+      )}
+      {screen === 'board' && !(choreOps.loading && !choreOps.data) && (
         <ChoreBoard
           boardMembers={boardMembers}
           columnTasks={columnTasks}
@@ -2056,6 +2125,7 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
+          onNewGoal={startRewardForm}
         />
       )}{' '}
       {screen === 'child' && childMember && (
@@ -2270,11 +2340,11 @@ export function ChorePlanner({
                 reward={assigningReward}
                 allocated={rewardState(assigningReward).allocated}
                 spendable={spendableFor(memberByName(assigningReward.assignee))}
+                saving={saving}
                 copy={c}
                 onCancel={() => dispatchOverlay({ type: 'close' })}
                 onAssign={(amount) => {
-                  dispatchOverlay({ type: 'close' });
-                  assignReward(assigningReward, amount);
+                  void assignReward(assigningReward, amount);
                 }}
               />
             )}{' '}
@@ -2326,7 +2396,13 @@ export function ChorePlanner({
           onCancel={() => setConfirmAction(null)}
           onConfirm={(action) => {
             setConfirmAction(null);
-            void runLiveAction(action.taskId, action.entityId, action.label, action.action);
+            void runLiveAction(
+              action.taskId,
+              action.entityId,
+              action.label,
+              action.action,
+              action.kind === 'done' ? 'chore' : undefined,
+            );
             const task = getTask(action.taskId);
             if (
               action.kind === 'done' &&
@@ -2352,13 +2428,19 @@ export function ChorePlanner({
           onCancel={() => setPinGate(null)}
         />
       )}
-      {confetti && (
-        <div
-          className={`planner-confetti ${goalCelebration ? 'planner-confetti--goal' : ''}`}
-          aria-hidden="true"
-        >
-          {Array.from({ length: 18 }, (_, index) => (
-            <i key={index} style={{ '--confetti-index': index } as React.CSSProperties} />
+      {celebration && (
+        <div className={`planner-confetti planner-confetti--${celebration}`} aria-hidden="true">
+          {Array.from({ length: celebration === 'goal' ? 54 : 36 }, (_, index) => (
+            <i
+              key={index}
+              style={
+                {
+                  '--confetti-index': index,
+                  '--confetti-x': `${(index * 37) % 100}%`,
+                  '--confetti-delay': `${(index % 8) * 0.045}s`,
+                } as React.CSSProperties
+              }
+            />
           ))}
         </div>
       )}

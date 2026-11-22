@@ -6,6 +6,7 @@
  * separately: the board decides *what* to show, these decide *how* it looks.
  */
 import { Check } from 'lucide-react';
+import { ActivitySpinner } from '../LoadingPlaceholder';
 import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { PlannerCopy } from './copy';
@@ -51,7 +52,7 @@ export function TaskRow({
         onClick={onPrimary}
       >
         {busy ? (
-          <span className="planner-spinner" />
+          <ActivitySpinner />
         ) : status === 'completed' ? (
           <Check />
         ) : task.audience === 'anyone' ? (

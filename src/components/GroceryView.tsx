@@ -7,6 +7,7 @@ import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
 import { HeaderDate } from './PageHeader';
 import { Clock } from './Clock';
+import { ActivitySpinner, LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface TodoItem {
   uid: string;
@@ -354,8 +355,9 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
           className="grocery-view-add-btn"
           disabled={!inputValue.trim() || submitting}
           aria-label={t('grocery.addItem')}
+          aria-busy={submitting}
         >
-          <Plus size={20} />
+          {submitting ? <ActivitySpinner /> : <Plus size={20} />}
         </button>
       </form>
 
@@ -375,7 +377,11 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
       {/* Items list */}
       <div className="grocery-view-list">
         {loading && items.length === 0 ? (
-          <div className="grocery-view-loading">{t('grocery.loadingItems')}</div>
+          <LoadingPlaceholder
+            label={t('grocery.loadingItems')}
+            lines={4}
+            className="loading-placeholder--list grocery-view-loading"
+          />
         ) : items.length === 0 && !loading ? (
           <div className="grocery-view-empty">
             <div className="grocery-view-empty-icon">

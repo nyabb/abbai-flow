@@ -203,6 +203,9 @@ export const it: Record<TranslationKey, string> = {
   'settings.general.sunday': 'Domenica',
   'settings.general.monday': 'Lunedì',
   'settings.general.languageLabel': 'Lingua / Paese',
+  'settings.general.debugModeLabel': 'Modalità debug',
+  'settings.general.debugModeSublabel': 'Mostra i dettagli completi di richieste ed errori nel planner delle faccende.',
+  'settings.display.ingressUrlUnavailable': 'Un URL display condivisibile non è disponibile in Home Assistant. Apri Abbai Flow sullo schermo di destinazione e scegli “Usa su questo dispositivo”.',
   'settings.general.dashboardLayoutTitle': 'Layout della bacheca',
   'settings.general.dashboardLayoutDesc': 'Scegli come organizzare la tua bacheca.',
   'settings.general.layoutLabel': 'Layout',
@@ -665,6 +668,7 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Attività e routine',
+  'planner.loading': 'Caricamento di attività e routine...',
   'planner.shortTitle': 'Attività',
   'planner.today': 'Oggi',
   'planner.weather': 'Meteo',

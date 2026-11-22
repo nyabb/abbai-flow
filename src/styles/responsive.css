@@ -212,9 +212,24 @@ input[type='range'] {
 .beacon--reduce-motion,
 .beacon--reduce-motion *,
 .beacon--reduce-motion *::before,
-.beacon--reduce-motion *::after {
+.beacon--reduce-motion *::after,
+.focus-view--reduce-motion,
+.focus-view--reduce-motion *,
+.focus-view--reduce-motion *::before,
+.focus-view--reduce-motion *::after {
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
+  animation-delay: 0s !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planner-confetti,
+  .planner-confetti *,
+  .planner-confetti::before {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+  }
 }

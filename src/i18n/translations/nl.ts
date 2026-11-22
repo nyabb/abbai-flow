@@ -200,6 +200,9 @@ export const nl: Record<TranslationKey, string> = {
   'settings.general.sunday': 'Zondag',
   'settings.general.monday': 'Maandag',
   'settings.general.languageLabel': 'Taal / Regio',
+  'settings.general.debugModeLabel': 'Debugmodus',
+  'settings.general.debugModeSublabel': 'Toon volledige aanvraag- en foutdetails in de klusjesplanner.',
+  'settings.display.ingressUrlUnavailable': 'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
   'settings.general.dashboardLayoutTitle': 'Dashboardindeling',
   'settings.general.dashboardLayoutDesc': 'Kies hoe je dashboard is ingedeeld.',
   'settings.general.layoutLabel': 'Indeling',
@@ -658,6 +661,7 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Taakjes & Routines',
+  'planner.loading': 'Taakjes en routines laden...',
   'planner.shortTitle': 'Taakjes',
   'planner.today': 'Vandaag',
   'planner.weather': 'Weer',

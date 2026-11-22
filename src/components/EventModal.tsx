@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format, parseISO, addMonths } from 'date-fns';
 import { CalendarEvent, CalendarInfo, RecurrenceFrequency } from '../types';
 import { useTranslation } from '../i18n';
+import { ActivitySpinner } from './LoadingPlaceholder';
 
 interface EventModalProps {
   event: CalendarEvent | null;
@@ -425,7 +426,13 @@ export function EventModal({
               <button type="button" className="btn btn--secondary" onClick={onClose} disabled={submitting}>
                 {t('common.cancel')}
               </button>
-              <button type="submit" className="btn btn--primary" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={submitting}
+                aria-busy={submitting}
+              >
+                {submitting && <ActivitySpinner />}
                 {isEditing ? t('common.save') : t('common.create')}
               </button>
             </div>

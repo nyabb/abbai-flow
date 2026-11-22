@@ -14,6 +14,7 @@ export interface AbbaiSettings {
   timeFormat: '12h' | '24h';
   weekStartsOn: 0 | 1; // 0 = Sunday, 1 = Monday
   locale: string;
+  debugMode: boolean;
 
   // Appearance
   themeId: string;
@@ -96,6 +97,7 @@ function buildDefaults(): AbbaiSettings {
     timeFormat: '12h',
     weekStartsOn: 0,
     locale: 'en-US',
+    debugMode: false,
 
     themeId: config.theme,
     autoDarkMode: config.auto_dark_mode,

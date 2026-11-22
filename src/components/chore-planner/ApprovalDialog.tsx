@@ -7,6 +7,7 @@
  *  - `PinSheet` asks for a parent PIN before a destructive or approval action.
  */
 import type { PlannerCopy } from './copy';
+import { ActivitySpinner } from '../LoadingPlaceholder';
 
 export interface ConfirmAction {
   taskId: string;
@@ -48,7 +49,13 @@ export function ConfirmSheet({
           <button className="planner-ghost" onClick={onCancel}>
             {c.cancel}
           </button>
-          <button className="planner-primary" disabled={pending} onClick={() => onConfirm(action)}>
+          <button
+            className="planner-primary"
+            disabled={pending}
+            aria-busy={pending}
+            onClick={() => onConfirm(action)}
+          >
+            {pending && <ActivitySpinner className="activity-spinner--small" />}
             {c.confirm}
           </button>
         </footer>
