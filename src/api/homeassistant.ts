@@ -1,4 +1,10 @@
 import { CalendarEvent, CalendarInfo, WeatherData, CalendarColorMember, resolveCalendarColor } from '../types';
+import {
+  recordDebugLog,
+  sanitizeDebugUrl,
+  stringifyDebugValue,
+  updateDebugLog,
+} from './debug-log';
 
 type MessageHandler = (message: HAMessage) => void;
 
@@ -58,8 +64,11 @@ export interface HAEntityRegistryEntry {
 }
 
 type PendingRequest = {
+  operation: string;
   resolve: (value: unknown) => void;
   reject: (reason: unknown) => void;
+  debugLogId: number | null;
+  startedAt: number;
 };
 
 export class HomeAssistantClient {
@@ -92,12 +101,23 @@ export class HomeAssistantClient {
       try {
         this.ws = new WebSocket(this.url);
       } catch (err) {
+        recordDebugLog({
+          level: 'error',
+          source: 'HA WebSocket',
+          message: 'Could not create WebSocket connection',
+          details: stringifyDebugValue(err),
+        });
         reject(err);
         return;
       }
 
       this.ws.onopen = () => {
         this.reconnectDelay = 1000;
+        recordDebugLog({
+          level: 'event',
+          source: 'HA WebSocket',
+          message: `Connected to ${sanitizeDebugUrl(this.url)}`,
+        });
       };
 
       this.ws.onmessage = (event) => {
@@ -114,11 +134,22 @@ export class HomeAssistantClient {
         if (msg.type === 'auth_ok') {
           this.authenticated = true;
           this.onConnectionChange?.(true);
+          recordDebugLog({
+            level: 'event',
+            source: 'HA WebSocket',
+            message: 'Home Assistant authentication succeeded',
+          });
           resolve();
           return;
         }
 
         if (msg.type === 'auth_invalid') {
+          recordDebugLog({
+            level: 'error',
+            source: 'HA WebSocket',
+            message: 'Home Assistant authentication failed',
+            details: stringifyDebugValue(msg),
+          });
           reject(new Error('Invalid Home Assistant token'));
           return;
         }
@@ -128,9 +159,23 @@ export class HomeAssistantClient {
           const pending = this.pendingRequests.get(result.id);
           if (pending) {
             this.pendingRequests.delete(result.id);
+            const elapsed = Math.round(
+              (typeof performance !== 'undefined' ? performance.now() : Date.now()) -
+                pending.startedAt,
+            );
             if (result.success) {
+              updateDebugLog(pending.debugLogId, {
+                level: 'success',
+                message: `${pending.operation} request succeeded · ${elapsed} ms`,
+                details: stringifyDebugValue(result.result),
+              });
               pending.resolve(result.result);
             } else {
+              updateDebugLog(pending.debugLogId, {
+                level: 'error',
+                message: `${pending.operation} request failed · ${elapsed} ms`,
+                details: stringifyDebugValue(result.error ?? 'Unknown WebSocket error'),
+              });
               const err = Object.assign(
                 new Error(result.error?.message || 'Home Assistant command failed'),
                 { code: result.error?.code },
@@ -142,6 +187,16 @@ export class HomeAssistantClient {
 
         if (msg.type === 'event' && msg.id !== undefined) {
           const eventMsg = msg as unknown as HAEventMessage;
+          const eventType =
+            eventMsg.event && typeof eventMsg.event === 'object' && 'event_type' in eventMsg.event
+              ? String((eventMsg.event as { event_type: unknown }).event_type)
+              : 'subscribed event';
+          recordDebugLog({
+            level: 'event',
+            source: 'HA WebSocket',
+            message: `Subscription ${eventMsg.id} received ${eventType}`,
+            details: stringifyDebugValue(eventMsg.event),
+          });
           const handler = this.subscriptions.get(eventMsg.id);
           handler?.(eventMsg.event as HAMessage);
         }
@@ -150,10 +205,21 @@ export class HomeAssistantClient {
       this.ws.onclose = () => {
         this.authenticated = false;
         this.onConnectionChange?.(false);
+        recordDebugLog({
+          level: 'event',
+          source: 'HA WebSocket',
+          message: `Connection closed · ${sanitizeDebugUrl(this.url)}`,
+        });
         this.scheduleReconnect();
       };
 
-      this.ws.onerror = () => {
+      this.ws.onerror = (event) => {
+        recordDebugLog({
+          level: 'error',
+          source: 'HA WebSocket',
+          message: 'WebSocket transport error',
+          details: stringifyDebugValue(event),
+        });
         // onclose will fire after this
       };
     });
@@ -172,12 +238,42 @@ export class HomeAssistantClient {
   private sendMessage(msg: Omit<HAMessage, 'id'>): Promise<unknown> {
     return new Promise((resolve, reject) => {
       if (!this.ws || !this.authenticated) {
-        reject(new Error('Not connected'));
+        const error = new Error('Not connected');
+        recordDebugLog({
+          level: 'error',
+          source: 'HA WebSocket',
+          message: `${msg.type} request could not be sent`,
+          details: error.message,
+        });
+        reject(error);
         return;
       }
       const id = this.msgId++;
-      this.pendingRequests.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ ...msg, id }));
+      const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now();
+      const debugLogId = recordDebugLog({
+        level: 'pending',
+        source: 'HA WebSocket',
+        message: `${msg.type} · pending`,
+        details: stringifyDebugValue(msg),
+      });
+      this.pendingRequests.set(id, {
+        operation: String(msg.type),
+        resolve,
+        reject,
+        debugLogId,
+        startedAt,
+      });
+      try {
+        this.ws.send(JSON.stringify({ ...msg, id }));
+      } catch (error) {
+        this.pendingRequests.delete(id);
+        updateDebugLog(debugLogId, {
+          level: 'error',
+          message: `${msg.type} request could not be sent`,
+          details: stringifyDebugValue(error),
+        });
+        reject(error);
+      }
     });
   }
 

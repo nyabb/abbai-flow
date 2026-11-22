@@ -67,6 +67,14 @@ export const ko: Record<TranslationKey, string> = {
   'app.choresDisabled':
     '집안일 기능이 꺼져 있습니다. 이 화면을 사용하려면 설정 → 집안일에서 켜세요.',
   'app.previewMode': '미리보기 모드',
+  'debugConsole.tab': '디버그',
+  'debugConsole.title': '디버그 활동',
+  'debugConsole.open': '디버그 활동 열기',
+  'debugConsole.close': '디버그 활동 닫기',
+  'debugConsole.copy': '로그 복사',
+  'debugConsole.copied': '복사됨',
+  'debugConsole.clear': '로그 지우기',
+  'debugConsole.empty': '아직 기록된 요청이나 오류가 없습니다.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ 대시보드 편집',
@@ -201,7 +209,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.general.monday': '월요일',
   'settings.general.languageLabel': '언어 / 지역',
   'settings.general.debugModeLabel': '디버그 모드',
-  'settings.general.debugModeSublabel': '집안일 플래너에 요청 및 오류 세부 정보를 표시합니다.',
+  'settings.general.debugModeSublabel': 'API 호출, 응답, 오류의 전체 로그를 표시합니다.',
   'settings.display.ingressUrlUnavailable': 'Home Assistant 내에서는 공유 가능한 디스플레이 URL을 사용할 수 없습니다. 대상 화면에서 Abbai Flow를 열고 “이 기기에서 사용”을 선택하세요.',
   'settings.general.dashboardLayoutTitle': '대시보드 레이아웃',
   'settings.general.dashboardLayoutDesc': '대시보드 구성 방식을 선택하세요.',
@@ -786,6 +794,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.rewardReset': '보상을 0포인트로 초기화했습니다',
   'planner.routinePicker': '기존 루틴',
   'planner.routineNew': '새 루틴',
+  'planner.manageExisting': '기존 항목 보기 및 편집',
   'planner.tab.goals': '목표',
   'planner.tab.chores': '할 일',
   'planner.tab.routines': '루틴',

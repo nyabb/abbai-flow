@@ -1,0 +1,282 @@
+/* Global debug log: a small top-edge tab that expands down over the current view. */
+.debug-console {
+  position: fixed;
+  z-index: 1000;
+  top: env(safe-area-inset-top, 0px);
+  left: 50%;
+  width: min(940px, calc(100vw - 24px));
+  transform: translateX(-50%);
+  color: #f8fafc;
+  pointer-events: none;
+}
+
+.debug-console-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  margin: 0 auto;
+  padding: 7px 14px 8px;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  color: #f8fafc;
+  background: rgba(11, 16, 25, 0.88);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.debug-console-tab:hover {
+  background: rgba(20, 28, 42, 0.96);
+}
+
+.debug-console-tab:focus-visible,
+.debug-console-actions button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}
+
+.debug-console-count {
+  display: inline-grid;
+  min-width: 19px;
+  height: 19px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  color: #dbeafe;
+  background: rgba(59, 130, 246, 0.34);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.debug-console-chevron {
+  transition: transform 180ms ease;
+}
+
+.debug-console.is-open .debug-console-chevron {
+  transform: rotate(180deg);
+}
+
+.debug-console-panel {
+  max-height: 0;
+  margin-top: -1px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  background: rgba(11, 16, 25, 0.88);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  pointer-events: none;
+  transition:
+    max-height 260ms ease,
+    opacity 180ms ease,
+    transform 220ms ease,
+    visibility 220ms;
+}
+
+.debug-console.is-open .debug-console-panel {
+  max-height: min(66vh, 660px);
+  max-height: min(66dvh, 660px);
+  border-color: rgba(226, 232, 240, 0.2);
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.debug-console-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.14);
+}
+
+.debug-console-heading,
+.debug-console-actions {
+  display: flex;
+  align-items: center;
+}
+
+.debug-console-heading {
+  min-width: 0;
+  gap: 9px;
+}
+
+.debug-console-heading h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.debug-console-heading > span {
+  color: #cbd5e1;
+  font: 0.72rem ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.debug-console-actions {
+  flex: 0 0 auto;
+  gap: 7px;
+}
+
+.debug-console-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  border-radius: 8px;
+  color: #f8fafc;
+  background: rgba(30, 41, 59, 0.76);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.debug-console-actions button:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.92);
+}
+
+.debug-console-actions button:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.debug-console-log {
+  max-height: min(56vh, 560px);
+  max-height: min(56dvh, 560px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 4px 14px 12px;
+  color: #f8fafc;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.debug-console-empty {
+  margin: 12px 0;
+  color: #cbd5e1;
+  font-size: 0.82rem;
+}
+
+.debug-console-entry {
+  padding: 9px 0 10px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.1);
+  font-size: 0.78rem;
+}
+
+.debug-console-entry:last-child {
+  border-bottom: 0;
+}
+
+.debug-console-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: #cbd5e1;
+  font: 0.68rem ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.debug-console-entry-meta time {
+  color: #94a3b8;
+}
+
+.debug-console-entry.is-pending .debug-console-entry-meta > span:last-child {
+  color: #fbbf24;
+}
+
+.debug-console-entry.is-success .debug-console-entry-meta > span:last-child {
+  color: #86efac;
+}
+
+.debug-console-entry.is-error .debug-console-entry-meta > span:last-child {
+  color: #fca5a5;
+}
+
+.debug-console-entry.is-event .debug-console-entry-meta > span:last-child {
+  color: #93c5fd;
+}
+
+.debug-console-entry p {
+  margin: 4px 0 0;
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.debug-console-entry pre {
+  max-height: 220px;
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border: 1px solid rgba(226, 232, 240, 0.1);
+  border-radius: 7px;
+  color: #f8fafc;
+  background: rgba(2, 6, 23, 0.42);
+  font: 0.69rem/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+@media (max-width: 600px) {
+  .debug-console {
+    width: calc(100vw - 16px);
+  }
+
+  .debug-console-tab {
+    min-height: 34px;
+    padding: 6px 12px 7px;
+  }
+
+  .debug-console-header {
+    min-height: 44px;
+    padding: 7px 9px;
+  }
+
+  .debug-console-heading h2 {
+    font-size: 0.82rem;
+  }
+
+  .debug-console-actions button {
+    min-height: 31px;
+    padding: 5px 7px;
+  }
+
+  .debug-console-actions button span {
+    display: none;
+  }
+
+  .debug-console-log {
+    max-height: min(62vh, 520px);
+    max-height: min(62dvh, 520px);
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .debug-console-panel,
+  .debug-console-chevron {
+    transition-duration: 0.01ms;
+  }
+}

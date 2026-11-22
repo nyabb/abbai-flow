@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { startOfWeek, startOfDay, addDays, format } from 'date-fns';
 import { useHomeAssistant } from './hooks/useHomeAssistant';
 import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
@@ -17,6 +17,7 @@ import { ChorePlanner } from './components/ChorePlanner';
 import { LoadingPlaceholder } from './components/LoadingPlaceholder';
 import { TimerAlarm } from './components/TimerAlarm';
 import { TimerDock } from './components/TimerDock';
+import { DebugConsole } from './components/DebugConsole';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { PhotoFrame } from './components/PhotoFrame';
@@ -570,10 +571,16 @@ export function App() {
   }, []);
 
   const sidebarPos = settings.sidebarPosition || 'left';
+  const withDebugConsole = (content: ReactNode) => (
+    <I18nContext.Provider value={i18n}>
+      {content}
+      <DebugConsole enabled={settings.debugMode} />
+    </I18nContext.Provider>
+  );
 
   // Show loading screen while checking stored credentials
   if (auth.state.loading) {
-    return (
+    return withDebugConsole(
       <div
         style={{
           display: 'flex',
@@ -602,18 +609,22 @@ export function App() {
     window.location.pathname.includes('/ingress/')
   );
   if (!isHaManaged && !auth.state.isOnboarded) {
-    return <OnboardingView onComplete={handleOnboardingComplete} onOAuthStart={handleOAuthStart} />;
+    return withDebugConsole(
+      <OnboardingView onComplete={handleOnboardingComplete} onOAuthStart={handleOAuthStart} />,
+    );
   }
 
   // Kid Display mode: replace the entire shell (same pattern as onboarding)
   if (focusMember) {
-    return <FocusView memberId={focusMember.id} settings={settings} onExit={handleExitFocus} />;
+    return withDebugConsole(
+      <FocusView memberId={focusMember.id} settings={settings} onExit={handleExitFocus} />,
+    );
   }
 
   // Focus member requested but members not loaded yet (fresh device cache):
   // hold on a lightweight loading screen instead of flashing the full app.
   if (focusMemberId && members.length === 0 && !focusLoadTimedOut) {
-    return (
+    return withDebugConsole(
       <div
         style={{
           display: 'flex',
@@ -660,6 +671,7 @@ export function App() {
             pause/delete right there so the timer page is optional. */}
         <TimerAlarm />
         {activeView !== 'timer' && <TimerDock onOpen={() => setActiveView('timer')} />}
+        <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
         <div className="beacon-main">
@@ -689,7 +701,6 @@ export function App() {
               <ChorePlanner
                 members={members}
                 locale={settings.locale}
-                debugMode={settings.debugMode}
                 onLocaleChange={(locale) => updateSettings({ locale })}
                 createRequest={choreCreate}
               />

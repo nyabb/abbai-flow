@@ -72,6 +72,14 @@ export const en = {
   'app.connecting': 'Connecting...',
   'app.choresDisabled': 'Chores are disabled. Enable them in Settings → Chores to use this screen.',
   'app.previewMode': 'Preview Mode',
+  'debugConsole.tab': 'Debug',
+  'debugConsole.title': 'Debug activity',
+  'debugConsole.open': 'Open debug activity',
+  'debugConsole.close': 'Close debug activity',
+  'debugConsole.copy': 'Copy log',
+  'debugConsole.copied': 'Copied',
+  'debugConsole.clear': 'Clear log',
+  'debugConsole.empty': 'No requests or errors logged yet.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Edit Dashboard',
@@ -206,7 +214,7 @@ export const en = {
   'settings.general.monday': 'Monday',
   'settings.general.languageLabel': 'Language / Locale',
   'settings.general.debugModeLabel': 'Debug Mode',
-  'settings.general.debugModeSublabel': 'Show full request and error details in the chore planner.',
+  'settings.general.debugModeSublabel': 'Show a global log of API calls, responses, and errors.',
   'settings.display.ingressUrlUnavailable': 'A shareable display URL is unavailable inside Home Assistant. Open Abbai Flow on the target screen and choose “Use on This Device”.',
   'settings.general.dashboardLayoutTitle': 'Dashboard Layout',
   'settings.general.dashboardLayoutDesc': 'Choose how your dashboard is organized.',
@@ -800,6 +808,7 @@ export const en = {
   'planner.rewardReset': 'Reward reset with 0 points',
   'planner.routinePicker': 'Existing routine',
   'planner.routineNew': 'New routine',
+  'planner.manageExisting': 'Browse and edit existing',
 
   // frequency option labels
   'planner.tab.goals': 'Goals',

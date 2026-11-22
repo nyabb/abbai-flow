@@ -68,6 +68,14 @@ export const pt: Record<TranslationKey, string> = {
   'app.choresDisabled':
     'As tarefas estão desativadas. Ative-as em Definições → Tarefas para usar este ecrã.',
   'app.previewMode': 'Modo de visualizacao',
+  'debugConsole.tab': 'Depuração',
+  'debugConsole.title': 'Atividade de depuração',
+  'debugConsole.open': 'Abrir atividade de depuração',
+  'debugConsole.close': 'Fechar atividade de depuração',
+  'debugConsole.copy': 'Copiar registro',
+  'debugConsole.copied': 'Copiado',
+  'debugConsole.clear': 'Limpar registro',
+  'debugConsole.empty': 'Nenhuma solicitação ou erro registrado ainda.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Editar painel',
@@ -202,7 +210,7 @@ export const pt: Record<TranslationKey, string> = {
   'settings.general.monday': 'Segunda-feira',
   'settings.general.languageLabel': 'Idioma / Região',
   'settings.general.debugModeLabel': 'Modo de depuração',
-  'settings.general.debugModeSublabel': 'Mostrar detalhes completos de solicitações e erros no planejador de tarefas.',
+  'settings.general.debugModeSublabel': 'Mostrar um registro global de chamadas de API, respostas e erros.',
   'settings.display.ingressUrlUnavailable': 'Um URL de ecrã partilhável não está disponível no Home Assistant. Abra o Abbai Flow no ecrã de destino e escolha “Usar neste dispositivo”.',
   'settings.general.dashboardLayoutTitle': 'Esquema do painel',
   'settings.general.dashboardLayoutDesc': 'Escolha como o seu painel está organizado.',
@@ -796,6 +804,7 @@ export const pt: Record<TranslationKey, string> = {
   'planner.rewardReset': 'Recompensa reposta com 0 pontos',
   'planner.routinePicker': 'Rotina existente',
   'planner.routineNew': 'Nova rotina',
+  'planner.manageExisting': 'Ver e editar itens existentes',
   'planner.tab.goals': 'Metas',
   'planner.tab.chores': 'Tarefas',
   'planner.tab.routines': 'Rotinas',

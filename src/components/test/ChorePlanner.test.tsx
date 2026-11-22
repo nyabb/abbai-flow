@@ -157,6 +157,7 @@ function openRewards(container: HTMLElement, name = 'Zara') {
 
 describe('ChorePlanner parent PIN gate', () => {
   beforeEach(() => {
+    localStorage.clear();
     mocks.state.current = choreOpsState();
     mocks.createReward.mockClear();
     mocks.deleteChore.mockClear();
@@ -189,6 +190,33 @@ describe('ChorePlanner parent PIN gate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
 
     await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Afwassen'));
+  });
+
+  it('browses household chores, rewards, and routines from the create sheet', async () => {
+    const base = choreOpsState();
+    mocks.state.current = {
+      ...base,
+      chores: [
+        {
+          ...base.chores[0],
+          frequency: 'daily',
+          labels: ['Ochtendroutine'],
+        },
+      ],
+    };
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+    const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
+
+    expect(within(sheet).getByText('Afwassen')).toBeTruthy();
+    expect(sheet.textContent).toContain('Zara');
+
+    fireEvent.click(within(sheet).getByRole('tab', { name: /Beloningen/ }));
+    expect(within(sheet).getByText('Schermtijd')).toBeTruthy();
+
+    fireEvent.click(within(sheet).getByRole('tab', { name: /Routines/ }));
+    await waitFor(() => expect(within(sheet).getByText('Ochtendroutine')).toBeTruthy());
   });
 });
 

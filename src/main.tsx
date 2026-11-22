@@ -19,14 +19,17 @@ import './styles/choreops.css';
 import './styles/chore-planner.css';
 import './styles/display.css';
 import './styles/timer.css';
+import './styles/debug-console.css';
 // Screen design layer last: it refines the per-view stylesheets app-wide.
 import './styles/surface.css';
 // Responsive/touch additions only - loaded after everything else.
 import './styles/responsive.css';
 import { applyStoredTheme } from './hooks/useTheme';
+import { installDebugFetchCapture } from './api/debug-log';
 
 // Apply stored theme immediately (before first paint) to prevent flash
 applyStoredTheme();
+installDebugFetchCapture();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

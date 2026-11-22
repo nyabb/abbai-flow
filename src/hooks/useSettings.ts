@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { getConfig } from '../config';
 import { loadDataSync, loadServerData, saveData } from '../api/beacon-store';
+import { setDebugCaptureEnabled } from '../api/debug-log';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -203,6 +204,7 @@ export function useSettings() {
   /** Re-fetch settings from server. */
   const refresh = useCallback(async () => {
     const serverSettings = await loadSettingsAsync();
+    setDebugCaptureEnabled(serverSettings.debugMode);
     setSettingsState(serverSettings);
     setLoaded(true);
   }, []);
@@ -232,12 +234,14 @@ export function useSettings() {
 
   /** Update one or more settings fields. Changes apply immediately. */
   const updateSettings = useCallback((patch: Partial<AbbaiSettings>) => {
+    if (patch.debugMode !== undefined) setDebugCaptureEnabled(patch.debugMode);
     setSettingsState((prev) => ({ ...prev, ...patch }));
   }, []);
 
   /** Reset all settings to defaults (merged with config.yaml values). */
   const resetSettings = useCallback(() => {
     const defaults = buildDefaults();
+    setDebugCaptureEnabled(defaults.debugMode);
     setSettingsState(defaults);
     persistSettings(defaults);
   }, []);
@@ -252,7 +256,9 @@ export function useSettings() {
     try {
       const parsed = JSON.parse(json);
       const defaults = buildDefaults();
-      setSettingsState({ ...defaults, ...parsed });
+      const imported = { ...defaults, ...parsed } as AbbaiSettings;
+      setDebugCaptureEnabled(imported.debugMode);
+      setSettingsState(imported);
     } catch {
       // invalid JSON — do nothing
     }

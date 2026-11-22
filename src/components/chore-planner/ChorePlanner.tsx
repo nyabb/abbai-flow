@@ -4,7 +4,6 @@ import {
   Check,
   ChevronDown,
   Clock3,
-  Copy,
   Eye,
   EyeOff,
   Plus,
@@ -43,6 +42,7 @@ import {
 import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
 import { HomeAssistantServiceError } from '../../api/ha-rest';
+import { recordDebugLog } from '../../api/debug-log';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
@@ -162,7 +162,6 @@ interface ChorePlannerProps {
    * e.g. from quick add. The token makes repeated requests distinct.
    */
   createRequest?: { kind: 'chore' | 'routine'; token: number };
-  debugMode?: boolean;
 }
 
 export function ChorePlanner({
@@ -170,7 +169,6 @@ export function ChorePlanner({
   locale,
   onLocaleChange,
   createRequest,
-  debugMode = false,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
   /**
@@ -199,6 +197,26 @@ export function ChorePlanner({
     routinesPaused: false,
     soundEnabled: true,
   };
+  const adminRoutines = [
+    ...meta.routines.map((definition) => {
+      const liveRoutine = data.routines.find((routine) => routine.id === definition.id);
+      return {
+        id: definition.id,
+        name: definition.name,
+        taskNames: definition.taskNames,
+        memberIds: liveRoutine?.memberIds ?? [],
+      };
+    }),
+    ...data.routines
+      .filter((routine) => !meta.routines.some((definition) => definition.id === routine.id))
+      .map((routine) => ({
+        id: routine.id,
+        name: routine.name,
+        taskNames: routine.taskNames,
+        memberIds: routine.memberIds,
+        fallback: routine.fallback,
+      })),
+  ];
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
@@ -226,14 +244,6 @@ export function ChorePlanner({
   const [saving, setSaving] = useState(false);
   /** Bottom-right notification: green for "done", red for "that failed". */
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [errorCopied, setErrorCopied] = useState(false);
-  useEffect(() => {
-    if (!debugMode) {
-      setErrorDetails(null);
-      setErrorCopied(false);
-    }
-  }, [debugMode]);
   const [celebration, setCelebration] = useState<'chore' | 'goal' | null>(null);
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -898,8 +908,12 @@ export function ChorePlanner({
   ) => {
     setToast({ message, kind });
     if (kind === 'error') {
-      setErrorDetails(debugMode ? details ?? message : null);
-      setErrorCopied(false);
+      recordDebugLog({
+        level: 'error',
+        source: 'Chore Planner',
+        message,
+        details: details ?? message,
+      });
     }
   };
 
@@ -908,34 +922,6 @@ export function ChorePlanner({
     showToast(message, 'error', errorDiagnosticText(error));
   };
 
-  const copyErrorDetails = async () => {
-    if (!errorDetails) return;
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(errorDetails);
-        setErrorCopied(true);
-        return;
-      }
-    } catch {
-      // Fall through to the legacy copy path for insecure contexts and WebViews.
-    }
-    const field = document.createElement('textarea');
-    field.value = errorDetails;
-    field.setAttribute('readonly', '');
-    field.style.position = 'fixed';
-    field.style.opacity = '0';
-    document.body.appendChild(field);
-    field.select();
-    field.setSelectionRange(0, field.value.length);
-    let copied = false;
-    try {
-      copied = document.execCommand('copy');
-    } finally {
-      field.remove();
-    }
-    if (copied) setErrorCopied(true);
-    else window.prompt(c.errorDetailsTitle, errorDetails);
-  };
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
     try {
@@ -2058,49 +2044,6 @@ export function ChorePlanner({
           {c.offline}
         </div>
       )}
-      {debugMode && errorDetails && (
-        <section
-          className="planner-error-details"
-          role="alert"
-          aria-labelledby="planner-error-details-title"
-        >
-          <div className="planner-error-details__header">
-            <h2 id="planner-error-details-title">{c.errorDetailsTitle}</h2>
-            <div className="planner-error-details__actions">
-              <button type="button" onClick={() => void copyErrorDetails()}>
-                {errorCopied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                <span>{errorCopied ? c.errorDetailsCopied : c.copyErrorDetails}</span>
-              </button>
-              <button
-                type="button"
-                className="planner-error-details__close"
-                aria-label={t('common.close')}
-                onClick={() => {
-                  setErrorDetails(null);
-                  setErrorCopied(false);
-                }}
-              >
-                <X aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-          <pre
-            tabIndex={0}
-            role="button"
-            aria-label={c.copyErrorDetails}
-            onClick={() => void copyErrorDetails()}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                void copyErrorDetails();
-              }
-            }}
-            style={{ cursor: 'copy' }}
-          >
-            {errorDetails}
-          </pre>
-        </section>
-      )}
       {screen === 'board' && choreOps.loading && !choreOps.data && (
         <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
           {Array.from({ length: Math.max(2, Math.min(data.members.length || 3, 4)) }, (_, index) => (
@@ -2346,10 +2289,19 @@ export function ChorePlanner({
             {overlay.type === 'create' && (
               <CreateSheet
                 copy={c}
+                chores={choreOps.data?.chores ?? []}
+                tasks={view.allTasks}
+                routines={adminRoutines}
+                rewards={rewards}
+                members={data.members}
                 onChore={() => openNewForm('chore')}
                 onRoutine={() => openNewForm('routine')}
                 onReward={() =>
                   startRewardForm(screen === 'child' ? (childMember?.id ?? undefined) : undefined)
+                }
+                onEditChore={openEditForm}
+                onOpenReward={(reward) =>
+                  dispatchOverlay({ type: 'open-reward-actions', reward })
                 }
               />
             )}{' '}

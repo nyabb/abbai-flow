@@ -68,6 +68,14 @@ export const de: Record<TranslationKey, string> = {
   'app.choresDisabled':
     'Aufgaben sind deaktiviert. Aktiviere sie unter Einstellungen → Aufgaben, um diesen Bildschirm zu nutzen.',
   'app.previewMode': 'Vorschaumodus',
+  'debugConsole.tab': 'Debug',
+  'debugConsole.title': 'Debug-Aktivität',
+  'debugConsole.open': 'Debug-Aktivität öffnen',
+  'debugConsole.close': 'Debug-Aktivität schließen',
+  'debugConsole.copy': 'Protokoll kopieren',
+  'debugConsole.copied': 'Kopiert',
+  'debugConsole.clear': 'Protokoll leeren',
+  'debugConsole.empty': 'Noch keine Anfragen oder Fehler protokolliert.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Übersicht bearbeiten',
@@ -203,7 +211,7 @@ export const de: Record<TranslationKey, string> = {
   'settings.general.monday': 'Montag',
   'settings.general.languageLabel': 'Sprache / Region',
   'settings.general.debugModeLabel': 'Debugmodus',
-  'settings.general.debugModeSublabel': 'Vollständige Anfrage- und Fehlerdetails im Aufgabenplaner anzeigen.',
+  'settings.general.debugModeSublabel': 'Ein globales Protokoll mit API-Aufrufen, Antworten und Fehlern anzeigen.',
   'settings.display.ingressUrlUnavailable': 'Eine teilbare Display-URL ist innerhalb von Home Assistant nicht verfügbar. Öffne Abbai Flow auf dem Zielbildschirm und wähle „Auf diesem Gerät verwenden“.',
   'settings.general.dashboardLayoutTitle': 'Übersichtslayout',
   'settings.general.dashboardLayoutDesc': 'Lege fest, wie deine Übersicht aufgebaut ist.',
@@ -802,6 +810,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.rewardReset': 'Belohnung mit 0 Punkten zurückgesetzt',
   'planner.routinePicker': 'Bestehende Routine',
   'planner.routineNew': 'Neue Routine',
+  'planner.manageExisting': 'Vorhandene ansehen und bearbeiten',
   'planner.tab.goals': 'Ziele',
   'planner.tab.chores': 'Aufgaben',
   'planner.tab.routines': 'Routinen',
