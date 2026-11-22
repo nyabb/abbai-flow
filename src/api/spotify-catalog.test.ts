@@ -48,6 +48,7 @@ describe('Spotify catalog search', () => {
         artists: ['Sample Artist'],
         album: 'Sample Album',
         artworkUrl: 'https://img.test/cover.jpg',
+        spotifyUrl: 'https://open.spotify.com/track/abc123',
         durationMs: 188000,
       },
     ]);
@@ -75,6 +76,19 @@ describe('Spotify catalog search', () => {
       code: 'not_configured',
       status: 503,
     });
+  });
+
+  it('verifies server credentials without returning or logging an access token', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({ access_token: 'private-access-token', expires_in: 3600 }),
+      );
+    const service = catalog(fetcher);
+
+    await expect(service.verifyCredentials()).resolves.toEqual({ ok: true });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(JSON.stringify(await service.verifyCredentials())).not.toContain('private-access-token');
   });
 
   it('converts Spotify rate limits and service failures to safe errors', async () => {

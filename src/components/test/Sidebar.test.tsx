@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent, screen, within } from '@testing-library/react';
 import { Sidebar } from '../Sidebar';
 import { I18nContext, createI18n } from '../../i18n';
+import { TOUCH_NAV_ORDER } from '../../utils/touch-navigation';
 
 const NL = createI18n('nl');
 
@@ -28,18 +29,19 @@ describe('Sidebar bottom bar', () => {
       'Klusjes',
       'Snel toevoegen',
       'Lijsten',
-      'Timer',
+      'Muziek',
       'Meer',
     ]);
   });
 
-  it('offers the timer in the bar and keeps photos one tap away', () => {
+  it('offers music in the bar and moves the timer into More', () => {
     const { container } = renderSidebar(() => {});
     const labels = [...container.querySelectorAll('.mobile-tab')].map((item) =>
       item.getAttribute('aria-label'),
     );
 
-    expect(labels).toContain('Timer');
+    expect(labels).toContain('Muziek');
+    expect(labels).not.toContain('Timer');
     expect(labels).not.toContain("Foto's");
   });
 
@@ -89,10 +91,10 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(['Muziek', "Foto's", 'Weer', 'Displaymodus', 'Instellingen']);
+    expect(entries).toEqual(["Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
     expect(entries).not.toContain('Lijsten');
-    expect(entries).not.toContain('Timer');
+    expect(entries).not.toContain('Muziek');
     expect(entries).not.toContain('Taken');
 
     fireEvent.click(within(menu).getByText("Foto's"));
@@ -119,5 +121,22 @@ describe('Sidebar desktop', () => {
     expect(labels(main)).not.toContain("Foto's");
     expect(labels(bottom)).toContain("Foto's");
     expect(labels(bottom)).toContain('Instellingen');
+  });
+});
+
+describe('touch navigation order', () => {
+  it('follows the mobile bar and its More menu', () => {
+    expect(TOUCH_NAV_ORDER).toEqual([
+      'dashboard',
+      'calendar',
+      'chores',
+      'grocery',
+      'music',
+      'photos',
+      'timer',
+      'weather',
+      'display',
+      'settings',
+    ]);
   });
 });

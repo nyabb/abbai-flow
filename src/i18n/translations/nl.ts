@@ -1,6 +1,7 @@
-import type { TranslationKey } from './en';
+import { en, type TranslationKey } from './en';
 
 export const nl: Record<TranslationKey, string> = {
+  ...en,
   // ---- common ----
   'common.save': 'Opslaan',
   'common.cancel': 'Annuleren',
@@ -646,6 +647,35 @@ export const nl: Record<TranslationKey, string> = {
     'Spotify zoeken vereist SPOTIFY_CLIENT_ID en SPOTIFY_CLIENT_SECRET op de server.',
   'music.spotifySearchResults': 'Zoekresultaten',
   'music.spotifyPlayTrack': 'Nummer afspelen',
+  'music.spotifyYourLibrary': 'Je bibliotheek',
+  'music.spotifyPlaylists': 'Afspeellijsten',
+  'music.spotifyCreatePlaylist': 'Afspeellijst maken',
+  'music.spotifyPlaylistConfigure':
+    'Stel SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET en SPOTIFY_REDIRECT_URI in op de server om afspeellijsten te beheren.',
+  'music.spotifyPlaylistConnectHelp':
+    'Verbind je Spotify-account om je afspeellijsten te zien, maken en bewerken.',
+  'music.spotifyConnecting': 'Verbinden met Spotify…',
+  'music.spotifyConnectAccount': 'Spotify-account verbinden',
+  'music.spotifyNewPlaylist': 'Nieuwe afspeellijst',
+  'music.spotifyPlaylistNamePlaceholder': 'Geef je afspeellijst een naam',
+  'music.spotifyPlaylistCreated': 'Afspeellijst gemaakt.',
+  'music.spotifyPlaylistCreateFailed': 'Afspeellijst maken is mislukt.',
+  'music.spotifyPlaylistConnected': 'Spotify-account verbonden.',
+  'music.spotifyPlaylistConnectFailed': 'Spotify-account verbinden is mislukt.',
+  'music.spotifyPlaylistTrackCount': '{count} nummers',
+  'music.spotifyNoPlaylists': 'Nog geen afspeellijsten.',
+  'music.spotifyLoadMore': 'Meer laden',
+  'music.spotifyPlaylist': 'Afspeellijst',
+  'music.spotifyPlaylistPrivate': 'Privé',
+  'music.spotifyOpenInSpotify': 'Openen in Spotify',
+  'music.spotifyTrackTitle': 'Titel',
+  'music.spotifyTrackAlbum': 'Album',
+  'music.spotifyTrackDuration': 'Tijd',
+  'music.spotifyPlaylistLoading': 'Afspeellijst laden…',
+  'music.spotifyPlaylistEmpty': 'Deze afspeellijst is leeg. Zoek een nummer en voeg het toe.',
+  'music.spotifyNoPlaylistSelected': 'Kies een afspeellijst',
+  'music.spotifyPlaylistEmptyHelp': 'Je afspeellijsten en nummers verschijnen hier.',
+  'music.spotifyAddToPlaylist': 'Toevoegen aan afspeellijst',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'Geen lijsten beschikbaar',

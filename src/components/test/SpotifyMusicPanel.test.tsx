@@ -1,11 +1,38 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { I18nContext, createI18n } from '../../i18n';
 import type { EncoreSnapshot } from '../../api/encore-music';
+import type { UseSpotifyPlaylistsResult } from '../../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from '../SpotifyMusicPanel';
 
 const EN = createI18n('en-US');
+
+function playlistLibrary(
+  overrides: Partial<UseSpotifyPlaylistsResult> = {},
+): UseSpotifyPlaylistsResult {
+  return {
+    status: { configured: false, authorized: false, redirectConfigured: false },
+    playlists: [],
+    playlistsTotal: 0,
+    selectedPlaylist: null,
+    selectedPlaylistId: null,
+    tracks: [],
+    tracksTotal: 0,
+    loading: false,
+    tracksLoading: false,
+    working: false,
+    error: null,
+    connect: vi.fn(async () => ({ ok: true })),
+    refresh: vi.fn(async () => undefined),
+    fetchPlaylists: vi.fn(async () => undefined),
+    selectPlaylist: vi.fn(),
+    loadMoreTracks: vi.fn(),
+    createPlaylist: vi.fn(async () => ({ ok: true })),
+    addTrack: vi.fn(async () => ({ ok: true })),
+    ...overrides,
+  };
+}
 
 function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
   return {
@@ -40,6 +67,7 @@ function renderPanel(
         loading={loading}
         onControl={vi.fn(async () => ({ ok: true }))}
         onSearch={onSearch}
+        library={playlistLibrary()}
       />
     </I18nContext.Provider>,
   );
@@ -70,6 +98,7 @@ describe('SpotifyMusicPanel connection states', () => {
           artists: ['Sample Artist'],
           album: 'Sample Album',
           artworkUrl: null,
+          spotifyUrl: null,
           durationMs: 180000,
         },
       ],
@@ -86,6 +115,7 @@ describe('SpotifyMusicPanel connection states', () => {
           loading={false}
           onSearch={onSearch}
           onControl={onControl}
+          library={playlistLibrary()}
         />
       </I18nContext.Provider>,
     );
@@ -112,6 +142,7 @@ describe('SpotifyMusicPanel connection states', () => {
           artists: ['Sample Artist'],
           album: 'Sample Album',
           artworkUrl: null,
+          spotifyUrl: null,
           durationMs: null,
         },
       ],
@@ -134,5 +165,66 @@ describe('SpotifyMusicPanel connection states', () => {
     fireEvent.click(volumeButton);
     expect(volumeButton).toHaveAttribute('aria-expanded', 'true');
     expect(volumeButton).toHaveAttribute('aria-controls', 'spotify-volume');
+  });
+
+  it('keeps the playlist list visible and lets a search result be added to a playlist', async () => {
+    const playlist = {
+      id: '4q3zB8nVYk9m2H6wX1cR0P',
+      uri: 'spotify:playlist:4q3zB8nVYk9m2H6wX1cR0P',
+      name: 'Summer mix',
+      artworkUrl: null,
+      spotifyUrl: 'https://open.spotify.com/playlist/4q3zB8nVYk9m2H6wX1cR0P',
+      ownerName: 'Abbai',
+      trackCount: 1,
+      isPublic: false,
+    };
+    const addTrack = vi.fn(async () => ({ ok: true }));
+    const library = playlistLibrary({
+      status: { configured: true, authorized: true, redirectConfigured: true },
+      playlists: [playlist],
+      playlistsTotal: 1,
+      selectedPlaylist: playlist,
+      selectedPlaylistId: playlist.id,
+      tracks: [],
+      addTrack,
+    });
+    const onSearch = vi.fn(async () => ({
+      tracks: [
+        {
+          uri: 'spotify:track:abc123',
+          title: 'Sample Song',
+          artists: ['Sample Artist'],
+          album: 'Sample Album',
+          artworkUrl: null,
+          spotifyUrl: 'https://open.spotify.com/track/abc123',
+          durationMs: 180000,
+        },
+      ],
+    }));
+
+    render(
+      <I18nContext.Provider value={EN}>
+        <SpotifyMusicPanel
+          snapshot={snapshot()}
+          loading={false}
+          onControl={vi.fn(async () => ({ ok: true }))}
+          onSearch={onSearch}
+          library={library}
+        />
+      </I18nContext.Provider>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Your Library' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summer mix' })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Search Spotify' }), {
+      target: { value: 'Sample Song' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+    await screen.findByRole('button', { name: 'Add to playlist: Sample Song' });
+    fireEvent.click(screen.getByRole('button', { name: 'Add to playlist: Sample Song' }));
+    const menu = screen.getByRole('group', { name: 'Add to playlist' });
+    fireEvent.click(within(menu).getByRole('button', { name: 'Summer mix' }));
+
+    await waitFor(() => expect(addTrack).toHaveBeenCalledWith(playlist.id, 'spotify:track:abc123'));
   });
 });

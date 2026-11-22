@@ -4,6 +4,7 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, ChevronDown } fro
 import { MediaPlayer } from '../types/music';
 import { useTranslation } from '../i18n';
 import { useEncoreMusic } from '../hooks/useEncoreMusic';
+import { useSpotifyPlaylists } from '../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from './SpotifyMusicPanel';
 
 interface MusicViewProps {
@@ -42,6 +43,7 @@ export function MusicView({
   const { t } = useTranslation();
   const [source, setSource] = useState<'spotify' | 'ha'>('spotify');
   const encore = useEncoreMusic();
+  const playlists = useSpotifyPlaylists();
 
   const player =
     activePlayer || players.find((p) => p.entity_id === selectedPlayerId) || players[0] || null;
@@ -133,6 +135,7 @@ export function MusicView({
           loading={encore.loading}
           onControl={encore.control}
           onSearch={encore.search}
+          library={playlists}
         />
       ) : (
         <div className="music-view">

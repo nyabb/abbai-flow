@@ -38,6 +38,8 @@ import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
+import { useTouchPageSwipe } from './hooks/useTouchPageSwipe';
+import { TOUCH_NAV_ORDER } from './utils/touch-navigation';
 import { useDashboardTasks } from './hooks/useDashboardTasks';
 import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
@@ -123,6 +125,7 @@ export function App() {
     // owns the path segment). This is read once on boot and never pushed back
     // into history, so the ingress base path stays intact.
     if (isDisplayUrl(window.location)) return 'display';
+    if (new URLSearchParams(window.location.search).get('view') === 'music') return 'music';
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';
@@ -427,6 +430,13 @@ export function App() {
     setActiveView(view);
   }, []);
 
+  const pageSwipeHandlers = useTouchPageSwipe({
+    activeView,
+    navigationOrder: TOUCH_NAV_ORDER,
+    onNavigate: handleChangeView,
+    enabled: !settings.kioskMode,
+  });
+
   /* Quick add lives in the middle of the tab bar; the chores page listens for a
      create request so "chore" and "routine" open its form directly. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -674,7 +684,12 @@ export function App() {
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
-        <div className="abbai-flow-main">
+        <div
+          className="abbai-flow-main"
+          onTouchStart={pageSwipeHandlers.onTouchStart}
+          onTouchEnd={pageSwipeHandlers.onTouchEnd}
+          onTouchCancel={pageSwipeHandlers.onTouchCancel}
+        >
           {activeView === 'dashboard' ? (
             <>
               <DashboardView

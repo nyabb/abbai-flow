@@ -415,6 +415,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
   return (
     <div
       className="week-calendar"
+      data-page-swipe-ignore
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >

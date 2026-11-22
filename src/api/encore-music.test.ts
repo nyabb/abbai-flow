@@ -173,6 +173,25 @@ describe('EncoreMusic', () => {
     music.stop();
   });
 
+  it('logs Encore command errors without printing sensitive server messages', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const music = createMusic();
+    music.start();
+    sockets[0].open();
+    sockets[0].receive({ type: 'error', message: 'command requires authentication' });
+    sockets[0].receive({ type: 'error', message: 'Bearer server-only-test-token was rejected' });
+
+    expect(warn).toHaveBeenCalledWith(
+      '[Integration] Spotify playback command error: command requires authentication',
+    );
+    expect(warn).toHaveBeenCalledWith(
+      '[Integration] Spotify playback command error: Encore returned a command error; details were omitted for safety',
+    );
+    expect(JSON.stringify(warn.mock.calls)).not.toContain('server-only-test-token');
+    warn.mockRestore();
+    music.stop();
+  });
+
   it('sends control commands and sets repeat modes in Soloist order', () => {
     const music = createMusic();
     music.start();

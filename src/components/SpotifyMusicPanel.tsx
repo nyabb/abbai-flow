@@ -4,6 +4,7 @@ import {
   ListMusic,
   Music2,
   Pause,
+  Plus,
   Play,
   Repeat,
   Search,
@@ -15,6 +16,8 @@ import {
 } from 'lucide-react';
 import type { EncorePlayback, EncoreRepeat, EncoreSnapshot } from '../api/encore-music';
 import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
+import { SpotifyPlaylistLibrary } from './SpotifyPlaylistLibrary';
+import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
 
 interface SpotifyMusicPanelProps {
@@ -26,6 +29,7 @@ interface SpotifyMusicPanelProps {
     code?: string;
     error?: string;
   }>;
+  library: UseSpotifyPlaylistsResult;
 }
 
 function formatTime(milliseconds: number | null | undefined): string {
@@ -48,6 +52,7 @@ export function SpotifyMusicPanel({
   loading,
   onControl,
   onSearch,
+  library,
 }: SpotifyMusicPanelProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,6 +60,7 @@ export function SpotifyMusicPanel({
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [addingTrackUri, setAddingTrackUri] = useState<string | null>(null);
   const [position, setPosition] = useState(0);
   const [positionDraft, setPositionDraft] = useState<number | null>(null);
   const [volumeDraft, setVolumeDraft] = useState<number | null>(null);
@@ -264,27 +270,79 @@ export function SpotifyMusicPanel({
                   </span>
                 )}
                 <span className="spotify-search-copy">
-                  <strong>{track.title}</strong>
+                  {track.spotifyUrl ? (
+                    <a href={track.spotifyUrl} target="_blank" rel="noreferrer">
+                      {track.title}
+                    </a>
+                  ) : (
+                    <strong>{track.title}</strong>
+                  )}
                   <span>
                     {track.artists.join(', ') || '—'}
                     {track.album ? ` · ${track.album}` : ''}
                   </span>
                 </span>
-                <button
-                  type="button"
-                  className="spotify-search-play"
-                  aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
-                  title={t('music.spotifyPlayTrack')}
-                  disabled={!canControl}
-                  onClick={() => void runControl('playTrack', track.uri)}
-                >
-                  <Play size={19} fill="currentColor" />
-                </button>
+                <span className="spotify-search-actions">
+                  <button
+                    type="button"
+                    className="spotify-search-play"
+                    aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
+                    title={t('music.spotifyPlayTrack')}
+                    disabled={!canControl}
+                    onClick={() => void runControl('playTrack', track.uri)}
+                  >
+                    <Play size={19} fill="currentColor" />
+                  </button>
+                  <button
+                    type="button"
+                    className="spotify-search-add"
+                    aria-label={`${t('music.spotifyAddToPlaylist')}: ${track.title}`}
+                    title={t('music.spotifyAddToPlaylist')}
+                    disabled={!library.status.authorized}
+                    aria-expanded={addingTrackUri === track.uri}
+                    onClick={() =>
+                      setAddingTrackUri((current) => (current === track.uri ? null : track.uri))
+                    }
+                  >
+                    <Plus size={20} />
+                  </button>
+                </span>
+                {addingTrackUri === track.uri && (
+                  <div className="spotify-search-add-menu" role="group" aria-label={t('music.spotifyAddToPlaylist')}>
+                    {library.playlists.length === 0 ? (
+                      <p>{t('music.spotifyNoPlaylists')}</p>
+                    ) : (
+                      library.playlists.map((playlist) => (
+                        <button
+                          type="button"
+                          key={playlist.id}
+                          disabled={library.working}
+                          onClick={async () => {
+                            const result = await library.addTrack(playlist.id, track.uri);
+                            if (result.ok) setAddingTrackUri(null);
+                          }}
+                        >
+                          <Plus size={15} /> {playlist.name}
+                        </button>
+                      ))
+                    )}
+                    {library.playlists.length < library.playlistsTotal && (
+                      <button type="button" onClick={() => void library.fetchPlaylists()}>
+                        {t('music.spotifyLoadMore')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      <SpotifyPlaylistLibrary
+        library={library}
+        onPlayTrack={(uri) => void runControl('playTrack', uri)}
+      />
 
       <div className="spotify-main-layout">
         <div className="spotify-now-playing">

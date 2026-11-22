@@ -77,6 +77,17 @@ function finiteNumber(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+function safeEncoreError(value: unknown): string {
+  if (typeof value !== 'string') return 'Encore returned a command error';
+  // Remove terminal control characters before writing a peer error to logs.
+  // eslint-disable-next-line no-control-regex
+  const message = value.replace(/[\r\n\u0000-\u001f\u007f]/g, ' ').trim();
+  if (!message || message.length > 160 || /token|secret|bearer|authorization/i.test(message)) {
+    return 'Encore returned a command error; details were omitted for safety';
+  }
+  return message;
+}
+
 function nameOf(entity: JsonRecord | undefined): string | null {
   const decorations = entity?.decorations;
   if (!isRecord(decorations) || !isRecord(decorations.identity)) return null;
@@ -453,6 +464,11 @@ export class EncoreMusic {
             upcoming: normalizeQueueEntries(message.upcoming),
           },
         });
+        return;
+      case 'error':
+        console.warn(
+          '[Integration] Spotify playback command error: ' + safeEncoreError(message.message),
+        );
         return;
       default:
         return;

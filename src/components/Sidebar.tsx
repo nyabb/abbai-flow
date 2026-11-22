@@ -11,7 +11,7 @@ import {
   Tv,
   CloudSun,
   MoreHorizontal,
-  Plus,
+  ListPlus,
   X,
 } from 'lucide-react';
 import abbaiIcon from '../assets/abbai-flow-icon.svg';
@@ -96,22 +96,24 @@ const NAV_ITEMS: NavItem[] = [
 
 /**
  * The bar is seven elements with quick add dead centre: three views on the left,
- * the add button, three views on the right. Timer sits in the bar because it is
- * reached constantly; Photos moved one tap away into the overflow menu.
+ * the add button, two views on the right and More. Music sits in the bar; Timer
+ * moves one tap away into the overflow menu.
  *
  * The overflow menu only ever holds views that are *not* on the phone bar, so
- * nothing appears twice: Muziek, Foto's, Weer (+ Instellingen).
- * Desktop has no overflow menu, so Photos takes the slot Timer left in the
- * bottom group, next to Weather and Settings.
+ * nothing appears twice: Foto's, Timer, Weer and Display (+ Instellingen).
+ * Desktop keeps its existing Timer and Music slots.
  */
 const NAV_LEFT_IDS: SidebarView[] = ['dashboard', 'calendar', 'chores'];
 const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'timer', 'music'];
 /** The right side on phones: the last slot is the overflow menu. */
-const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'timer'];
+const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
 /** Everything the phone bar already shows. */
 const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
 const NAV_EXTRA_IDS: SidebarView[] = ['photos', 'weather', 'display'];
+const NAV_MORE_ITEMS = NAV_ITEMS.filter(
+  (item) => item.id !== 'settings' && !BAR_IDS.includes(item.id),
+);
 
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();
@@ -123,7 +125,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
   const mobileRight = MOBILE_RIGHT_IDS.map(itemFor);
   const navExtra = NAV_EXTRA_IDS.map(itemFor);
   /** Overflow = every nav item the bar does not already show. */
-  const navMore = NAV_ITEMS.filter((item) => item.id !== 'settings' && !BAR_IDS.includes(item.id));
+  const navMore = NAV_MORE_ITEMS;
   const quickAddLabel = t('omniAdd.quickAdd');
 
   const handleMobileNav = (view: SidebarView) => {
@@ -166,7 +168,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
               title={quickAddLabel}
               aria-label={quickAddLabel}
             >
-              <Plus size={ICON_SIZE} strokeWidth={2} />
+              <ListPlus size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
             </button>
           )}
           {navRight.map((item) => (
@@ -214,7 +216,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
 
       {/* Mobile bottom tab bar (hidden on desktop via CSS) */}
       <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
-        {/* Three views, the add button dead centre, then three more. */}
+        {/* Three views, the quick-add button, two more views and More. */}
         {navLeft.map((item) => (
           <button
             key={item.id}
@@ -234,7 +236,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
             onClick={onQuickAdd}
             aria-label={quickAddLabel}
           >
-            <Plus size={ICON_SIZE + 6} strokeWidth={2} />
+            <ListPlus size={ICON_SIZE + 6} strokeWidth={STROKE_WIDTH} />
           </button>
         )}
         {mobileRight.map((item) => (

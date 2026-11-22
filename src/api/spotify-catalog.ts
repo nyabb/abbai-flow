@@ -4,6 +4,7 @@ export interface SpotifyCatalogTrack {
   artists: string[];
   album: string;
   artworkUrl: string | null;
+  spotifyUrl: string | null;
   durationMs: number | null;
 }
 
@@ -29,6 +30,9 @@ export interface SpotifyCatalogOptions {
   now?: () => number;
 }
 
+export type SpotifyCatalogVerification =
+  { ok: true } | { ok: false; code: SpotifyCatalogErrorCode };
+
 interface JsonRecord {
   [key: string]: unknown;
 }
@@ -48,6 +52,16 @@ function safeImage(value: unknown): string | null {
   try {
     const url = new URL(item.url as string);
     return url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSpotifyUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && url.hostname === 'open.spotify.com' ? url.toString() : null;
   } catch {
     return null;
   }
@@ -152,6 +166,20 @@ export class SpotifyCatalog {
     throw new SpotifyCatalogError('unavailable', 502, 'Spotify search is temporarily unavailable');
   }
 
+  /** Verify the configured app credentials without returning its access token. */
+  async verifyCredentials(): Promise<SpotifyCatalogVerification> {
+    if (!this.configured) return { ok: false, code: 'not_configured' };
+    try {
+      await this.getToken();
+      return { ok: true };
+    } catch (error) {
+      return {
+        ok: false,
+        code: error instanceof SpotifyCatalogError ? error.code : 'unavailable',
+      };
+    }
+  }
+
   private async getToken(): Promise<string> {
     if (this.cachedToken && this.cachedToken.expiresAt > this.now()) {
       return this.cachedToken.value;
@@ -235,6 +263,7 @@ export class SpotifyCatalog {
               .filter((name): name is string => name !== null)
           : [];
         const album = isRecord(value.album) ? value.album : {};
+        const externalUrls = isRecord(value.external_urls) ? value.external_urls : {};
         const durationMs =
           typeof value.duration_ms === 'number' && Number.isFinite(value.duration_ms)
             ? value.duration_ms
@@ -246,6 +275,7 @@ export class SpotifyCatalog {
           artists,
           album: text(album.name) || '',
           artworkUrl: safeImage(album.images),
+          spotifyUrl: safeSpotifyUrl(externalUrls.spotify),
           durationMs,
         };
       })

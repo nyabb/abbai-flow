@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EncoreMusic, type EncoreSnapshot } from './encore-music';
 import { SpotifyCatalog } from './spotify-catalog';
+import type { SpotifyPlaylistLibrary } from './spotify-playlists';
 import {
   handleEncoreMusicRequest,
   type EncoreHttpHelpers,
@@ -135,6 +136,62 @@ describe('Encore HTTP bridge', () => {
     expect(catalog.search).toHaveBeenCalledWith('sample song');
     expect(bridge.response.status).toBe(200);
     expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({ tracks: [track] });
+  });
+
+  it('exposes safe playlist status and library data through the application API', async () => {
+    const encore = new EncoreMusic();
+    const playlistService = {
+      status: vi.fn(async () => ({ configured: true, authorized: true, redirectConfigured: true })),
+      listPlaylists: vi.fn(async () => ({ items: [], total: 0, offset: 0 })),
+    } as unknown as SpotifyPlaylistLibrary;
+    const bridge = helpers();
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/status'),
+      bridge.response,
+      encore,
+      bridge,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+    expect(bridge.response.status).toBe(200);
+    expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({
+      configured: true,
+      authorized: true,
+      redirectConfigured: true,
+    });
+    expect(bridge.response.chunks.join('')).not.toMatch(/access_token|refresh_token|client_secret/i);
+
+    const listBridge = helpers();
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/playlists?offset=0'),
+      listBridge.response,
+      encore,
+      listBridge,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+    expect(playlistService.listPlaylists).toHaveBeenCalledWith('0');
+    expect(listBridge.response.status).toBe(200);
+    expect(JSON.parse(listBridge.response.chunks.join(''))).toEqual({ items: [], total: 0, offset: 0 });
+  });
+
+  it('rejects unexpected playlist query parameters before calling Spotify', async () => {
+    const encore = new EncoreMusic();
+    const playlistService = { listPlaylists: vi.fn() } as unknown as SpotifyPlaylistLibrary;
+    const bridge = helpers();
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/playlists?offset=0&secret=bad'),
+      bridge.response,
+      encore,
+      bridge,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+
+    expect(bridge.response.status).toBe(400);
+    expect(playlistService.listPlaylists).not.toHaveBeenCalled();
   });
 
   it('rejects malformed search requests before querying Spotify', async () => {

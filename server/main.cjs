@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const { createApp, configFromEnv } = require('./app.cjs');
+const { startIntegrationDiagnostics } = require('./build/integration-diagnostics.js');
 
 const PORT = Number(process.env.ABBAI_FLOW_PORT || process.env.PORT || 3000);
 const config = configFromEnv();
@@ -23,7 +24,16 @@ try {
   /* read-only or already present */
 }
 
-const { server } = createApp(config);
+const { server, encore, verifySpotifyCatalog, verifySpotifyPlaylists } = createApp(config);
+const integrationDiagnostics = startIntegrationDiagnostics(
+  { ...config, customHaCaConfigured: Boolean(config.ca) },
+  encore,
+  {
+    verifySpotifyCatalog,
+    verifySpotifyPlaylists,
+  },
+);
+server.on('close', integrationDiagnostics.stop);
 
 server.listen(PORT, () => {
   console.log(`Abbai Flow server listening on port ${PORT}`);
