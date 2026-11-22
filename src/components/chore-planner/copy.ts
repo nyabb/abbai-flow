@@ -73,6 +73,7 @@ export function usePlannerCopy() {
       startMissions: t('planner.startMissions'),
       startRoutine: t('planner.startRoutine'),
       chooseWhat: t('planner.chooseWhat'),
+      manageExisting: t('planner.manageExisting'),
       assignPoints: t('planner.assignPoints'),
       assignPointsHint: t('planner.assignPointsHint'),
       missionsHint: t('planner.missionsHint'),

@@ -308,9 +308,11 @@ export interface UpdateRewardInput {
    */
   name: string;
   cost?: number;
+  /** Replaces the users who can see and claim the reward when provided. */
+  assignedUserNames?: string[];
 }
 
-/** Build the `choreops.update_reward` payload (price changes from the UI). */
+/** Build the `choreops.update_reward` payload. */
 export function buildUpdateRewardPayload(input: UpdateRewardInput): Record<string, unknown> | null {
   const name = input.name.trim();
   if (!input.entryId || !name) return null;
@@ -318,6 +320,11 @@ export function buildUpdateRewardPayload(input: UpdateRewardInput): Record<strin
   const payload: Record<string, unknown> = { config_entry_id: input.entryId, name };
   if (typeof input.cost === 'number' && Number.isFinite(input.cost)) {
     payload.cost = Math.max(1, Math.round(input.cost));
+  }
+  if (input.assignedUserNames !== undefined) {
+    payload.assigned_user_names = Array.from(
+      new Set(input.assignedUserNames.map((userName) => userName.trim()).filter(Boolean)),
+    );
   }
 
   return payload;

@@ -68,6 +68,14 @@ export const es: Record<TranslationKey, string> = {
   'app.choresDisabled':
     'Las tareas están desactivadas. Actívalas en Ajustes → Tareas para usar esta pantalla.',
   'app.previewMode': 'Modo de vista previa',
+  'debugConsole.tab': 'Depuración',
+  'debugConsole.title': 'Actividad de depuración',
+  'debugConsole.open': 'Abrir actividad de depuración',
+  'debugConsole.close': 'Cerrar actividad de depuración',
+  'debugConsole.copy': 'Copiar registro',
+  'debugConsole.copied': 'Copiado',
+  'debugConsole.clear': 'Borrar registro',
+  'debugConsole.empty': 'Aún no hay solicitudes ni errores registrados.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Editar panel',
@@ -202,7 +210,7 @@ export const es: Record<TranslationKey, string> = {
   'settings.general.monday': 'Lunes',
   'settings.general.languageLabel': 'Idioma / Configuración regional',
   'settings.general.debugModeLabel': 'Modo de depuración',
-  'settings.general.debugModeSublabel': 'Mostrar detalles completos de solicitudes y errores en el planificador de tareas.',
+  'settings.general.debugModeSublabel': 'Mostrar un registro global de llamadas API, respuestas y errores.',
   'settings.display.ingressUrlUnavailable': 'No hay una URL de pantalla compartible dentro de Home Assistant. Abre Abbai Flow en la pantalla de destino y elige «Usar en este dispositivo».',
   'settings.general.dashboardLayoutTitle': 'Diseño del panel',
   'settings.general.dashboardLayoutDesc': 'Elige cómo se organiza tu panel.',
@@ -798,6 +806,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.rewardReset': 'Recompensa restablecida con 0 puntos',
   'planner.routinePicker': 'Rutina existente',
   'planner.routineNew': 'Nueva rutina',
+  'planner.manageExisting': 'Ver y editar existentes',
   'planner.tab.goals': 'Objetivos',
   'planner.tab.chores': 'Tareas',
   'planner.tab.routines': 'Rutinas',

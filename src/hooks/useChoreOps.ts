@@ -455,7 +455,7 @@ export function useChoreOps(): UseChoreOpsResult {
     [reloadAfterWrite],
   );
 
-  /** Delete a chore in ChoreOps by name (the id ChoreOps publishes). */
+  /** Update a reward's cost and, when provided, its assigned users. */
   const updateReward = useCallback(
     async (input: Omit<UpdateRewardInput, 'entryId'>): Promise<void> => {
       const entryId = snapshot.data?.entryId ?? null;

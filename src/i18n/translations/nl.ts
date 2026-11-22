@@ -67,6 +67,14 @@ export const nl: Record<TranslationKey, string> = {
   'app.choresDisabled':
     'Klusjes zijn uitgeschakeld. Schakel ze in bij Instellingen → Klusjes om dit scherm te gebruiken.',
   'app.previewMode': 'Voorbeeldmodus',
+  'debugConsole.tab': 'Debug',
+  'debugConsole.title': 'Debugactiviteit',
+  'debugConsole.open': 'Debugactiviteit openen',
+  'debugConsole.close': 'Debugactiviteit sluiten',
+  'debugConsole.copy': 'Logboek kopiëren',
+  'debugConsole.copied': 'Gekopieerd',
+  'debugConsole.clear': 'Logboek wissen',
+  'debugConsole.empty': 'Nog geen verzoeken of fouten vastgelegd.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Dashboard bewerken',
@@ -201,7 +209,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.general.monday': 'Maandag',
   'settings.general.languageLabel': 'Taal / Regio',
   'settings.general.debugModeLabel': 'Debugmodus',
-  'settings.general.debugModeSublabel': 'Toon volledige aanvraag- en foutdetails in de klusjesplanner.',
+  'settings.general.debugModeSublabel': 'Toon een algemeen logboek van API-aanroepen, antwoorden en fouten.',
   'settings.display.ingressUrlUnavailable': 'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
   'settings.general.dashboardLayoutTitle': 'Dashboardindeling',
   'settings.general.dashboardLayoutDesc': 'Kies hoe je dashboard is ingedeeld.',
@@ -795,6 +803,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.rewardReset': 'Beloning teruggezet met 0 punten',
   'planner.routinePicker': 'Bestaande routine',
   'planner.routineNew': 'Nieuwe routine',
+  'planner.manageExisting': 'Bestaande bekijken en bewerken',
 
   // frequency option labels
   'planner.tab.goals': 'Doelen',

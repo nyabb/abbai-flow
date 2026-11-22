@@ -407,8 +407,34 @@ export class FakeHa {
     if (service === 'update_reward') {
       const name = String(data.name ?? '').trim();
       const cost = Number(data.cost ?? 0);
-      for (const reward of this.rewards) {
-        if (reward.name === name && cost > 0) reward.cost = Math.max(1, Math.round(cost));
+      const assignedUserNames = Array.isArray(data.assigned_user_names)
+        ? Array.from(new Set(data.assigned_user_names.map((user) => String(user).trim()).filter(Boolean)))
+        : null;
+      const existing = this.rewards.filter(
+        (reward) => reward.name.trim().toLowerCase() === name.toLowerCase(),
+      );
+      const updatedCost = cost > 0 ? Math.max(1, Math.round(cost)) : null;
+
+      if (assignedUserNames !== null) {
+        const reassigned = assignedUserNames.map((userName) => {
+          const previous = existing.find(
+            (reward) => reward.userName.trim().toLowerCase() === userName.toLowerCase(),
+          );
+          return previous
+            ? { ...previous, userName, cost: updatedCost ?? previous.cost }
+            : {
+                userName,
+                name,
+                cost: updatedCost ?? existing[0]?.cost ?? 0,
+                pendingClaims: 0,
+                status: 'available',
+              };
+        });
+        this.rewards = this.rewards
+          .filter((reward) => reward.name.trim().toLowerCase() !== name.toLowerCase())
+          .concat(reassigned);
+      } else if (updatedCost !== null) {
+        for (const reward of existing) reward.cost = updatedCost;
       }
       return;
     }

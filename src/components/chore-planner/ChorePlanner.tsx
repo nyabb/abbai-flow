@@ -4,12 +4,11 @@ import {
   Check,
   ChevronDown,
   Clock3,
-  Copy,
   Eye,
   EyeOff,
-  Filter,
   Plus,
   RotateCcw,
+  SlidersHorizontal,
   Volume2,
   VolumeX,
   X,
@@ -21,28 +20,14 @@ import {
 } from '../../api/chore-planner-model';
 import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
-import { fetchChoreOpsChoreHistory } from '../../api/choreops-chore-history';
-import type {
-  ChoreOpsChoreHistoryEntity,
-  ChoreOpsChoreHistoryEntry,
-} from '../../api/choreops-chore-history';
-import { fetchChoreOpsRewardHistory } from '../../api/choreops-ledger';
-import type { ChoreOpsRewardHistoryEntry } from '../../api/choreops-ledger';
+import { resolveMemberForUser } from '../../api/choreops';
 import {
-  formatChoreOpsOffset,
-  isChoreOpenToAnyone,
-  resolveMemberForUser,
-  CHOREOPS_ALL_USERS,
-} from '../../api/choreops';
-import {
-  activeRedemption,
   activeRedemptions,
   fulfilledRedemptions,
   spendableWithRedemptions,
 } from '../../api/reward-redemptions';
-import type { Redemption } from '../../api/reward-redemptions';
 import type { ChoreOpsReward } from '../../types/choreops';
-import { HomeAssistantServiceError } from '../../api/ha-rest';
+import { recordDebugLog } from '../../api/debug-log';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
@@ -50,7 +35,6 @@ import {
   findRoutine,
   missionStep,
   normaliseName,
-  routineIdForTask,
   routineTaskOrder,
 } from '../../api/planner-meta';
 import { useTranslation } from '../../i18n';
@@ -78,13 +62,15 @@ import {
 } from './sheets';
 import { ChildView } from './ChildView';
 import { MissionView } from './MissionView';
+import { usePlannerHistory } from './usePlannerHistory';
+import { useChoreFormActions } from './useChoreFormActions';
+import { usePlannerRewards } from './usePlannerRewards';
+import { errorDiagnosticText } from './planner-utils';
 import {
-  DAY_KEYS,
   MIN_PIN_LENGTH,
   clockTime,
   countdown,
   emptyForm,
-  formFromLiveTask,
   toastWith,
   type FormValue,
 } from './form';
@@ -104,37 +90,6 @@ type Screen = 'board' | 'child' | 'missions' | 'mission' | 'closing';
 type ToastKind = 'success' | 'error';
 
 const PAUSED_ROUTINES_KEY = 'beacon_paused_routines';
-
-function sameMinute(left: string | null | undefined, right: string | null | undefined): boolean {
-  const minute = (value: string | null | undefined): number | null => {
-    if (!value) return null;
-    const timestamp = new Date(value).getTime();
-    return Number.isFinite(timestamp) ? Math.floor(timestamp / 60_000) : null;
-  };
-  return minute(left) === minute(right);
-}
-
-function sameNames(left: string[] | undefined, right: string[]): boolean {
-  const normalize = (names: string[]) =>
-    Array.from(new Set(names.map((name) => normaliseName(name)))).sort();
-  return JSON.stringify(normalize(left ?? [])) === JSON.stringify(normalize(right));
-}
-
-function sameDays(left: string[] | undefined, right: string[]): boolean {
-  const normalize = (days: string[]) =>
-    Array.from(new Set(days.map((day) => day.trim().toLowerCase()))).sort();
-  return JSON.stringify(normalize(left ?? [])) === JSON.stringify(normalize(right));
-}
-
-function errorDiagnosticText(error: unknown): string {
-  if (error instanceof HomeAssistantServiceError) return error.details;
-  if (error instanceof Error) {
-    const attachedDetails = (error as Error & { details?: unknown }).details;
-    if (typeof attachedDetails === 'string') return attachedDetails;
-    return error.stack ?? `${error.name}: ${error.message}`;
-  }
-  return typeof error === 'string' ? error : String(error);
-}
 
 /**
  * Routines paused on this device before pause state moved into the shared
@@ -162,7 +117,6 @@ interface ChorePlannerProps {
    * e.g. from quick add. The token makes repeated requests distinct.
    */
   createRequest?: { kind: 'chore' | 'routine'; token: number };
-  debugMode?: boolean;
 }
 
 export function ChorePlanner({
@@ -170,7 +124,6 @@ export function ChorePlanner({
   locale,
   onLocaleChange,
   createRequest,
-  debugMode = false,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
   /**
@@ -199,6 +152,26 @@ export function ChorePlanner({
     routinesPaused: false,
     soundEnabled: true,
   };
+  const adminRoutines = [
+    ...meta.routines.map((definition) => {
+      const liveRoutine = data.routines.find((routine) => routine.id === definition.id);
+      return {
+        id: definition.id,
+        name: definition.name,
+        taskNames: definition.taskNames,
+        memberIds: liveRoutine?.memberIds ?? [],
+      };
+    }),
+    ...data.routines
+      .filter((routine) => !meta.routines.some((definition) => definition.id === routine.id))
+      .map((routine) => ({
+        id: routine.id,
+        name: routine.name,
+        taskNames: routine.taskNames,
+        memberIds: routine.memberIds,
+        fallback: routine.fallback,
+      })),
+  ];
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
@@ -226,14 +199,6 @@ export function ChorePlanner({
   const [saving, setSaving] = useState(false);
   /** Bottom-right notification: green for "done", red for "that failed". */
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [errorCopied, setErrorCopied] = useState(false);
-  useEffect(() => {
-    if (!debugMode) {
-      setErrorDetails(null);
-      setErrorCopied(false);
-    }
-  }, [debugMode]);
   const [celebration, setCelebration] = useState<'chore' | 'goal' | null>(null);
   const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -260,26 +225,12 @@ export function ChorePlanner({
   const [livePin, setLivePin] = useState('');
   const [livePinError, setLivePinError] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [rewardForm, setRewardForm] = useState<{
-    name: string;
-    cost: number;
-    memberIds: string[];
-  }>({ name: '', cost: 10, memberIds: [] });
   /**
    * Reward progress (saving → achieved → given). Shared through beacon-store:
    * ChoreOps owns the definition and the deduction, not the pursuit.
    */
   const rewardsState = useRewardRedemptions();
   const redemptions = rewardsState.redemptions;
-  const [rewardLedgerHistory, setRewardLedgerHistory] = useState<{
-    userName: string;
-    entries: ChoreOpsRewardHistoryEntry[];
-  } | null>(null);
-  const [choreHistorySnapshot, setChoreHistorySnapshot] = useState<{
-    userName: string;
-    entityKey: string;
-    entries: ChoreOpsChoreHistoryEntry[];
-  } | null>(null);
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
 
@@ -405,17 +356,6 @@ export function ChorePlanner({
   const givenReward = overlay.type === 'reward-given' ? { name: overlay.name } : null;
   /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
   const rewards = choreOps.data?.rewards ?? [];
-  const memberByName = (name: string | null) =>
-    data.members.find(
-      (member) => member.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase(),
-    ) ?? null;
-  /** The rewards ChoreOps assigns to one planner member (via its ChoreOps user). */
-  const rewardsForMember = (memberId: string | null): ChoreOpsReward[] => {
-    const userName = memberId ? userNameByMemberId.get(memberId) : null;
-    if (!userName) return [];
-    const key = userName.trim().toLowerCase();
-    return rewards.filter((reward) => (reward.assignee ?? '').trim().toLowerCase() === key);
-  };
   const missionTask = getTask(missionIds[missionIndex] ?? null);
 
   /**
@@ -788,94 +728,17 @@ export function ChorePlanner({
     dispatchOverlay({ type: 'open-goals', memberId });
   };
   const goalsUserName = goalsMember ? (userNameByMemberId.get(goalsMember.id) ?? null) : null;
-  const goalsLedgerHistory =
-    rewardLedgerHistory?.userName === goalsUserName ? rewardLedgerHistory.entries : [];
-  useEffect(() => {
-    if (modal !== 'goals' || !goalsUserName || !choreOps.available) {
-      setRewardLedgerHistory(null);
-      return;
-    }
-
-    let current = true;
-    setRewardLedgerHistory(null);
-    void fetchChoreOpsRewardHistory(goalsUserName)
-      .then((history) => {
-        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: history });
-      })
-      .catch(() => {
-        // Older ChoreOps versions may not expose get_ledger. Keep the
-        // Abbai Flow history available when the optional ledger query fails.
-        if (current) setRewardLedgerHistory({ userName: goalsUserName, entries: [] });
-      });
-
-    return () => {
-      current = false;
-    };
-  }, [modal, goalsUserName, choreOps.available]);
   const childMember = memberFor(childMemberId);
   const childUserName = childMember ? (userNameByMemberId.get(childMember.id) ?? null) : null;
-  const childHistoryEntities = useMemo<ChoreOpsChoreHistoryEntity[]>(() => {
-    const userKey = childUserName?.trim().toLocaleLowerCase();
-    if (!userKey) return [];
-    return (choreOps.data?.chores ?? []).flatMap((chore) => {
-      const label = (chore.labels ?? []).map((item) => item.trim()).find(Boolean) ?? null;
-      const isRoutineStep =
-        /^daily/i.test(chore.frequency ?? '') &&
-        routineIdForTask(meta, chore.name, label) !== null;
-      return chore.statusEntityId &&
-        chore.assignee?.trim().toLocaleLowerCase() === userKey &&
-        !isRoutineStep
-        ? [
-            {
-              entityId: chore.statusEntityId,
-              choreName: chore.name,
-              points: chore.points,
-            },
-          ]
-        : [];
-    });
-  }, [choreOps.data?.chores, childUserName, meta]);
-  const childHistoryEntityKey = childHistoryEntities
-    .map((entity) => entity.entityId)
-    .sort()
-    .join('|');
-  const childChoreHistory =
-    choreHistorySnapshot?.userName === childUserName &&
-    choreHistorySnapshot.entityKey === childHistoryEntityKey
-      ? choreHistorySnapshot.entries
-      : null;
-  useEffect(() => {
-    if (screen !== 'child' || !childUserName || !choreOps.available) {
-      setChoreHistorySnapshot(null);
-      return;
-    }
-
-    let current = true;
-    setChoreHistorySnapshot(null);
-    void fetchChoreOpsChoreHistory(childHistoryEntities)
-      .then((history) => {
-        if (current) {
-          setChoreHistorySnapshot({
-            userName: childUserName,
-            entityKey: childHistoryEntityKey,
-            entries: history,
-          });
-        }
-      })
-      .catch(() => {
-        if (current) {
-          setChoreHistorySnapshot({
-            userName: childUserName,
-            entityKey: childHistoryEntityKey,
-            entries: [],
-          });
-        }
-      });
-
-    return () => {
-      current = false;
-    };
-  }, [screen, childUserName, childHistoryEntities, childHistoryEntityKey, choreOps.available]);
+  const { goalsLedgerHistory, childChoreHistory } = usePlannerHistory({
+    goalsOpen: modal === 'goals',
+    goalsUserName,
+    childViewOpen: screen === 'child',
+    childUserName,
+    chores: choreOps.data?.chores ?? [],
+    meta,
+    choreOpsAvailable: choreOps.available,
+  });
   /** The filter sheet doubles as the board's filter state indicator. */
   const filterOpen = modal === 'filter';
 
@@ -886,8 +749,12 @@ export function ChorePlanner({
   ) => {
     setToast({ message, kind });
     if (kind === 'error') {
-      setErrorDetails(debugMode ? details ?? message : null);
-      setErrorCopied(false);
+      recordDebugLog({
+        level: 'error',
+        source: 'Chore Planner',
+        message,
+        details: details ?? message,
+      });
     }
   };
 
@@ -896,34 +763,6 @@ export function ChorePlanner({
     showToast(message, 'error', errorDiagnosticText(error));
   };
 
-  const copyErrorDetails = async () => {
-    if (!errorDetails) return;
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(errorDetails);
-        setErrorCopied(true);
-        return;
-      }
-    } catch {
-      // Fall through to the legacy copy path for insecure contexts and WebViews.
-    }
-    const field = document.createElement('textarea');
-    field.value = errorDetails;
-    field.setAttribute('readonly', '');
-    field.style.position = 'fixed';
-    field.style.opacity = '0';
-    document.body.appendChild(field);
-    field.select();
-    field.setSelectionRange(0, field.value.length);
-    let copied = false;
-    try {
-      copied = document.execCommand('copy');
-    } finally {
-      field.remove();
-    }
-    if (copied) setErrorCopied(true);
-    else window.prompt(c.errorDetailsTitle, errorDetails);
-  };
   const playCompletionSound = () => {
     if (!data.soundEnabled) return;
     try {
@@ -1063,6 +902,64 @@ export function ChorePlanner({
     setPinGate({ title, description, run });
   };
 
+  const { openNewForm, openEditForm, saveForm, removeTask } = useChoreFormActions({
+    form,
+    setForm,
+    editingId,
+    saving,
+    setSaving,
+    now,
+    choreOps,
+    getTask,
+    userNameByMemberId,
+    meta,
+    runPlannerOp: plannerMeta.runOp,
+    hasParentPin,
+    requestPin,
+    dispatchOverlay,
+    showToast,
+    showError,
+    copy: c,
+    t,
+    createRequest,
+  });
+  const {
+    rewardForm,
+    setRewardForm,
+    memberByName,
+    rewardsForMember,
+    memberIdsForReward,
+    startRewardForm,
+    saveReward,
+    removeReward,
+    openAssign,
+    assignReward,
+    undoRewardChoice,
+    giveReward,
+    reuseGivenReward,
+    deleteGivenReward,
+    rewardState,
+  } = usePlannerRewards({
+    choreOps,
+    rewardsState,
+    rewards,
+    redemptions,
+    members: data.members,
+    userNameByMemberId,
+    selectedTodayMember,
+    spendableFor,
+    editingReward,
+    givenRewardName: givenReward?.name ?? null,
+    saving,
+    setSaving,
+    setCelebration,
+    requestPin,
+    dispatchOverlay,
+    showToast,
+    showError,
+    copy: c,
+  });
+
   /**
    * Parent sign-off for a chore waiting in review.
    *
@@ -1084,641 +981,10 @@ export function ChorePlanner({
     );
   };
 
-  const openNewForm = (kind: 'chore' | 'routine' = 'chore') => {
-    // A routine is a chore that repeats daily and belongs to a named routine.
-    setForm(
-      kind === 'routine'
-        ? {
-            ...emptyForm(now),
-            kind: 'routine',
-            frequency: 'daily',
-            liveFrequency: 'daily',
-            timeBlock: 'morning',
-          }
-        : emptyForm(now),
-    );
-    dispatchOverlay({ type: 'open-form' });
-  };
-
-  /* Quick add's "chore"/"routine" entries land here: the token changes once per
-     request, so the form opens even when this page is already on screen. */
-  const createToken = createRequest?.token ?? 0;
-  useEffect(() => {
-    if (createToken === 0) return;
-    openNewForm(createRequest?.kind ?? 'chore');
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
-  }, [createToken]);
-
   /**
    * Open the reward form. A child's goals sheet preselects that child; the
    * header create menu starts empty and lets the parent pick who gets it.
    */
-  const startRewardForm = (memberId?: string) => {
-    setRewardForm({ name: '', cost: 10, memberIds: memberId ? [memberId] : [] });
-    dispatchOverlay({ type: 'open-reward-form' });
-  };
-
-  const openEditForm = (task: PlannerTask) => {
-    if (hasParentPin) dispatchOverlay({ type: 'close' });
-    requestPin(c.edit, task.name, () => {
-      // ChoreOps is the source of truth: prefill from its own record of the chore.
-      const chore =
-        choreOps.data?.chores.find(
-          (item) => item.name.trim().toLowerCase() === task.name.trim().toLowerCase(),
-        ) ?? null;
-      const nextForm = formFromLiveTask(task, chore);
-      if (chore) {
-        const assignedNames = new Set(
-          (chore.assignedUserNames ?? []).map((name) => normaliseName(name)),
-        );
-        const anyone = isChoreOpenToAnyone(chore);
-        if (anyone) {
-          nextForm.free = true;
-          nextForm.memberIds = [];
-        } else if (chore.assignedUserNames?.length) {
-          nextForm.free = false;
-          nextForm.memberIds = Array.from(userNameByMemberId.entries())
-            .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
-            .map(([memberId]) => memberId);
-        }
-      }
-      setForm(nextForm);
-      dispatchOverlay({ type: 'open-form', editingId: task.id });
-    });
-  };
-
-  const saveForm = async () => {
-    if (!form.name.trim() || (!form.memberIds.length && !form.free) || saving) return;
-
-    /*
-     * "Free for anyone to claim" is ChoreOps' `*` sentinel, not an empty
-     * assignee list: ChoreOps treats an empty list as a dormant chore and
-     * publishes no entities for it, so the chore would silently vanish.
-     */
-    const userNames = form.free
-      ? [CHOREOPS_ALL_USERS]
-      : form.memberIds
-          .map((id) => userNameByMemberId.get(id))
-          .filter((name): name is string => Boolean(name));
-    if (userNames.length === 0) {
-      showToast(c.assignToClaim);
-      return;
-    }
-
-    /*
-     * Recurrence belongs to routines. A new task is a one-off, so it is created
-     * as `none` rather than carrying whatever the form happened to hold -- the
-     * editor hides the schedule for exactly that case. Edits keep whatever
-     * repeat ChoreOps already has, so nothing is rewritten behind the user.
-     */
-    const frequency = form.kind === 'task' && !editingId ? 'none' : form.liveFrequency;
-    /*
-     * Labels are the routine name. They are only sent when the field differs
-     * from what ChoreOps already has, so editing e.g. the points of a chore
-     * whose label Abbai Flow cannot see never wipes that label. Clearing the field
-     * sends `[]`, which is how a routine is removed again.
-     */
-    const originalTask = editingId ? getTask(editingId) : null;
-    const originalName = originalTask?.name ?? form.name;
-    const originalChore =
-      editingId
-        ? choreOps.data?.chores.find(
-            (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
-          ) ?? null
-        : null;
-    let recreateForClaimModeChange = false;
-    if (editingId && originalChore) {
-      const assignedNames = (originalChore.assignedUserNames ?? []).map((name) =>
-        normaliseName(name),
-      );
-      const originalCriteria = normaliseName(originalChore.completionCriteria ?? '');
-      const claimModeKnown = Boolean(originalCriteria || assignedNames.length > 0);
-      const effectiveCriteria = originalCriteria || 'independent';
-      recreateForClaimModeChange = claimModeKnown && (
-        (form.free && effectiveCriteria !== 'shared_first') ||
-        (!form.free && effectiveCriteria === 'shared_first' && form.memberIds.length > 1)
-      );
-    }
-    const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
-    const nextLabel = form.liveLabel.trim();
-    const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
-    const schedule = {
-      frequency,
-      customInterval:
-        frequency === 'custom' ||
-        frequency === 'custom_from_complete' ||
-        frequency === 'custom_from_complete_date_only'
-          ? form.liveInterval
-          : undefined,
-      customIntervalUnit: form.liveIntervalUnit,
-      applicableDays:
-        frequency === 'weekly' ? form.liveWeekdays.map((day) => DAY_KEYS[day]) : undefined,
-      // Sent exactly as the form shows it: ChoreOps decides whether the date is
-      // acceptable and its message is what the (red) toast shows.
-      dueDate: form.deadlineAt ? new Date(form.deadlineAt).toISOString() : undefined,
-      description: form.liveDescription,
-      autoApprove: form.liveAutoApprove,
-      // The first ChoreOps label groups daily chores into a named routine.
-      labels,
-    };
-    const frequencyChanged = Boolean(
-      originalChore && frequency !== (originalChore.frequency ?? 'none'),
-    );
-    const intervalChanged = Boolean(
-      originalChore &&
-        (form.liveInterval !== (originalChore.customInterval ?? 1) ||
-          form.liveIntervalUnit !== (originalChore.customIntervalUnit ?? 'days')),
-    );
-    const requestedDays = schedule.applicableDays ?? [];
-    const daysChanged = Boolean(
-      originalChore &&
-        ((frequency === 'weekly' || originalChore.frequency === 'weekly') &&
-          !sameDays(originalChore.applicableDays, requestedDays)),
-    );
-    const dueDateChanged = Boolean(
-      originalChore &&
-        !sameMinute(schedule.dueDate, originalChore.dueDate),
-    );
-    const currentWindow = formatChoreOpsOffset(originalChore?.windowOffset);
-    const windowChanged = Boolean(originalChore && form.liveWindow.trim() !== currentWindow);
-    const updateSchedule = {
-      // ChoreOps treats these as real schedule edits. Leave unchanged schedule
-      // fields out of an assignee-only update, especially `due_date`: sensors
-      // can publish an overdue date and the editor may otherwise replay it.
-      ...(frequencyChanged ? { frequency: schedule.frequency } : {}),
-      ...(frequencyChanged || intervalChanged
-        ? {
-            customInterval: schedule.customInterval,
-            customIntervalUnit: schedule.customIntervalUnit,
-          }
-        : {}),
-      ...(frequencyChanged || daysChanged
-        ? { applicableDays: frequency === 'weekly' ? requestedDays : [] }
-        : {}),
-      ...(dueDateChanged && schedule.dueDate ? { dueDate: schedule.dueDate } : {}),
-      ...(originalChore && form.liveDescription !== (originalChore.description ?? '')
-        ? { description: form.liveDescription }
-        : {}),
-      ...(originalChore && form.liveAutoApprove !== Boolean(originalChore.autoApprove)
-        ? { autoApprove: form.liveAutoApprove }
-        : {}),
-      ...(windowChanged ? { windowOffset: form.liveWindow } : {}),
-      ...(labels !== undefined ? { labels } : {}),
-    };
-    try {
-      setSaving(true);
-      if (editingId) {
-        const renamed = normaliseName(originalName) !== normaliseName(form.name);
-        let choreId: string | undefined;
-        if (renamed || recreateForClaimModeChange) {
-          const resolvedId = originalChore?.statusEntityId && choreOps.resolveChoreId
-            ? await choreOps.resolveChoreId(originalChore.statusEntityId)
-            : null;
-          if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
-          choreId = resolvedId;
-        }
-        if (!recreateForClaimModeChange) {
-          await choreOps.updateChore({
-            ...updateSchedule,
-            name: form.name,
-            targetName: originalName,
-            choreId,
-            ...(!originalChore || !sameNames(originalChore.assignedUserNames, userNames)
-              ? { assignedUserNames: userNames }
-              : {}),
-            ...(!originalChore || form.points !== originalChore.points
-              ? { points: form.points }
-              : {}),
-            ...(form.liveReminder.trim() ? { reminderOffset: form.liveReminder } : {}),
-          });
-        } else {
-          const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          await choreOps.updateChore({
-            name: temporaryName,
-            targetName: originalName,
-            choreId,
-          });
-
-          try {
-            await choreOps.createChore({
-              ...schedule,
-              name: form.name,
-              assignedUserNames: userNames,
-              completionCriteria: form.free ? 'shared_first' : 'independent',
-              points: form.points,
-              labels: labels ?? originalChore?.labels ?? [],
-              icon: originalChore?.icon ?? undefined,
-              customInterval: form.liveInterval,
-              customIntervalUnit: form.liveIntervalUnit,
-              dueDate: (() => {
-                if (dueDateChanged) return schedule.dueDate;
-                const existingDueDate = originalChore?.dueDate;
-                if (existingDueDate && new Date(existingDueDate).getTime() > Date.now()) {
-                  return existingDueDate;
-                }
-                return undefined;
-              })(),
-              windowOffset: form.liveWindow,
-              reminderOffset: form.liveReminder || undefined,
-              autoApprove: form.liveAutoApprove,
-              approvalReset: originalChore?.approvalReset,
-              pendingClaims: originalChore?.pendingClaims,
-              overdueHandling: originalChore?.overdueHandling,
-              claimLockUntilWindow: originalChore?.claimLockUntilWindow,
-              notificationChannel: originalChore?.notificationChannel,
-              notificationImportance: originalChore?.notificationImportance,
-            });
-          } catch (createError) {
-            try {
-              await choreOps.updateChore({
-                name: originalName,
-                targetName: temporaryName,
-                choreId,
-              });
-            } catch (restoreError) {
-              const createMessage = createError instanceof Error ? createError.message : c.noFail;
-              const restoreMessage = restoreError instanceof Error ? restoreError.message : c.noFail;
-              const failure = new Error(
-                `${createMessage}. Could not restore the original chore: ${restoreMessage}`,
-              ) as Error & { details?: string };
-              failure.details = [
-                'Replacement create request failed:',
-                errorDiagnosticText(createError),
-                'Original chore restore request failed:',
-                errorDiagnosticText(restoreError),
-              ].join('\n\n');
-              throw failure;
-            }
-            throw createError;
-          }
-
-          try {
-            await choreOps.deleteChore(temporaryName);
-          } catch (deleteError) {
-            const rollbackErrors: string[] = [];
-            const rollbackDetails: string[] = [];
-            try {
-              await choreOps.deleteChore(form.name.trim());
-            } catch (rollbackError) {
-              rollbackErrors.push(
-                `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
-              );
-              rollbackDetails.push(errorDiagnosticText(rollbackError));
-            }
-            try {
-              await choreOps.updateChore({
-                name: originalName,
-                targetName: temporaryName,
-                choreId,
-              });
-            } catch (restoreError) {
-              rollbackErrors.push(
-                `could not restore the original name: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
-              );
-              rollbackDetails.push(errorDiagnosticText(restoreError));
-            }
-            const deleteMessage = deleteError instanceof Error ? deleteError.message : c.noFail;
-            if (rollbackErrors.length) {
-              const failure = new Error(
-                `${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`,
-              ) as Error & { details?: string };
-              failure.details = [
-                'Delete request failed:',
-                errorDiagnosticText(deleteError),
-                ...rollbackDetails.flatMap((details, index) => [
-                  `Rollback request ${index + 1} failed:`,
-                  details,
-                ]),
-              ].join('\n\n');
-              throw failure;
-            }
-            throw deleteError;
-          }
-        }
-      } else {
-        await choreOps.createChore({
-          ...schedule,
-          name: form.name,
-          assignedUserNames: userNames,
-          // One open chore that whoever gets to it first completes — otherwise
-          // every child would get their own private copy to check off.
-          completionCriteria: form.free ? 'shared_first' : undefined,
-          points: form.points,
-          windowOffset: form.liveWindow,
-          reminderOffset: form.liveReminder,
-        });
-      }
-      dispatchOverlay({ type: 'close' });
-      showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
-
-      /*
-       * Routine membership is Abbai Flow metadata, not a ChoreOps field: the label
-       * names the routine, and the registry remembers the chore belongs to it
-       * (with an order ChoreOps cannot store). A cleared label removes it again.
-       */
-      const taskName = form.name.trim();
-      if (editingId && currentLabel) {
-        const movedOrRenamed =
-          normaliseName(currentLabel) !== normaliseName(nextLabel) ||
-          normaliseName(originalName) !== normaliseName(taskName);
-        if (movedOrRenamed) {
-          const owner = meta.routines.find((routine) =>
-            routine.taskNames.some((name) => normaliseName(name) === normaliseName(originalName)),
-          );
-          if (owner) {
-            await plannerMeta.runOp({
-              type: 'removeRoutineTask',
-              id: owner.id,
-              taskName: originalName,
-            });
-          }
-        }
-      }
-      if (nextLabel) {
-        const routine = (await plannerMeta.runOp({
-          type: 'upsertRoutine',
-          name: nextLabel,
-        })) as { id?: string } | null;
-        if (routine && typeof routine.id === 'string') {
-          await plannerMeta.runOp({
-            type: 'addRoutineTask',
-            id: routine.id,
-            taskName,
-          });
-        }
-      }
-    } catch (err) {
-      // ChoreOps replies with the exact reason (e.g. "The requested changes
-      // require a future due date"); show it verbatim in the red toast.
-      showError(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const removeTask = async (task: PlannerTask) => {
-    try {
-      await choreOps.deleteChore(task.name);
-      dispatchOverlay({ type: 'close' });
-      showToast(toastWith(c.removedToast, task.name));
-    } catch (err) {
-      showError(err);
-    }
-  };
-
-  /**
-   * Create a reward in ChoreOps for the chosen children.
-   *
-   * ChoreOps publishes one reward entity per user, so `assigned_user_names` is
-   * what makes the reward belong to that child — different kids can have
-   * different rewards with different costs.
-   */
-  const saveReward = async () => {
-    if (saving) return;
-
-    if (editingReward) {
-      const update = async () => {
-        try {
-          setSaving(true);
-          await choreOps.updateReward({ name: editingReward, cost: rewardForm.cost });
-          dispatchOverlay({ type: 'close' });
-          showToast(`${c.savedToast} \u00b7 ${editingReward}`);
-        } catch (err) {
-          showError(err);
-        } finally {
-          setSaving(false);
-        }
-      };
-      requestPin(c.cost, editingReward, () => void update());
-      return;
-    }
-
-    const userNames = rewardForm.memberIds
-      .map((id) => userNameByMemberId.get(id))
-      .filter((name): name is string => Boolean(name));
-    if (!rewardForm.name.trim() || userNames.length === 0) return;
-
-    const create = async () => {
-      try {
-        setSaving(true);
-        await choreOps.createReward({
-          name: rewardForm.name.trim(),
-          cost: rewardForm.cost,
-          assignedUserNames: userNames,
-        });
-        dispatchOverlay({ type: 'close' });
-        showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
-      } catch (err) {
-        showError(err);
-      } finally {
-        setSaving(false);
-      }
-    };
-    requestPin(c.newReward, rewardForm.name.trim(), () => void create());
-  };
-
-  /**
-   * Delete a reward from ChoreOps.
-   *
-   * `skipPin` is only used by the post-payout prompt: the parent has already
-   * unlocked the payout in this very flow, so asking for the PIN twice would be
-   * noise rather than a second decision.
-   */
-  const removeReward = async (reward: Pick<ChoreOpsReward, 'name'>, skipPin = false) => {
-    const remove = async () => {
-      try {
-        setSaving(true);
-        await choreOps.deleteReward(reward.name);
-        dispatchOverlay({ type: 'close' });
-        showToast(toastWith(c.removedToast, reward.name));
-      } catch (err) {
-        showError(err);
-      } finally {
-        setSaving(false);
-      }
-    };
-    /*
-     * Deleting a reward removes the definition for every child it is assigned
-     * to, and a goal that was already reached is waiting to be handed over.
-     * Both are parent decisions, so this is always PIN-gated — it used to be
-     * free for a fully funded goal, which let a child delete a reward they were
-     * about to receive.
-     */
-    if (skipPin) {
-      await remove();
-      return;
-    }
-    requestPin(c.remove, reward.name, () => void remove());
-  };
-
-  /**
-   * Ask how many points go towards this reward.
-   *
-   * The allocation is explicit: a child can fund several goals side by side
-   * (5 here, 3 there) and leave the rest in the savings pot. The old button
-   * silently took as much as the goal still needed.
-   */
-  const openAssign = (reward: ChoreOpsReward) => {
-    if (!rewardState(reward).canAdd) return;
-    dispatchOverlay({ type: 'open-assign', reward });
-  };
-
-  /**
-   * Put points aside for a reward.
-   *
-   * Approval-free and Abbai Flow-only: the balance drops the moment the child
-   * allocates, and nothing is written to ChoreOps, so they can still change
-   * their mind. The amount is chosen explicitly by the child; points accumulate
-   * towards the cost instead of being reserved in one go -- that is what makes
-   * "on hold" (partway) and "reached the goal" (fully covered) two different
-   * states.
-   */
-  const assignReward = async (reward: ChoreOpsReward, amount: number) => {
-    const userName =
-      reward.assignee ??
-      (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
-    if (!userName) {
-      showToast(c.assignToClaim, 'error');
-      return;
-    }
-
-    const owner = memberByName(userName);
-    const already = activeRedemption(redemptions, userName, reward.name)?.points ?? 0;
-    const stillNeeded = Math.max(0, reward.cost - already);
-    // Never invent points: the explicit amount is still capped by what the
-    // child can spend and by what the goal still needs.
-    const give = Math.min(Math.round(amount), stillNeeded, owner ? spendableFor(owner) : 0);
-    if (give <= 0) return;
-
-    setSaving(true);
-    try {
-      const result = await rewardsState.runOp({
-        type: 'addPoints',
-        user: userName,
-        reward: reward.name,
-        cost: reward.cost,
-        amount: give,
-      });
-      if (
-        result &&
-        typeof result === 'object' &&
-        'state' in result &&
-        result.state === 'awaiting_fulfilment' &&
-        already < reward.cost
-      ) {
-        setCelebration('goal');
-      }
-      showToast(toastWith(c.assignedToast, reward.name));
-      dispatchOverlay({ type: 'close' });
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  /** Give the points back -- the child changed their mind, or wants it again. */
-  const undoRewardChoice = (reward: ChoreOpsReward) => {
-    const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
-    if (pursuit) {
-      void rewardsState.runOp({ type: 'release', id: pursuit.id });
-    }
-    showToast(toastWith(c.undoneToast, reward.name));
-  };
-
-  /**
-   * Parent hands a reached reward over.
-   *
-   * ChoreOps deducts the cost through `approve_reward` and Abbai Flow records who
-   * gave what and when. A child can never reach this: it is behind the PIN, and
-   * the redemption only exists once the goal is actually achieved.
-   */
-  const giveReward = (redemption: Redemption) => {
-    const member = memberByName(redemption.user);
-    const userName = member ? userNameByMemberId.get(member.id) : null;
-    if (!userName) {
-      showToast(c.assignToClaim, 'error');
-      return;
-    }
-    requestPin(c.approvePayout, redemption.rewardLabel, (approverName) => {
-      void (async () => {
-        try {
-          setSaving(true);
-          await choreOps.approveReward(userName, redemption.rewardLabel, approverName);
-          await rewardsState.runOp({
-            type: 'fulfil',
-            id: redemption.id,
-            by: approverName,
-          });
-          showToast(toastWith(c.rewardGiven, redemption.rewardLabel));
-          setCelebration('goal');
-          /*
-           * The goal is met and handed over. Ask the parent what happens to the
-           * definition: save for it again from zero, or remove it altogether.
-           */
-          const definition =
-            rewards.find(
-              (item) =>
-                normaliseName(item.name) === normaliseName(redemption.reward) &&
-                normaliseName(item.assignee) === normaliseName(redemption.user),
-            ) ?? null;
-          dispatchOverlay({
-            type: 'open-reward-given',
-            name: definition?.name ?? redemption.rewardLabel,
-          });
-        } catch (err) {
-          showError(err);
-        } finally {
-          setSaving(false);
-        }
-      })();
-    });
-  };
-
-  /** Payout done: keep the goal and put it back at 0 allocations. */
-  const reuseGivenReward = () => {
-    if (!givenReward) return;
-    const name = givenReward.name;
-    dispatchOverlay({ type: 'close' });
-    showToast(toastWith(c.rewardReset, name));
-  };
-
-  /** Payout done: delete the definition; the payout PIN already covered this. */
-  const deleteGivenReward = () => {
-    if (!givenReward) return;
-    void removeReward(givenReward, true);
-  };
-
-  /**
-   * Reward card state shared by the child screen and the rewards sheet:
-   * how much is set aside, what is still missing, and whether the goal is met.
-   *
-   * `done` means *the goal is achieved* — not that the child has the reward.
-   * The reward is still waiting for a parent at that point.
-   */
-  const rewardState = (reward: ChoreOpsReward) => {
-    const owner = memberByName(reward.assignee);
-    const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
-    const saved = owner ? spendableFor(owner) : 0;
-    const allocated = pursuit?.points ?? 0;
-    const remaining = Math.max(0, reward.cost - allocated);
-    const status = reward.status.toLowerCase();
-    // ChoreOps marks rewards `locked` when the balance is below the full
-    // cost. Abbai Flow supports smaller allocations, so the child can still
-    // save toward a locked reward while they have points.
-    const canSave = status === 'available' || status === 'locked';
-    return {
-      owner,
-      pursuit,
-      saved,
-      allocated,
-      remaining,
-      /** Reached the cost: waiting for a parent to hand it over. */
-      done: pursuit?.state === 'awaiting_fulfilment',
-      available: status === 'available',
-      pending: reward.pendingClaims > 0,
-      canAdd: canSave && saved > 0 && remaining > 0,
-    };
-  };
-
   /** Start the guided run through one child's first open routine. */
   /** Start one routine as a mission, without walking the child's other routines. */
   const beginRoutine = (memberId: string, routine: PlannerRoutine) => {
@@ -1991,7 +1257,7 @@ export function ChorePlanner({
               aria-label={c.filter}
               aria-expanded={filterOpen}
             >
-              <Filter />
+              <SlidersHorizontal />
             </button>
           )}
           {(screen === 'board' || screen === 'child') && (
@@ -2039,49 +1305,6 @@ export function ChorePlanner({
         <div className="planner-offline-banner" role="alert">
           {c.offline}
         </div>
-      )}
-      {debugMode && errorDetails && (
-        <section
-          className="planner-error-details"
-          role="alert"
-          aria-labelledby="planner-error-details-title"
-        >
-          <div className="planner-error-details__header">
-            <h2 id="planner-error-details-title">{c.errorDetailsTitle}</h2>
-            <div className="planner-error-details__actions">
-              <button type="button" onClick={() => void copyErrorDetails()}>
-                {errorCopied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-                <span>{errorCopied ? c.errorDetailsCopied : c.copyErrorDetails}</span>
-              </button>
-              <button
-                type="button"
-                className="planner-error-details__close"
-                aria-label={t('common.close')}
-                onClick={() => {
-                  setErrorDetails(null);
-                  setErrorCopied(false);
-                }}
-              >
-                <X aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-          <pre
-            tabIndex={0}
-            role="button"
-            aria-label={c.copyErrorDetails}
-            onClick={() => void copyErrorDetails()}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                void copyErrorDetails();
-              }
-            }}
-            style={{ cursor: 'copy' }}
-          >
-            {errorDetails}
-          </pre>
-        </section>
       )}
       {screen === 'board' && choreOps.loading && !choreOps.data && (
         <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
@@ -2328,10 +1551,19 @@ export function ChorePlanner({
             {overlay.type === 'create' && (
               <CreateSheet
                 copy={c}
+                chores={choreOps.data?.chores ?? []}
+                tasks={view.allTasks}
+                routines={adminRoutines}
+                rewards={rewards}
+                members={data.members}
                 onChore={() => openNewForm('chore')}
                 onRoutine={() => openNewForm('routine')}
                 onReward={() =>
                   startRewardForm(screen === 'child' ? (childMember?.id ?? undefined) : undefined)
+                }
+                onEditChore={openEditForm}
+                onOpenReward={(reward) =>
+                  dispatchOverlay({ type: 'open-reward-actions', reward })
                 }
               />
             )}{' '}
@@ -2359,11 +1591,11 @@ export function ChorePlanner({
             {selectedReward && (
               <RewardActionsSheet
                 copy={c}
-                onEditCost={() => {
+                onEdit={() => {
                   setRewardForm({
                     name: selectedReward.name,
                     cost: Math.round(selectedReward.cost),
-                    memberIds: [],
+                    memberIds: memberIdsForReward(selectedReward.name),
                   });
                   dispatchOverlay({
                     type: 'open-reward-form',

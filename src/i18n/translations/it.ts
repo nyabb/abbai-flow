@@ -68,6 +68,14 @@ export const it: Record<TranslationKey, string> = {
   'app.choresDisabled':
     'Le faccende sono disattivate. Attivale in Impostazioni → Faccende per usare questa schermata.',
   'app.previewMode': 'Modalita anteprima',
+  'debugConsole.tab': 'Debug',
+  'debugConsole.title': 'Attività di debug',
+  'debugConsole.open': 'Apri attività di debug',
+  'debugConsole.close': 'Chiudi attività di debug',
+  'debugConsole.copy': 'Copia registro',
+  'debugConsole.copied': 'Copiato',
+  'debugConsole.clear': 'Cancella registro',
+  'debugConsole.empty': 'Nessuna richiesta o errore registrato.',
 
   // ---- dashboard / cards ----
   'dashboard.editDashboard': '✎ Modifica bacheca',
@@ -204,7 +212,7 @@ export const it: Record<TranslationKey, string> = {
   'settings.general.monday': 'Lunedì',
   'settings.general.languageLabel': 'Lingua / Paese',
   'settings.general.debugModeLabel': 'Modalità debug',
-  'settings.general.debugModeSublabel': 'Mostra i dettagli completi di richieste ed errori nel planner delle faccende.',
+  'settings.general.debugModeSublabel': 'Mostra un registro globale di chiamate API, risposte ed errori.',
   'settings.display.ingressUrlUnavailable': 'Un URL display condivisibile non è disponibile in Home Assistant. Apri Abbai Flow sullo schermo di destinazione e scegli “Usa su questo dispositivo”.',
   'settings.general.dashboardLayoutTitle': 'Layout della bacheca',
   'settings.general.dashboardLayoutDesc': 'Scegli come organizzare la tua bacheca.',
@@ -802,6 +810,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.rewardReset': 'Ricompensa ripristinata con 0 punti',
   'planner.routinePicker': 'Routine esistente',
   'planner.routineNew': 'Nuova routine',
+  'planner.manageExisting': 'Visualizza e modifica gli elementi esistenti',
   'planner.tab.goals': 'Obiettivi',
   'planner.tab.chores': 'Attività',
   'planner.tab.routines': 'Routine',
