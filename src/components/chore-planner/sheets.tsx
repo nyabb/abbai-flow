@@ -2,7 +2,7 @@
  * Presentational task and filter sheets. Reward sheets and the household
  * create browser live in adjacent modules to keep each file focused.
  */
-import { CheckCheck, Pencil, Trash2 } from 'lucide-react';
+import { CheckCheck, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
@@ -31,6 +31,7 @@ export interface ActionsSheetProps {
   onApprove?: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onUseAgain?: () => void;
 }
 
 export function ActionsSheet({
@@ -40,6 +41,7 @@ export function ActionsSheet({
   onApprove,
   onEdit,
   onDelete,
+  onUseAgain,
 }: ActionsSheetProps) {
   return (
     <>
@@ -54,6 +56,12 @@ export function ActionsSheet({
         <button className="planner-destination" onClick={onEdit}>
           <Pencil />
           <strong>{c.edit}</strong>
+        </button>
+      )}
+      {onUseAgain && (
+        <button className="planner-destination" onClick={onUseAgain}>
+          <RotateCcw />
+          <strong>{c.useAgain}</strong>
         </button>
       )}
       <button className="planner-destination planner-danger" onClick={onDelete}>
@@ -246,7 +254,6 @@ export function ClaimSheet({
     </>
   );
 }
-
 
 export { CreateSheet } from './sheets/CreateSheet';
 export type { CreateSheetProps } from './sheets/CreateSheet';

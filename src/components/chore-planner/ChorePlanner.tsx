@@ -901,7 +901,7 @@ export function ChorePlanner({
     setPinGate({ title, description, run });
   };
 
-  const { openNewForm, openEditForm, saveForm, removeTask } = useChoreFormActions({
+  const { openNewForm, openEditForm, saveForm, removeTask, reuseTask } = useChoreFormActions({
     form,
     setForm,
     editingId,
@@ -922,6 +922,10 @@ export function ChorePlanner({
     t,
     createRequest,
   });
+  const requestUseAgain = (task: PlannerTask) => {
+    dispatchOverlay({ type: 'close' });
+    requestPin(c.useAgain, task.name, () => void reuseTask(task));
+  };
   const {
     rewardForm,
     setRewardForm,
@@ -1433,6 +1437,11 @@ export function ChorePlanner({
                 completed={taskStatus(selectedTask) === 'completed' && !actionsOverlay.fromRoutine}
                 copy={c}
                 confirmingDelete={actionsOverlay.confirmingDelete}
+                onUseAgain={
+                  taskStatus(selectedTask) === 'completed'
+                    ? () => requestUseAgain(selectedTask)
+                    : undefined
+                }
                 onApprove={
                   selectedTask.awaitingReview && selectedTask.actions?.approve
                     ? () => {
@@ -1558,6 +1567,8 @@ export function ChorePlanner({
                   startRewardForm(screen === 'child' ? (childMember?.id ?? undefined) : undefined)
                 }
                 onEditChore={openEditForm}
+                onOpenTaskActions={(task) => openActions(task.id, task.inRoutine)}
+                onUseAgain={requestUseAgain}
                 onOpenReward={(reward) =>
                   dispatchOverlay({ type: 'open-reward-actions', reward })
                 }
