@@ -457,6 +457,12 @@ export class SpotifyPlaylistLibrary {
     });
   }
 
+  async removePlaylist(playlistIdValue: unknown): Promise<void> {
+    const playlistId = this.validatePlaylistId(playlistIdValue);
+    const query = new URLSearchParams({ uris: `spotify:playlist:${playlistId}` });
+    await this.spotifyRequest(`/me/library?${query}`, { method: 'DELETE' });
+  }
+
   private ensureConfigured(): void {
     if (!this.clientId || !this.clientSecret || !validRedirectUri(this.redirectUri)) {
       throw new SpotifyPlaylistError(

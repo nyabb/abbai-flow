@@ -188,6 +188,39 @@ describe('Encore HTTP bridge', () => {
     });
   });
 
+  it('removes a playlist through the application API and rejects other methods', async () => {
+    const encore = new EncoreMusic();
+    const removePlaylist = vi.fn(async () => undefined);
+    const playlistService = { removePlaylist } as unknown as SpotifyPlaylistLibrary;
+    const bridge = helpers();
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/playlists/4q3zB8nVYk9m2H6wX1cR0P', 'DELETE'),
+      bridge.response,
+      encore,
+      bridge,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+
+    expect(removePlaylist).toHaveBeenCalledWith('4q3zB8nVYk9m2H6wX1cR0P');
+    expect(bridge.response.status).toBe(202);
+    expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({ accepted: true });
+
+    const wrongMethod = helpers();
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/playlists/4q3zB8nVYk9m2H6wX1cR0P', 'POST'),
+      wrongMethod.response,
+      encore,
+      wrongMethod,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+    expect(wrongMethod.response.status).toBe(405);
+    expect(wrongMethod.response.headers.Allow).toBe('DELETE');
+    expect(removePlaylist).toHaveBeenCalledOnce();
+  });
+
   it('rejects unexpected playlist query parameters before calling Spotify', async () => {
     const encore = new EncoreMusic();
     const playlistService = { listPlaylists: vi.fn() } as unknown as SpotifyPlaylistLibrary;

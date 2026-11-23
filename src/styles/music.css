@@ -730,24 +730,28 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 344px;
   margin: 8px 0 0;
   padding: 0;
-  overflow-y: auto;
   list-style: none;
 }
 
 .spotify-search-results li {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  padding: 6px 3px;
+}
+
+.spotify-search-result-main {
   display: flex;
   align-items: center;
   gap: 11px;
   min-width: 0;
   min-height: 58px;
-  padding: 6px 3px;
 }
 
-.spotify-search-results li > img,
+.spotify-search-result-main > img,
 .spotify-search-art {
   display: grid;
   place-items: center;
@@ -847,15 +851,14 @@
 }
 
 .spotify-search-add-menu {
-  position: absolute;
-  z-index: 5;
-  top: calc(100% - 2px);
-  right: 6px;
+  position: static;
   display: flex;
   flex-direction: column;
-  min-width: 210px;
-  max-width: min(320px, calc(100vw - 56px));
+  width: min(320px, 100%);
+  min-width: min(210px, 100%);
+  max-width: 100%;
   max-height: 240px;
+  margin: 6px 0 2px auto;
   padding: 6px;
   overflow-y: auto;
   background: var(--bg-surface);
@@ -1149,6 +1152,29 @@
   border-radius: var(--radius-pill);
   font-size: 0.76rem;
   text-decoration: none;
+}
+
+.spotify-remove-playlist {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 11px;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border-radius: var(--radius-pill);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.spotify-remove-playlist:hover:not(:disabled) {
+  color: var(--color-red-full, #c0392b);
+}
+
+.spotify-remove-playlist:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .spotify-playlist-track-heading,
@@ -1720,11 +1746,11 @@
     padding: 0 13px;
   }
 
-  .spotify-search-results li {
+  .spotify-search-result-main {
     gap: 8px;
   }
 
-  .spotify-search-results li > img,
+  .spotify-search-result-main > img,
   .spotify-search-art {
     width: 40px;
     height: 40px;
@@ -1851,7 +1877,8 @@
     height: 64px;
   }
 
-  .spotify-open-playlist {
+  .spotify-open-playlist,
+  .spotify-remove-playlist {
     width: 40px;
     flex: 0 0 auto;
     justify-content: center;

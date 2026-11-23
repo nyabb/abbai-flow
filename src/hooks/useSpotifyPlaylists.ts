@@ -30,6 +30,7 @@ export interface UseSpotifyPlaylistsResult {
   loadMoreTracks(): void;
   createPlaylist(name: string): Promise<PlaylistActionResult>;
   addTrack(playlistId: string, uri: string): Promise<PlaylistActionResult>;
+  removePlaylist(playlistId: string): Promise<PlaylistActionResult>;
 }
 
 const EMPTY_STATUS: SpotifyPlaylistStatus = {
@@ -265,6 +266,43 @@ export function useSpotifyPlaylists() {
     [fetchPlaylists, fetchTracks, selectedPlaylistId],
   );
 
+  const removePlaylist = useCallback(
+    async (playlistId: string): Promise<PlaylistActionResult> => {
+      setWorking(true);
+      setError(null);
+      try {
+        await jsonRequest<{ accepted: boolean }>(
+          `/abbai-flow/music/library/playlists/${encodeURIComponent(playlistId)}`,
+          { method: 'DELETE' },
+        );
+
+        const remaining = playlists.filter((playlist) => playlist.id !== playlistId);
+        const nextSelectedId =
+          selectedPlaylistId === playlistId ? (remaining[0]?.id ?? null) : selectedPlaylistId;
+        setPlaylists(remaining);
+        setPlaylistsTotal((current) => Math.max(0, current - 1));
+        setSelectedPlaylistId(nextSelectedId);
+        saveSelectedId(nextSelectedId);
+
+        if (selectedPlaylistId === playlistId) {
+          if (nextSelectedId) await fetchTracks(nextSelectedId);
+          else {
+            setTracks([]);
+            setTracksTotal(0);
+          }
+        }
+        return { ok: true };
+      } catch (caught) {
+        const message = caught instanceof Error ? caught.message : 'Could not remove playlist';
+        setError(message);
+        return { ok: false, error: message };
+      } finally {
+        setWorking(false);
+      }
+    },
+    [fetchTracks, playlists, selectedPlaylistId],
+  );
+
   return {
     status,
     playlists,
@@ -284,5 +322,6 @@ export function useSpotifyPlaylists() {
     loadMoreTracks,
     createPlaylist,
     addTrack,
+    removePlaylist,
   };
 }
