@@ -64,7 +64,12 @@ export function ChoreBoard({
    * here in JS; CSS alone would mean rendering both layouts at once and
    * duplicating every row.
    */
-  const compact = useMediaQuery('(max-width: 600px)');
+  const phoneWidth = useMediaQuery('(max-width: 600px)');
+  const shortLandscape = useMediaQuery(
+    '(orientation: landscape) and (max-height: 520px) and (pointer: coarse)',
+  );
+  const compactLandscape = !phoneWidth && shortLandscape;
+  const compact = phoneWidth || compactLandscape;
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
   const [tab, setTab] = useState<'chores' | 'routines' | 'goals' | 'free'>('chores');
 
@@ -82,7 +87,9 @@ export function ChoreBoard({
               type="button"
               className={`planner-mobile-member${item.id === member?.id ? ' is-active' : ''}`}
               aria-pressed={item.id === member?.id}
-              onClick={() => setActiveMemberId(item.id)}
+              onClick={() =>
+                compactLandscape ? onOpenChild(item.id) : setActiveMemberId(item.id)
+              }
             >
               <span className="planner-mobile-avatar">
                 <MemberAvatar member={item} />

@@ -865,11 +865,7 @@ describe('ChorePlanner board', () => {
     await waitFor(() => expect(historyNames()).toEqual(['Afwassen vandaag', 'Afwassen eerder']));
   });
 
-  /*
-   * The award sheet asks where the earned points should go once a chore is ticked off, so
-   * the child can push them towards a savings goal instead of a blind balance.
-   */
-  it('asks where the points go after a chore is confirmed', async () => {
+  it('offers only saved rewards when asking where earned points should go', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 
     fireEvent.click(column(container, 'Zara').querySelector('.planner-row-check')!);
@@ -878,8 +874,8 @@ describe('ChorePlanner board', () => {
     await waitFor(() =>
       expect(container.textContent).toContain('Waar wil je de punten aan koppelen?'),
     );
-    expect(container.textContent).toContain('Spaarpot');
     expect(container.textContent).toContain('Schermtijd');
+    expect(container.textContent).not.toContain('Spaarpot');
     expect(container.textContent).toContain('Stel een doel in');
   });
 

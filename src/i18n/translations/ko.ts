@@ -841,7 +841,6 @@ export const ko: Record<TranslationKey, string> = {
   'planner.filterTitle': '무엇을 볼까요?',
   'planner.awardTitle': '이 포인트는 어디로 갈까요?',
   'planner.stillNeeded': '{points} 포인트 남음',
-  'planner.savingsPot': '저금통',
   'planner.pausedRoutines': '일시정지된 루틴',
   'planner.resumeRoutine': '재개',
   'planner.pauseRoutine': '일시정지',

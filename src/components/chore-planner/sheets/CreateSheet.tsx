@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock3, Gift, ListChecks, Pencil } from 'lucide-react';
+import { ChevronDown, Clock3, Gift, ListChecks, Pencil } from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../../api/chore-planner-model';
 import type { ChoreOpsChore, ChoreOpsReward } from '../../../types/choreops';
 import type { PlannerCopy } from '../copy';
@@ -202,6 +202,7 @@ export function CreateSheet({
                         {assigned && <small>{assigned}</small>}
                       </span>
                       <span className="planner-create-step-count">{steps.length}</span>
+                      <ChevronDown className="planner-create-routine-chevron" aria-hidden="true" />
                     </summary>
                     {steps.length > 0 && (
                       <ul>
@@ -213,15 +214,18 @@ export function CreateSheet({
                           );
                           return (
                             <li key={name}>
-                              <span>{name}</span>
-                              {task && (
+                              {task ? (
                                 <button
                                   type="button"
+                                  className="planner-create-routine-step"
                                   onClick={() => onEditChore(task)}
                                   aria-label={`${c.edit}: ${name}`}
                                 >
+                                  <span>{name}</span>
                                   <Pencil size={14} aria-hidden="true" />
                                 </button>
+                              ) : (
+                                <span>{name}</span>
                               )}
                             </li>
                           );

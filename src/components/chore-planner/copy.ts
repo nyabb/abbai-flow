@@ -102,7 +102,6 @@ export function usePlannerCopy() {
       filterTitle: t('planner.filterTitle'),
       awardTitle: t('planner.awardTitle'),
       stillNeeded: t('planner.stillNeeded'),
-      savingsPot: t('planner.savingsPot'),
       pausedRoutines: t('planner.pausedRoutines'),
       resumeRoutine: t('planner.resumeRoutine'),
       pauseRoutine: t('planner.pauseRoutine'),

@@ -935,7 +935,6 @@ export const nl: Record<TranslationKey, string> = {
   'planner.filterTitle': 'Wat wil je zien?',
   'planner.awardTitle': 'Waar wil je de punten aan koppelen?',
   'planner.stillNeeded': 'Nog {points} punten te gaan',
-  'planner.savingsPot': 'Spaarpot',
   'planner.pausedRoutines': 'Gepauzeerde routines',
   'planner.resumeRoutine': 'Hervatten',
   'planner.pauseRoutine': 'Pauzeren',

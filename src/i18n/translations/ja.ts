@@ -844,7 +844,6 @@ export const ja: Record<TranslationKey, string> = {
   'planner.filterTitle': 'なにを表示しますか？',
   'planner.awardTitle': 'このポイントはどこへ？',
   'planner.stillNeeded': 'あと{points}ポイント',
-  'planner.savingsPot': '貯金箱',
   'planner.pausedRoutines': '停止中のルーティン',
   'planner.resumeRoutine': '再開',
   'planner.pauseRoutine': '停止',
