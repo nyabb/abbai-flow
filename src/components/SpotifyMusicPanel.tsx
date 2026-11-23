@@ -270,51 +270,53 @@ export function SpotifyMusicPanel({
           <ul className="spotify-search-results" aria-label={t('music.spotifySearchResults')}>
             {searchResults.map((track) => (
               <li key={track.uri}>
-                {track.artworkUrl ? (
-                  <img src={track.artworkUrl} alt="" />
-                ) : (
-                  <span className="spotify-search-art">
-                    <Music2 size={18} />
-                  </span>
-                )}
-                <span className="spotify-search-copy">
-                  {track.spotifyUrl ? (
-                    <a href={track.spotifyUrl} target="_blank" rel="noreferrer">
-                      {track.title}
-                    </a>
+                <div className="spotify-search-result-main">
+                  {track.artworkUrl ? (
+                    <img src={track.artworkUrl} alt="" />
                   ) : (
-                    <strong>{track.title}</strong>
+                    <span className="spotify-search-art">
+                      <Music2 size={18} />
+                    </span>
                   )}
-                  <span>
-                    {track.artists.join(', ') || '—'}
-                    {track.album ? ` · ${track.album}` : ''}
+                  <span className="spotify-search-copy">
+                    {track.spotifyUrl ? (
+                      <a href={track.spotifyUrl} target="_blank" rel="noreferrer">
+                        {track.title}
+                      </a>
+                    ) : (
+                      <strong>{track.title}</strong>
+                    )}
+                    <span>
+                      {track.artists.join(', ') || '—'}
+                      {track.album ? ` · ${track.album}` : ''}
+                    </span>
                   </span>
-                </span>
-                <span className="spotify-search-actions">
-                  <button
-                    type="button"
-                    className="spotify-search-play"
-                    aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
-                    title={t('music.spotifyPlayTrack')}
-                    disabled={!canControl}
-                    onClick={() => void runControl('playTrack', track.uri)}
-                  >
-                    <Play size={19} fill="currentColor" />
-                  </button>
-                  <button
-                    type="button"
-                    className="spotify-search-add"
-                    aria-label={`${t('music.spotifyAddToPlaylist')}: ${track.title}`}
-                    title={t('music.spotifyAddToPlaylist')}
-                    disabled={!library.status.authorized}
-                    aria-expanded={addingTrackUri === track.uri}
-                    onClick={() =>
-                      setAddingTrackUri((current) => (current === track.uri ? null : track.uri))
-                    }
-                  >
-                    <Plus size={20} />
-                  </button>
-                </span>
+                  <span className="spotify-search-actions">
+                    <button
+                      type="button"
+                      className="spotify-search-play"
+                      aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
+                      title={t('music.spotifyPlayTrack')}
+                      disabled={!canControl}
+                      onClick={() => void runControl('playTrack', track.uri)}
+                    >
+                      <Play size={19} fill="currentColor" />
+                    </button>
+                    <button
+                      type="button"
+                      className="spotify-search-add"
+                      aria-label={`${t('music.spotifyAddToPlaylist')}: ${track.title}`}
+                      title={t('music.spotifyAddToPlaylist')}
+                      disabled={!library.status.authorized}
+                      aria-expanded={addingTrackUri === track.uri}
+                      onClick={() =>
+                        setAddingTrackUri((current) => (current === track.uri ? null : track.uri))
+                      }
+                    >
+                      <Plus size={20} />
+                    </button>
+                  </span>
+                </div>
                 {addingTrackUri === track.uri && (
                   <div
                     className="spotify-search-add-menu"
@@ -339,7 +341,11 @@ export function SpotifyMusicPanel({
                       ))
                     )}
                     {library.playlists.length < library.playlistsTotal && (
-                      <button type="button" onClick={() => void library.fetchPlaylists()}>
+                      <button
+                        type="button"
+                        disabled={library.working}
+                        onClick={() => void library.fetchPlaylists()}
+                      >
                         {t('music.spotifyLoadMore')}
                       </button>
                     )}

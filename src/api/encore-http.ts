@@ -154,6 +154,25 @@ export async function handleEncoreMusicRequest(
     return true;
   }
 
+  const playlistMatch = pathname.match(/^\/abbai-flow\/music\/library\/playlists\/([^/]+)$/);
+  if (playlistMatch) {
+    if (!playlists) {
+      helpers.sendJson(response, 503, { error: 'Spotify playlist integration is unavailable' });
+      return true;
+    }
+    if (method !== 'DELETE') {
+      helpers.sendJson(response, 405, { error: 'Method not allowed' }, { Allow: 'DELETE' });
+      return true;
+    }
+    try {
+      await playlists.removePlaylist(playlistMatch[1]);
+      helpers.sendJson(response, 202, { accepted: true });
+    } catch (error) {
+      sendPlaylistError(error, response, helpers);
+    }
+    return true;
+  }
+
   const playlistItemsMatch = pathname.match(/^\/abbai-flow\/music\/library\/playlists\/([^/]+)\/items$/);
   if (playlistItemsMatch) {
     if (!playlists) {

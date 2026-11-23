@@ -232,6 +232,27 @@ describe('Spotify playlist library', () => {
     });
   });
 
+  it('removes a playlist from the user library using its validated Spotify URI', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(jsonResponse({}));
+    const service = library(fetcher);
+
+    await expect(service.removePlaylist(PLAYLIST_ID)).resolves.toBeUndefined();
+
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      `https://api.spotify.com/v1/me/library?uris=spotify%3Aplaylist%3A${PLAYLIST_ID}`,
+    );
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ method: 'DELETE' });
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({
+      Authorization: `Bearer ${USER_TOKEN}`,
+    });
+
+    await expect(service.removePlaylist('../private')).rejects.toMatchObject({
+      code: 'invalid_request',
+    });
+    expect(fetcher).toHaveBeenCalledOnce();
+  });
+
   it('refreshes user tokens and persists rotated refresh credentials without exposing them', async () => {
     const storage = tokenStore(storedToken(0));
     const fetcher = vi

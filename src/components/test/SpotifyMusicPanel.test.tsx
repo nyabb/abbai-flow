@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { I18nContext, createI18n } from '../../i18n';
@@ -47,9 +47,14 @@ function playlistLibrary(
     loadMoreTracks: vi.fn(),
     createPlaylist: vi.fn(async () => ({ ok: true })),
     addTrack: vi.fn(async () => ({ ok: true })),
+    removePlaylist: vi.fn(async () => ({ ok: true })),
     ...overrides,
   };
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
   return {
@@ -283,8 +288,50 @@ describe('SpotifyMusicPanel connection states', () => {
     await screen.findByRole('button', { name: 'Add to playlist: Sample Song' });
     fireEvent.click(screen.getByRole('button', { name: 'Add to playlist: Sample Song' }));
     const menu = screen.getByRole('group', { name: 'Add to playlist' });
+    expect(menu).toBeVisible();
+    expect(menu.parentElement?.tagName).toBe('LI');
+    const librarySection = document.querySelector('.spotify-library');
+    expect(librarySection).not.toBeNull();
+    expect(
+      menu.compareDocumentPosition(librarySection as Element) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
     fireEvent.click(within(menu).getByRole('button', { name: 'Summer mix' }));
 
     await waitFor(() => expect(addTrack).toHaveBeenCalledWith(playlist.id, 'spotify:track:abc123'));
+  });
+
+  it('confirms playlist removal and calls the library remove action', async () => {
+    const playlist = {
+      id: '4q3zB8nVYk9m2H6wX1cR0P',
+      uri: 'spotify:playlist:4q3zB8nVYk9m2H6wX1cR0P',
+      name: 'Summer mix',
+      artworkUrl: null,
+      spotifyUrl: null,
+      ownerName: 'Abbai',
+      trackCount: 1,
+      isPublic: false,
+    };
+    const removePlaylist = vi.fn(async () => ({ ok: true }));
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const library = playlistLibrary({
+      status: {
+        configured: true,
+        credentialsConfigured: true,
+        authorized: true,
+        redirectConfigured: true,
+      },
+      playlists: [playlist],
+      playlistsTotal: 1,
+      selectedPlaylist: playlist,
+      selectedPlaylistId: playlist.id,
+      removePlaylist,
+    });
+
+    renderPanel(snapshot(), false, undefined, library);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove playlist' }));
+
+    await waitFor(() => expect(removePlaylist).toHaveBeenCalledWith(playlist.id));
+    expect(confirm).toHaveBeenCalledOnce();
   });
 });

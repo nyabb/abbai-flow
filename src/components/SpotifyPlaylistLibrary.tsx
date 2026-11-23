@@ -1,5 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ExternalLink, ListMusic, LoaderCircle, Music2, Plus, Sparkles } from 'lucide-react';
+import {
+  ExternalLink,
+  ListMusic,
+  LoaderCircle,
+  Music2,
+  Plus,
+  Sparkles,
+  Trash2,
+} from 'lucide-react';
 import type { SpotifyPlaylist, SpotifyPlaylistTrack } from '../api/spotify-playlists';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
@@ -70,6 +78,17 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
       setActionError(result.error || t('music.spotifyPlaylistCreateFailed'));
     }
     setCreatingPlaylist(false);
+  };
+
+  const removeSelectedPlaylist = async () => {
+    const playlist = library.selectedPlaylist;
+    if (!playlist || library.working) return;
+    if (!window.confirm(t('music.spotifyRemovePlaylistConfirm', { name: playlist.name }))) return;
+
+    setActionError(null);
+    const result = await library.removePlaylist(playlist.id);
+    if (result.ok) setNotice(t('music.spotifyPlaylistRemoved'));
+    else setActionError(result.error || t('music.spotifyPlaylistRemoveFailed'));
   };
 
   const playlistButton = (playlist: SpotifyPlaylist) => (
@@ -264,6 +283,17 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
                   <span>Spotify</span>
                 </a>
               )}
+              <button
+                type="button"
+                className="spotify-remove-playlist"
+                aria-label={t('music.spotifyRemovePlaylist')}
+                title={t('music.spotifyRemovePlaylist')}
+                disabled={library.working}
+                onClick={() => void removeSelectedPlaylist()}
+              >
+                <Trash2 size={18} />
+                <span>{t('music.spotifyRemovePlaylist')}</span>
+              </button>
             </header>
             <div className="spotify-playlist-track-heading" aria-hidden="true">
               <span>#</span>
