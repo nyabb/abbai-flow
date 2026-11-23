@@ -1,3 +1,10 @@
+## [2.15.1](https://github.com/nyabb/abbai-flow/compare/v2.15.0...v2.15.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* improve chore planner mobile interactions ([139d92f](https://github.com/nyabb/abbai-flow/commit/139d92f495b696ff2d76a166ba70ba05baaf15e3))
+
 # [2.15.0](https://github.com/nyabb/abbai-flow/compare/v2.14.3...v2.15.0) (2026-11-23)
 
 
