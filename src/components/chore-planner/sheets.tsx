@@ -68,11 +68,8 @@ export interface AwardSheetProps {
   task: PlannerTask;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  /** What the child can still spend on goals. */
-  spendable: number;
   rewards: ChoreOpsReward[];
   rewardState: (reward: ChoreOpsReward) => RewardState;
-  onClose: () => void;
   onAssign: (reward: ChoreOpsReward) => void;
   onNewGoal: () => void;
 }
@@ -82,10 +79,8 @@ export function AwardSheet({
   task,
   copy: c,
   t,
-  spendable,
   rewards,
   rewardState,
-  onClose,
   onAssign,
   onNewGoal,
 }: AwardSheetProps) {
@@ -97,17 +92,6 @@ export function AwardSheet({
         {task.points > 0 && ` \u00b7 ${'\u{1F3C6}'} ${task.points}`}
       </p>
       <div className="planner-goal-list">
-        <button type="button" className="planner-goal" onClick={onClose}>
-          <span className="planner-goal-icon" aria-hidden="true">
-            {'\u{1F3E6}'}
-          </span>
-          <span className="planner-goal-copy">
-            <strong>{c.savingsPot}</strong>
-            <small>
-              {c.pot} \u00b7 {spendable}
-            </small>
-          </span>
-        </button>
         {rewards.map((reward) => {
           const { canAdd, remaining } = rewardState(reward);
           return (

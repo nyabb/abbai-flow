@@ -938,7 +938,6 @@ export const en = {
   'planner.filterTitle': 'What do you want to see?',
   'planner.awardTitle': 'Where should these points go?',
   'planner.stillNeeded': 'still {points} to go',
-  'planner.savingsPot': 'Savings pot',
   'planner.pausedRoutines': 'Paused routines',
   'planner.resumeRoutine': 'Resume',
   'planner.pauseRoutine': 'Pause',

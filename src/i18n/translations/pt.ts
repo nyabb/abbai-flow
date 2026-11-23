@@ -851,7 +851,6 @@ export const pt: Record<TranslationKey, string> = {
   'planner.filterTitle': 'O que queres ver?',
   'planner.awardTitle': 'Para onde vão estes pontos?',
   'planner.stillNeeded': 'Faltam {points} pontos',
-  'planner.savingsPot': 'Mealheiro',
   'planner.pausedRoutines': 'Rotinas em pausa',
   'planner.resumeRoutine': 'Retomar',
   'planner.pauseRoutine': 'Pausar',

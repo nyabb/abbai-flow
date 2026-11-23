@@ -1101,6 +1101,7 @@
   max-height: min(84vh, 880px);
   max-height: min(84dvh, 880px);
   overflow: auto;
+  overscroll-behavior: contain;
   padding: 32px;
   border-radius: 20px;
   background: var(--planner-surface);
@@ -1402,6 +1403,7 @@
 }
 .planner-create-management {
   display: grid;
+  flex: 0 0 auto;
   gap: 10px;
   padding-top: 14px;
   border-top: 1px solid var(--planner-line);
@@ -1454,9 +1456,8 @@
 .planner-create-list {
   display: grid;
   gap: 7px;
-  max-height: min(32vh, 300px);
-  overflow: auto;
-  overscroll-behavior: contain;
+  min-height: 0;
+  overflow: visible;
 }
 .planner-create-row {
   display: flex;
@@ -1527,6 +1528,16 @@
 .planner-create-routine summary::-webkit-details-marker {
   display: none;
 }
+.planner-create-routine-chevron {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: var(--planner-muted);
+  transition: transform 150ms ease-out;
+}
+.planner-create-routine[open] .planner-create-routine-chevron {
+  transform: rotate(180deg);
+}
 .planner-create-routine ul {
   display: grid;
   gap: 5px;
@@ -1546,15 +1557,23 @@
 .planner-create-routine li span {
   overflow-wrap: anywhere;
 }
-.planner-create-routine li button {
-  display: grid;
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  place-items: center;
+.planner-create-routine-step {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 3px 6px;
   border-radius: 8px;
-  color: var(--planner-accent);
+  color: var(--planner-ink);
   background: var(--planner-surface);
+  text-align: left;
+  cursor: pointer;
+}
+.planner-create-routine-step svg {
+  flex: 0 0 auto;
+  color: var(--planner-accent);
 }
 .planner-danger {
   color: var(--planner-accent);

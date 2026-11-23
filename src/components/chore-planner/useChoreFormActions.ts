@@ -54,19 +54,20 @@ export function useChoreFormActions({
   t,
   createRequest,
 }: UseChoreFormActionsOptions) {
-  const openNewForm = (kind: 'chore' | 'routine' = 'chore') => {
+  const openNewForm = (kind: 'chore' | 'routine' = 'chore', memberId?: string) => {
     // A routine is a chore that repeats daily and belongs to a named routine.
-    setForm(
+    const nextForm =
       kind === 'routine'
         ? {
             ...emptyForm(now),
-            kind: 'routine',
-            frequency: 'daily',
-            liveFrequency: 'daily',
-            timeBlock: 'morning',
+            kind: 'routine' as const,
+            frequency: 'daily' as const,
+            liveFrequency: 'daily' as const,
+            timeBlock: 'morning' as const,
           }
-        : emptyForm(now),
-    );
+        : emptyForm(now);
+    if (memberId) nextForm.memberIds = [memberId];
+    setForm(nextForm);
     dispatchOverlay({ type: 'open-form' });
   };
 

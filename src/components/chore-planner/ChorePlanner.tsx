@@ -1414,7 +1414,11 @@ export function ChorePlanner({
               <ChoreEditor
                 form={form}
                 setForm={setForm}
-                members={data.members}
+                members={
+                  !overlay.editingId && screen === 'child' && childMember
+                    ? [childMember]
+                    : data.members
+                }
                 editingId={overlay.editingId}
                 saving={saving}
                 copy={c}
@@ -1459,10 +1463,8 @@ export function ChorePlanner({
                 task={awardTask}
                 copy={c}
                 t={t}
-                spendable={spendableFor(memberFor(awardTask.memberId))}
                 rewards={rewardsForMember(awardTask.memberId)}
                 rewardState={rewardState}
-                onClose={() => dispatchOverlay({ type: 'close' })}
                 onAssign={(reward) => openAssign(reward)}
                 onNewGoal={() => startRewardForm(awardTask.memberId ?? undefined)}
               />
@@ -1540,8 +1542,18 @@ export function ChorePlanner({
                 routines={adminRoutines}
                 rewards={rewards}
                 members={data.members}
-                onChore={() => openNewForm('chore')}
-                onRoutine={() => openNewForm('routine')}
+                onChore={() =>
+                  openNewForm(
+                    'chore',
+                    screen === 'child' ? (childMember?.id ?? undefined) : undefined,
+                  )
+                }
+                onRoutine={() =>
+                  openNewForm(
+                    'routine',
+                    screen === 'child' ? (childMember?.id ?? undefined) : undefined,
+                  )
+                }
                 onReward={() =>
                   startRewardForm(screen === 'child' ? (childMember?.id ?? undefined) : undefined)
                 }
@@ -1594,7 +1606,11 @@ export function ChorePlanner({
                 rewardForm={rewardForm}
                 setRewardForm={setRewardForm}
                 editingReward={overlay.editingReward}
-                members={data.members}
+                members={
+                  overlay.editingReward || screen !== 'child' || !childMember
+                    ? data.members
+                    : [childMember]
+                }
                 saving={saving}
                 copy={c}
                 onCancel={() => dispatchOverlay({ type: 'close' })}
