@@ -1,3 +1,10 @@
+# [2.15.0](https://github.com/nyabb/abbai-flow/compare/v2.14.3...v2.15.0) (2026-11-23)
+
+
+### Features
+
+* improve Spotify playlist management ([82d4009](https://github.com/nyabb/abbai-flow/commit/82d400947158a6a2d163d0b1edff6b6e2a19756b))
+
 ## [2.14.3](https://github.com/nyabb/abbai-flow/compare/v2.14.2...v2.14.3) (2026-11-22)
 
 
