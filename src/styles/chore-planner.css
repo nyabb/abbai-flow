@@ -1495,7 +1495,13 @@
   color: var(--planner-muted);
   font-size: 0.72rem;
 }
-.planner-create-row > button {
+.planner-create-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+}
+.planner-create-row-actions button {
   display: grid;
   flex: 0 0 auto;
   width: 34px;
@@ -1506,7 +1512,7 @@
   background: var(--planner-soft);
   cursor: pointer;
 }
-.planner-create-row > button svg {
+.planner-create-row-actions button svg {
   flex: 0 0 auto;
 }
 .planner-create-routine {

@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { ChevronDown, Clock3, Gift, ListChecks, Pencil } from 'lucide-react';
+import {
+  ChevronDown,
+  Clock3,
+  Gift,
+  ListChecks,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+} from 'lucide-react';
 import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../../api/chore-planner-model';
 import type { ChoreOpsChore, ChoreOpsReward } from '../../../types/choreops';
 import type { PlannerCopy } from '../copy';
@@ -15,6 +23,8 @@ export interface CreateSheetProps {
   onRoutine: () => void;
   onReward: () => void;
   onEditChore: (task: PlannerTask) => void;
+  onOpenTaskActions: (task: PlannerTask) => void;
+  onUseAgain: (task: PlannerTask) => void;
   onOpenReward: (reward: ChoreOpsReward) => void;
 }
 
@@ -33,6 +43,8 @@ export function CreateSheet({
   onRoutine,
   onReward,
   onEditChore,
+  onOpenTaskActions,
+  onUseAgain,
   onOpenReward,
 }: CreateSheetProps) {
   const [browse, setBrowse] = useState<'chores' | 'rewards' | 'routines'>('chores');
@@ -55,6 +67,8 @@ export function CreateSheet({
       .map((id) => members.find((member) => member.id === id)?.name)
       .filter((name): name is string => Boolean(name))
       .join(', ');
+  const isCompleted = (task: PlannerTask) =>
+    task.statusOverride ? task.statusOverride === 'completed' : Boolean(task.completedAt);
 
   return (
     <>
@@ -92,7 +106,8 @@ export function CreateSheet({
               className={browse === key ? 'is-active' : ''}
               onClick={() => setBrowse(key)}
             >
-              {label}<span>{count}</span>
+              {label}
+              <span>{count}</span>
             </button>
           ))}
         </div>
@@ -106,9 +121,10 @@ export function CreateSheet({
                 .sort(([left], [right]) => left.localeCompare(right))
                 .map(([key, group]) => {
                   const chore = group[0];
-                  const task = tasks.find(
+                  const matchingTasks = tasks.filter(
                     (item) => item.name.trim().toLowerCase() === chore.name.trim().toLowerCase(),
                   );
+                  const task = matchingTasks.find(isCompleted) ?? matchingTasks[0];
                   const assignedNames = Array.from(
                     new Set(
                       group
@@ -137,14 +153,46 @@ export function CreateSheet({
                         </small>
                       </span>
                       {task && (
-                        <button
-                          type="button"
-                          onClick={() => onEditChore(task)}
-                          aria-label={`${c.edit}: ${chore.name}`}
-                          title={c.edit}
-                        >
-                          <Pencil size={16} aria-hidden="true" />
-                        </button>
+                        <div className="planner-create-row-actions">
+                          {task.inRoutine ? (
+                            <button
+                              type="button"
+                              onClick={() => onOpenTaskActions(task)}
+                              aria-label={`${c.action}: ${chore.name}`}
+                              title={c.action}
+                            >
+                              <MoreHorizontal size={16} aria-hidden="true" />
+                            </button>
+                          ) : isCompleted(task) ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => onUseAgain(task)}
+                                aria-label={`${c.useAgain}: ${chore.name}`}
+                                title={c.useAgain}
+                              >
+                                <RotateCcw size={16} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => onOpenTaskActions(task)}
+                                aria-label={`${c.action}: ${chore.name}`}
+                                title={c.action}
+                              >
+                                <MoreHorizontal size={16} aria-hidden="true" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => onEditChore(task)}
+                              aria-label={`${c.edit}: ${chore.name}`}
+                              title={c.edit}
+                            >
+                              <Pencil size={16} aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   );
@@ -207,22 +255,23 @@ export function CreateSheet({
                     {steps.length > 0 && (
                       <ul>
                         {steps.map((name) => {
-                          const task = tasks.find(
+                          const matchingTasks = tasks.filter(
                             (item) =>
                               item.routineId === routine.id &&
                               item.name.trim().toLowerCase() === name.trim().toLowerCase(),
                           );
+                          const task = matchingTasks.find(isCompleted) ?? matchingTasks[0];
                           return (
                             <li key={name}>
                               {task ? (
                                 <button
                                   type="button"
                                   className="planner-create-routine-step"
-                                  onClick={() => onEditChore(task)}
-                                  aria-label={`${c.edit}: ${name}`}
+                                  onClick={() => onOpenTaskActions(task)}
+                                  aria-label={`${c.action}: ${name}`}
                                 >
                                   <span>{name}</span>
-                                  <Pencil size={14} aria-hidden="true" />
+                                  <MoreHorizontal size={16} aria-hidden="true" />
                                 </button>
                               ) : (
                                 <span>{name}</span>

@@ -1,5 +1,12 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
-import { formatChoreOpsOffset, isChoreOpenToAnyone, CHOREOPS_ALL_USERS } from '../../api/choreops';
+import {
+  formatChoreOpsOffset,
+  isChoreOpenToAnyone,
+  CHOREOPS_ALL_USERS,
+  type ChoreOpsFrequency,
+  type ChoreOpsIntervalUnit,
+  type ChoreOpsWeekday,
+} from '../../api/choreops';
 import { normaliseName } from '../../api/planner-meta';
 import type { UsePlannerMetaResult } from '../../hooks/usePlannerMeta';
 import type { UseChoreOpsResult } from '../../hooks/useChoreOps';
@@ -71,14 +78,12 @@ export function useChoreFormActions({
     dispatchOverlay({ type: 'open-form' });
   };
 
-
   const createToken = createRequest?.token ?? 0;
   useEffect(() => {
     if (createToken === 0) return;
     openNewForm(createRequest?.kind ?? 'chore');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
   }, [createToken]);
-
 
   const openEditForm = (task: PlannerTask) => {
     if (hasParentPin) dispatchOverlay({ type: 'close' });
@@ -109,6 +114,84 @@ export function useChoreFormActions({
     });
   };
 
+  /** Replace a chore definition while keeping the original recoverable on failure. */
+  const replaceChore = async (
+    originalName: string,
+    choreId: string,
+    replacement: Parameters<UseChoreOpsResult['createChore']>[0],
+  ) => {
+    const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    await choreOps.updateChore({ name: temporaryName, targetName: originalName, choreId });
+
+    try {
+      await choreOps.createChore(replacement);
+    } catch (createError) {
+      try {
+        await choreOps.updateChore({
+          name: originalName,
+          targetName: temporaryName,
+          choreId,
+        });
+      } catch (restoreError) {
+        const createMessage = createError instanceof Error ? createError.message : c.noFail;
+        const restoreMessage = restoreError instanceof Error ? restoreError.message : c.noFail;
+        const failure = new Error(
+          `${createMessage}. Could not restore the original chore: ${restoreMessage}`,
+        ) as Error & { details?: string };
+        failure.details = [
+          'Replacement create request failed:',
+          errorDiagnosticText(createError),
+          'Original chore restore request failed:',
+          errorDiagnosticText(restoreError),
+        ].join('\n\n');
+        throw failure;
+      }
+      throw createError;
+    }
+
+    try {
+      await choreOps.deleteChore(temporaryName);
+    } catch (deleteError) {
+      const rollbackErrors: string[] = [];
+      const rollbackDetails: string[] = [];
+      try {
+        await choreOps.deleteChore(replacement.name.trim());
+      } catch (rollbackError) {
+        rollbackErrors.push(
+          `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
+        );
+        rollbackDetails.push(errorDiagnosticText(rollbackError));
+      }
+      try {
+        await choreOps.updateChore({
+          name: originalName,
+          targetName: temporaryName,
+          choreId,
+        });
+      } catch (restoreError) {
+        rollbackErrors.push(
+          `could not restore the original name: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
+        );
+        rollbackDetails.push(errorDiagnosticText(restoreError));
+      }
+      const deleteMessage = deleteError instanceof Error ? deleteError.message : c.noFail;
+      if (rollbackErrors.length) {
+        const failure = new Error(
+          `${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`,
+        ) as Error & { details?: string };
+        failure.details = [
+          'Delete request failed:',
+          errorDiagnosticText(deleteError),
+          ...rollbackDetails.flatMap((details, index) => [
+            `Rollback request ${index + 1} failed:`,
+            details,
+          ]),
+        ].join('\n\n');
+        throw failure;
+      }
+      throw deleteError;
+    }
+  };
 
   const saveForm = async () => {
     if (!form.name.trim() || (!form.memberIds.length && !form.free) || saving) return;
@@ -143,12 +226,11 @@ export function useChoreFormActions({
      */
     const originalTask = editingId ? getTask(editingId) : null;
     const originalName = originalTask?.name ?? form.name;
-    const originalChore =
-      editingId
-        ? choreOps.data?.chores.find(
-            (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
-          ) ?? null
-        : null;
+    const originalChore = editingId
+      ? (choreOps.data?.chores.find(
+          (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
+        ) ?? null)
+      : null;
     let recreateForClaimModeChange = false;
     if (editingId && originalChore) {
       const assignedNames = (originalChore.assignedUserNames ?? []).map((name) =>
@@ -157,10 +239,10 @@ export function useChoreFormActions({
       const originalCriteria = normaliseName(originalChore.completionCriteria ?? '');
       const claimModeKnown = Boolean(originalCriteria || assignedNames.length > 0);
       const effectiveCriteria = originalCriteria || 'independent';
-      recreateForClaimModeChange = claimModeKnown && (
-        (form.free && effectiveCriteria !== 'shared_first') ||
-        (!form.free && effectiveCriteria === 'shared_first' && form.memberIds.length > 1)
-      );
+      recreateForClaimModeChange =
+        claimModeKnown &&
+        ((form.free && effectiveCriteria !== 'shared_first') ||
+          (!form.free && effectiveCriteria === 'shared_first' && form.memberIds.length > 1));
     }
     const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
     const nextLabel = form.liveLabel.trim();
@@ -189,18 +271,17 @@ export function useChoreFormActions({
     );
     const intervalChanged = Boolean(
       originalChore &&
-        (form.liveInterval !== (originalChore.customInterval ?? 1) ||
-          form.liveIntervalUnit !== (originalChore.customIntervalUnit ?? 'days')),
+      (form.liveInterval !== (originalChore.customInterval ?? 1) ||
+        form.liveIntervalUnit !== (originalChore.customIntervalUnit ?? 'days')),
     );
     const requestedDays = schedule.applicableDays ?? [];
     const daysChanged = Boolean(
       originalChore &&
-        ((frequency === 'weekly' || originalChore.frequency === 'weekly') &&
-          !sameDays(originalChore.applicableDays, requestedDays)),
+      (frequency === 'weekly' || originalChore.frequency === 'weekly') &&
+      !sameDays(originalChore.applicableDays, requestedDays),
     );
     const dueDateChanged = Boolean(
-      originalChore &&
-        !sameMinute(schedule.dueDate, originalChore.dueDate),
+      originalChore && !sameMinute(schedule.dueDate, originalChore.dueDate),
     );
     const currentWindow = formatChoreOpsOffset(originalChore?.windowOffset);
     const windowChanged = Boolean(originalChore && form.liveWindow.trim() !== currentWindow);
@@ -234,9 +315,10 @@ export function useChoreFormActions({
         const renamed = normaliseName(originalName) !== normaliseName(form.name);
         let choreId: string | undefined;
         if (renamed || recreateForClaimModeChange) {
-          const resolvedId = originalChore?.statusEntityId && choreOps.resolveChoreId
-            ? await choreOps.resolveChoreId(originalChore.statusEntityId)
-            : null;
+          const resolvedId =
+            originalChore?.statusEntityId && choreOps.resolveChoreId
+              ? await choreOps.resolveChoreId(originalChore.statusEntityId)
+              : null;
           if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
           choreId = resolvedId;
         }
@@ -255,108 +337,34 @@ export function useChoreFormActions({
             ...(form.liveReminder.trim() ? { reminderOffset: form.liveReminder } : {}),
           });
         } else {
-          const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-          await choreOps.updateChore({
-            name: temporaryName,
-            targetName: originalName,
-            choreId,
+          await replaceChore(originalName, choreId!, {
+            ...schedule,
+            name: form.name,
+            assignedUserNames: userNames,
+            completionCriteria: form.free ? 'shared_first' : 'independent',
+            points: form.points,
+            labels: labels ?? originalChore?.labels ?? [],
+            icon: originalChore?.icon ?? undefined,
+            customInterval: form.liveInterval,
+            customIntervalUnit: form.liveIntervalUnit,
+            dueDate: (() => {
+              if (dueDateChanged) return schedule.dueDate;
+              const existingDueDate = originalChore?.dueDate;
+              if (existingDueDate && new Date(existingDueDate).getTime() > Date.now()) {
+                return existingDueDate;
+              }
+              return undefined;
+            })(),
+            windowOffset: form.liveWindow,
+            reminderOffset: form.liveReminder || undefined,
+            autoApprove: form.liveAutoApprove,
+            approvalReset: originalChore?.approvalReset,
+            pendingClaims: originalChore?.pendingClaims,
+            overdueHandling: originalChore?.overdueHandling,
+            claimLockUntilWindow: originalChore?.claimLockUntilWindow,
+            notificationChannel: originalChore?.notificationChannel,
+            notificationImportance: originalChore?.notificationImportance,
           });
-
-          try {
-            await choreOps.createChore({
-              ...schedule,
-              name: form.name,
-              assignedUserNames: userNames,
-              completionCriteria: form.free ? 'shared_first' : 'independent',
-              points: form.points,
-              labels: labels ?? originalChore?.labels ?? [],
-              icon: originalChore?.icon ?? undefined,
-              customInterval: form.liveInterval,
-              customIntervalUnit: form.liveIntervalUnit,
-              dueDate: (() => {
-                if (dueDateChanged) return schedule.dueDate;
-                const existingDueDate = originalChore?.dueDate;
-                if (existingDueDate && new Date(existingDueDate).getTime() > Date.now()) {
-                  return existingDueDate;
-                }
-                return undefined;
-              })(),
-              windowOffset: form.liveWindow,
-              reminderOffset: form.liveReminder || undefined,
-              autoApprove: form.liveAutoApprove,
-              approvalReset: originalChore?.approvalReset,
-              pendingClaims: originalChore?.pendingClaims,
-              overdueHandling: originalChore?.overdueHandling,
-              claimLockUntilWindow: originalChore?.claimLockUntilWindow,
-              notificationChannel: originalChore?.notificationChannel,
-              notificationImportance: originalChore?.notificationImportance,
-            });
-          } catch (createError) {
-            try {
-              await choreOps.updateChore({
-                name: originalName,
-                targetName: temporaryName,
-                choreId,
-              });
-            } catch (restoreError) {
-              const createMessage = createError instanceof Error ? createError.message : c.noFail;
-              const restoreMessage = restoreError instanceof Error ? restoreError.message : c.noFail;
-              const failure = new Error(
-                `${createMessage}. Could not restore the original chore: ${restoreMessage}`,
-              ) as Error & { details?: string };
-              failure.details = [
-                'Replacement create request failed:',
-                errorDiagnosticText(createError),
-                'Original chore restore request failed:',
-                errorDiagnosticText(restoreError),
-              ].join('\n\n');
-              throw failure;
-            }
-            throw createError;
-          }
-
-          try {
-            await choreOps.deleteChore(temporaryName);
-          } catch (deleteError) {
-            const rollbackErrors: string[] = [];
-            const rollbackDetails: string[] = [];
-            try {
-              await choreOps.deleteChore(form.name.trim());
-            } catch (rollbackError) {
-              rollbackErrors.push(
-                `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
-              );
-              rollbackDetails.push(errorDiagnosticText(rollbackError));
-            }
-            try {
-              await choreOps.updateChore({
-                name: originalName,
-                targetName: temporaryName,
-                choreId,
-              });
-            } catch (restoreError) {
-              rollbackErrors.push(
-                `could not restore the original name: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
-              );
-              rollbackDetails.push(errorDiagnosticText(restoreError));
-            }
-            const deleteMessage = deleteError instanceof Error ? deleteError.message : c.noFail;
-            if (rollbackErrors.length) {
-              const failure = new Error(
-                `${deleteMessage}. Rollback issue: ${rollbackErrors.join('; ')}`,
-              ) as Error & { details?: string };
-              failure.details = [
-                'Delete request failed:',
-                errorDiagnosticText(deleteError),
-                ...rollbackDetails.flatMap((details, index) => [
-                  `Rollback request ${index + 1} failed:`,
-                  details,
-                ]),
-              ].join('\n\n');
-              throw failure;
-            }
-            throw deleteError;
-          }
         }
       } else {
         await choreOps.createChore({
@@ -419,7 +427,6 @@ export function useChoreFormActions({
     }
   };
 
-
   const removeTask = async (task: PlannerTask) => {
     try {
       await choreOps.deleteChore(task.name);
@@ -430,6 +437,108 @@ export function useChoreFormActions({
     }
   };
 
+  /** Reopen a completed task; standalone chores become shared-first for everyone. */
+  const reuseTask = async (task: PlannerTask) => {
+    if (saving) return;
+    const choreMatches = choreOps.data?.chores.filter(
+      (item) => normaliseName(item.name) === normaliseName(task.name),
+    ) ?? [];
+    const taskUserName = task.memberId ? userNameByMemberId.get(task.memberId) : undefined;
+    const chore =
+      (task.inRoutine && taskUserName
+        ? choreMatches.find(
+            (item) => normaliseName(item.assignee ?? '') === normaliseName(taskUserName),
+          )
+        : undefined) ?? choreMatches[0];
+    if (!chore) {
+      showError(new Error(t('planner.renameUnavailable')));
+      return;
+    }
 
-  return { openNewForm, openEditForm, saveForm, removeTask };
+    const futureDueDate =
+      chore.dueDate && new Date(chore.dueDate).getTime() > Date.now() ? chore.dueDate : null;
+    try {
+      setSaving(true);
+      if (task.inRoutine) {
+        const userName =
+          normaliseName(chore.completionCriteria ?? '') === 'independent' && taskUserName
+            ? taskUserName
+            : undefined;
+        await choreOps.setChoreDueDate(task.name, futureDueDate, userName);
+      } else if (normaliseName(chore.completionCriteria ?? '') === 'shared_first') {
+        const previousAssignees = chore.assignedUserNames ?? [];
+        const needsAllUsers = !previousAssignees.some(
+          (name) => normaliseName(name) === normaliseName(CHOREOPS_ALL_USERS),
+        );
+        if (needsAllUsers) {
+          await choreOps.updateChore({
+            name: chore.name,
+            targetName: chore.name,
+            assignedUserNames: [CHOREOPS_ALL_USERS],
+          });
+        }
+        try {
+          await choreOps.setChoreDueDate(task.name, futureDueDate);
+        } catch (resetError) {
+          if (needsAllUsers && previousAssignees.length > 0) {
+            try {
+              await choreOps.updateChore({
+                name: chore.name,
+                targetName: chore.name,
+                assignedUserNames: previousAssignees,
+              });
+            } catch (restoreError) {
+              const failure = new Error(
+                `${resetError instanceof Error ? resetError.message : c.noFail}. Could not restore the original assignees: ${restoreError instanceof Error ? restoreError.message : c.noFail}`,
+              ) as Error & { details?: string };
+              failure.details = [
+                'Reset request failed:',
+                errorDiagnosticText(resetError),
+                'Assignee restore request failed:',
+                errorDiagnosticText(restoreError),
+              ].join('\n\n');
+              throw failure;
+            }
+          }
+          throw resetError;
+        }
+      } else {
+        const choreId =
+          chore.statusEntityId && choreOps.resolveChoreId
+            ? await choreOps.resolveChoreId(chore.statusEntityId)
+            : null;
+        if (!choreId) throw new Error(t('planner.renameUnavailable'));
+        await replaceChore(task.name, choreId, {
+          name: chore.name,
+          assignedUserNames: [CHOREOPS_ALL_USERS],
+          completionCriteria: 'shared_first',
+          icon: chore.icon,
+          points: chore.points,
+          description: chore.description,
+          labels: chore.labels,
+          frequency: (chore.frequency ?? 'none') as ChoreOpsFrequency,
+          customInterval: chore.customInterval,
+          customIntervalUnit: chore.customIntervalUnit as ChoreOpsIntervalUnit | null,
+          applicableDays: (chore.applicableDays ?? []) as ChoreOpsWeekday[],
+          dueDate: futureDueDate ?? undefined,
+          windowOffset: chore.windowOffset,
+          autoApprove: chore.autoApprove,
+          approvalReset: chore.approvalReset,
+          pendingClaims: chore.pendingClaims,
+          overdueHandling: chore.overdueHandling,
+          claimLockUntilWindow: chore.claimLockUntilWindow,
+          notificationChannel: chore.notificationChannel,
+          notificationImportance: chore.notificationImportance,
+        });
+      }
+      dispatchOverlay({ type: 'close' });
+      showToast(toastWith(c.useAgain, task.name));
+    } catch (err) {
+      showError(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return { openNewForm, openEditForm, saveForm, removeTask, reuseTask };
 }

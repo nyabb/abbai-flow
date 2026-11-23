@@ -90,6 +90,8 @@ export interface UseChoreOpsResult {
   approveReward: (userName: string, rewardName: string, approverName?: string) => Promise<void>;
   /** Delete a ChoreOps chore by name. */
   deleteChore: (choreName: string) => Promise<void>;
+  /** Reset a chore to pending by setting or clearing its due date. */
+  setChoreDueDate: (choreName: string, dueDate?: string | null, userName?: string) => Promise<void>;
 }
 
 interface ChoreOpsSnapshot {
@@ -520,6 +522,22 @@ export function useChoreOps(): UseChoreOpsResult {
     [reloadAfterWrite],
   );
 
+  /** Set or clear a chore due date; ChoreOps resets the affected task to pending. */
+  const setChoreDueDate = useCallback(
+    async (choreName: string, dueDate?: string | null, userName?: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      await callHaService('choreops', 'set_chore_due_date', {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        chore_name: choreName,
+        due_date: dueDate ?? null,
+        ...(userName ? { user_name: userName } : {}),
+      });
+
+      await reloadAfterWrite();
+    },
+    [reloadAfterWrite],
+  );
+
   /**
    * Change an existing ChoreOps chore and re-read its entities.
    *
@@ -557,6 +575,7 @@ export function useChoreOps(): UseChoreOpsResult {
       deleteReward,
       approveReward,
       deleteChore,
+      setChoreDueDate,
     }),
     [
       state,
@@ -571,6 +590,7 @@ export function useChoreOps(): UseChoreOpsResult {
       deleteReward,
       approveReward,
       deleteChore,
+      setChoreDueDate,
     ],
   );
 }
