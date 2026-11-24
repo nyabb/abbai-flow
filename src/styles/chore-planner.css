@@ -1517,9 +1517,15 @@
 }
 .planner-create-routine {
   overflow: hidden;
+  flex: 1 1 auto;
   border: 1px solid var(--planner-line);
   border-radius: 11px;
   color: var(--planner-ink);
+}
+.planner-create-routine-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
 }
 .planner-create-routine summary {
   display: flex;

@@ -30,6 +30,7 @@ vi.mock('../../hooks/useRoutines', () => ({
     addRoutine: mocks.addRoutine,
     updateRoutine: mocks.updateRoutine,
     removeRoutine: mocks.removeRoutine,
+    refresh: vi.fn(async () => {}),
     isTaskCompletedToday: () => false,
     toggleTask: vi.fn(),
   }),
@@ -275,11 +276,14 @@ describe('FamilySection', () => {
     fireEvent.click(screen.getByLabelText(t.t('settings.family.routinesFor', { name: 'Noor' })));
     expect(screen.getByText('Avond')).toBeInTheDocument();
 
-    const remove = screen.getByLabelText(t.t('settings.family.deleteRoutine', { name: 'Avond' }));
+    fireEvent.click(screen.getByRole('button', { name: `${t.t('planner.action')}: Avond` }));
+    const remove = screen.getByRole('menuitem', {
+      name: t.t('settings.family.deleteRoutine', { name: 'Avond' }),
+    });
     fireEvent.click(remove);
     expect(mocks.removeRoutine).not.toHaveBeenCalled();
 
-    fireEvent.click(screen.getByLabelText(t.t('settings.family.deleteRoutine', { name: 'Avond' })));
+    fireEvent.click(remove);
     expect(mocks.removeRoutine).toHaveBeenCalledWith('r1');
   });
 
@@ -303,8 +307,11 @@ describe('FamilySection', () => {
     fireEvent.click(screen.getByLabelText(t.t('settings.family.routinesFor', { name: 'Noor' })));
     const card = document.querySelector<HTMLElement>('.settings-fm-card')!;
     expect(card.querySelector('.settings-fm-role')?.textContent).toContain('ma, wo');
+    fireEvent.click(screen.getByRole('button', { name: `${t.t('planner.action')}: School reset` }));
     fireEvent.click(
-      screen.getByLabelText(t.t('settings.family.editRoutine', { name: 'School reset' })),
+      screen.getByRole('menuitem', {
+        name: t.t('settings.family.editRoutine', { name: 'School reset' }),
+      }),
     );
 
     const weekdays = screen.getByRole('group', { name: t.t('settings.family.repeatOnLabel') });
@@ -317,7 +324,7 @@ describe('FamilySection', () => {
     fireEvent.click(tuesday);
 
     fireEvent.click(screen.getAllByLabelText(t.t('settings.family.moveDown'))[0]);
-    fireEvent.click(screen.getAllByLabelText(t.t('settings.family.removeTask'))[0]);
+    fireEvent.click(screen.getByLabelText(`${t.t('settings.family.removeTask')}: Find shoes`));
     fireEvent.click(screen.getByText(t.t('settings.family.saveRoutine')));
 
     await waitFor(() => expect(mocks.updateRoutine).toHaveBeenCalledTimes(1));

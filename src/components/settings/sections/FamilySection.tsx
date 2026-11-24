@@ -9,23 +9,18 @@ import { useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useChoreOps } from '../../../hooks/useChoreOps';
 import { useRoutines } from '../../../hooks/useRoutines';
-import { ALL_WEEKDAYS } from '../../../api/routine-schedule';
-import {
-  DEFAULT_ROUTINE_MISSION_POINTS,
-  normalizePin,
-  type FamilyMember,
-  type Routine,
-} from '../../../types/family';
+import { normalizePin, type FamilyMember, type Routine } from '../../../types/family';
 import { imageFileToDataUrl } from '../../../utils/member-photo';
 import { MemberFormView } from './family/MemberFormView';
 import { MemberList } from './family/MemberList';
 import { RoutineEditor } from './family/RoutineEditor';
+import { RoutineEditorDialog } from '../../routines/RoutineEditorDialog';
+import type { RoutineEditorRequest } from '../../routines/RoutineEditorDialog';
 import {
   EMPTY_FORM,
   type MemberForm,
   type MemberFormMode,
   type PersonOption,
-  type RoutineFormValue,
 } from './family/types';
 import type { SettingsSectionContext } from './context';
 
@@ -95,87 +90,28 @@ export function FamilySection({
   // ---- Routine editor state ----
   const routinesApi = useRoutines();
   const [routinesFor, setRoutinesFor] = useState<FamilyMember | null>(null);
-  const [routineForm, setRoutineForm] = useState<RoutineFormValue | null>(null);
-  const [confirmDeleteRoutine, setConfirmDeleteRoutine] = useState<string | null>(null);
-
-  const genTaskId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-  const handleSaveRoutine = useCallback(async () => {
-    if (!routineForm || !routinesFor) return;
-    const name = routineForm.name.trim();
-    const tasks = routineForm.tasks
-      .map((task) => ({ ...task, name: task.name.trim() }))
-      .filter((task) => task.name.length > 0)
-      .map((task, i) => ({ id: task.id ?? genTaskId(), name: task.name, order: i }));
-    if (!name || tasks.length === 0) return;
-    if (routineForm.id) {
-      await routinesApi.updateRoutine(routineForm.id, {
-        name,
-        time_of_day: routineForm.time_of_day,
-        days_of_week: [...routineForm.days_of_week].sort((a, b) => a - b),
-        mission_points: routinesFor.role === 'parent' ? 0 : routineForm.mission_points,
-        tasks,
-      });
-    } else {
-      await routinesApi.addRoutine({
-        name,
-        member_id: routinesFor.id,
-        time_of_day: routineForm.time_of_day,
-        days_of_week: [...routineForm.days_of_week].sort((a, b) => a - b),
-        mission_points: routinesFor.role === 'parent' ? 0 : routineForm.mission_points,
-        tasks,
-      });
-    }
-    setRoutineForm(null);
-  }, [routineForm, routinesFor, routinesApi]);
-
-  const handleStartCreateRoutine = useCallback(() => {
-    setRoutineForm({
-      id: null,
-      name: '',
-      time_of_day: 'morning',
-      days_of_week: [...ALL_WEEKDAYS],
-      mission_points: routinesFor?.role === 'parent' ? 0 : DEFAULT_ROUTINE_MISSION_POINTS,
-      tasks: [{ id: null, name: '' }],
-    });
-  }, [routinesFor]);
-
-  const handleStartEditRoutine = useCallback(
-    (routine: Routine) => {
-      setRoutineForm({
-        id: routine.id,
-        name: routine.name,
-        time_of_day: routine.time_of_day,
-        days_of_week: routine.days_of_week?.length ? [...routine.days_of_week] : [...ALL_WEEKDAYS],
-        mission_points:
-          routinesFor?.role === 'parent'
-            ? 0
-            : (routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS),
-        tasks: [...routine.tasks]
-          .sort((a, b) => a.order - b.order)
-          .map((task) => ({ id: task.id, name: task.name })),
-      });
-    },
-    [routinesFor],
+  const [routineEditorRequest, setRoutineEditorRequest] = useState<RoutineEditorRequest | null>(
+    null,
   );
 
-  /** Two-step delete: the first click arms the button, the second removes. */
+  const handleStartCreateRoutine = useCallback(() => {
+    setRoutineEditorRequest({ token: Date.now(), memberId: routinesFor?.id });
+  }, [routinesFor]);
+
+  const handleStartEditRoutine = useCallback((routine: Routine) => {
+    setRoutineEditorRequest({ token: Date.now(), routine, memberId: routine.member_id });
+  }, []);
+
   const handleDeleteRoutine = useCallback(
-    (id: string) => {
-      if (confirmDeleteRoutine === id) {
-        routinesApi.removeRoutine(id);
-        setConfirmDeleteRoutine(null);
-      } else {
-        setConfirmDeleteRoutine(id);
-        setTimeout(() => setConfirmDeleteRoutine(null), 3000);
-      }
+    async (id: string) => {
+      await routinesApi.removeRoutine(id);
     },
-    [confirmDeleteRoutine, routinesApi],
+    [routinesApi],
   );
 
   const handleBackFromRoutines = useCallback(() => {
     setRoutinesFor(null);
-    setRoutineForm(null);
+    setRoutineEditorRequest(null);
   }, []);
 
   // ---- Family member handlers ----
@@ -270,21 +206,30 @@ export function FamilySection({
 
   if (routinesFor) {
     return (
-      <RoutineEditor
-        member={routinesFor}
-        routines={routinesApi.routines.filter((routine) => routine.member_id === routinesFor.id)}
-        form={routineForm}
-        confirmDelete={confirmDeleteRoutine}
-        t={t}
-        locale={settings.locale}
-        weekStartsOn={settings.weekStartsOn}
-        onBack={handleBackFromRoutines}
-        onStartCreate={handleStartCreateRoutine}
-        onStartEdit={handleStartEditRoutine}
-        onDelete={handleDeleteRoutine}
-        onChangeForm={setRoutineForm}
-        onSave={handleSaveRoutine}
-      />
+      <>
+        <RoutineEditor
+          member={routinesFor}
+          routines={routinesApi.routines.filter((routine) => routine.member_id === routinesFor.id)}
+          t={t}
+          locale={settings.locale}
+          weekStartsOn={settings.weekStartsOn}
+          onBack={handleBackFromRoutines}
+          onStartCreate={handleStartCreateRoutine}
+          onStartEdit={handleStartEditRoutine}
+          onDelete={handleDeleteRoutine}
+        />
+        {routineEditorRequest && (
+          <RoutineEditorDialog
+            key={routineEditorRequest.token}
+            request={routineEditorRequest}
+            members={members}
+            locale={settings.locale}
+            weekStartsOn={settings.weekStartsOn}
+            onClose={() => setRoutineEditorRequest(null)}
+            onSaved={routinesApi.refresh}
+          />
+        )}
+      </>
     );
   }
 

@@ -37,7 +37,7 @@ export interface ChoreBoardProps {
   /** Open the missions overview (the mission screen's back destination). */
   onOpenMissions: (memberId: string) => void;
   onNewChore: () => void;
-  onNewRoutine?: () => void;
+  onNewRoutine?: (memberId: string) => void;
   onNewGoal: (memberId: string) => void;
 }
 
@@ -171,7 +171,7 @@ export function ChoreBoard({
                       <button
                         type="button"
                         className="planner-section-action"
-                        onClick={onNewRoutine}
+                        onClick={() => onNewRoutine(member.id)}
                       >
                         <Plus aria-hidden="true" /> {c.addRoutine}
                       </button>
@@ -266,7 +266,7 @@ export function ChoreBoard({
                       <button
                         type="button"
                         className="planner-section-action"
-                        onClick={onNewRoutine}
+                        onClick={() => onNewRoutine(member.id)}
                       >
                         <Plus aria-hidden="true" /> {c.addRoutine}
                       </button>
