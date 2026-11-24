@@ -52,10 +52,8 @@ npm ci
 npm run dev
 ```
 
-The development server runs at `http://localhost:5173`. Enter Home Assistant credentials in the onboarding flow or **Settings → Integrations**. To use Vite's same-origin development proxy, optionally set the HA address in a root `.env` file:
-
-```bash
-VITE_HA_URL=http://homeassistant.local:8123
-```
+The development server runs at `http://localhost:5173`. Enter Home Assistant
+credentials in onboarding or **Settings → Integrations**. Home Assistant must
+allow requests from the development origin.
 
 See [Configuration](/docs/customization/configuration/) for the available environment variables and [Deployment](/docs/getting-started/deployment/) for reverse proxy and kiosk setup.

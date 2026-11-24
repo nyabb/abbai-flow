@@ -194,7 +194,7 @@ export function useCalendarEvents(
    * connection), this calls its createEvent method directly. Otherwise
    * (add-on/proxy mode, no browser-side token) it routes through the add-on
    * server's /abbai-flow/action/calendar-event bridge, which opens the WS
-   * connection server-side using SUPERVISOR_TOKEN.
+   * connection server-side using the saved Home Assistant credentials.
    *
    * Many calendar providers don't support event creation at all
    * (CalendarEntityFeature.CREATE_EVENT unset) — HA reports that as error
@@ -245,7 +245,7 @@ export function useCalendarEvents(
    * updateEvent method directly. Otherwise (add-on/proxy mode, no
    * browser-side token) it routes through the add-on server's
    * /abbai-flow/action/calendar-event bridge, which opens the WS connection
-   * server-side using SUPERVISOR_TOKEN.
+   * server-side using the saved Home Assistant credentials.
    *
    * Many calendar providers don't support event updates at all
    * (CalendarEntityFeature.UPDATE_EVENT unset) — HA reports that as error

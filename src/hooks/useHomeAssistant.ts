@@ -69,6 +69,7 @@ function requestIngressToken(): Promise<string | null> {
 export function useHomeAssistant() {
   const clientRef = useRef<HomeAssistantClient | null>(null);
   const [connected, setConnected] = useState(false);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,14 +99,12 @@ export function useHomeAssistant() {
         token = (await requestIngressToken()) || '';
       }
 
+      if (cancelled) return;
+      setHaToken(token);
       if (!token) {
         console.warn('Abbai Flow: no HA token available. Running with preview data.');
         return;
       }
-
-      setHaToken(token);
-
-      if (cancelled) return;
 
       const client = new HomeAssistantClient(url, token);
       client.setConnectionChangeHandler(setConnected);
@@ -123,9 +122,13 @@ export function useHomeAssistant() {
       clientRef.current?.disconnect();
       clientRef.current = null;
     };
-  }, []);
+  }, [connectionAttempt]);
 
   const getClient = useCallback(() => clientRef.current, []);
+  const reconnect = useCallback(() => {
+    setConnected(false);
+    setConnectionAttempt((current) => current + 1);
+  }, []);
 
-  return { client: getClient, connected };
+  return { client: getClient, connected, reconnect };
 }

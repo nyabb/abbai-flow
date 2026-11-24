@@ -46,8 +46,8 @@ export function PageHeaderActions({
   return (
     <div className={className}>
       {children}
-      <LanguageSwitcher />
       {clock === undefined ? <Clock /> : clock}
+      <LanguageSwitcher />
     </div>
   );
 }

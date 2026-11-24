@@ -807,19 +807,30 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
 });
 
 /* ------------------------------------------------------------------ */
-/*  Container environment contract (HA_URL / HA_TOKEN)                */
+/*  Integration settings are persisted in /data, not container env        */
 /* ------------------------------------------------------------------ */
 
-test('configFromEnv reads the documented HA_URL and HA_TOKEN', () => {
+test('configFromEnv ignores Home Assistant, Encore, and Spotify integration variables', () => {
   const config = configFromEnv({
     HA_URL: 'https://ha.example.com',
     HA_TOKEN: 'tok',
+    SUPERVISOR_TOKEN: 'supervisor-token',
+    ENCORE_URL: 'ws://encore.example.com',
+    ENCORE_TOKEN: 'encore-token',
+    SPOTIFY_CLIENT_ID: 'client-id',
+    SPOTIFY_CLIENT_SECRET: 'client-secret',
+    SPOTIFY_MARKET: 'US',
     SPOTIFY_REDIRECT_URI: 'https://abbai.example/abbai-flow/music/oauth/callback',
     ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: 'unix:path=/run/dbus/system_bus_socket',
   });
-  assert.equal(config.haBaseUrl, 'https://ha.example.com');
-  assert.equal(config.haToken, 'tok');
-  assert.equal(config.spotifyRedirectUri, 'https://abbai.example/abbai-flow/music/oauth/callback');
+  assert.equal(config.haBaseUrl, undefined);
+  assert.equal(config.haToken, undefined);
+  assert.equal(config.encoreUrl, undefined);
+  assert.equal(config.encoreToken, undefined);
+  assert.equal(config.spotifyClientId, undefined);
+  assert.equal(config.spotifyClientSecret, undefined);
+  assert.equal(config.spotifyMarket, undefined);
+  assert.equal(config.spotifyRedirectUri, undefined);
   assert.equal(config.bluetoothDbusAddress, 'unix:path=/run/dbus/system_bus_socket');
 });
 
@@ -905,19 +916,19 @@ test('Bluetooth status is readable while Bluetooth controls remain same-origin g
   assert.deepEqual(calls, [{ action: 'scan' }]);
 });
 
-test('configFromEnv keeps the add-on contract working', () => {
-  const addon = configFromEnv({
+test('Home Assistant add-on environment variables are ignored in favor of saved settings', () => {
+  const config = configFromEnv({
     SUPERVISOR_TOKEN: 'supervisor',
     HA_API_BASE_OVERRIDE: 'http://supervisor/core',
   });
-  assert.equal(addon.haBaseUrl, 'http://supervisor/core');
-  assert.equal(addon.haToken, 'supervisor');
+  assert.equal(config.haBaseUrl, undefined);
+  assert.equal(config.haToken, undefined);
 
-  // Nothing configured at all must not crash; the Supervisor default is used
-  // and the startup log explains why it will not resolve outside the add-on.
+  // Nothing configured at all must not crash; the default URL can be set in
+  // Settings → Integrations.
   const empty = configFromEnv({});
-  assert.equal(empty.haBaseUrl, 'http://supervisor/core');
-  assert.equal(empty.haToken, '');
+  assert.equal(empty.haBaseUrl, undefined);
+  assert.equal(empty.haToken, undefined);
 });
 
 test('normaliseHaBaseUrl accepts what people actually type', () => {
@@ -939,7 +950,9 @@ test('runtime config tells the browser to use the proxy and never leaks the toke
   fs.writeFileSync(path.join(distDir, 'runtime-config.js'), '/* static stub */');
 
   const config = {
-    ...configFromEnv({ HA_URL: ha.baseUrl, HA_TOKEN: 'super-secret-token' }),
+    ...configFromEnv({}),
+    haBaseUrl: ha.baseUrl,
+    haToken: 'super-secret-token',
     distDir,
     dataDir,
   };

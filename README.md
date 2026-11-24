@@ -84,9 +84,9 @@ npm ci
 npm run dev          # http://localhost:5173
 ```
 
-Set `VITE_HA_URL` in `.env` only if you want Vite's development proxy to reach a
-Home Assistant instance. Enter the access token in Abbai Flow's onboarding or
-Settings → Integrations; it is no longer compiled into the browser bundle.
+Enter the Home Assistant URL and access token in Abbai Flow's onboarding or
+Settings → Integrations. The standalone app uses those saved credentials for
+Home Assistant requests.
 
 ## Configuration
 
@@ -99,10 +99,9 @@ Settings → Integrations; it is no longer compiled into the browser bundle.
 | `ABBAI_FLOW_HA_CA`                  | —           | Optional CA certificate for a private Home Assistant TLS certificate |
 | `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | —           | Optional host D-Bus address; the socket must also be mounted into the container |
 
-Older deployments may still have Home Assistant, Encore, or Spotify values in
-their environment. The server uses those as initial defaults until the first
-save in **Settings → Integrations**; saved values then take precedence. New
-deployments should enter these credentials in the app.
+Home Assistant, Encore, and Spotify settings are read from the app's saved
+integration settings in the persistent data directory. They are not read from
+environment variables.
 
 Spotify playlist management also needs the Spotify developer app's callback
 URL registered under its Redirect URIs. Set it in **Settings → Integrations**

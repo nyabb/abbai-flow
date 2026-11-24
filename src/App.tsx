@@ -57,7 +57,8 @@ type EventDialogState =
 
 export function App() {
   const auth = useHaAuth();
-  const { client, connected } = useHomeAssistant();
+  const { client, connected, reconnect: reconnectHomeAssistant } = useHomeAssistant();
+  const [haIntegrationRevision, setHaIntegrationRevision] = useState(0);
   const { isIngress, compact } = useIngressDetect();
   const {
     settings,
@@ -96,7 +97,12 @@ export function App() {
     connected,
     settings.groceryListIds,
     settings.taskListIds ?? [],
+    haIntegrationRevision,
   );
+
+  const handleIntegrationSettingsSaved = useCallback(() => {
+    setHaIntegrationRevision((current) => current + 1);
+  }, []);
 
   // Apply theme at App level so it stays active regardless of which view is shown
   const { setTheme } = useTheme(settings);
@@ -550,10 +556,16 @@ export function App() {
       if (!token) throw new Error(t('settings.integrations.haTokenHelp'));
       await auth.saveManualToken(haUrl, token);
       patchConfig({ ha_url: haUrl, ha_token: token });
-      window.location.reload();
+      reconnectHomeAssistant();
     },
-    [auth, t],
+    [auth, reconnectHomeAssistant, t],
   );
+
+  const handleRemoveHomeAssistantToken = useCallback(async () => {
+    await auth.clearToken();
+    patchConfig({ ha_token: '' });
+    reconnectHomeAssistant();
+  }, [auth, reconnectHomeAssistant]);
 
   const handleOAuthStart = useCallback(
     (haUrl: string) => {
@@ -764,13 +776,17 @@ export function App() {
               onRemoveMember={removeMember}
               connected={connected}
               haUrl={auth.state.haUrl || config.ha_url}
+              haTokenConfigured={Boolean(auth.state.haToken)}
               onSaveHomeAssistant={handleSaveHomeAssistantSettings}
+              onRemoveHomeAssistantToken={handleRemoveHomeAssistantToken}
+              onIntegrationSettingsSaved={handleIntegrationSettingsSaved}
               calendars={calendars}
               onEnterFocusMode={handleEnterFocusMode}
             />
           ) : activeView === 'grocery' ? (
             <GroceryView
               defaultListId={settings.defaultGroceryList || undefined}
+              connected={connected}
               groceryListIds={settings.groceryListIds}
             />
           ) : activeView === 'timer' ? (

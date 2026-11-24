@@ -1405,7 +1405,7 @@ function readIntegrationSettings(dataDir, fallback) {
     };
   } catch (error) {
     if (error && error.code !== 'ENOENT') {
-      console.warn('Could not read saved integration settings; using environment defaults.');
+      console.warn('Could not read saved integration settings; using default integration settings.');
     }
     return fallback;
   }
@@ -1596,7 +1596,7 @@ function updateHaWebSocketUrl(config) {
  * @param {string} [options.ca]         extra CA (PEM) for private HA certs
  */
 function createApp(options) {
-  const environmentIntegrations = {
+  const initialIntegrationSettings = {
     haToken: options.haToken || '',
     haBaseUrl: (options.haBaseUrl || 'http://supervisor/core').replace(/\/$/, ''),
     haWsUrlOverride: options.haWsUrl || '',
@@ -1616,7 +1616,7 @@ function createApp(options) {
     allowedOrigins: options.allowedOrigins || [],
     ca: options.ca,
     upgradeTimeoutMs: options.upgradeTimeoutMs || UPGRADE_TIMEOUT_MS,
-    ...readIntegrationSettings(options.dataDir, environmentIntegrations),
+    ...readIntegrationSettings(options.dataDir, initialIntegrationSettings),
   };
   updateHaWebSocketUrl(config);
 
@@ -1994,12 +1994,9 @@ function runtimeConfigFor(config, env = process.env) {
 }
 
 /**
- * Read deployment configuration and legacy initial integration defaults.
- *
- * App-facing credentials are being moved to Settings → Integrations. These
- * variables remain as migration defaults for deployments that have not saved
- * the new settings yet. `HA_API_BASE_OVERRIDE` and `SUPERVISOR_TOKEN` also
- * remain supported for the Home Assistant add-on.
+ * Read deployment configuration. Home Assistant, Encore, and Spotify
+ * integration values are managed in Settings → Integrations and persisted in
+ * the data directory, not read from environment variables.
  *
  * Paths, the CSRF allow-list and the extra CA all use `ABBAI_FLOW_*` names.
  * The pre-2.0 spelling of those variables is deliberately not accepted any
@@ -2010,16 +2007,7 @@ function configFromEnv(env = process.env) {
   return {
     distDir: env.ABBAI_FLOW_DIST || '/app/dist',
     dataDir: env.ABBAI_FLOW_DATA || '/data',
-    haToken: env.HA_TOKEN || env.SUPERVISOR_TOKEN || '',
-    haBaseUrl: normaliseHaBaseUrl(env.HA_URL || env.HA_API_BASE_OVERRIDE),
-    haWsUrl: env.HA_WS_URL || env.HA_WS_URL_OVERRIDE || undefined,
-    encoreToken: env.ENCORE_TOKEN || '',
-    encoreUrl: env.ENCORE_URL || DEFAULT_ENCORE_URL,
     bluetoothDbusAddress: env.ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS || '',
-    spotifyClientId: env.SPOTIFY_CLIENT_ID || '',
-    spotifyClientSecret: env.SPOTIFY_CLIENT_SECRET || '',
-    spotifyMarket: env.SPOTIFY_MARKET || 'NL',
-    spotifyRedirectUri: env.SPOTIFY_REDIRECT_URI || '',
     weatherEntity: env.WEATHER_ENTITY || '',
     photoDirectory: env.PHOTO_DIRECTORY || '',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')

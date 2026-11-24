@@ -8,6 +8,7 @@ interface SecretInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   autoComplete?: string;
+  disabled?: boolean;
 }
 
 export function SecretInput({
@@ -16,6 +17,7 @@ export function SecretInput({
   onChange,
   placeholder = '',
   autoComplete = 'new-password',
+  disabled = false,
 }: SecretInputProps) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
@@ -29,6 +31,7 @@ export function SecretInput({
         aria-label={label}
         autoComplete={autoComplete}
         className="settings-input settings-secret-input-field"
+        disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         type={visible ? 'text' : 'password'}
@@ -38,6 +41,7 @@ export function SecretInput({
         aria-label={toggleLabel}
         aria-pressed={visible}
         className="settings-secret-input-toggle"
+        disabled={disabled}
         onClick={() => setVisible((current) => !current)}
         title={toggleLabel}
         type="button"

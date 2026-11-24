@@ -15,6 +15,7 @@ export function useTaskLists(
   connected: boolean,
   groceryListIds: string[] = [],
   taskListIds: string[] = [],
+  refreshKey = 0,
 ) {
   const localTasks = useLocalTasks();
   const { users, listByUser, completions } = useTaskmate(connected);
@@ -122,7 +123,7 @@ export function useTaskLists(
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
-  }, [connected, groceryKey, taskKey]);
+  }, [connected, groceryKey, taskKey, refreshKey]);
 
   const items: TaskTodoItem[] = useMemo(() => {
     const local: TaskTodoItem[] = localTasks

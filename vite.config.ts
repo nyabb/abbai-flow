@@ -23,36 +23,20 @@ function getAppVersion(override: string | undefined): string {
 }
 
 export default defineConfig(({ mode }) => {
-  // Dev-only stand-in for the add-on's server proxy: forward /api to HA so REST
-  // calls stay same-origin and CORS never comes into play. Mirrors the
-  // condition in src/api/ha-rest.ts's resolveBaseUrl().
+  // Home Assistant credentials and URLs come from the app's saved settings.
   const env = loadEnv(mode, process.cwd(), '');
-  const haUrl = env.VITE_HA_URL?.trim();
 
   return {
     plugins: [react()],
     server: {
       port: 3000,
       host: true,
-      proxy: haUrl
-        ? {
-            '/api': {
-              target: haUrl.replace(/\/$/, ''),
-              changeOrigin: true,
-              secure: false,
-              ws: true,
-            },
-            '/abbai-flow/music': {
-              target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
-              changeOrigin: false,
-            },
-          }
-        : {
-            '/abbai-flow/music': {
-              target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
-              changeOrigin: false,
-            },
-          },
+      proxy: {
+        '/abbai-flow/music': {
+          target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
+          changeOrigin: false,
+        },
+      },
     },
     base: './',
     define: {
