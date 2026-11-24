@@ -49,9 +49,9 @@ async function openMemberRoutines(page: Page, name: string) {
 
 async function createRoutine(page: Page, name: string, task: string, selectedDays?: string[]) {
   await page.getByRole('button', { name: /Add Routine/ }).click();
-  const form = page.locator('.settings-group');
-  await form.locator('input.settings-input').first().fill(name);
-  await form.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill(task);
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Name').fill(name);
+  await dialog.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill(task);
 
   if (selectedDays) {
     const weekdays = page.getByRole('group', { name: 'Repeat on' });
@@ -82,11 +82,17 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   }, FAMILY);
   await page.goto(stack.appUrl);
 
-  // Settings is the canonical editor. A selected-weekday routine is persisted
+  // Settings opens the shared editor. A selected-weekday routine is persisted
   // as Abbai Flow data and has no ChoreOps side effect.
   await openFamilySettings(page);
   await openMemberRoutines(page, 'Zara');
-  await createRoutine(page, 'School mornings', 'Brush teeth', ['Monday', 'Wednesday']);
+  const schoolDays = new Set([
+    'Monday',
+    'Wednesday',
+    new Intl.DateTimeFormat('en', { weekday: 'long' }).format(new Date()),
+  ]);
+  const expectedSchoolDays = [...new Set([1, 3, new Date().getDay()])].sort((left, right) => left - right);
+  await createRoutine(page, 'School mornings', 'Brush teeth', [...schoolDays]);
 
   await expect
     .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
@@ -94,7 +100,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
       {
         name: 'School mornings',
         member_id: 'child-1',
-        days_of_week: [1, 3],
+        days_of_week: expectedSchoolDays,
         tasks: [expect.objectContaining({ name: 'Brush teeth' })],
       },
     ]);
@@ -109,7 +115,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await expect
     .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
     .toMatchObject([
-      expect.objectContaining({ name: 'School mornings', days_of_week: [1, 3] }),
+      expect.objectContaining({ name: 'School mornings', days_of_week: expectedSchoolDays }),
       expect.objectContaining({
         name: 'Kitchen reset',
         member_id: 'parent-1',
@@ -119,6 +125,22 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
     ]);
 
   await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
+  const zara = page
+    .locator('.planner-col')
+    .filter({ has: page.locator('.planner-col-head strong', { hasText: 'Zara' }) });
+  await zara.locator('.planner-col-open').click();
+  const detail = page.locator('.planner-detail');
+  await expect(detail.locator('.planner-row--routine')).toContainText('School mornings');
+
+  // The child detail page uses the same edit menu and editor as Settings.
+  await detail.getByRole('button', { name: 'Actions: School mornings' }).click();
+  await page.getByRole('menuitem', { name: 'Edit School mornings' }).click();
+  const editDialog = page.getByRole('dialog');
+  await editDialog.getByLabel('Name').fill('School day');
+  await editDialog.getByRole('button', { name: 'Save Routine', exact: true }).click();
+  await expect(detail.locator('.planner-row--routine')).toContainText('School day');
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+
   const papa = page
     .locator('.planner-col')
     .filter({ has: page.locator('.planner-col-head strong', { hasText: 'Papa' }) });
@@ -130,18 +152,48 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await expect(papa.locator('.planner-col-play')).toHaveCount(0);
   await expect(papa.locator('.planner-row-start')).toHaveCount(0);
 
-  // The Omni Add routine shortcut opens the same Family editor.
+  // The Omni Add routine shortcut opens the shared routine editor directly.
   await page
     .locator('.sidebar--desktop')
     .getByRole('button', { name: 'Quick add', exact: true })
     .click();
   await page.getByRole('button', { name: 'Routine', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Family Members', exact: true })).toBeVisible();
+  const omniDialog = page.getByRole('dialog');
+  await expect(omniDialog).toBeVisible();
+  await omniDialog.getByLabel('For whom').selectOption('child-1');
+  await omniDialog.getByLabel('Name').fill('Weekend prep');
+  await omniDialog.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill('Pack swim bag');
+  await omniDialog.getByRole('button', { name: 'Save Routine', exact: true }).click();
+  await expect
+    .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
+    .toContainEqual(expect.objectContaining({ name: 'Weekend prep', member_id: 'child-1' }));
 
   // Chores page quick add reaches that same editor, without creating a chore.
   await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
   await page.locator('.planner-add').click();
   await page.getByRole('button', { name: 'New routine', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Family Members', exact: true })).toBeVisible();
+  const choresDialog = page.getByRole('dialog');
+  await expect(choresDialog).toBeVisible();
+  await choresDialog.getByLabel('For whom').selectOption('parent-1');
+  await choresDialog.getByLabel('Name').fill('After school reset');
+  await choresDialog.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill('Put shoes away');
+  await choresDialog.getByRole('button', { name: 'Save Routine', exact: true }).click();
+  await expect
+    .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
+    .toContainEqual(expect.objectContaining({ name: 'After school reset', member_id: 'parent-1' }));
+
+  // Routines can also be removed from the Chores page's routines list.
+  await page.locator('.planner-add').click();
+  await page.getByRole('tab', { name: /^Routines/ }).click();
+  const routineList = page
+    .locator('.planner-create-routine-row')
+    .filter({ hasText: 'Weekend prep' });
+  await routineList.getByRole('button', { name: 'Actions: Weekend prep' }).click();
+  const deleteAction = page.getByRole('menuitem', { name: 'Delete Weekend prep' });
+  await deleteAction.click();
+  await deleteAction.click();
+  await expect
+    .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
+    .not.toContainEqual(expect.objectContaining({ name: 'Weekend prep' }));
   expect(stack.fakeHa.serviceCalls('choreops.create_chore')).toHaveLength(0);
 });

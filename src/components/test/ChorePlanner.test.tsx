@@ -121,8 +121,7 @@ const NL = createI18n('nl');
 
 function renderPlanner(
   members: FamilyMember[],
-  createRequest?: { kind: 'chore'; token: number },
-  onRequestRoutineCreate?: () => void,
+  createRequest?: { kind: 'chore' | 'routine'; token: number },
 ) {
   return render(
     <I18nContext.Provider value={NL}>
@@ -131,7 +130,6 @@ function renderPlanner(
         locale="nl"
         onLocaleChange={() => {}}
         createRequest={createRequest}
-        onRequestRoutineCreate={onRequestRoutineCreate}
       />
     </I18nContext.Provider>,
   );
@@ -876,14 +874,30 @@ describe('ChorePlanner board', () => {
     expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
   });
 
-  it('routes routine creation from the Chores add sheet to the shared Family editor', () => {
-    const onRequestRoutineCreate = vi.fn();
-    const { container } = renderPlanner([PARENT, ZARA], undefined, onRequestRoutineCreate);
+  it('opens the shared routine editor from the Chores add sheet', async () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
 
     fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
     fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
 
-    expect(onRequestRoutineCreate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(NL.t('planner.forWho')), {
+      target: { value: ZARA.id },
+    });
+    fireEvent.change(screen.getByPlaceholderText(NL.t('settings.family.routineNamePlaceholder')), {
+      target: { value: 'Before school' },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(NL.t('settings.family.taskPlaceholder', { n: 1 })),
+      { target: { value: 'Pack bag' } },
+    );
+    fireEvent.click(screen.getByText(NL.t('settings.family.saveRoutine')));
+
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('abbai_flow_routines') ?? '[]')).toEqual([
+        expect.objectContaining({ name: 'Before school', member_id: ZARA.id }),
+      ]);
+    });
   });
 
   /*

@@ -7,7 +7,7 @@ interface OmniAddProps {
   onAddEvent: () => void;
   onAddGroceryItem: () => void;
   onAddChore: () => void;
-  /** Creates a repeating chore; the chores page opens its form in routine mode. */
+  /** Opens the shared Abbai Flow routine editor. */
   onAddRoutine?: () => void;
   onNavigateTimer: () => void;
   sidebarPosition?: 'left' | 'right' | 'bottom';
