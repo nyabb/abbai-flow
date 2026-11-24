@@ -1,3 +1,10 @@
+# [2.21.0](https://github.com/nyabb/abbai-flow/compare/v2.20.0...v2.21.0) (2026-11-24)
+
+
+### Features
+
+* scope missions to routine time windows ([e6c3135](https://github.com/nyabb/abbai-flow/commit/e6c3135d00e519c6ac99ae0db46ce9fddbcbdcfe))
+
 # [2.20.0](https://github.com/nyabb/abbai-flow/compare/v2.19.1...v2.20.0) (2026-11-24)
 
 
