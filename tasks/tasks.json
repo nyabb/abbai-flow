@@ -3,7 +3,7 @@
     {
       "id": 1,
       "title": "Phase 1: Zero-Config Standalone Mode",
-      "description": "Make Abbai Flow work out of the box without Home Assistant. Install → 2-minute setup wizard → working dashboard.",
+      "description": "Make Abbai Flow work out of the box without Home Assistant. Install → 2-minute setup wizard → working Calendar view.",
       "status": "in-review",
       "priority": "high",
       "tags": ["phase-1", "standalone"],
@@ -315,7 +315,7 @@
         {
           "id": 511,
           "title": "Produce featurette 09 — Voice & AI",
-          "description": "Mixed recording: manual voice/AI demos + automated dashboard captures. Generate voiceover from scripts/09-voice-ai.md, composite with FFmpeg.",
+          "description": "Mixed recording: manual voice/AI demos + automated Calendar captures. Generate voiceover from scripts/09-voice-ai.md, composite with FFmpeg.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-5"]

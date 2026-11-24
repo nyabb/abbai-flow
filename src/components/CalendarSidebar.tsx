@@ -3,7 +3,7 @@ import { format, parseISO, isSameDay, startOfDay } from 'date-fns';
 import { CalendarEvent } from '../types';
 import { Chore, FamilyMember } from '../types/family';
 import { TaskChecklist } from './TaskChecklist';
-import { DashboardTodoItem } from '../hooks/useDashboardTasks';
+import type { TaskTodoItem } from '../hooks/useTaskLists';
 import { useTranslation } from '../i18n';
 
 interface CalendarSidebarProps {
@@ -11,8 +11,8 @@ interface CalendarSidebarProps {
   chores: Chore[];
   completedChoreIds: Set<string>;
   onToggleChore: (choreId: string) => void;
-  todoItems: DashboardTodoItem[];
-  onToggleTodo?: (uid: string, currentStatus: string) => void;
+  todoItems: TaskTodoItem[];
+  onToggleTodo?: (uid: string, currentStatus: string, listId?: string) => void;
   members?: FamilyMember[];
 }
 
@@ -65,7 +65,7 @@ export function CalendarSidebar({
         )}
       </section>
 
-      {/* Tasks / Chores */}
+      {/* Today's Tasks */}
       <section className="cal-sidebar-section">
         <h3 className="cal-sidebar-heading">{t('calendarSidebar.tasks')}</h3>
         {pendingTodos.length > 0 && onToggleTodo ? (
@@ -75,7 +75,7 @@ export function CalendarSidebar({
                 <button
                   type="button"
                   className="cal-sidebar-todo-check"
-                  onClick={() => onToggleTodo(item.uid, item.status)}
+                  onClick={() => onToggleTodo(item.uid, item.status, item.listId)}
                   aria-label={t('calendarSidebar.completeItem', { name: item.summary })}
                 >
                   <span className="task-checkbox-box" />
@@ -84,17 +84,23 @@ export function CalendarSidebar({
               </li>
             ))}
           </ul>
-        ) : chores.length > 0 ? (
+        ) : (
+          <p className="cal-sidebar-empty">{t('calendarSidebar.allClear')}</p>
+        )}
+      </section>
+
+      {/* Today's Chores */}
+      {chores.length > 0 && (
+        <section className="cal-sidebar-section">
+          <h3 className="cal-sidebar-heading">{t('nav.chores')}</h3>
           <TaskChecklist
             chores={chores}
             completedIds={completedChoreIds}
             onToggle={onToggleChore}
             members={members}
           />
-        ) : (
-          <p className="cal-sidebar-empty">{t('calendarSidebar.allClear')}</p>
-        )}
-      </section>
+        </section>
+      )}
     </aside>
   );
 }

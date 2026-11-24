@@ -52,7 +52,7 @@ all_day: true
 
 ## Calendar-to-Person Mapping
 
-Family members have an optional `calendar_entity` field that links to their HA calendar. This enables per-member columns on the dashboard. Assign via Abbai Flow Settings > Family Members > Edit > Calendar dropdown.
+Family members have an optional `calendar_entity` field that links to their HA calendar. Linked events use the member's color in Calendar. Assign via Abbai Flow Settings > Family Members > Edit > Calendar dropdown.
 
 Common entity patterns:
 - Google Calendar: `calendar.aaron_sachs`, `calendar.ashley_sachs`

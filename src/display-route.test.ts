@@ -16,7 +16,7 @@ describe('isDisplayUrl', () => {
     },
   );
 
-  it.each(['/', '/dashboard', '/displaymode', '/display/more', '/'])(
+  it.each(['/', '/displaymode', '/display/more'])(
     'does not match %s',
     (path) => {
       expect(isDisplayUrl(url(path))).toBe(false);

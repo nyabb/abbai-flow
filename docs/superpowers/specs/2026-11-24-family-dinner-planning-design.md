@@ -15,7 +15,7 @@ source refreshes.
 | Area           | Proposed decision                                                                                                                                                                                                                                   |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Meals          | Dinner only in the first release.                                                                                                                                                                                                                   |
-| Main view      | A dedicated Meals view opens on **Today**. The existing dashboard Menu card becomes a compact dinner card that links to Meals.                                                                                                                      |
+| Main view      | A dedicated Meals view opens on **Today**. Meals has its own navigation entry.                                                                                                                      |
 | Planning       | A parent assigns one recipe to each date in the seven-day week view. A date can be left unplanned.                                                                                                                                                  |
 | Unplanned day  | A parent can pick any catalog recipe for that date from Today; this creates that day's plan. No automatic recipe is chosen.                                                                                                                         |
 | Child view     | Children can see today's meal and the week's plan, open recipe photos and steps, and rate a meal. They do not edit the plan or recipe catalog.                                                                                                      |
@@ -28,18 +28,16 @@ source refreshes.
 ## Existing meal-plan support
 
 Abbai Flow already reads externally written entries from
-`abbai_flow_meal_plans` and shows today's entries in a dashboard Menu card. The
-new feature should extend this flow instead of creating a second competing
-plan store. Keep existing records readable, preserve the existing key during
+`abbai_flow_meal_plans` for existing syncs. The new feature should extend this
+flow instead of creating a second competing plan store. Keep existing records readable, preserve the existing key during
 migration, and show only dinner in the new Meals views. Old breakfast, lunch,
 and snack entries may remain in storage for compatibility but are not offered
 for new plans. Existing third-party meal syncs can continue to write legacy
 entries; parent-created plans in the app become the primary source for new
 dinner features.
 
-The current dashboard calculation uses UTC to choose "today." The new Meals
-screens and dashboard card must use the household's local date so the same
-dinner appears across the family's devices.
+The new Meals screens must use the household's local date so the same dinner
+appears across the family's devices.
 
 ## 1. Navigation and screens
 
@@ -60,8 +58,7 @@ Add a **Meals** area with these views:
   token, and data mapping in Settings → Integrations.
 
 On a child's view, hide edit, delete, source, and planning controls. Opening
-Meals still makes today's dinner the first thing shown. A dashboard card is a
-shortcut to the same Today view, not a second source of meal data.
+Meals still makes today's dinner the first thing shown.
 
 ## 2. Recipe and plan data
 

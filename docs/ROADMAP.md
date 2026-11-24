@@ -4,7 +4,7 @@
 Make Abbai Flow the free, open-source family command center that anyone can set up on any screen — no technical expertise required. The only cost should be the hardware (a tablet, old monitor, or Raspberry Pi).
 
 ## Phase 1: Zero-Config Standalone Mode
-**Goal**: Install → 2-minute setup wizard → working dashboard
+**Goal**: Install → 2-minute setup wizard → working Calendar view
 
 - [ ] **Setup wizard** — guided onboarding: family name, add members (name/avatar/color), enter zip code for weather, done
 - [ ] **OpenWeatherMap integration** — free tier weather API, just needs zip code (no HA required)
@@ -45,7 +45,6 @@ Make Abbai Flow the free, open-source family command center that anyone can set 
 ## Phase 5: HA Power-User Features
 **Goal**: Deep smart home integration for advanced users
 
-- [ ] **Entity dashboard widgets** — show HA sensor values, camera feeds, etc.
 - [ ] **Automation triggers** — "when all chores are done, turn on movie mode"
 - [ ] **Presence detection** — show relevant info based on who's home
 - [ ] **Voice assistant** — built-in wake word + HA Assist integration

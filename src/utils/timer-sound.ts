@@ -2,7 +2,7 @@
  * Timer sound engine.
  *
  * Lives outside the timer page so an alarm can ring while the family is looking
- * at the dashboard: the countdown store fires the event, this module makes the
+ * in the app: the countdown store fires the event, this module makes the
  * noise, and the preference is shared.
  */
 const SOUND_STORAGE_KEY = 'abbai-flow-timer-sound';

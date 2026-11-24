@@ -129,7 +129,7 @@ export function PhotoFrame({
             type="button"
             className="photo-frame-back"
             onClick={(e) => { e.stopPropagation(); onBack(); }}
-            aria-label={t('photoFrame.backToDashboard')}
+            aria-label={t('photoFrame.backToCalendar')}
           >
             <ArrowLeft size={24} />
           </button>
@@ -194,7 +194,7 @@ export function PhotoFrame({
           type="button"
           className="photo-frame-back"
           onClick={(e) => { e.stopPropagation(); onBack(); }}
-          aria-label={t('photoFrame.backToDashboard')}
+          aria-label={t('photoFrame.backToCalendar')}
         >
           <ArrowLeft size={24} />
         </button>

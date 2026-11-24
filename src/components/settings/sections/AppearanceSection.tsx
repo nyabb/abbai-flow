@@ -1,6 +1,6 @@
 /**
  * Appearance settings: theme picker, automatic dark mode, font size, sidebar
- * position and the advanced dashboard toggle.
+ * position.
  */
 import { Check } from 'lucide-react';
 import { themes } from '../../../styles/themes';
@@ -134,22 +134,6 @@ export function AppearanceSection({ settings, onUpdateSettings, t }: SettingsSec
         </div>
       </div>
 
-      <div className="settings-group">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.appearance.advancedDashboardLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.appearance.advancedDashboardSublabel')}
-            </div>
-          </div>
-          <Toggle
-            checked={settings.advancedDashboard}
-            onChange={(v) => onUpdateSettings({ advancedDashboard: v })}
-          />
-        </div>
-      </div>
     </>
   );
 }

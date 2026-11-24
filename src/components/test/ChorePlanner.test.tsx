@@ -693,6 +693,10 @@ describe('ChorePlanner board', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     const actions = container.querySelector('.planner-header-actions');
 
+    expect(actions?.querySelector('.language-switcher')).not.toBeNull();
+    expect(actions?.querySelector('.language-switcher')?.nextElementSibling).toHaveClass(
+      'planner-header-clock',
+    );
     expect(actions?.lastElementChild).toHaveClass('planner-header-clock');
   });
 

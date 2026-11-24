@@ -92,8 +92,8 @@ export interface CalendarColorMember {
 
 /**
  * Picks a calendar's display color: user override > linked family member >
- * defaultColor > positional preset. Single source of truth so every view
- * (Dashboard, Calendar, Settings) agrees.
+ * defaultColor > positional preset. Single source of truth so Calendar and
+ * Settings use the same color.
  */
 export function resolveCalendarColor(
   calendarId: string,

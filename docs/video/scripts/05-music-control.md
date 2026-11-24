@@ -6,11 +6,11 @@
 
 ## Scene 1: Now Playing Bar (0s–10s)
 
-**Scene:** Dashboard view with the Now Playing bar visible at the bottom — showing album art, song title, artist name, and playback controls.
+**Scene:** Calendar view with the Now Playing bar visible at the bottom — showing album art, song title, artist name, and playback controls.
 
 **Voice:** "See that bar at the bottom? That's whatever's playing on your speakers right now. Song title, artist, album art — all right there."
 
-**Transitions:** Fade in to dashboard, subtle highlight on the Now Playing bar.
+**Transitions:** Fade in to Calendar, subtle highlight on the Now Playing bar.
 
 ---
 
@@ -18,7 +18,7 @@
 
 **Scene:** Tap play/pause, skip forward, adjust the volume slider. Show the controls responding in real time.
 
-**Voice:** "Play, pause, skip — it all works from the dashboard. Drag the volume up for dance party, down for bedtime. No need to grab your phone."
+**Voice:** "Play, pause, skip — controls stay available while you're checking the calendar. Drag the volume up for dance party, down for bedtime."
 
 **Transitions:** Show each control interaction with a brief pause between.
 

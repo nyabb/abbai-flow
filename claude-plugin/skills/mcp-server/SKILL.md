@@ -15,7 +15,7 @@ triggers:
 
 ## Overview
 
-The Abbai Flow MCP server exposes 17 tools for controlling a family dashboard that runs as a Home Assistant add-on. It communicates with HA via REST API and manages local JSON data files for chores, family members, and meal plans.
+The Abbai Flow MCP server exposes 17 tools for managing a family organizer that runs as a Home Assistant add-on. It communicates with HA via REST API and manages local JSON data files for chores, family members, and meal plans.
 
 ## Environment Variables
 

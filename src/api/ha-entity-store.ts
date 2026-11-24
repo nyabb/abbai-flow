@@ -1,7 +1,7 @@
 /**
  * Shared poller for Home Assistant entity states.
  *
- * Every HA card used to run its own `setInterval`, so a dashboard with several
+ * Every HA card used to run its own `setInterval`, so a view with several
  * cards produced as many concurrent polling loops (re-fetching the same
  * entities). This module keeps a single timer and one cache for all of them.
  */

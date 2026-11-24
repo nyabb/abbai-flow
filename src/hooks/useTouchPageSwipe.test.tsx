@@ -4,7 +4,6 @@ import { useTouchPageSwipe } from './useTouchPageSwipe';
 import type { SidebarView } from '../components/Sidebar';
 
 const navigationOrder: SidebarView[] = [
-  'dashboard',
   'calendar',
   'chores',
   'grocery',
@@ -17,7 +16,7 @@ const navigationOrder: SidebarView[] = [
 ];
 
 function TouchSwipeHarness({
-  activeView = 'dashboard',
+  activeView = 'calendar',
   enabled = true,
   onNavigate,
 }: {
@@ -63,11 +62,11 @@ describe('useTouchPageSwipe', () => {
     const content = getByTestId('content');
 
     swipe(content, 220, 100, 120, 106);
-    expect(onNavigate).toHaveBeenLastCalledWith('calendar');
+    expect(onNavigate).toHaveBeenLastCalledWith('chores');
 
-    rerender(<TouchSwipeHarness activeView="calendar" onNavigate={onNavigate} />);
+    rerender(<TouchSwipeHarness activeView="chores" onNavigate={onNavigate} />);
     swipe(content, 120, 100, 220, 106);
-    expect(onNavigate).toHaveBeenLastCalledWith('dashboard');
+    expect(onNavigate).toHaveBeenLastCalledWith('calendar');
   });
 
   it('does not navigate for vertical gestures or gestures on controls', () => {
@@ -104,7 +103,7 @@ describe('useTouchPageSwipe', () => {
     swipe(getByTestId('content'), 220, 100, 100, 100);
     expect(onNavigate).not.toHaveBeenCalled();
 
-    rerender(<TouchSwipeHarness activeView="dashboard" onNavigate={onNavigate} />);
+    rerender(<TouchSwipeHarness activeView="calendar" onNavigate={onNavigate} />);
     swipe(getByTestId('content'), 100, 100, 220, 100);
     expect(onNavigate).not.toHaveBeenCalled();
   });

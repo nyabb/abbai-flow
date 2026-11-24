@@ -1,10 +1,10 @@
 # Abbai Flow — Claude Code Plugin
 
-Control your [Abbai Flow](https://github.com/nyabb/abbai-flow) family dashboard from Claude Code.
+Manage your [Abbai Flow](https://github.com/nyabb/abbai-flow) family chores, calendars, and lists from Claude Code.
 
 ## What you get
 
-**Skills** — Domain knowledge for chores, calendars, meal plans, dashboard layout, and the MCP server.
+**Skills** — Domain knowledge for chores, calendars, meal plans, and the MCP server.
 
 **Commands:**
 - `/create-chore` — Create a family chore with assignments and payouts
@@ -32,7 +32,6 @@ Control your [Abbai Flow](https://github.com/nyabb/abbai-flow) family dashboard 
 
 ## Documentation
 
-- [Dashboard](../../docs/)
 - [Chores](../../docs/)
 - [Calendar](../../docs/)
 - [AI Integration](../../docs/ai-integration.md)

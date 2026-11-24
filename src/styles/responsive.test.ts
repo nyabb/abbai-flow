@@ -7,8 +7,8 @@ import path from 'node:path';
  * The responsive layer is plain CSS, so what can be pinned is that it stays
  * *connected* to reality: it must keep the documented breakpoint ladder, and
  * every class it targets must exist in another stylesheet. That second check
- * catches the real failure mode — a rule that silently does nothing because the
- * class was renamed (`.dash-grid` was exactly such a phantom).
+ * catches the real failure mode — a rule that silently does nothing because a
+ * component class was removed or renamed.
  */
 const stylesDir = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.resolve(stylesDir, '..');

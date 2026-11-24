@@ -32,13 +32,8 @@ const MEMBER: FamilyMember = {
 
 function renderPlanner(locale: string, onLocaleChange: (locale: string) => void) {
   return render(
-    <I18nContext.Provider value={createI18n(locale)}>
-      <ChorePlanner
-        members={[MEMBER]}
-        nextAppointment={null}
-        locale={locale}
-        onLocaleChange={onLocaleChange}
-      />
+    <I18nContext.Provider value={createI18n(locale, onLocaleChange)}>
+      <ChorePlanner members={[MEMBER]} locale={locale} />
     </I18nContext.Provider>,
   );
 }

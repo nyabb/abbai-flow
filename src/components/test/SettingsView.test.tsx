@@ -17,7 +17,7 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   return {
     familyName: 'Sachshaus',
     saveConfigInBrowser: true,
-    defaultView: 'dashboard',
+    defaultView: 'calendar',
     timeFormat: '24h',
     weekStartsOn: 1,
     locale: 'nl',
@@ -42,8 +42,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     photoDirectory: '/media/beacon/photos',
     photoInterval: 30,
     photoTransition: 'fade',
-    dashboardLayout: 'default',
-    advancedDashboard: false,
     screenSaverEnabled: true,
     dimTimeout: 5,
     screenSaverTimeout: 10,

@@ -21,7 +21,6 @@ export const nl: Record<TranslationKey, string> = {
   'common.start': 'Starten',
 
   // ---- nav (Sidebar) ----
-  'nav.dashboard': 'Dashboard',
   'nav.calendar': 'Agenda',
   'nav.chores': 'Klusjes',
   'nav.grocery': 'Lijsten',
@@ -77,29 +76,6 @@ export const nl: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Logboek wissen',
   'debugConsole.empty': 'Nog geen verzoeken of fouten vastgelegd.',
 
-  // ---- dashboard / cards ----
-  'dashboard.editDashboard': '✎ Dashboard bewerken',
-  'dashboard.previousDay': 'Vorige dag',
-  'dashboard.nextDay': 'Volgende dag',
-  'dashboard.nothingScheduledOpen': 'Niets gepland — je dag is helemaal vrij',
-  'dashboard.nothingScheduledToday': 'Vandaag niets gepland',
-  'dashboard.nothingScheduledThisDay': 'Deze dag niets gepland',
-  'dashboard.filterChoresFor': 'Klusjes van {name} filteren',
-  'dashboard.other': 'Overig',
-  'dashboard.thisWeek': 'Deze week',
-  'dashboard.weekEmpty': '—',
-  'dashboard.menu': 'Menu',
-  'dashboard.tasks': 'Taken',
-  'dashboard.shared': 'Gedeeld',
-  'dashboard.completedItem': '{name} voltooid',
-  'dashboard.completeItem': '{name} voltooien',
-  'dashboard.shopping': 'Boodschappen',
-  'dashboard.shoppingNotConfigured': 'Stel een boodschappenlijst in via Instellingen → Integraties',
-  'dashboard.shoppingAddItemPlaceholder': 'Item toevoegen...',
-  'dashboard.shoppingAddItem': 'Item toevoegen',
-  'dashboard.shoppingLoading': 'Items laden...',
-  'dashboard.shoppingEmpty': 'Nog geen items — voeg er hierboven een toe',
-  'dashboard.shoppingCheckItem': '{name} afvinken',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': 'Heldere nacht',
@@ -214,16 +190,6 @@ export const nl: Record<TranslationKey, string> = {
     'Toon een algemeen logboek van API-aanroepen, antwoorden en fouten.',
   'settings.display.ingressUrlUnavailable':
     'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
-  'settings.general.dashboardLayoutTitle': 'Dashboardindeling',
-  'settings.general.dashboardLayoutDesc': 'Kies hoe je dashboard is ingedeeld.',
-  'settings.general.layoutLabel': 'Indeling',
-  'settings.general.layoutSublabel': 'Kies een vooraf ingestelde indeling',
-  'settings.general.layoutFamilyLabel': 'Gezin',
-  'settings.general.layoutFamilyDesc': 'Agendakolommen per lid',
-  'settings.general.layoutClassicLabel': 'Klassiek',
-  'settings.general.layoutClassicDesc': 'Originele weergave met 3 kolommen',
-  'settings.general.layoutCompactLabel': 'Compact',
-  'settings.general.layoutCompactDesc': 'Eén kolom, scrollbaar',
 
   // ---- settings: appearance ----
   'settings.appearance.title': 'Weergave',
@@ -243,9 +209,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.appearance.left': 'Links',
   'settings.appearance.right': 'Rechts',
   'settings.appearance.bottom': 'Onder',
-  'settings.appearance.advancedDashboardLabel': 'Geavanceerd dashboard',
-  'settings.appearance.advancedDashboardSublabel':
-    'Schakel aanpasbare dashboardwidgets en -indelingen in',
 
   // ---- settings: family ----
   'settings.family.title': 'Gezinsleden',
@@ -258,8 +221,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.family.child': 'Kind',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint':
-    'Wordt getoond in plaats van de emoji op het dashboard, bij taken en in het klassement.',
+  'settings.family.photoHint': "Wordt getoond in plaats van de emoji bij gezinsleden.",
   'settings.family.photoUpload': 'Foto uploaden',
   'settings.family.photoRemove': 'Foto verwijderen',
   'settings.family.photoFromHa': 'Foto uit Home Assistant gebruiken',
@@ -358,6 +320,8 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.secretReplace':
     'Voer een nieuwe waarde in om het opgeslagen geheim te vervangen',
   'settings.integrations.clearSecret': 'Opgeslagen geheim verwijderen',
+  'settings.integrations.showSecret': 'Geheim tonen',
+  'settings.integrations.hideSecret': 'Geheim verbergen',
   'settings.integrations.notConfigured': 'Niet ingesteld',
   'settings.integrations.testConnection': 'Verbinding testen',
   'settings.integrations.testSuccess': 'Verbinding met Home Assistant is gelukt.',
@@ -441,7 +405,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.display.fullscreenLabel': 'Starten op volledig scherm',
   'settings.display.fullscreenSublabel':
     'Browsers staan dit pas toe na een tik, dus soms is één keer drukken nodig.',
-  'settings.display.idleTimeoutLabel': 'Terug naar dashboard na',
+  'settings.display.idleTimeoutLabel': "Terug naar agenda na",
   'settings.display.idleTimeoutSublabel':
     'Onderbreekt nooit een open dialoog of een veld waarin je typt.',
   'settings.display.panelsLabel': 'Panelen',
@@ -512,24 +476,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.about.clearLocalStorage': 'Lokale opslag wissen',
   'settings.about.resetToDefaults': 'Terugzetten naar standaardwaarden',
 
-  'cards.common.entityLabel': 'Entiteit',
-  'cards.common.entitiesLabel': 'Entiteiten',
-  'cards.common.titleLabel': 'Titel',
-  'cards.common.subtitleLabel': 'Ondertitel',
-  'cards.clockWeather.displayName': 'Klok & Weer',
-  'cards.familyCalendar.displayName': 'Gezinskalender',
-  'cards.familyCalendar.showOtherLabel': 'Overige tonen',
-  'cards.familyCalendar.showOtherDescription':
-    'Toon afspraken die niet aan een gezinslid zijn toegewezen',
-  'cards.agendaToday.displayName': 'Vandaag',
-  'cards.agendaWeek.displayName': 'Deze Week',
-  'cards.menu.displayName': 'Menu',
-  'cards.tasks.displayName': 'Taken',
-  'cards.shopping.displayName': 'Boodschappen',
-  'cards.shopping.entityLabel': 'Boodschappenlijst-entiteit',
-  'cards.haEntity.displayName': 'HA-entiteit',
-  'cards.haEntitiesList.displayName': 'HA-entiteitenlijst',
-  'cards.haToggle.displayName': 'HA-schakelaar',
   'weatherView.loading': 'Weergegevens laden...',
   'weatherView.notConnected': 'Niet verbonden met Home Assistant',
   'weatherView.noEntityFound': 'Geen weer-entiteit gevonden',
@@ -564,17 +510,9 @@ export const nl: Record<TranslationKey, string> = {
   'timer.lap': 'Ronde',
   'timer.reset': 'Resetten',
   'timer.lapN': 'Ronde {n}',
-  'countdown.title': 'Aftellen',
-  'countdown.add': 'Aftellen toevoegen',
-  'countdown.eventNamePlaceholder': 'Naam van gebeurtenis',
-  'countdown.addBtn': 'Toevoegen',
-  'countdown.day': 'dag',
-  'countdown.days': 'dagen',
-  'countdown.remove': 'Verwijderen',
-  'countdown.removeNamed': '{name} verwijderen',
   'photoFrame.noPhotos': "Geen foto's beschikbaar",
   'photoFrame.addPhotosHint': "Voeg foto's toe aan je Home Assistant-mediamap",
-  'photoFrame.backToDashboard': 'Terug naar dashboard',
+  'photoFrame.backToCalendar': "Terug naar agenda",
   'photoFrame.photoAlt': 'Foto',
   'photoFrame.previousPhoto': 'Vorige foto',
   'photoFrame.pauseSlideshow': 'Diavoorstelling pauzeren',

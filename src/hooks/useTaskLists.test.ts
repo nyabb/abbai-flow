@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { useDashboardTasks } from './useDashboardTasks';
+import { useTaskLists } from './useTaskLists';
 import { haFetch, callHaService } from '../api/ha-rest';
 
 vi.mock('../api/ha-rest', () => ({
@@ -38,7 +38,7 @@ beforeEach(() => {
   callHaServiceMock.mockResolvedValue({ service_response: {} });
 });
 
-describe('useDashboardTasks', () => {
+describe('useTaskLists', () => {
   /*
    * Regression: the effect used to depend on the list arrays themselves. A
    * dependency array compares identity, so an inline `settings.taskListIds ?? []`
@@ -46,7 +46,7 @@ describe('useDashboardTasks', () => {
    * passed while the browser was hammering /api/states.
    */
   it('fetches once even when the caller passes a fresh array on every render', async () => {
-    const { rerender } = renderHook(() => useDashboardTasks(true, [], []));
+    const { rerender } = renderHook(() => useTaskLists(true, [], []));
 
     await waitFor(() => expect(haFetchMock).toHaveBeenCalled());
     const afterFirstFetch = haFetchMock.mock.calls.length;
@@ -65,7 +65,7 @@ describe('useDashboardTasks', () => {
   /* The counterpart: the guard must not be "never refetch". */
   it('refetches when the selection actually changes', async () => {
     const { rerender } = renderHook(
-      ({ ids }: { ids: string[] }) => useDashboardTasks(true, [], ids),
+      ({ ids }: { ids: string[] }) => useTaskLists(true, [], ids),
       { initialProps: { ids: ['todo.tasks_a'] } },
     );
 
@@ -78,10 +78,10 @@ describe('useDashboardTasks', () => {
 
   /*
    * A selection means exactly those lists: everything else is ignored, so a
-   * newly added Home Assistant list cannot appear in the dashboard by accident.
+   * newly added Home Assistant list cannot appear in the wrong task group.
    */
   it('reads only the selected task lists, minus anything chosen as grocery', async () => {
-    renderHook(() => useDashboardTasks(true, ['todo.grocery'], ['todo.tasks_a']));
+    renderHook(() => useTaskLists(true, ['todo.grocery'], ['todo.tasks_a']));
 
     await waitFor(() => expect(callHaServiceMock).toHaveBeenCalled());
 
@@ -93,7 +93,7 @@ describe('useDashboardTasks', () => {
 
   /* With nothing selected, the old "any todo list that is not grocery" behaviour stands. */
   it('falls back to every non-grocery list when nothing is selected', async () => {
-    renderHook(() => useDashboardTasks(true, ['todo.grocery'], []));
+    renderHook(() => useTaskLists(true, ['todo.grocery'], []));
 
     await waitFor(() => expect(callHaServiceMock).toHaveBeenCalledTimes(2));
 

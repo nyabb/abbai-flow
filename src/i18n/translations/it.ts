@@ -21,7 +21,6 @@ export const it: Record<TranslationKey, string> = {
   'common.start': 'Avvia',
 
   // ---- nav (Sidebar) ----
-  'nav.dashboard': 'Bacheca',
   'nav.calendar': 'Calendario',
   'nav.chores': 'Faccende',
   'nav.grocery': 'Liste',
@@ -78,30 +77,6 @@ export const it: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Cancella registro',
   'debugConsole.empty': 'Nessuna richiesta o errore registrato.',
 
-  // ---- dashboard / cards ----
-  'dashboard.editDashboard': '✎ Modifica bacheca',
-  'dashboard.previousDay': 'Giorno precedente',
-  'dashboard.nextDay': 'Giorno successivo',
-  'dashboard.nothingScheduledOpen': 'Nulla in programma — la tua giornata è libera',
-  'dashboard.nothingScheduledToday': 'Nulla in programma oggi',
-  'dashboard.nothingScheduledThisDay': 'Nulla in programma in questo giorno',
-  'dashboard.filterChoresFor': 'Filtra le faccende di {name}',
-  'dashboard.other': 'Altro',
-  'dashboard.thisWeek': 'Questa settimana',
-  'dashboard.weekEmpty': '—',
-  'dashboard.menu': 'Menu',
-  'dashboard.tasks': 'Attività',
-  'dashboard.shared': 'Condiviso',
-  'dashboard.completedItem': '{name} completato',
-  'dashboard.completeItem': 'Completa {name}',
-  'dashboard.shopping': 'Spesa',
-  'dashboard.shoppingNotConfigured':
-    'Configura una lista della spesa in Impostazioni → Integrazioni',
-  'dashboard.shoppingAddItemPlaceholder': 'Aggiungi articolo...',
-  'dashboard.shoppingAddItem': 'Aggiungi articolo',
-  'dashboard.shoppingLoading': 'Caricamento articoli...',
-  'dashboard.shoppingEmpty': 'Ancora nessun articolo — aggiungine uno sopra',
-  'dashboard.shoppingCheckItem': 'Spunta {name}',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': 'Notte serena',
@@ -217,16 +192,6 @@ export const it: Record<TranslationKey, string> = {
     'Mostra un registro globale di chiamate API, risposte ed errori.',
   'settings.display.ingressUrlUnavailable':
     'Un URL display condivisibile non è disponibile in Home Assistant. Apri Abbai Flow sullo schermo di destinazione e scegli “Usa su questo dispositivo”.',
-  'settings.general.dashboardLayoutTitle': 'Layout della bacheca',
-  'settings.general.dashboardLayoutDesc': 'Scegli come organizzare la tua bacheca.',
-  'settings.general.layoutLabel': 'Layout',
-  'settings.general.layoutSublabel': 'Scegli un layout predefinito',
-  'settings.general.layoutFamilyLabel': 'Famiglia',
-  'settings.general.layoutFamilyDesc': 'Colonne di calendario per membro',
-  'settings.general.layoutClassicLabel': 'Classico',
-  'settings.general.layoutClassicDesc': 'Vista originale a 3 colonne',
-  'settings.general.layoutCompactLabel': 'Compatto',
-  'settings.general.layoutCompactDesc': 'Colonna singola, scorrevole',
 
   // ---- settings: appearance ----
   'settings.appearance.title': 'Aspetto',
@@ -247,9 +212,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.appearance.left': 'Sinistra',
   'settings.appearance.right': 'Destra',
   'settings.appearance.bottom': 'In basso',
-  'settings.appearance.advancedDashboardLabel': 'Bacheca avanzata',
-  'settings.appearance.advancedDashboardSublabel':
-    'Attiva widget e layout della bacheca personalizzabili',
 
   // ---- settings: family ----
   'settings.family.title': 'Membri della famiglia',
@@ -262,8 +224,7 @@ export const it: Record<TranslationKey, string> = {
   'settings.family.child': 'Bambino/a',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint':
-    'Mostrata al posto dell’emoji nella dashboard, nelle faccende e in classifica.',
+  'settings.family.photoHint': "Mostrata al posto dell’emoji negli avatar dei membri della famiglia.",
   'settings.family.photoUpload': 'Carica foto',
   'settings.family.photoRemove': 'Rimuovi foto',
   'settings.family.photoFromHa': 'Usa la foto di Home Assistant',
@@ -393,7 +354,7 @@ export const it: Record<TranslationKey, string> = {
   'settings.display.fullscreenLabel': 'Avvia a schermo intero',
   'settings.display.fullscreenSublabel':
     'I browser lo consentono solo dopo un tocco, potrebbe servire una pressione.',
-  'settings.display.idleTimeoutLabel': 'Torna alla dashboard dopo',
+  'settings.display.idleTimeoutLabel': "Torna al calendario dopo",
   'settings.display.idleTimeoutSublabel':
     'Non interrompe mai una finestra aperta o un campo in scrittura.',
   'settings.display.panelsLabel': 'Pannelli',
@@ -464,24 +425,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.about.clearLocalStorage': 'Cancella archiviazione locale',
   'settings.about.resetToDefaults': 'Ripristina valori predefiniti',
 
-  'cards.common.entityLabel': 'Entità',
-  'cards.common.entitiesLabel': 'Entità',
-  'cards.common.titleLabel': 'Titolo',
-  'cards.common.subtitleLabel': 'Sottotitolo',
-  'cards.clockWeather.displayName': 'Orologio e Meteo',
-  'cards.familyCalendar.displayName': 'Calendario di Famiglia',
-  'cards.familyCalendar.showOtherLabel': 'Mostra altri',
-  'cards.familyCalendar.showOtherDescription':
-    'Mostra eventi non assegnati a un membro della famiglia',
-  'cards.agendaToday.displayName': 'Oggi',
-  'cards.agendaWeek.displayName': 'Questa Settimana',
-  'cards.menu.displayName': 'Menu',
-  'cards.tasks.displayName': 'Attività',
-  'cards.shopping.displayName': 'Spesa',
-  'cards.shopping.entityLabel': 'Entità lista della spesa',
-  'cards.haEntity.displayName': 'Entità HA',
-  'cards.haEntitiesList.displayName': 'Elenco entità HA',
-  'cards.haToggle.displayName': 'Interruttore HA',
   'weatherView.loading': 'Caricamento dati meteo...',
   'weatherView.notConnected': 'Non connesso a Home Assistant',
   'weatherView.noEntityFound': 'Nessuna entità meteo trovata',
@@ -516,17 +459,9 @@ export const it: Record<TranslationKey, string> = {
   'timer.lap': 'Giro',
   'timer.reset': 'Reimposta',
   'timer.lapN': 'Giro {n}',
-  'countdown.title': 'Conto alla rovescia',
-  'countdown.add': 'Aggiungi conto alla rovescia',
-  'countdown.eventNamePlaceholder': 'Nome evento',
-  'countdown.addBtn': 'Aggiungi',
-  'countdown.day': 'giorno',
-  'countdown.days': 'giorni',
-  'countdown.remove': 'Rimuovi',
-  'countdown.removeNamed': 'Rimuovi {name}',
   'photoFrame.noPhotos': 'Nessuna foto disponibile',
   'photoFrame.addPhotosHint': 'Aggiungi foto alla tua directory multimediale di Home Assistant',
-  'photoFrame.backToDashboard': 'Torna alla bacheca',
+  'photoFrame.backToCalendar': "Torna al calendario",
   'photoFrame.photoAlt': 'Foto',
   'photoFrame.previousPhoto': 'Foto precedente',
   'photoFrame.pauseSlideshow': 'Metti in pausa la presentazione',

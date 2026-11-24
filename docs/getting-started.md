@@ -8,11 +8,10 @@ A visual walkthrough of Abbai Flow — your family's daily signal. This guide sh
 
 ## Table of Contents
 
-- [Dashboard](#dashboard)
 - [Calendar](#calendar)
 - [Chores](#chores)
 - [Lists (Grocery / Shopping)](#lists-grocery--shopping)
-- [Meal Plan](#meal-plan)
+- [Meal Planning Integration](#meal-planning-integration)
 - [Tasks](#tasks)
 - [Music Controls](#music-controls)
 - [Weather](#weather)
@@ -20,33 +19,6 @@ A visual walkthrough of Abbai Flow — your family's daily signal. This guide sh
 - [Navigation: Desktop vs. Mobile](#navigation-desktop-vs-mobile)
 - [Family Member Setup](#family-member-setup)
 - [Theme Selection](#theme-selection)
-
----
-
-## Dashboard
-
-The dashboard is your family's home screen. At a glance you see:
-
-- **Large clock and date** -- always visible, great for wall-mounted displays
-- **Personalized greeting** -- "Good morning/afternoon/evening, {Family Name}"
-- **Today's events** -- pulled from all connected Home Assistant calendar entities
-- **Meal plan bar** -- today's dinner from AnyList or a local meal plan calendar
-- **Weather chip** -- current temperature and conditions (tap to open the full weather view)
-- **Task summary** -- outstanding tasks from your HA todo lists
-- **Chores panel** -- each family member's assigned chores for the day
-- **Chore planner** -- full-screen chores, routines and points view per child
-
-### Desktop (1280 x 800)
-
-![Dashboard — desktop](images/dashboard-desktop.png)
-
-Abbai Flow's sidebar provides access to every view: Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather, and Settings.
-
-### Mobile (390 x 844)
-
-![Dashboard — mobile](images/dashboard-mobile.png)
-
-On mobile, Abbai Flow's navigation moves to a bottom tab bar with the most-used views (Dashboard, Calendar, Chores, Music) and a **More** menu for the rest.
 
 ---
 
@@ -119,28 +91,10 @@ On mobile the list selector is a full-width dropdown at the top, with the add-it
 
 ## Meal Plan
 
-Today's meals are shown by the **Menu** card on the Dashboard: in the sidebar for the Family layout, in the right-hand column for the Classic layout. The card is hidden while nothing is planned for today, so an empty household never gets a blank block.
-
-Each row is one meal, in breakfast → lunch → dinner → snack order:
-
-| Meal      | Icon |
-| --------- | ---- |
-| Breakfast | 🌅   |
-| Lunch     | ☀️   |
-| Dinner    | 🌙   |
-| Snack     | 🍎   |
-
-**Where the data comes from:**
-
-- Abbai Flow stores the plan as a `beacon_meal_plans` array in its data store (Docker deployments persist it on the server; browser-only runs keep it locally). Each entry is `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "..." }`.
-- Meals are **written by a sync, not typed into Abbai Flow**. AnyList plans go through `scripts/sync-meals.ts`, which converts AnyList MCP output (or the plain `- **YYYY-MM-DD** [📖] Meal Name [MealType]` lines) into that JSON array. Grocy users get today's plan from `sensor.grocy_meal_plan` instead.
-- The dashboard re-reads the store every 5 minutes, so a sync shows up without reloading the page.
-
-**Key features:**
-
-- **Per-day filtering** -- only entries whose `date` is today are shown; the list rolls over automatically at midnight.
-- **Meal types** -- breakfast, lunch, dinner and snack each get their own icon.
-- **Optional recipes** -- entries may carry a `recipe_id` for anything that links back to a recipe.
+Meal plan entries remain available through the AnyList sync script and Abbai
+Flow's MCP tools. Removing the Dashboard Menu card does not remove those
+records or integrations. See the [Meal Plan Data guide](/docs/features/meal-planning/)
+for the record format and sync details.
 
 ---
 
@@ -153,7 +107,7 @@ The tasks view shows todo items from Home Assistant's todo entities and Abbai Fl
 - **Task list selector** -- switch between different HA todo lists.
 - **Add tasks** -- type a task and press Enter or tap Add.
 - **Mark complete** -- check off tasks to remove them from the active list.
-- **Dashboard integration** -- outstanding tasks also appear on the Dashboard in the Tasks card.
+- **Calendar summary** -- today's open tasks appear beside the week view.
 
 ### Desktop
 
@@ -240,7 +194,7 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 |                   | Desktop                                 | Mobile                                                    |
 | ----------------- | --------------------------------------- | --------------------------------------------------------- |
 | **Layout**        | Vertical icon sidebar on the left       | Bottom tab bar with 4 tabs + More                         |
-| **Primary tabs**  | All views visible at once               | Dashboard, Calendar, Chores, Music                        |
+| **Primary tabs**  | All views visible at once               | Calendar, Chores, Lists, Music                            |
 | **Overflow**      | N/A (all visible)                       | More menu: Lists, Tasks, Photos, Timer, Weather, Settings |
 | **Chore planner** | Full content column next to the sidebar | Scrolls below the header, own tab bar at the bottom       |
 
@@ -260,7 +214,7 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 5. Tap **Add Member**.
 6. Repeat for each family member.
 
-Family members appear on the Dashboard chores panel, the Chore planner and in Calendar color-coding.
+Family members appear in the Calendar task and chore summary, the Chore planner and Calendar color-coding.
 
 ---
 

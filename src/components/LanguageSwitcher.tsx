@@ -5,24 +5,21 @@ import { LOCALE_OPTIONS } from '../i18n/locales';
 export interface LanguageSwitcherProps {
   locale?: string;
   onLocaleChange?: (locale: string) => void;
-  variant?: 'default' | 'planner';
 }
 
 /** Compact language control for the top edge of every app page. */
 export function LanguageSwitcher({
   locale,
   onLocaleChange,
-  variant = 'default',
 }: LanguageSwitcherProps) {
   const i18n = useTranslation();
   const value = locale ?? i18n.locale;
   const changeLocale = onLocaleChange ?? i18n.onLocaleChange;
-  const planner = variant === 'planner';
 
   return (
-    <span className={planner ? 'planner-language' : 'language-switcher'}>
+    <span className="language-switcher">
       <select
-        className={planner ? 'planner-language-select' : 'language-switcher-select'}
+        className="language-switcher-select"
         value={value}
         onChange={(event) => changeLocale?.(event.target.value)}
         aria-label={i18n.t('settings.general.languageLabel')}
