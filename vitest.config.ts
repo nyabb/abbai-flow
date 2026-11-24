@@ -38,6 +38,24 @@ export default defineConfig({
           functions: 70,
           lines: 70,
         },
+        'src/components/routines/RoutineActionsMenu.tsx': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/routines/RoutineEditorDialog.tsx': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/focus/RoutineCard.tsx': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
         'src/components/settings/sections/FamilySection.tsx': {
           statements: 70,
           branches: 70,

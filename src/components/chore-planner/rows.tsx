@@ -11,6 +11,7 @@ import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model'
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { Routine as FamilyRoutine } from '../../types/family';
 import type { PlannerCopy } from './copy';
+import { RoutineActionsMenu } from '../routines/RoutineActionsMenu';
 
 export interface TaskRowProps {
   task: PlannerTask;
@@ -256,6 +257,8 @@ export interface FamilyRoutineRowProps {
   canStart: boolean;
   busyTaskId?: string | null;
   onStart?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
   onCompleteStep: (taskId: string) => void;
 }
 
@@ -269,6 +272,8 @@ export function FamilyRoutineRow({
   canStart,
   busyTaskId,
   onStart,
+  onEdit,
+  onDelete,
   onCompleteStep,
 }: FamilyRoutineRowProps) {
   const doneCount = steps.filter((step) => step.done).length;
@@ -312,6 +317,9 @@ export function FamilyRoutineRow({
           >
             {'\u25b6'}
           </button>
+        )}
+        {onEdit && onDelete && (
+          <RoutineActionsMenu routineName={routine.name} onEdit={onEdit} onDelete={onDelete} />
         )}
       </div>
       {steps.length > 0 && (

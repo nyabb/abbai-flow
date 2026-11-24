@@ -1,3 +1,10 @@
+# [2.18.0](https://github.com/nyabb/abbai-flow/compare/v2.17.0...v2.18.0) (2026-11-24)
+
+
+### Features
+
+* edit routines across the app ([7b1abbc](https://github.com/nyabb/abbai-flow/commit/7b1abbc2db22baaac7d0a3cf80fb61d67ffe8927))
+
 # [2.17.0](https://github.com/nyabb/abbai-flow/compare/v2.16.1...v2.17.0) (2026-11-24)
 
 

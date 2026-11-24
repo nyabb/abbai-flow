@@ -10,6 +10,8 @@ import { AbbaiSettings } from '../../hooks/useSettings';
 import { ScreenSaver } from '../ScreenSaver';
 import { useTranslation } from '../../i18n';
 import { RoutineCard } from './RoutineCard';
+import { RoutineEditorDialog } from '../routines/RoutineEditorDialog';
+import type { RoutineEditorRequest } from '../routines/RoutineEditorDialog';
 import { FocusChores } from './FocusChores';
 import { pickRoutine, getTimeOfDay } from './period';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
@@ -31,6 +33,9 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   const routinesApi = useRoutines(memberId);
   const choreOps = useChoreOps();
   const { t } = useTranslation();
+  const [routineEditorRequest, setRoutineEditorRequest] = useState<RoutineEditorRequest | null>(
+    null,
+  );
 
   const member = members.find((m) => m.id === memberId);
 
@@ -182,6 +187,10 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
                   routinesApi.isTaskCompletedToday(pick.routine.id, taskId, memberId)
                 }
                 onToggleTask={(taskId) => routinesApi.toggleTask(pick.routine, taskId)}
+                onEdit={() =>
+                  setRoutineEditorRequest({ token: Date.now(), routine: pick.routine, memberId })
+                }
+                onDelete={() => void routinesApi.removeRoutine(pick.routine.id)}
               />
             )}
             <FocusChores
@@ -195,7 +204,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
             />
             {!pick && memberChores.length === 0 && (
               <div className="focus-empty">
-                Nothing scheduled yet. A parent can add routines and chores in Settings.
+                Nothing scheduled yet. Add a routine from Quick Add or the Chores page.
               </div>
             )}
           </>
@@ -291,6 +300,18 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
             />
           ))}
         </div>
+      )}
+
+      {routineEditorRequest && (
+        <RoutineEditorDialog
+          key={routineEditorRequest.token}
+          request={routineEditorRequest}
+          members={members}
+          locale={settings.locale}
+          weekStartsOn={settings.weekStartsOn}
+          onClose={() => setRoutineEditorRequest(null)}
+          onSaved={routinesApi.refresh}
+        />
       )}
 
       <ScreenSaver

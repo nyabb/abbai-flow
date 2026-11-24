@@ -33,7 +33,7 @@ interface UseChoreFormActionsOptions {
   showError: (error: unknown) => void;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  createRequest?: { kind: 'chore'; token: number };
+  createRequest?: { kind: 'chore' | 'routine'; token: number };
 }
 
 /** Chore creation, editing, persistence and deletion actions. */
@@ -65,7 +65,7 @@ export function useChoreFormActions({
 
   const createToken = createRequest?.token ?? 0;
   useEffect(() => {
-    if (createToken === 0) return;
+    if (createToken === 0 || createRequest?.kind !== 'chore') return;
     openNewForm();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
   }, [createToken]);

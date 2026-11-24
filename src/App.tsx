@@ -445,23 +445,16 @@ export function App() {
     enabled: !settings.kioskMode,
   });
 
-  /* Quick add lives in the middle of the tab bar. ChoreOps owns chores; routine
-     setup always opens Abbai Flow's shared Family editor. */
+  /* Quick add lives in the middle of the tab bar. Routines use the same
+     Abbai Flow editor from whichever view opens them. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore'; token: number }>({
+  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>({
     kind: 'chore',
     token: 0,
   });
-  const [settingsInitialSection, setSettingsInitialSection] = useState<'family' | undefined>();
   const requestChoreCreate = useCallback((kind: 'chore' | 'routine') => {
-    if (kind === 'routine') {
-      setSettingsInitialSection('family');
-      setActiveView('settings');
-      return;
-    }
-    setSettingsInitialSection(undefined);
     setActiveView('chores');
-    setChoreCreate((previous) => ({ kind: 'chore', token: previous.token + 1 }));
+    setChoreCreate((previous) => ({ kind, token: previous.token + 1 }));
   }, []);
 
   // ---- Chore data ----
@@ -741,9 +734,9 @@ export function App() {
               <ChorePlanner
                 members={members}
                 locale={settings.locale}
+                weekStartsOn={settings.weekStartsOn}
                 onLocaleChange={(locale) => updateSettings({ locale })}
                 createRequest={choreCreate}
-                onRequestRoutineCreate={() => requestChoreCreate('routine')}
               />
             ) : (
               <div className="chores-empty chores-empty--disabled" style={{ padding: 48 }}>
@@ -770,8 +763,6 @@ export function App() {
             </div>
           ) : activeView === 'settings' ? (
             <SettingsView
-              initialSection={settingsInitialSection}
-              onInitialSectionApplied={() => setSettingsInitialSection(undefined)}
               settings={settings}
               onUpdateSettings={updateSettings}
               onResetSettings={resetSettings}

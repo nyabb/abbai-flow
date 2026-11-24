@@ -69,6 +69,8 @@ import { usePlannerRewards } from './usePlannerRewards';
 import { errorDiagnosticText } from './planner-utils';
 import { MIN_PIN_LENGTH, clockTime, countdown, emptyForm, toastWith, type FormValue } from './form';
 import { initialPlannerOverlay, plannerOverlayReducer } from './overlay-state';
+import { RoutineEditorDialog } from '../routines/RoutineEditorDialog';
+import type { RoutineEditorRequest } from '../routines/RoutineEditorDialog';
 
 /**
  * The planner is one board: routines for every family member and chore lists
@@ -84,30 +86,30 @@ interface ChorePlannerProps {
   members: FamilyMember[];
   /** App language (`AbbaiSettings.locale`); the planner has no own language switch. */
   locale: string;
+  weekStartsOn?: 0 | 1;
   /** The same updater Settings uses, so picking a language here changes the whole app. */
   onLocaleChange: (locale: string) => void;
   /**
    * Asks the planner to open its new chore form from quick add.
    */
-  createRequest?: { kind: 'chore'; token: number };
-  /** Routes routine creation to the shared Family settings editor. */
-  onRequestRoutineCreate?: () => void;
+  createRequest?: { kind: 'chore' | 'routine'; token: number };
 }
 
 export function ChorePlanner({
   members,
   locale,
+  weekStartsOn = 1,
   onLocaleChange,
   createRequest,
-  onRequestRoutineCreate,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
+  const routinesApi = useRoutines();
   const {
     routines: familyRoutines,
     isTaskCompletedToday: isRoutineTaskCompletedToday,
     refresh: refreshRoutines,
     toggleTask: toggleRoutineTask,
-  } = useRoutines();
+  } = routinesApi;
   const familyStore = useMemo(() => new FamilyStore(), []);
   const [now, setNow] = useState(new Date());
   /** ChoreOps owns chore data; routines come from the Family store. */
@@ -146,6 +148,9 @@ export function ChorePlanner({
   const timeLocale = dateLocale.code || lang;
   const [screen, setScreen] = useState<Screen>('board');
   const [overlay, dispatchOverlay] = useReducer(plannerOverlayReducer, initialPlannerOverlay);
+  const [routineEditorRequest, setRoutineEditorRequest] = useState<RoutineEditorRequest | null>(
+    null,
+  );
   const modal = overlay.type === 'closed' ? null : overlay.type;
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
@@ -198,6 +203,19 @@ export function ChorePlanner({
   const redemptions = rewardsState.redemptions;
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
+  const openRoutineEditor = (routine?: FamilyRoutine, memberId?: string) => {
+    setRoutineEditorRequest((current) => ({
+      token: (current?.token ?? 0) + 1,
+      routine,
+      memberId: memberId ?? routine?.member_id,
+    }));
+  };
+  useEffect(() => {
+    if (!createRequest || createRequest.token === 0 || createRequest.kind !== 'routine') return;
+    dispatchOverlay({ type: 'close' });
+    openRoutineEditor();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- a new request token opens once
+  }, [createRequest?.token]);
 
   const familyMissionTasks = useMemo<PlannerTask[]>(
     () =>
@@ -384,6 +402,8 @@ export function ChorePlanner({
         steps={steps}
         copy={c}
         onStart={canEarnMissionPoints ? () => beginRoutine(memberId, routine) : undefined}
+        onEdit={() => openRoutineEditor(routine, memberId)}
+        onDelete={() => void routinesApi.removeRoutine(routine.id)}
         canStart={
           steps.some((step) => step.open) &&
           (bonusPoints === 0 || Boolean(userNameByMemberId.get(memberId)))
@@ -1284,10 +1304,7 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
-          onNewRoutine={() => {
-            dispatchOverlay({ type: 'close' });
-            onRequestRoutineCreate?.();
-          }}
+          onNewRoutine={(memberId) => openRoutineEditor(undefined, memberId)}
           onNewGoal={startRewardForm}
         />
       )}{' '}
@@ -1318,10 +1335,7 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewGoal={startRewardForm}
-          onNewRoutine={() => {
-            dispatchOverlay({ type: 'close' });
-            onRequestRoutineCreate?.();
-          }}
+          onNewRoutine={(memberId) => openRoutineEditor(undefined, memberId)}
         />
       )}{' '}
       {(screen === 'missions' || screen === 'mission' || screen === 'closing') &&
@@ -1511,14 +1525,15 @@ export function ChorePlanner({
                 routines={familyRoutines}
                 rewards={rewards}
                 members={data.members}
-                onRoutine={
-                  onRequestRoutineCreate
-                    ? () => {
-                        dispatchOverlay({ type: 'close' });
-                        onRequestRoutineCreate();
-                      }
-                    : undefined
-                }
+                onRoutine={() => {
+                  dispatchOverlay({ type: 'close' });
+                  openRoutineEditor();
+                }}
+                onEditRoutine={(routine) => {
+                  dispatchOverlay({ type: 'close' });
+                  openRoutineEditor(routine, routine.member_id);
+                }}
+                onDeleteRoutine={(routine) => void routinesApi.removeRoutine(routine.id)}
                 onChore={() =>
                   openNewForm(
                     screen === 'child' && childMember && isChildMember(childMember.id)
@@ -1591,6 +1606,17 @@ export function ChorePlanner({
             )}
           </section>
         </div>
+      )}
+      {routineEditorRequest && (
+        <RoutineEditorDialog
+          key={routineEditorRequest.token}
+          request={routineEditorRequest}
+          members={members}
+          locale={locale}
+          weekStartsOn={weekStartsOn}
+          onClose={() => setRoutineEditorRequest(null)}
+          onSaved={refreshRoutines}
+        />
       )}
       {confirmAction && (
         <ConfirmSheet

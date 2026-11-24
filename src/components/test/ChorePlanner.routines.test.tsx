@@ -111,18 +111,10 @@ function seedRoutines(...routines: Routine[]) {
   localStorage.setItem('abbai_flow_routines', JSON.stringify(routines));
 }
 
-function renderPlanner(
-  members: FamilyMember[] = [PARENT, CHILD],
-  onRequestRoutineCreate?: () => void,
-) {
+function renderPlanner(members: FamilyMember[] = [PARENT, CHILD]) {
   return render(
     <I18nContext.Provider value={NL}>
-      <ChorePlanner
-        members={members}
-        locale="nl"
-        onLocaleChange={() => {}}
-        onRequestRoutineCreate={onRequestRoutineCreate}
-      />
+      <ChorePlanner members={members} locale="nl" onLocaleChange={() => {}} />
     </I18nContext.Provider>,
   );
 }
@@ -282,14 +274,84 @@ describe('Family routines in the chore planner', () => {
     expect(within(filter).getByRole('button', { name: /Papa/ })).toBeInTheDocument();
   });
 
-  it('routes the chore page add button to the shared Family routine editor', () => {
-    const onRequestRoutineCreate = vi.fn();
-    const { container } = renderPlanner([PARENT, CHILD], onRequestRoutineCreate);
+  it('opens the shared editor from a routine row and saves the edit in place', async () => {
+    seedRoutines(familyRoutine());
+    const { container } = renderPlanner();
+    await waitFor(() =>
+      expect(column(container, 'Zara').querySelector('.planner-row--routine')).not.toBeNull(),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: `${NL.t('planner.action')}: Morning routine` }),
+    );
+    fireEvent.click(
+      screen.getByRole('menuitem', {
+        name: NL.t('settings.family.editRoutine', { name: 'Morning routine' }),
+      }),
+    );
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    fireEvent.change(
+      within(dialog).getByPlaceholderText(NL.t('settings.family.routineNamePlaceholder')),
+      { target: { value: 'Updated morning' } },
+    );
+    fireEvent.click(within(dialog).getByText(NL.t('settings.family.saveRoutine')));
+
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('abbai_flow_routines') ?? '[]')).toEqual([
+        expect.objectContaining({ id: 'routine-child-1', name: 'Updated morning' }),
+      ]);
+    });
+    expect(column(container, 'Zara').textContent).toContain('Updated morning');
+  });
+
+  it('deletes a routine from the task list dropdown after confirmation', async () => {
+    seedRoutines(familyRoutine());
+    const { container } = renderPlanner();
+    await waitFor(() =>
+      expect(column(container, 'Zara').querySelector('.planner-row--routine')).not.toBeNull(),
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: `${NL.t('planner.action')}: Morning routine` }),
+    );
+    const deleteAction = screen.getByRole('menuitem', {
+      name: NL.t('settings.family.deleteRoutine', { name: 'Morning routine' }),
+    });
+    fireEvent.click(deleteAction);
+    expect(JSON.parse(localStorage.getItem('abbai_flow_routines') ?? '[]')).toHaveLength(1);
+    fireEvent.click(deleteAction);
+
+    await waitFor(() =>
+      expect(JSON.parse(localStorage.getItem('abbai_flow_routines') ?? '[]')).toEqual([]),
+    );
+    expect(column(container, 'Zara').querySelector('.planner-row--routine')).toBeNull();
+  });
+
+  it('opens the shared routine editor from the Chores add sheet', async () => {
+    const { container } = renderPlanner();
 
     fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
     fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
 
-    expect(onRequestRoutineCreate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(NL.t('planner.forWho')), {
+      target: { value: CHILD.id },
+    });
+    fireEvent.change(screen.getByPlaceholderText(NL.t('settings.family.routineNamePlaceholder')), {
+      target: { value: 'After school' },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(NL.t('settings.family.taskPlaceholder', { n: 1 })),
+      { target: { value: 'Hang coat' } },
+    );
+    fireEvent.click(screen.getByText(NL.t('settings.family.saveRoutine')));
+
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('abbai_flow_routines') ?? '[]')).toEqual([
+        expect.objectContaining({ name: 'After school', member_id: CHILD.id }),
+      ]);
+    });
     expect(mocks.createChore).not.toHaveBeenCalled();
   });
 });

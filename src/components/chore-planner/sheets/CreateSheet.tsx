@@ -12,6 +12,7 @@ import type { PlannerMember, PlannerTask } from '../../../api/chore-planner-mode
 import type { ChoreOpsChore, ChoreOpsReward } from '../../../types/choreops';
 import type { Routine } from '../../../types/family';
 import type { PlannerCopy } from '../copy';
+import { RoutineActionsMenu } from '../../routines/RoutineActionsMenu';
 
 export interface CreateSheetProps {
   copy: PlannerCopy;
@@ -27,6 +28,8 @@ export interface CreateSheetProps {
   onOpenTaskActions: (task: PlannerTask) => void;
   onUseAgain: (task: PlannerTask) => void;
   onOpenReward: (reward: ChoreOpsReward) => void;
+  onEditRoutine: (routine: Routine) => void;
+  onDeleteRoutine: (routine: Routine) => void;
 }
 
 /**
@@ -47,6 +50,8 @@ export function CreateSheet({
   onOpenTaskActions,
   onUseAgain,
   onOpenReward,
+  onEditRoutine,
+  onDeleteRoutine,
 }: CreateSheetProps) {
   const [browse, setBrowse] = useState<'chores' | 'rewards' | 'routines'>('chores');
   const choreGroups = new Map<string, ChoreOpsChore[]>();
@@ -246,30 +251,39 @@ export function CreateSheet({
                 const steps = [...routine.tasks].sort((a, b) => a.order - b.order);
                 const assigned = memberNames([routine.member_id]);
                 return (
-                  <details className="planner-create-routine" key={routine.id}>
-                    <summary>
-                      <span>
-                        <strong>{routine.name}</strong>
-                        <small>
-                          {assigned} · {routine.time_of_day} · {routine.mission_points ?? 5}{' '}
-                          {c.pointsUnit}
-                        </small>
-                      </span>
-                      <span className="planner-create-step-count">{steps.length}</span>
-                      <ChevronDown className="planner-create-routine-chevron" aria-hidden="true" />
-                    </summary>
-                    {steps.length > 0 && (
-                      <ul>
-                        {steps.map((step) => {
-                          return (
+                  <div className="planner-create-routine-row" key={routine.id}>
+                    <details className="planner-create-routine">
+                      <summary>
+                        <span>
+                          <strong>{routine.name}</strong>
+                          <small>
+                            {assigned} · {routine.time_of_day}
+                            {members.find((member) => member.id === routine.member_id)?.role !==
+                              'parent' && ` · ${routine.mission_points ?? 5} ${c.pointsUnit}`}
+                          </small>
+                        </span>
+                        <span className="planner-create-step-count">{steps.length}</span>
+                        <ChevronDown
+                          className="planner-create-routine-chevron"
+                          aria-hidden="true"
+                        />
+                      </summary>
+                      {steps.length > 0 && (
+                        <ul>
+                          {steps.map((step) => (
                             <li key={step.id}>
                               <span>{step.name}</span>
                             </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </details>
+                          ))}
+                        </ul>
+                      )}
+                    </details>
+                    <RoutineActionsMenu
+                      routineName={routine.name}
+                      onEdit={() => onEditRoutine(routine)}
+                      onDelete={() => onDeleteRoutine(routine)}
+                    />
+                  </div>
                 );
               })
             ))}

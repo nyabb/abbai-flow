@@ -32,7 +32,7 @@ export interface ChildViewProps {
   /** Whether this child has anything left to run — routines, not loose chores. */
   canRunMissions: (memberId: string) => boolean;
   onNewGoal: (memberId: string) => void;
-  onNewRoutine?: () => void;
+  onNewRoutine?: (memberId: string) => void;
 }
 
 export function ChildView({
@@ -221,7 +221,11 @@ export function ChildView({
           </h3>
           {isParent ? (
             onNewRoutine && (
-              <button type="button" className="planner-section-action" onClick={onNewRoutine}>
+              <button
+                type="button"
+                className="planner-section-action"
+                onClick={() => onNewRoutine(childMember.id)}
+              >
                 <Plus aria-hidden="true" /> {c.addRoutine}
               </button>
             )

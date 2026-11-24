@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Routine } from '../../types/family';
 import { hapticMedium, hapticSuccess } from '../../hooks/useHaptics';
+import { RoutineActionsMenu } from '../routines/RoutineActionsMenu';
 
 interface RoutineCardProps {
   routine: Routine;
@@ -10,9 +11,19 @@ interface RoutineCardProps {
   interactive: boolean;
   isTaskCompleted: (taskId: string) => boolean;
   onToggleTask: (taskId: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function RoutineCard({ routine, label, interactive, isTaskCompleted, onToggleTask }: RoutineCardProps) {
+export function RoutineCard({
+  routine,
+  label,
+  interactive,
+  isTaskCompleted,
+  onToggleTask,
+  onEdit,
+  onDelete,
+}: RoutineCardProps) {
   const [animatingId, setAnimatingId] = useState<string | null>(null);
   const tasks = [...routine.tasks].sort((a, b) => a.order - b.order);
   const doneCount = tasks.filter((t) => isTaskCompleted(t.id)).length;
@@ -36,8 +47,13 @@ export function RoutineCard({ routine, label, interactive, isTaskCompleted, onTo
           <span className="focus-card-badge">{label}</span>
         ) : (
           <span className="focus-card-count">
-            {doneCount === tasks.length && tasks.length > 0 ? 'Done!' : `${doneCount}/${tasks.length}`}
+            {doneCount === tasks.length && tasks.length > 0
+              ? 'Done!'
+              : `${doneCount}/${tasks.length}`}
           </span>
+        )}
+        {onEdit && onDelete && (
+          <RoutineActionsMenu routineName={routine.name} onEdit={onEdit} onDelete={onDelete} />
         )}
       </header>
       <ul className="focus-checklist">
@@ -54,7 +70,16 @@ export function RoutineCard({ routine, label, interactive, isTaskCompleted, onTo
               >
                 <span className="focus-check-box">
                   {done && (
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}
