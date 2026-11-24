@@ -1,3 +1,18 @@
+## [2.16.1](https://github.com/nyabb/abbai-flow/compare/v2.16.0...v2.16.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* apply appearance settings ([4e66911](https://github.com/nyabb/abbai-flow/commit/4e669114c8e3fb2cbb74cfd0bb2c8c211bf018b3))
+* clean up theme hook dependencies ([47fcb8f](https://github.com/nyabb/abbai-flow/commit/47fcb8f8bc7689dd1dfba34c34b7affc81713a35))
+
+# [2.16.0](https://github.com/nyabb/abbai-flow/compare/v2.15.1...v2.16.0) (2026-11-23)
+
+
+### Features
+
+* reuse completed chores and manage routine steps ([7965db3](https://github.com/nyabb/abbai-flow/commit/7965db3dbac1e98e841f0d0ea62bb6ad794582e4))
+
 ## [2.15.1](https://github.com/nyabb/abbai-flow/compare/v2.15.0...v2.15.1) (2026-11-23)
 
 
