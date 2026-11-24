@@ -49,8 +49,6 @@ docker run -d \
   --name abbai-flow \
   --restart unless-stopped \
   -p 3000:3000 \
-  -e HA_URL=https://homeassistant.local:8123 \
-  -e HA_TOKEN=your_long_lived_access_token \
   -v abbai-flow-data:/data \
   ghcr.io/nyabb/abbai-flow:latest
 ```
@@ -58,9 +56,10 @@ docker run -d \
 Open `http://<host>:3000`. Images are published for `linux/amd64` and
 `linux/arm64`, so the same tag runs on a server and on a Raspberry Pi.
 
-`HA_TOKEN` is a Home Assistant long-lived access token (Profile → Security →
-Long-Lived Access Tokens). Without it, Abbai Flow still runs in standalone mode
-with local calendars, lists and tasks.
+On first launch, open **Settings → Integrations** to connect Home Assistant,
+Encore, and Spotify, or configure a JSON recipe/menu feed for meal planning.
+Abbai Flow starts in standalone mode until you configure the services you want.
+Integration settings are stored in the `/data` volume.
 
 ### Docker Compose
 
@@ -70,17 +69,6 @@ services:
     image: ghcr.io/nyabb/abbai-flow:latest
     restart: unless-stopped
     ports: ['3000:3000']
-    environment:
-      HA_URL: https://homeassistant.local:8123
-      HA_TOKEN: ${HA_TOKEN}
-      ENCORE_TOKEN: ${ENCORE_TOKEN:-}
-      ENCORE_URL: ${ENCORE_URL:-ws://host.docker.internal:8095/}
-      SPOTIFY_CLIENT_ID: ${SPOTIFY_CLIENT_ID:-}
-      SPOTIFY_CLIENT_SECRET: ${SPOTIFY_CLIENT_SECRET:-}
-      SPOTIFY_MARKET: ${SPOTIFY_MARKET:-NL}
-      SPOTIFY_REDIRECT_URI: ${SPOTIFY_REDIRECT_URI:-}
-      # Optional direct Bluetooth control through the Raspberry Pi's BlueZ D-Bus.
-      # ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: unix:path=/run/dbus/system_bus_socket
     volumes: ['abbai-flow-data:/data']
     # Optional direct Bluetooth control: mount the host socket into this service.
     # - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
@@ -96,32 +84,32 @@ npm ci
 npm run dev          # http://localhost:5173
 ```
 
-Set `VITE_HA_URL` and `VITE_HA_TOKEN` in `.env` to develop against a real Home
-Assistant. Abbai Flow works fully without it — calendars, lists and tasks are
-then kept in the browser.
+Set `VITE_HA_URL` in `.env` only if you want Vite's development proxy to reach a
+Home Assistant instance. Enter the access token in Abbai Flow's onboarding or
+Settings → Integrations; it is no longer compiled into the browser bundle.
 
 ## Configuration
 
-| Variable                            | Default                           | Description                                                                                                                                    |
-| ----------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PORT`                              | `3000`                            | Port the container listens on                                                                                                                  |
-| `HA_URL`                            | —                                 | Home Assistant base URL                                                                                                                        |
-| `HA_TOKEN`                          | —                                 | Long-lived access token                                                                                                                        |
-| `ENCORE_TOKEN`                      | —                                 | Optional Encore bearer token for the Spotify integration; stays on the server                                                                  |
-| `ENCORE_URL`                        | `ws://host.docker.internal:8095/` | Optional Encore WebSocket URL (the verified Docker network address)                                                                            |
-| `SPOTIFY_CLIENT_ID`                 | —                                 | Optional Spotify Developer app ID for catalog search; server-side only                                                                         |
-| `SPOTIFY_CLIENT_SECRET`             | —                                 | Optional Spotify Developer app secret for catalog search; server-side only                                                                     |
-| `SPOTIFY_MARKET`                    | `NL`                              | Two-letter Spotify catalog market used for search results                                                                                      |
-| `SPOTIFY_REDIRECT_URI`              | —                                 | HTTPS Spotify OAuth callback registered in your Spotify Developer app; use `https://<your-app-host>/abbai-flow/music/oauth/callback`           |
-| `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | —                                 | Optional host system D-Bus address for direct BlueZ device management; set to `unix:path=/run/dbus/system_bus_socket` when mounting the socket |
-| `DATA_DIR`                          | `/data`                           | Where persisted documents are stored                                                                                                           |
+| Variable                            | Default     | Description |
+| ----------------------------------- | ----------- | ----------- |
+| `ABBAI_FLOW_PORT` or `PORT`         | `3000`      | HTTP port used by the server |
+| `ABBAI_FLOW_DATA`                   | `/data`     | Directory for persisted family and integration data |
+| `ABBAI_FLOW_DIST`                   | `/app/dist` | Built app directory |
+| `ABBAI_FLOW_ALLOWED_ORIGINS`        | —           | Extra origins allowed to make state-changing requests |
+| `ABBAI_FLOW_HA_CA`                  | —           | Optional CA certificate for a private Home Assistant TLS certificate |
+| `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | —           | Optional host D-Bus address; the socket must also be mounted into the container |
 
-Spotify search can use the app credentials above. Managing Spotify playlists
-also needs user authorization: set `SPOTIFY_REDIRECT_URI` to the exact HTTPS
-callback URL registered under your Spotify Developer app's Redirect URIs. The
-Music page then provides a Connect Spotify account button. The resulting
-refresh token is stored server-side in the existing data directory with
-owner-only file permissions; it is never sent to browser code.
+Older deployments may still have Home Assistant, Encore, or Spotify values in
+their environment. The server uses those as initial defaults until the first
+save in **Settings → Integrations**; saved values then take precedence. New
+deployments should enter these credentials in the app.
+
+Spotify playlist management also needs the Spotify developer app's callback
+URL registered under its Redirect URIs. Set it in **Settings → Integrations**
+to `https://<your-app-host>/abbai-flow/music/oauth/callback`, then use the Music
+page's Connect Spotify account button. The resulting refresh token is stored
+server-side in the existing data directory with owner-only file permissions;
+it is never sent to browser code.
 
 Direct Bluetooth management is optional and does not use Snapcast or add a
 container. To discover, pair, connect, disconnect or forget devices from Music,

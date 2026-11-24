@@ -132,10 +132,10 @@ describe('SpotifyMusicPanel connection states', () => {
       }),
     );
     expect(
-      screen.getByText(/Spotify app credentials are configured\. Set SPOTIFY_REDIRECT_URI/),
+      screen.getByText(/Register the OAuth redirect URL from Settings → Integrations/),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText(/Set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET/),
+      screen.queryByText(/Add your Spotify developer app credentials and OAuth redirect URL/),
     ).not.toBeInTheDocument();
   });
 

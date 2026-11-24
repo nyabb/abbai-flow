@@ -22,9 +22,11 @@ function resolveBaseUrl(): string {
   // The dev server proxies /api to HA (see vite.config.ts), so REST calls stay
   // same-origin there too and CORS is never a factor. Requires VITE_HA_URL,
   // matching the proxy condition in vite.config.ts.
-  if (import.meta.env.DEV && import.meta.env.VITE_HA_URL) return '';
-
   const config = getConfig();
+  const devProxyUrl = import.meta.env.VITE_HA_URL?.replace(/\/$/, '');
+  if (import.meta.env.DEV && devProxyUrl && config.ha_url.replace(/\/$/, '') === devProxyUrl) {
+    return '';
+  }
   if (config.ha_url && !config.ha_url.includes('supervisor')) {
     return config.ha_url.replace(/\/$/, '');
   }
@@ -89,7 +91,10 @@ export function setHaToken(token: string) {
 
 /** A service error with the request and full response ready to display/copy. */
 export class HomeAssistantServiceError extends Error {
-  constructor(message: string, readonly details: string) {
+  constructor(
+    message: string,
+    readonly details: string,
+  ) {
     super(message);
     this.name = 'HomeAssistantServiceError';
   }

@@ -468,7 +468,7 @@ export class SpotifyPlaylistLibrary {
       throw new SpotifyPlaylistError(
         'not_configured',
         503,
-        'Set SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and a valid SPOTIFY_REDIRECT_URI on the server',
+        'Add Spotify developer app credentials and the OAuth redirect URL in Settings → Integrations.',
       );
     }
   }

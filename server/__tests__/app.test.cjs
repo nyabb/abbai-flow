@@ -69,6 +69,12 @@ async function startBeacon(overrides = {}) {
     haToken: overrides.haToken ?? 'test-token',
     haBaseUrl: overrides.haBaseUrl,
     haWsUrl: overrides.haWsUrl,
+    encoreToken: overrides.encoreToken,
+    encoreUrl: overrides.encoreUrl,
+    spotifyClientId: overrides.spotifyClientId,
+    spotifyClientSecret: overrides.spotifyClientSecret,
+    spotifyMarket: overrides.spotifyMarket,
+    spotifyRedirectUri: overrides.spotifyRedirectUri,
     allowedOrigins: overrides.allowedOrigins,
     ca: overrides.ca,
     spotifyPlaylists: overrides.spotifyPlaylists,
@@ -406,6 +412,133 @@ test('data API rejects oversized documents', async (t) => {
   assert.equal(res.status, 413);
 });
 
+test('integration settings redact secrets and persist saved values across restarts', async (t) => {
+  const dataDir = tmpDir('integration-settings');
+  const legacy = {
+    dataDir,
+    haToken: 'legacy-ha-secret',
+    haBaseUrl: 'http://127.0.0.1:1',
+    spotifyClientId: 'legacy-client-id',
+    spotifyClientSecret: 'legacy-client-secret',
+    spotifyMarket: 'NL',
+    spotifyRedirectUri: 'https://abbai.example/old-callback',
+  };
+  const app = await startBeacon(legacy);
+  t.after(() => app.close());
+
+  const initial = await request(app.port, { path: '/abbai-flow/settings/integrations' });
+  assert.equal(initial.status, 200);
+  assert.equal(initial.headers['cache-control'], 'no-store');
+  assert.equal(initial.json.haConfigured, true);
+  assert.equal(initial.json.spotifyClientSecretConfigured, true);
+  assert.equal(initial.json.spotifyClientId, 'legacy-client-id');
+  assert.doesNotMatch(JSON.stringify(initial.json), /legacy-ha-secret|legacy-client-secret/);
+
+  const saved = await request(app.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: {
+      spotifyClientId: 'new-client-id',
+      spotifyClientSecret: 'new-client-secret',
+      spotifyMarket: 'us',
+      spotifyRedirectUri: 'https://abbai.example/abbai-flow/music/oauth/callback',
+      mealSourceUrl: 'https://food.example/api/recipes',
+      mealSourceToken: 'meal-source-secret',
+      mealDataMapping: {
+        itemsPath: '$.data.recipes',
+        idPath: '$.id',
+        titlePath: '$.name',
+        imagePath: '$.photo.url',
+        ingredientsPath: '$.ingredients[]',
+        stepsPath: '$.instructions[].text',
+        tagsPath: '$.tags[]',
+        datePath: '$.dinner_date',
+        sourceUrlPath: '$.url',
+      },
+    },
+  });
+  assert.equal(saved.status, 200);
+  assert.equal(saved.json.spotifyClientId, 'new-client-id');
+  assert.equal(saved.json.spotifyMarket, 'US');
+  assert.equal(saved.json.spotifyClientSecretConfigured, true);
+  assert.equal(saved.json.mealSourceUrl, 'https://food.example/api/recipes');
+  assert.equal(saved.json.mealSourceTokenConfigured, true);
+  assert.equal(saved.json.mealDataMapping.stepsPath, '$.instructions[].text');
+  assert.doesNotMatch(
+    JSON.stringify(saved.json),
+    /new-client-secret|legacy-ha-secret|meal-source-secret/,
+  );
+
+  const invalidMapping = await request(app.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { mealDataMapping: { stepsPath: '$.instructions[?(@.done)]' } },
+  });
+  assert.equal(invalidMapping.status, 400);
+
+  const invalidMealUrl = await request(app.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { mealSourceUrl: 'file:///etc/passwd' },
+  });
+  assert.equal(invalidMealUrl.status, 400);
+
+  const settingsPath = path.join(dataDir, 'integration-settings.json');
+  const persisted = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+  assert.equal(persisted.haToken, 'legacy-ha-secret');
+  assert.equal(persisted.spotifyClientSecret, 'new-client-secret');
+  assert.equal(persisted.mealSourceToken, 'meal-source-secret');
+  assert.equal(persisted.mealDataMapping.itemsPath, '$.data.recipes');
+  assert.equal(fs.statSync(settingsPath).mode & 0o777, 0o600);
+
+  const restarted = await startBeacon(legacy);
+  t.after(() => restarted.close());
+  const afterRestart = await request(restarted.port, { path: '/abbai-flow/settings/integrations' });
+  assert.equal(afterRestart.status, 200);
+  assert.equal(afterRestart.json.spotifyClientId, 'new-client-id');
+  assert.equal(afterRestart.json.spotifyMarket, 'US');
+  assert.equal(afterRestart.json.spotifyClientSecretConfigured, true);
+  assert.equal(afterRestart.json.mealSourceUrl, 'https://food.example/api/recipes');
+  assert.equal(afterRestart.json.mealSourceTokenConfigured, true);
+  assert.equal(afterRestart.json.mealDataMapping.titlePath, '$.name');
+
+  const cleared = await request(restarted.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { clearMealSourceToken: true },
+  });
+  assert.equal(cleared.status, 200);
+  assert.equal(cleared.json.mealSourceTokenConfigured, false);
+  assert.equal(JSON.parse(fs.readFileSync(settingsPath, 'utf8')).mealSourceToken, '');
+});
+
+test('integration settings test connection checks submitted Home Assistant credentials without saving', async (t) => {
+  const ha = await startFakeHa();
+  t.after(() => ha.close());
+  const app = await startBeacon({ haBaseUrl: 'http://127.0.0.1:1', haToken: 'old-token' });
+  t.after(() => app.close());
+
+  const denied = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/integrations',
+    body: { haUrl: ha.baseUrl, haToken: 'candidate-token' },
+    headers: { Origin: 'https://evil.example' },
+  });
+  assert.equal(denied.status, 403);
+
+  const tested = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/integrations',
+    body: { haUrl: ha.baseUrl, haToken: 'candidate-token' },
+  });
+  assert.equal(tested.status, 200);
+  assert.deepEqual(tested.json, { ok: true });
+  assert.equal(ha.requests[0].headers.authorization, 'Bearer candidate-token');
+
+  const unchanged = await request(app.port, { path: '/abbai-flow/settings/integrations' });
+  assert.equal(unchanged.json.haUrl, 'http://127.0.0.1:1');
+});
+
 test('service bridge validates input and forwards to Home Assistant', async (t) => {
   const ha = await startFakeHa();
   t.after(() => ha.close());
@@ -611,11 +744,19 @@ test('planner mutate replays an idempotency key instead of applying twice', asyn
     op: { type: 'addPoints', user: 'Ada', reward: 'Cinema', cost: 100, amount: 30 },
   };
 
-  const first = await request(beacon.port, { method: 'POST', path: '/api/planner/mutate', body: op });
+  const first = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: op,
+  });
   assert.equal(first.status, 200);
   assert.equal(first.json.changed, true);
 
-  const replay = await request(beacon.port, { method: 'POST', path: '/api/planner/mutate', body: op });
+  const replay = await request(beacon.port, {
+    method: 'POST',
+    path: '/api/planner/mutate',
+    body: op,
+  });
   assert.equal(replay.status, 200);
   assert.equal(replay.json.changed, false);
   assert.equal(replay.json.duplicate, true);
@@ -765,7 +906,10 @@ test('Bluetooth status is readable while Bluetooth controls remain same-origin g
 });
 
 test('configFromEnv keeps the add-on contract working', () => {
-  const addon = configFromEnv({ SUPERVISOR_TOKEN: 'supervisor', HA_API_BASE_OVERRIDE: 'http://supervisor/core' });
+  const addon = configFromEnv({
+    SUPERVISOR_TOKEN: 'supervisor',
+    HA_API_BASE_OVERRIDE: 'http://supervisor/core',
+  });
   assert.equal(addon.haBaseUrl, 'http://supervisor/core');
   assert.equal(addon.haToken, 'supervisor');
 
@@ -811,7 +955,10 @@ test('runtime config tells the browser to use the proxy and never leaks the toke
   // The SPA only needs to know it is proxied; the token stays server-side.
   assert.match(served.raw, /window\.__ABBAI_FLOW_CONFIG__ = /);
   assert.match(served.raw, /"deployment_mode":"standalone"/);
-  assert.match(served.raw, new RegExp(`"ha_url":"${ha.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`));
+  assert.match(
+    served.raw,
+    new RegExp(`"ha_url":"${ha.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`),
+  );
   assert.doesNotMatch(served.raw, /super-secret-token/);
 
   // Proxied REST calls must reach HA_URL with the server-held token — this is

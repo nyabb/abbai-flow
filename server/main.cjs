@@ -24,9 +24,11 @@ try {
   /* read-only or already present */
 }
 
-const { server, encore, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = createApp(config);
+const app = createApp(config);
+const { server, encore, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
+const effectiveConfig = app.config;
 const integrationDiagnostics = startIntegrationDiagnostics(
-  { ...config, customHaCaConfigured: Boolean(config.ca) },
+  { ...effectiveConfig, customHaCaConfigured: Boolean(effectiveConfig.ca) },
   encore,
   {
     verifySpotifyCatalog,
@@ -38,25 +40,16 @@ server.on('close', integrationDiagnostics.stop);
 
 server.listen(PORT, () => {
   console.log(`Abbai Flow server listening on port ${PORT}`);
-  console.log(`Home Assistant base: ${config.haBaseUrl}`);
-  console.log(`Home Assistant token: ${config.haToken ? 'available' : 'NOT available'}`);
-  console.log(`Data directory: ${config.dataDir}`);
+  console.log(`Home Assistant base: ${effectiveConfig.haBaseUrl}`);
+  console.log(`Home Assistant token: ${effectiveConfig.haToken ? 'available' : 'not configured'}`);
+  console.log(`Data directory: ${effectiveConfig.dataDir}`);
 
   // Misconfiguration used to fail silently: the SPA loaded, then every /api/*
   // call answered 503 (no token) or hung against the Supervisor address that
   // does not exist outside the add-on sandbox. Say it plainly instead.
-  if (!config.haToken) {
+  if (!effectiveConfig.haToken) {
     console.warn(
-      'Home Assistant token is missing — set HA_TOKEN to a long-lived access token ' +
-        '(Profile → Security → Long-lived access tokens). Without it every /api/* ' +
-        'request answers 503.',
-    );
-  }
-  if (config.haBaseUrl === 'http://supervisor/core' && !process.env.HA_URL) {
-    console.warn(
-      'HA_URL is not set, so requests target http://supervisor/core, which only ' +
-        'exists inside a Home Assistant add-on. Set HA_URL=http://<your-ha-host>:8123 ' +
-        'when running the container standalone (e.g. in Portainer).',
+      'Home Assistant is not configured yet. Open Settings → Integrations to add your URL and access token.',
     );
   }
 });

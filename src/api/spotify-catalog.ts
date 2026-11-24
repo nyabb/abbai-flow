@@ -105,7 +105,7 @@ export class SpotifyCatalog {
       throw new SpotifyCatalogError(
         'not_configured',
         503,
-        'Spotify search is not configured on the server',
+        'Spotify search is not configured; add developer app credentials in Settings → Integrations.',
       );
     }
 

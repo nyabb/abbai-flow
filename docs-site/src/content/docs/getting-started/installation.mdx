@@ -10,22 +10,20 @@ Abbai Flow runs as a Docker container alongside Home Assistant. It can also run 
 
 ## Docker
 
-Create a Home Assistant long-lived access token from your profile if you want to use Home Assistant calendars, media players, weather, or lists. Then start the container:
+Start the container, then open **Settings → Integrations** to add the Home Assistant URL and long-lived access token if you want calendars, media players, weather, or lists:
 
 ```bash
 docker run -d \
   --name abbai-flow \
   --restart unless-stopped \
   -p 3000:3000 \
-  -e HA_URL=http://homeassistant.local:8123 \
-  -e HA_TOKEN=your_long_lived_access_token \
   -v abbai-flow-data:/data \
   ghcr.io/nyabb/abbai-flow:latest
 ```
 
 Open `http://<server-address>:3000`. Images are available for `linux/amd64` and `linux/arm64`.
 
-Without `HA_TOKEN`, Abbai Flow runs in standalone mode. Local calendars, tasks, and shopping lists remain available.
+Until Home Assistant is configured, Abbai Flow runs in standalone mode. Local calendars, tasks, and shopping lists remain available.
 
 ### Docker Compose
 
@@ -36,9 +34,6 @@ services:
     restart: unless-stopped
     ports:
       - '3000:3000'
-    environment:
-      HA_URL: http://homeassistant.local:8123
-      HA_TOKEN: ${HA_TOKEN}
     volumes:
       - abbai-flow-data:/data
 
@@ -46,7 +41,7 @@ volumes:
   abbai-flow-data:
 ```
 
-Store `HA_TOKEN` in a `.env` file next to your Compose file instead of committing it to source control.
+Integration settings are stored in the persistent `/data` volume.
 
 ## Local development
 
@@ -57,11 +52,10 @@ npm ci
 npm run dev
 ```
 
-The development server runs at `http://localhost:5173`. To connect to Home Assistant, create a root `.env` file with:
+The development server runs at `http://localhost:5173`. Enter Home Assistant credentials in the onboarding flow or **Settings → Integrations**. To use Vite's same-origin development proxy, optionally set the HA address in a root `.env` file:
 
 ```bash
 VITE_HA_URL=http://homeassistant.local:8123
-VITE_HA_TOKEN=your_long_lived_access_token
 ```
 
 See [Configuration](/docs/customization/configuration/) for the available environment variables and [Deployment](/docs/getting-started/deployment/) for reverse proxy and kiosk setup.

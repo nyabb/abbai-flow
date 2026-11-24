@@ -619,7 +619,7 @@ export const ko: Record<TranslationKey, string> = {
   'music.spotifyStatusPlaying': '재생 중',
   'music.spotifyStatusPaused': '일시 정지',
   'music.spotifyStatusBuffering': '불러오는 중',
-  'music.spotifyConfigure': 'Encore를 통해 Spotify를 연결하려면 서버에 ENCORE_TOKEN을 설정하세요.',
+  'music.spotifyConfigure': '설정 → 통합에서 Encore를 통한 Spotify 연결을 구성하세요.',
   'music.spotifyConnectionHelp':
     'Encore에 연결할 수 없습니다. Abbai Flow가 자동으로 다시 연결합니다.',
   'music.spotifyLoginHelp': 'Spotify 앱에서 로그인하면 Soloist 기기에서 재생할 수 있습니다.',
@@ -640,8 +640,7 @@ export const ko: Record<TranslationKey, string> = {
   'music.spotifySearching': '검색 중...',
   'music.spotifySearchEmpty': '노래를 찾을 수 없습니다',
   'music.spotifySearchFailed': 'Spotify 검색에 실패했습니다. 다시 시도해 주세요.',
-  'music.spotifySearchConfigure':
-    'Spotify 검색을 사용하려면 서버에 SPOTIFY_CLIENT_ID와 SPOTIFY_CLIENT_SECRET을 설정하세요.',
+  'music.spotifySearchConfigure': '설정 → 통합에서 Spotify 개발자 앱 인증 정보를 추가하세요.',
   'music.spotifySearchResults': '검색 결과',
   'music.spotifyPlayTrack': '트랙 재생',
 

@@ -622,7 +622,7 @@ export const ja: Record<TranslationKey, string> = {
   'music.spotifyStatusPaused': '一時停止中',
   'music.spotifyStatusBuffering': '読み込み中',
   'music.spotifyConfigure':
-    'Encore 経由で Spotify を接続するには、サーバーに ENCORE_TOKEN を設定してください。',
+    '設定 → インテグレーションで Encore 経由の Spotify 接続を設定してください。',
   'music.spotifyConnectionHelp': 'Encore に接続できません。Abbai Flow は自動的に再接続します。',
   'music.spotifyLoginHelp': 'Spotify アプリでログインすると Soloist デバイスで再生できます。',
   'music.spotifyDevice': '再生デバイス',
@@ -643,7 +643,7 @@ export const ja: Record<TranslationKey, string> = {
   'music.spotifySearchEmpty': '曲が見つかりません',
   'music.spotifySearchFailed': 'Spotify の検索に失敗しました。もう一度お試しください。',
   'music.spotifySearchConfigure':
-    'Spotify 検索にはサーバーで SPOTIFY_CLIENT_ID と SPOTIFY_CLIENT_SECRET の設定が必要です。',
+    '設定 → インテグレーションで Spotify 開発者アプリの認証情報を追加してください。',
   'music.spotifySearchResults': '検索結果',
   'music.spotifyPlayTrack': '曲を再生',
 

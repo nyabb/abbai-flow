@@ -18,6 +18,7 @@
 
 const http = require('http');
 const https = require('https');
+const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const { randomBytes } = require('crypto');
@@ -1343,6 +1344,245 @@ function handleUpgrade(req, socket, head, config) {
 /*  Application factory                                               */
 /* ------------------------------------------------------------------ */
 
+const INTEGRATION_SETTINGS_FILE = 'integration-settings.json';
+const MEAL_DATA_MAPPING_KEYS = [
+  'itemsPath',
+  'idPath',
+  'titlePath',
+  'imagePath',
+  'ingredientsPath',
+  'stepsPath',
+  'tagsPath',
+  'datePath',
+  'sourceUrlPath',
+];
+const EMPTY_MEAL_DATA_MAPPING = Object.fromEntries(MEAL_DATA_MAPPING_KEYS.map((key) => [key, '']));
+const INTEGRATION_SETTING_KEYS = [
+  'haToken',
+  'haBaseUrl',
+  'haWsUrlOverride',
+  'encoreToken',
+  'encoreUrl',
+  'spotifyClientId',
+  'spotifyClientSecret',
+  'spotifyMarket',
+  'spotifyRedirectUri',
+  'mealSourceUrl',
+  'mealSourceToken',
+  'mealDataMapping',
+];
+
+function integrationSettingsPath(dataDir) {
+  return path.join(dataDir, INTEGRATION_SETTINGS_FILE);
+}
+
+function readIntegrationSettings(dataDir, fallback) {
+  try {
+    const stored = JSON.parse(fs.readFileSync(integrationSettingsPath(dataDir), 'utf8'));
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored)) return fallback;
+    return {
+      ...fallback,
+      ...Object.fromEntries(
+        INTEGRATION_SETTING_KEYS.filter((key) =>
+          Object.prototype.hasOwnProperty.call(stored, key),
+        ).map((key) => [key, stored[key]]),
+      ),
+      mealDataMapping: {
+        ...EMPTY_MEAL_DATA_MAPPING,
+        ...(stored.mealDataMapping &&
+        typeof stored.mealDataMapping === 'object' &&
+        !Array.isArray(stored.mealDataMapping)
+          ? Object.fromEntries(
+              MEAL_DATA_MAPPING_KEYS.filter((key) =>
+                Object.prototype.hasOwnProperty.call(stored.mealDataMapping, key),
+              ).map((key) => [
+                key,
+                typeof stored.mealDataMapping[key] === 'string' ? stored.mealDataMapping[key] : '',
+              ]),
+            )
+          : {}),
+      },
+    };
+  } catch (error) {
+    if (error && error.code !== 'ENOENT') {
+      console.warn('Could not read saved integration settings; using environment defaults.');
+    }
+    return fallback;
+  }
+}
+
+async function writeIntegrationSettings(dataDir, settings) {
+  const filePath = integrationSettingsPath(dataDir);
+  const temporaryPath = `${filePath}.${process.pid}.${randomBytes(6).toString('hex')}.tmp`;
+  const stored = Object.fromEntries(INTEGRATION_SETTING_KEYS.map((key) => [key, settings[key]]));
+  try {
+    await fsp.mkdir(dataDir, { recursive: true, mode: 0o700 });
+    await fsp.writeFile(temporaryPath, JSON.stringify(stored), { encoding: 'utf8', mode: 0o600 });
+    await fsp.chmod(temporaryPath, 0o600);
+    await fsp.rename(temporaryPath, filePath);
+    await fsp.chmod(filePath, 0o600);
+  } catch (error) {
+    await fsp.unlink(temporaryPath).catch(() => undefined);
+    throw error;
+  }
+}
+
+function mergeIntegrationSettings(current, patch) {
+  const next = Object.fromEntries(INTEGRATION_SETTING_KEYS.map((key) => [key, current[key]]));
+  const fields = {
+    haUrl: 'haBaseUrl',
+    haToken: 'haToken',
+    encoreToken: 'encoreToken',
+    encoreUrl: 'encoreUrl',
+    spotifyClientId: 'spotifyClientId',
+    spotifyClientSecret: 'spotifyClientSecret',
+    spotifyMarket: 'spotifyMarket',
+    spotifyRedirectUri: 'spotifyRedirectUri',
+    mealSourceUrl: 'mealSourceUrl',
+    mealSourceToken: 'mealSourceToken',
+  };
+  for (const [input, key] of Object.entries(fields)) {
+    if (typeof patch[input] === 'string') {
+      next[key] =
+        input === 'spotifyMarket' ? patch[input].trim().toUpperCase() : patch[input].trim();
+    }
+  }
+  if (typeof patch.haUrl === 'string') next.haBaseUrl = normaliseHaBaseUrl(patch.haUrl);
+  if (patch.clearHaToken === true) next.haToken = '';
+  if (patch.clearEncoreToken === true) next.encoreToken = '';
+  if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
+  if (patch.clearMealSourceToken === true) next.mealSourceToken = '';
+  if (patch.mealDataMapping && typeof patch.mealDataMapping === 'object') {
+    next.mealDataMapping = { ...current.mealDataMapping };
+    for (const key of MEAL_DATA_MAPPING_KEYS) {
+      if (typeof patch.mealDataMapping[key] === 'string') {
+        next.mealDataMapping[key] = patch.mealDataMapping[key].trim();
+      }
+    }
+  }
+  return next;
+}
+
+function isValidMealMappingPath(value) {
+  let candidate = value.trim();
+  if (!candidate) return true;
+  if (candidate === '$') return true;
+  if (candidate.startsWith('$')) {
+    candidate = candidate.slice(1);
+    if (candidate && !candidate.startsWith('.') && !candidate.startsWith('[')) return false;
+  }
+  if (candidate.startsWith('.')) candidate = candidate.slice(1);
+  return /^(?:[A-Za-z_$][A-Za-z0-9_$-]*|\[\d+\]|\[\])(?:\.(?:[A-Za-z_$][A-Za-z0-9_$-]*|\[\d+\]|\[\])|\[\d+\]|\[\])*$/u.test(
+    candidate,
+  );
+}
+
+function validateIntegrationSettings(settings) {
+  try {
+    const haUrl = new URL(settings.haBaseUrl);
+    if (
+      !['http:', 'https:'].includes(haUrl.protocol) ||
+      !haUrl.hostname ||
+      haUrl.username ||
+      haUrl.password
+    ) {
+      return 'Enter a valid Home Assistant URL using http or https.';
+    }
+  } catch {
+    return 'Enter a valid Home Assistant URL using http or https.';
+  }
+  try {
+    const encoreUrl = new URL(settings.encoreUrl);
+    if (
+      !['ws:', 'wss:'].includes(encoreUrl.protocol) ||
+      !encoreUrl.hostname ||
+      encoreUrl.username ||
+      encoreUrl.password
+    ) {
+      return 'Enter a valid Encore WebSocket URL using ws or wss.';
+    }
+  } catch {
+    return 'Enter a valid Encore WebSocket URL using ws or wss.';
+  }
+  if (!/^[A-Za-z]{2}$/.test(settings.spotifyMarket || '')) {
+    return 'Spotify market must be a two-letter country code.';
+  }
+  if (settings.spotifyRedirectUri) {
+    try {
+      const redirect = new URL(settings.spotifyRedirectUri);
+      if (
+        !['http:', 'https:'].includes(redirect.protocol) ||
+        redirect.username ||
+        redirect.password
+      ) {
+        return 'Enter a valid Spotify redirect URL using http or https.';
+      }
+    } catch {
+      return 'Enter a valid Spotify redirect URL using http or https.';
+    }
+  }
+  const mealDataMapping = settings.mealDataMapping || EMPTY_MEAL_DATA_MAPPING;
+  if (settings.mealSourceUrl) {
+    try {
+      const mealSourceUrl = new URL(settings.mealSourceUrl);
+      if (
+        !['http:', 'https:'].includes(mealSourceUrl.protocol) ||
+        !mealSourceUrl.hostname ||
+        mealSourceUrl.username ||
+        mealSourceUrl.password
+      ) {
+        return 'Enter a valid meal source URL using http or https.';
+      }
+    } catch {
+      return 'Enter a valid meal source URL using http or https.';
+    }
+    if (!mealDataMapping.itemsPath || !mealDataMapping.titlePath || !mealDataMapping.stepsPath) {
+      return 'Meal source mapping must include items, title, and steps paths.';
+    }
+  }
+  for (const key of MEAL_DATA_MAPPING_KEYS) {
+    const value = mealDataMapping[key] || '';
+    if (!isValidMealMappingPath(value)) {
+      return `Meal source mapping has an invalid ${key} path.`;
+    }
+  }
+  return null;
+}
+
+function publicIntegrationSettings(settings) {
+  return {
+    haUrl:
+      !settings.haToken && settings.haBaseUrl === 'http://supervisor/core'
+        ? ''
+        : settings.haBaseUrl,
+    haConfigured: Boolean(settings.haToken),
+    encoreUrl: settings.encoreUrl,
+    encoreConfigured: Boolean(settings.encoreToken),
+    spotifyClientId: settings.spotifyClientId,
+    spotifyClientSecretConfigured: Boolean(settings.spotifyClientSecret),
+    spotifyMarket: settings.spotifyMarket,
+    spotifyRedirectUri: settings.spotifyRedirectUri,
+    mealSourceUrl: settings.mealSourceUrl,
+    mealSourceTokenConfigured: Boolean(settings.mealSourceToken),
+    mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING, ...settings.mealDataMapping },
+  };
+}
+
+function updateHaWebSocketUrl(config) {
+  if (config.haWsUrlOverride) {
+    config.haWsUrl = config.haWsUrlOverride;
+    return;
+  }
+  try {
+    const url = new URL(config.haBaseUrl);
+    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+    url.pathname = `${url.pathname.replace(/\/$/, '')}/api/websocket`;
+    config.haWsUrl = url.toString();
+  } catch {
+    config.haWsUrl = '';
+  }
+}
+
 /**
  * Build the HTTP server.
  *
@@ -1356,39 +1596,38 @@ function handleUpgrade(req, socket, head, config) {
  * @param {string} [options.ca]         extra CA (PEM) for private HA certs
  */
 function createApp(options) {
+  const environmentIntegrations = {
+    haToken: options.haToken || '',
+    haBaseUrl: (options.haBaseUrl || 'http://supervisor/core').replace(/\/$/, ''),
+    haWsUrlOverride: options.haWsUrl || '',
+    encoreToken: options.encoreToken || '',
+    encoreUrl: options.encoreUrl || DEFAULT_ENCORE_URL,
+    spotifyClientId: options.spotifyClientId || '',
+    spotifyClientSecret: options.spotifyClientSecret || '',
+    spotifyMarket: (options.spotifyMarket || 'NL').toUpperCase(),
+    spotifyRedirectUri: options.spotifyRedirectUri || '',
+    mealSourceUrl: '',
+    mealSourceToken: '',
+    mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING },
+  };
   const config = {
     distDir: options.distDir,
     dataDir: options.dataDir,
-    haToken: options.haToken || '',
-    haBaseUrl: (options.haBaseUrl || 'http://supervisor/core').replace(/\/$/, ''),
     allowedOrigins: options.allowedOrigins || [],
     ca: options.ca,
     upgradeTimeoutMs: options.upgradeTimeoutMs || UPGRADE_TIMEOUT_MS,
+    ...readIntegrationSettings(options.dataDir, environmentIntegrations),
   };
-  config.haWsUrl =
-    options.haWsUrl ||
-    (() => {
-      const url = new URL(config.haBaseUrl);
-      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-      url.pathname = `${url.pathname.replace(/\/$/, '')}/api/websocket`;
-      return url.toString();
-    })();
+  updateHaWebSocketUrl(config);
 
-  const encore =
-    options.encore ||
-    new EncoreMusic({
-      token: options.encoreToken || '',
-      url: options.encoreUrl || DEFAULT_ENCORE_URL,
-    });
+  const createEncore = () => new EncoreMusic({ token: config.encoreToken, url: config.encoreUrl });
   const bluetooth =
-    options.bluetooth ||
-    new BluetoothManager({ dbusAddress: options.bluetoothDbusAddress || '' });
-  const spotifyCatalog =
-    options.spotifyCatalog ||
+    options.bluetooth || new BluetoothManager({ dbusAddress: options.bluetoothDbusAddress || '' });
+  const createSpotifyCatalog = () =>
     new SpotifyCatalog({
-      clientId: options.spotifyClientId || '',
-      clientSecret: options.spotifyClientSecret || '',
-      market: options.spotifyMarket || 'NL',
+      clientId: config.spotifyClientId,
+      clientSecret: config.spotifyClientSecret,
+      market: config.spotifyMarket,
     });
   const spotifyTokenPath = path.join(config.dataDir, 'spotify-playlists-token.json');
   const spotifyTokenStore = options.spotifyTokenStore || {
@@ -1404,7 +1643,10 @@ function createApp(options) {
       const temporaryPath = `${spotifyTokenPath}.${randomBytes(8).toString('hex')}.tmp`;
       try {
         await fsp.mkdir(path.dirname(spotifyTokenPath), { recursive: true, mode: 0o700 });
-        await fsp.writeFile(temporaryPath, JSON.stringify(token), { encoding: 'utf8', mode: 0o600 });
+        await fsp.writeFile(temporaryPath, JSON.stringify(token), {
+          encoding: 'utf8',
+          mode: 0o600,
+        });
         await fsp.chmod(temporaryPath, 0o600);
         await fsp.rename(temporaryPath, spotifyTokenPath);
         await fsp.chmod(spotifyTokenPath, 0o600);
@@ -1419,47 +1661,113 @@ function createApp(options) {
       });
     },
   };
-  const spotifyPlaylists =
-    options.spotifyPlaylists ||
+  const createSpotifyPlaylists = () =>
     new SpotifyPlaylistLibrary({
-      clientId: options.spotifyClientId || '',
-      clientSecret: options.spotifyClientSecret || '',
-      redirectUri: options.spotifyRedirectUri || '',
-      market: options.spotifyMarket || 'NL',
+      clientId: config.spotifyClientId,
+      clientSecret: config.spotifyClientSecret,
+      redirectUri: config.spotifyRedirectUri,
+      market: config.spotifyMarket,
       tokenStore: spotifyTokenStore,
       createState: options.createSpotifyState,
     });
-  const verifySpotifyCatalog = () => spotifyCatalog.verifyCredentials();
-  const verifySpotifyPlaylists = () => spotifyPlaylists.status();
+  const services = {
+    encore: options.encore || createEncore(),
+    spotifyCatalog: options.spotifyCatalog || createSpotifyCatalog(),
+    spotifyPlaylists: options.spotifyPlaylists || createSpotifyPlaylists(),
+  };
+  const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
+  const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
 
   const server = http.createServer((req, res) => {
-    void route(req, res, config, encore, spotifyCatalog, spotifyPlaylists, bluetooth);
+    void route(req, res, config, services, bluetooth);
   });
 
   server.on('upgrade', (req, socket, head) => {
     handleUpgrade(req, socket, head, config);
   });
   server.on('close', () => {
-    encore.stop();
+    services.encore.stop();
     bluetooth.stop();
   });
-  encore.start();
+  services.encore.start();
   bluetooth.start();
+
+  async function updateIntegrations(patch) {
+    const next = mergeIntegrationSettings(config, patch);
+    const validation = validateIntegrationSettings(next);
+    if (validation) return { error: validation };
+
+    const haConnectionChanged =
+      next.haBaseUrl !== config.haBaseUrl || next.haToken !== config.haToken;
+    if (haConnectionChanged && next.haToken) {
+      try {
+        const result = await haRequest({ ...config, ...next }, 'GET', '/api/', null, 10000);
+        if (result.status !== 200) {
+          return { error: `Home Assistant rejected the connection (HTTP ${result.status})` };
+        }
+      } catch {
+        return { error: 'Could not reach Home Assistant at that address' };
+      }
+    }
+    try {
+      await writeIntegrationSettings(config.dataDir, next);
+    } catch {
+      return { error: 'Could not save integration settings' };
+    }
+
+    const encoreChanged =
+      next.encoreToken !== config.encoreToken || next.encoreUrl !== config.encoreUrl;
+    const spotifySettingsChanged =
+      next.spotifyClientId !== config.spotifyClientId ||
+      next.spotifyClientSecret !== config.spotifyClientSecret ||
+      next.spotifyMarket !== config.spotifyMarket ||
+      next.spotifyRedirectUri !== config.spotifyRedirectUri;
+    const spotifyCredentialsChanged =
+      next.spotifyClientId !== config.spotifyClientId ||
+      next.spotifyClientSecret !== config.spotifyClientSecret;
+    if (spotifyCredentialsChanged) {
+      try {
+        await spotifyTokenStore.clear();
+      } catch {
+        console.warn('Could not clear the old Spotify authorization after credentials changed.');
+      }
+    }
+
+    Object.assign(config, next);
+    updateHaWebSocketUrl(config);
+    if (encoreChanged) {
+      services.encore.stop();
+      services.encore = createEncore();
+      services.encore.start();
+    }
+    if (spotifySettingsChanged) {
+      services.spotifyCatalog = createSpotifyCatalog();
+      services.spotifyPlaylists = createSpotifyPlaylists();
+    }
+    return { settings: publicIntegrationSettings(config) };
+  }
+  services.updateIntegrations = updateIntegrations;
 
   return {
     server,
     config,
-    encore,
+    get encore() {
+      return services.encore;
+    },
     bluetooth,
     verifySpotifyCatalog,
-    spotifyPlaylists,
+    get spotifyPlaylists() {
+      return services.spotifyPlaylists;
+    },
     verifySpotifyPlaylists,
+    updateIntegrations,
   };
 }
 
-async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists, bluetooth) {
+async function route(req, res, config, services, bluetooth) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
+  const { encore, spotifyCatalog, spotifyPlaylists } = services;
   const actionPath =
     {
       '/abbai-flow/action/voice': '/beacon-action/voice',
@@ -1479,6 +1787,7 @@ async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists,
     actionPath === '/beacon-action/entity-registry' ||
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
+    pathname === '/abbai-flow/settings/integrations' ||
     pathname.startsWith('/abbai-flow/music/control') ||
     pathname.startsWith('/abbai-flow/music/library/') ||
     pathname.startsWith('/abbai-flow/bluetooth/control') ||
@@ -1490,8 +1799,54 @@ async function route(req, res, config, encore, spotifyCatalog, spotifyPlaylists,
   }
 
   try {
+    if (pathname === '/abbai-flow/settings/integrations') {
+      if (req.method === 'GET') {
+        sendJson(res, 200, publicIntegrationSettings(config), { 'Cache-Control': 'no-store' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      if (req.method === 'POST') {
+        const candidate = { ...config, ...mergeIntegrationSettings(config, value) };
+        const validation = validateIntegrationSettings(candidate);
+        if (validation) {
+          sendJson(res, 400, { error: validation });
+          return;
+        }
+        try {
+          const result = await haRequest(candidate, 'GET', '/api/', null, 10000);
+          if (result.status !== 200) {
+            sendJson(res, 400, {
+              error: `Home Assistant rejected the connection (HTTP ${result.status})`,
+            });
+            return;
+          }
+          sendJson(res, 200, { ok: true });
+        } catch {
+          sendJson(res, 502, { error: 'Could not reach Home Assistant at that address' });
+        }
+        return;
+      }
+      if (req.method === 'PUT') {
+        const result = await services.updateIntegrations(value);
+        if (result.error) {
+          sendJson(res, 400, { error: result.error });
+          return;
+        }
+        sendJson(res, 200, result.settings, { 'Cache-Control': 'no-store' });
+        return;
+      }
+      sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST, PUT' });
+      return;
+    }
     if (pathname.startsWith('/abbai-flow/bluetooth/')) {
-      const handled = await handleBluetoothRequest(req, res, bluetooth, { sendJson, readJsonObject });
+      const handled = await handleBluetoothRequest(req, res, bluetooth, {
+        sendJson,
+        readJsonObject,
+      });
       if (!handled) sendJson(res, 404, { error: 'Bluetooth route not found' });
       return;
     }
@@ -1639,12 +1994,12 @@ function runtimeConfigFor(config, env = process.env) {
 }
 
 /**
- * Read configuration from the environment.
+ * Read deployment configuration and legacy initial integration defaults.
  *
- * `HA_URL` + `HA_TOKEN` are the documented contract for the container image
- * (`README.md`, `docs/upgrade-2.0.0.md`). `HA_API_BASE_OVERRIDE` and
- * `SUPERVISOR_TOKEN` stay supported because the Home Assistant add-on image
- * sets those.
+ * App-facing credentials are being moved to Settings → Integrations. These
+ * variables remain as migration defaults for deployments that have not saved
+ * the new settings yet. `HA_API_BASE_OVERRIDE` and `SUPERVISOR_TOKEN` also
+ * remain supported for the Home Assistant add-on.
  *
  * Paths, the CSRF allow-list and the extra CA all use `ABBAI_FLOW_*` names.
  * The pre-2.0 spelling of those variables is deliberately not accepted any
