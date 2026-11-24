@@ -1,16 +1,11 @@
 import { Routine } from '../../types/family';
+import { getTimeOfDay, routineOccursOnDate } from '../../api/routine-schedule';
+
+export { getTimeOfDay };
 
 export type TimeOfDay = 'morning' | 'afternoon' | 'evening';
 
 const ORDER: TimeOfDay[] = ['morning', 'afternoon', 'evening'];
-
-/** morning < 12:00, afternoon 12:00–16:59, evening >= 17:00 (local time) */
-export function getTimeOfDay(date: Date): TimeOfDay {
-  const h = date.getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
-}
 
 export interface RoutinePick {
   routine: Routine;
@@ -26,26 +21,26 @@ const PREVIEW_LABELS: Record<TimeOfDay, string> = {
 };
 
 /**
- * Pick the routine to show: the current period's, else search forward with
- * wraparound (evening -> tomorrow morning). Returns null when the member has
- * no routines at all.
+ * Show every routine in the current period. If none is scheduled now, preview
+ * the next period that has routines, wrapping evening -> tomorrow morning.
  */
-export function pickRoutine(routines: Routine[], now: Date): RoutinePick | null {
-  if (routines.length === 0) return null;
+export function pickRoutines(routines: Routine[], now: Date): RoutinePick[] {
+  if (routines.length === 0) return [];
   const startIdx = ORDER.indexOf(getTimeOfDay(now));
   for (let offset = 0; offset < ORDER.length; offset++) {
-    const idx = (startIdx + offset) % ORDER.length;
+    const absoluteIdx = startIdx + offset;
+    const idx = absoluteIdx % ORDER.length;
     const period = ORDER[idx];
-    const routine = routines.find((r) => r.time_of_day === period);
-    if (!routine) continue;
+    const scheduledDate = new Date(now);
+    scheduledDate.setDate(scheduledDate.getDate() + Math.floor(absoluteIdx / ORDER.length));
+    const scheduled = routines.filter(
+      (routine) => routine.time_of_day === period && routineOccursOnDate(routine, scheduledDate),
+    );
+    if (scheduled.length === 0) continue;
     const isCurrent = offset === 0;
-    const wrapped = startIdx + offset >= ORDER.length;
-    const label = isCurrent
-      ? ''
-      : wrapped
-        ? `Tomorrow ${period}`
-        : PREVIEW_LABELS[period];
-    return { routine, isCurrent, label };
+    const wrapped = absoluteIdx >= ORDER.length;
+    const label = isCurrent ? '' : wrapped ? `Tomorrow ${period}` : PREVIEW_LABELS[period];
+    return scheduled.map((routine) => ({ routine, isCurrent, label }));
   }
-  return null;
+  return [];
 }

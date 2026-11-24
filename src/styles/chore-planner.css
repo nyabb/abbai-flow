@@ -1754,9 +1754,37 @@
   margin: 0 0 12px;
   font-size: 1.875rem;
 }
-.planner-missions > .planner-primary {
+.planner-mission-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--planner-line);
+  border-radius: 15px;
+  background: var(--planner-surface);
+}
+.planner-mission-choice > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.planner-mission-choice h3 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.planner-mission-choice > header span,
+.planner-mission-window {
+  color: var(--planner-muted);
+}
+.planner-mission-choice > .planner-primary {
   align-self: flex-end;
-  margin-top: 14px;
+  margin-top: 6px;
+}
+.planner-mission-window {
+  margin: 0;
+  text-align: center;
 }
 .planner-mission-screen {
   display: flex;

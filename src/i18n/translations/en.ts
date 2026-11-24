@@ -960,6 +960,7 @@ export const en = {
   'planner.missionsHint': 'Work through your chores',
   'planner.startMissions': 'Start missions',
   'planner.startRoutine': 'Start this routine',
+  'planner.routineWindowHint': 'This routine is available in the {time} only.',
   'planner.missions': 'Missions',
   'planner.continue': 'Continue',
   'planner.iDidIt': 'I did it!',
