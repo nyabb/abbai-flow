@@ -16,7 +16,7 @@ this review was written; nothing here is a projected result.
 | Mode                        | Entry              | Who talks to Home Assistant                                              |
 | --------------------------- | ------------------ | ------------------------------------------------------------------------ |
 | Dev (`npm run dev`)         | Vite (port 3001)   | Browser directly; Vite proxies `/api` to `VITE_HA_URL`                   |
-| Container (Portainer…)      | `server.js`        | Server-side proxy with `HA_URL` + `HA_TOKEN`                             |
+| Container (Portainer…)      | `server.js`        | Server-side proxy with credentials managed in Settings → Integrations    |
 | Container behind HA ingress | `server.js`        | Server-side proxy with `SUPERVISOR_TOKEN`; browser uses the ingress path |
 | Capacitor (iOS/Android)     | `dist/` in WebView | Browser directly with a user supplied long-lived token                   |
 

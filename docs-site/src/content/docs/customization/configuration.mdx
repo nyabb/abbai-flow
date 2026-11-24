@@ -1,83 +1,88 @@
 ---
 title: 'Configuration'
-description: 'Docker and development configuration for Abbai Flow.'
+description: 'Configure Abbai Flow in the app and set deployment-level options.'
 order: 2
 ---
 
 # Configuration
 
-Configure the Docker server with environment variables, or use `VITE_*` variables for local development. Docker configuration is injected at runtime through `window.__ABBAI_FLOW_CONFIG__`; the Home Assistant token stays on the server.
+Configure service connections after starting Abbai Flow in **Settings →
+Integrations**. Enter the Home Assistant URL and token, Encore connection
+details, and Spotify developer app credentials there. The app verifies the
+Home Assistant connection before saving. Secrets are stored by the server in
+the persistent data directory and are never returned to the browser.
 
-## Docker environment variables
+Family name, theme, weather entity, photos, and display behavior are also
+editable in their existing Settings sections. New installations do not need
+integration or family-preference variables in Docker Compose.
 
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `HA_URL` | Home Assistant address used by the server proxy | `http://supervisor/core` |
-| `HA_TOKEN` | Long-lived Home Assistant access token | unset; Home Assistant features are unavailable |
-| `SUPERVISOR_TOKEN` | Legacy alias for `HA_TOKEN` | unset |
-| `FAMILY_NAME` | Family name shown in the dashboard | `My Family` |
-| `THEME` | Initial theme identifier | `skylight` |
-| `WEATHER_ENTITY` | Home Assistant weather entity | `weather.home` |
-| `PHOTO_DIRECTORY` | Photo directory path | `/media/beacon/photos` |
-| `PHOTO_INTERVAL` | Seconds between photo changes | `30` |
-| `SCREEN_SAVER_TIMEOUT` | Idle minutes before screen saver | `5` |
-| `PORT` | HTTP server port | `3000` |
-| `ABBAI_FLOW_DATA` | Directory for persisted server data | `/data` |
-
-Example:
+## Docker Compose
 
 ```yaml
 services:
   abbai-flow:
     image: ghcr.io/nyabb/abbai-flow:latest
     ports: ['3000:3000']
-    environment:
-      HA_URL: http://homeassistant.local:8123
-      HA_TOKEN: ${HA_TOKEN}
-      FAMILY_NAME: Sachs Family
-      THEME: midnight
-      WEATHER_ENTITY: weather.home
     volumes:
       - abbai-flow-data:/data
+
+volumes:
+  abbai-flow-data:
 ```
 
-The theme selector and other settings in the app can override these initial values.
+The `/data` volume keeps family data and server-side integration credentials
+across container restarts.
 
-## Development environment variables
+## Deployment environment variables
 
-Vite reads these from a `.env` file in the repository root:
+These values configure the server or its host environment and stay outside the
+app UI:
 
-| Variable | Purpose | Default |
-| --- | --- | --- |
-| `VITE_HA_URL` | Home Assistant address | empty |
-| `VITE_HA_TOKEN` | Home Assistant token for local development | empty |
-| `VITE_FAMILY_NAME` | Family name | `My Family` |
-| `VITE_SAVE_CONFIG_IN_BROWSER` | Save configuration in browser storage | `true` |
-| `VITE_THEME` | Initial theme identifier | `skylight` |
-| `VITE_AUTO_DARK_MODE` | Enable automatic light/dark switching | `true` |
-| `VITE_HA_WEATHER_ENTITY` | Weather entity ID | `weather.home` |
-| `VITE_PHOTO_DIRECTORY` | Photo directory path | `/media/beacon/photos` |
-| `VITE_PHOTO_INTERVAL` | Seconds between photo changes | `30` |
-| `VITE_SCREEN_SAVER_TIMEOUT` | Idle minutes before screen saver | `5` |
+| Variable                            | Purpose                                                                       | Default     |
+| ----------------------------------- | ----------------------------------------------------------------------------- | ----------- |
+| `ABBAI_FLOW_PORT` or `PORT`         | HTTP server port                                                              | `3000`      |
+| `ABBAI_FLOW_DATA`                   | Directory for persisted data and integration credentials                      | `/data`     |
+| `ABBAI_FLOW_DIST`                   | Built frontend directory                                                      | `/app/dist` |
+| `ABBAI_FLOW_ALLOWED_ORIGINS`        | Additional allowed origins for state-changing requests                        | unset       |
+| `ABBAI_FLOW_HA_CA`                  | Optional CA certificate for a private Home Assistant TLS certificate          | unset       |
+| `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | Host D-Bus socket address; the socket must also be mounted into the container | unset       |
 
-The runtime config takes priority over Vite values, which take priority over application defaults. The version shown in About comes from the root `package.json` version and can be overridden at build time with `VITE_APP_VERSION`.
+Existing installations can keep using legacy integration variables while
+migrating. If there are no saved integration settings, those values act as
+initial defaults. Saving in **Settings → Integrations** makes the saved values
+authoritative. Supported legacy variables include `HA_URL`, `HA_TOKEN`,
+`SUPERVISOR_TOKEN`, `ENCORE_TOKEN`, `ENCORE_URL`, `SPOTIFY_CLIENT_ID`,
+`SPOTIFY_CLIENT_SECRET`, `SPOTIFY_MARKET`, and `SPOTIFY_REDIRECT_URI`.
+
+Older family and display preference variables (`FAMILY_NAME`, `THEME`,
+`WEATHER_ENTITY`, `PHOTO_DIRECTORY`, `PHOTO_INTERVAL`, and
+`SCREEN_SAVER_TIMEOUT`) are initial defaults only. Set their current values in
+the app.
+
+## Local development
+
+Run `npm ci` and `npm run dev`. Enter Home Assistant credentials in onboarding
+or **Settings → Integrations**. `VITE_HA_URL` can optionally set the Vite
+development proxy target; it is not a credential and does not need to be
+compiled into the app. `VITE_APP_VERSION` is an optional build label.
 
 ## Runtime configuration
 
-The server serves `/runtime-config.js` before the application loads. It sets `window.__ABBAI_FLOW_CONFIG__` with the deployment mode, Home Assistant address, and supported display settings. The access token is kept on the backend and is never sent to the browser.
-
-For example, a runtime config can look like:
+The server serves `/runtime-config.js` before the app loads. It identifies the
+server-backed proxy and provides non-secret defaults such as the Home Assistant
+URL. The access token and other integration secrets stay on the server.
 
 ```javascript
 window.__ABBAI_FLOW_CONFIG__ = {
   deployment_mode: 'standalone',
   ha_url: 'http://homeassistant.local:8123',
-  family_name: 'Sachs Family',
-  theme: 'midnight',
-  weather_entity: 'weather.home',
 };
 ```
 
 ## Troubleshooting
 
-If Home Assistant data is unavailable, check that `HA_URL` is reachable from the container and that `HA_TOKEN` is valid. After changing Docker environment variables, recreate or restart the container. Development `.env` changes require restarting the Vite server.
+Use **Settings → Integrations → Test connection** to check the Home Assistant
+URL and token. A failed test leaves the current configuration unchanged. For a
+private TLS certificate, configure `ABBAI_FLOW_HA_CA` on the server. After
+changing deployment-level variables, restart the container; app credentials
+and preferences are edited in Settings without rebuilding the image.

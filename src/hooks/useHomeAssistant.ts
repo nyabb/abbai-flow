@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { HomeAssistantClient } from '../api/homeassistant';
-import { getConfig } from '../config';
+import { getConfig, patchConfig } from '../config';
 import { setHaToken } from '../api/ha-rest';
+import { getSecureItem, StorageKeys } from '../api/secure-storage';
 import { usesServerProxy, isIngress } from '../utils/ha-env';
 
 function resolveHaUrl(): string {
@@ -74,16 +75,22 @@ export function useHomeAssistant() {
 
     async function connect() {
       const config = getConfig();
-      let token = config.ha_token;
-      const url = resolveHaUrl();
-
-      // Server-proxy deployments don't need a browser-side token.
-      // The backend injects the HA token for all /api/* requests.
-      // Just mark as connected so REST-based hooks fire.
-      if (usesServerProxy() && !token) {
+      // Server-proxy deployments keep the Home Assistant credential on the
+      // backend. Do not load a stale browser token and bypass that proxy.
+      if (usesServerProxy()) {
         console.info('Abbai Flow: Server proxy mode — using REST API through Abbai Flow.');
         if (!cancelled) setConnected(true);
         return;
+      }
+
+      const [storedUrl, storedToken] = await Promise.all([
+        getSecureItem(StorageKeys.HA_URL),
+        getSecureItem(StorageKeys.HA_TOKEN),
+      ]);
+      let token = config.ha_token || storedToken || '';
+      const url = storedUrl || resolveHaUrl();
+      if (storedUrl || storedToken) {
+        patchConfig({ ha_url: url, ha_token: token });
       }
 
       // If no token from config, try requesting one from HA ingress

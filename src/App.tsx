@@ -554,6 +554,17 @@ export function App() {
     [auth],
   );
 
+  const handleSaveHomeAssistantSettings = useCallback(
+    async (haUrl: string, haToken: string) => {
+      const token = haToken || auth.state.haToken;
+      if (!token) throw new Error(t('settings.integrations.haTokenHelp'));
+      await auth.saveManualToken(haUrl, token);
+      patchConfig({ ha_url: haUrl, ha_token: token });
+      window.location.reload();
+    },
+    [auth, t],
+  );
+
   const handleOAuthStart = useCallback(
     (haUrl: string) => {
       auth.startOAuth(haUrl);
@@ -625,11 +636,10 @@ export function App() {
   }
 
   // Show onboarding ONLY when running as a standalone app with no HA connection configured.
-  // Skip if: the deployment injected a runtime config, or env token set, or already onboarded,
+  // Skip if: the deployment injected a runtime config, already onboarded,
   // or running in an iframe (HA ingress), or URL has /ingress/ path.
   const isHaManaged = !!(
     getRuntimeConfig() ||
-    import.meta.env.VITE_HA_TOKEN ||
     window !== window.parent ||
     window.location.pathname.includes('/ingress/')
   );
@@ -773,7 +783,8 @@ export function App() {
               onUpdateMember={updateMember}
               onRemoveMember={removeMember}
               connected={connected}
-              haUrl={config.ha_url}
+              haUrl={auth.state.haUrl || config.ha_url}
+              onSaveHomeAssistant={handleSaveHomeAssistantSettings}
               calendars={calendars}
               onEnterFocusMode={handleEnterFocusMode}
             />

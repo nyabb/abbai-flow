@@ -48,11 +48,13 @@ const CHECK_TIMEOUT_MS = 8_000;
 function cleanLabel(value: string | null | undefined): string {
   // Remove control characters so configured labels cannot forge log lines.
   const normalized = value || '';
-  return normalized
-    // eslint-disable-next-line no-control-regex
-    .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
-    .trim()
-    .slice(0, 100);
+  return (
+    normalized
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+      .trim()
+      .slice(0, 100)
+  );
 }
 
 function describeEntity(states: HaState[], entityId: string): string {
@@ -86,7 +88,7 @@ function logEncoreStateChanges(
     if (!snapshot.configured) {
       if (!configuredLogged) {
         logger.warn(
-          '[Integration] Spotify playback (Encore): not configured; ENCORE_TOKEN is missing.',
+          '[Integration] Spotify playback (Encore): not configured; add the connection in Settings → Integrations.',
         );
         configuredLogged = true;
       }
@@ -150,7 +152,7 @@ function logBluetoothStateChanges(
     if (!snapshot.configured) {
       if (!missingConfigurationLogged) {
         logger.info(
-          '[Integration] Bluetooth: not configured; mount the host D-Bus socket and set ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS to enable device management.',
+          '[Integration] Bluetooth: not configured; mount the host D-Bus socket and configure its address for device management.',
         );
         missingConfigurationLogged = true;
       }
@@ -195,7 +197,7 @@ async function checkHomeAssistant(
 ): Promise<void> {
   if (!config.haToken) {
     logger.warn(
-      '[Integration] Home Assistant API: not checked because HA_TOKEN/SUPERVISOR_TOKEN is missing.',
+      '[Integration] Home Assistant API: not checked because credentials are not configured in Settings → Integrations.',
     );
     return;
   }
@@ -355,7 +357,7 @@ async function checkSpotifyCatalog(
 
   if (missing.length > 0) {
     logger.warn(
-      `[Integration] Spotify catalog search: not configured; missing ${missing.join(' and ')}.`,
+      '[Integration] Spotify catalog search: not configured; add developer app credentials in Settings → Integrations.',
     );
     return;
   }
@@ -420,7 +422,7 @@ export function startIntegrationDiagnostics(
     `[Integration] Home Assistant: ${config.haToken ? 'token configured' : 'token missing'}; base URL is ${config.haBaseUrl}.`,
   );
   logger.info(
-    `[Integration] Spotify playback (Encore): ${config.encoreToken ? 'token configured; connection status follows' : 'not configured; set ENCORE_TOKEN'}.`,
+    `[Integration] Spotify playback (Encore): ${config.encoreToken ? 'token configured; connection status follows' : 'not configured; add connection details in Settings → Integrations'}.`,
   );
   logger.info(`[Integration] Spotify catalog market: ${cleanLabel(config.spotifyMarket) || 'NL'}.`);
   logger.info(

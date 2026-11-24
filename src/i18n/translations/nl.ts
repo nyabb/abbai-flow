@@ -348,6 +348,37 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.connectionStatusLabel': 'Verbindingsstatus',
   'settings.integrations.connected': 'Verbonden',
   'settings.integrations.disconnected': 'Niet verbonden',
+  'settings.integrations.configured': 'Ingesteld',
+  'settings.integrations.haUrlLabel': 'Home Assistant-URL',
+  'settings.integrations.haUrlHelp':
+    'Adres waarmee Abbai Flow verbinding maakt met Home Assistant.',
+  'settings.integrations.haTokenLabel': 'Langdurige toegangstoken',
+  'settings.integrations.haTokenHelp': 'Maak een token aan in je Home Assistant-profiel.',
+  'settings.integrations.secretSaved': 'Er is een geheim opgeslagen. Laat leeg om het te behouden.',
+  'settings.integrations.secretReplace':
+    'Voer een nieuwe waarde in om het opgeslagen geheim te vervangen',
+  'settings.integrations.clearSecret': 'Opgeslagen geheim verwijderen',
+  'settings.integrations.notConfigured': 'Niet ingesteld',
+  'settings.integrations.testConnection': 'Verbinding testen',
+  'settings.integrations.testSuccess': 'Verbinding met Home Assistant is gelukt.',
+  'settings.integrations.save': 'Integratie-instellingen opslaan',
+  'settings.integrations.saving': 'Opslaan…',
+  'settings.integrations.saved': 'Instellingen opgeslagen.',
+  'settings.integrations.saveError': 'Integratie-instellingen konden niet worden opgeslagen.',
+  'settings.integrations.encoreTitle': 'Encore-muziek',
+  'settings.integrations.encoreUrlLabel': 'Encore WebSocket-URL',
+  'settings.integrations.encoreUrlHelp': 'WebSocket-adres van de Encore-server.',
+  'settings.integrations.encoreTokenLabel': 'Encore-token',
+  'settings.integrations.encoreTokenHelp': 'Bearer-token voor verbinding met Encore.',
+  'settings.integrations.spotifyTitle': 'Spotify-ontwikkelaarsapp',
+  'settings.integrations.spotifyClientIdLabel': 'Client-ID',
+  'settings.integrations.spotifyClientSecretLabel': 'Clientgeheim',
+  'settings.integrations.spotifyClientHelp': 'Gegevens uit je Spotify-ontwikkelaarsapp.',
+  'settings.integrations.spotifyMarketLabel': 'Catalogusregio',
+  'settings.integrations.spotifyMarketHelp': 'Landcode van twee letters, bijvoorbeeld NL of US.',
+  'settings.integrations.spotifyRedirectLabel': 'OAuth-omleidings-URL',
+  'settings.integrations.spotifyRedirectHelp':
+    'Registreer deze exacte callback-URL in de Spotify-ontwikkelaarsapp.',
   'settings.integrations.weatherEntityLabel': 'Weerentiteit',
   'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
   'settings.integrations.grocyTitle': 'Grocy',
@@ -628,7 +659,8 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyStatusPlaying': 'Speelt af',
   'music.spotifyStatusPaused': 'Gepauzeerd',
   'music.spotifyStatusBuffering': 'Laden',
-  'music.spotifyConfigure': 'Stel ENCORE_TOKEN in op de server om Spotify via Encore te verbinden.',
+  'music.spotifyConfigure':
+    'Stel de Spotify-verbinding via Encore in bij Instellingen → Integraties.',
   'music.spotifyConnectionHelp':
     'Encore is niet bereikbaar. Abbai Flow probeert automatisch opnieuw te verbinden.',
   'music.spotifyLoginHelp':
@@ -651,16 +683,16 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifySearchEmpty': 'Geen nummers gevonden',
   'music.spotifySearchFailed': 'Zoeken op Spotify is mislukt. Probeer het opnieuw.',
   'music.spotifySearchConfigure':
-    'Spotify zoeken vereist SPOTIFY_CLIENT_ID en SPOTIFY_CLIENT_SECRET op de server.',
+    'Voeg de gegevens van je Spotify-ontwikkelaarsapp toe bij Instellingen → Integraties.',
   'music.spotifySearchResults': 'Zoekresultaten',
   'music.spotifyPlayTrack': 'Nummer afspelen',
   'music.spotifyYourLibrary': 'Je bibliotheek',
   'music.spotifyPlaylists': 'Afspeellijsten',
   'music.spotifyCreatePlaylist': 'Afspeellijst maken',
   'music.spotifyPlaylistConfigure':
-    'Stel SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET en SPOTIFY_REDIRECT_URI in op de server om afspeellijsten te beheren.',
+    'Voeg de Spotify-appgegevens en OAuth-omleidings-URL toe bij Instellingen → Integraties om afspeellijsten te beheren.',
   'music.spotifyPlaylistRedirectConfigure':
-    'De Spotify-appgegevens zijn al ingesteld. Stel SPOTIFY_REDIRECT_URI op de server in op https://<app-host>/abbai-flow/music/oauth/callback en registreer exact die URL in je Spotify Developer-app.',
+    'Registreer de OAuth-omleidings-URL uit Instellingen → Integraties in je Spotify-ontwikkelaarsapp.',
   'music.spotifyPlaylistConnectHelp':
     'Verbind je Spotify-account om je afspeellijsten te zien, maken en bewerken.',
   'music.spotifyConnecting': 'Verbinden met Spotify…',

@@ -633,7 +633,7 @@ export const de: Record<TranslationKey, string> = {
   'music.spotifyStatusPaused': 'Pausiert',
   'music.spotifyStatusBuffering': 'Wird geladen',
   'music.spotifyConfigure':
-    'Setze ENCORE_TOKEN in der Serverumgebung, um Spotify über Encore zu verbinden.',
+    'Richte die Spotify-Verbindung über Encore unter Einstellungen → Integrationen ein.',
   'music.spotifyConnectionHelp':
     'Encore ist nicht verfügbar. Abbai Flow verbindet sich automatisch erneut.',
   'music.spotifyLoginHelp':
@@ -656,7 +656,7 @@ export const de: Record<TranslationKey, string> = {
   'music.spotifySearchEmpty': 'Keine Titel gefunden',
   'music.spotifySearchFailed': 'Spotify-Suche fehlgeschlagen. Bitte erneut versuchen.',
   'music.spotifySearchConfigure':
-    'Für die Spotify-Suche müssen SPOTIFY_CLIENT_ID und SPOTIFY_CLIENT_SECRET auf dem Server gesetzt sein.',
+    'Füge die Zugangsdaten deiner Spotify-Entwickler-App unter Einstellungen → Integrationen hinzu.',
   'music.spotifySearchResults': 'Suchergebnisse',
   'music.spotifyPlayTrack': 'Titel abspielen',
 

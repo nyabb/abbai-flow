@@ -72,7 +72,7 @@ docker compose logs -f abbai-flow
 
 ### The container cannot connect to Home Assistant
 
-Check that `HA_URL` is reachable from inside the container and that `HA_TOKEN` is valid. If Home Assistant uses a private certificate authority, configure the server's CA trust before connecting.
+Use **Settings → Integrations → Test connection** to check the Home Assistant URL and token from the running container. If Home Assistant uses a private certificate authority, configure the server's CA trust before connecting.
 
 ### The page does not load through the reverse proxy
 

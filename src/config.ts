@@ -45,7 +45,7 @@ export function getConfig(): AbbaiConfig {
 
   cached = {
     ha_url: runtime.ha_url ?? import.meta.env.VITE_HA_URL ?? '',
-    ha_token: runtime.ha_token || import.meta.env.VITE_HA_TOKEN || '',
+    ha_token: runtime.ha_token || '',
     family_name: runtime.family_name || import.meta.env.VITE_FAMILY_NAME || 'My Family',
     save_config_in_browser:
       runtime.save_config_in_browser ?? import.meta.env.VITE_SAVE_CONFIG_IN_BROWSER !== 'false',

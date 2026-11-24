@@ -53,6 +53,7 @@ interface SettingsViewProps {
   // HA connection
   connected: boolean;
   haUrl: string;
+  onSaveHomeAssistant?: (url: string, token: string) => Promise<void>;
   // Calendars
   calendars: Array<{ id: string; name: string; color?: string }>;
   // Kid Display
@@ -97,6 +98,7 @@ export function SettingsView({
   onRemoveMember,
   connected,
   haUrl,
+  onSaveHomeAssistant,
   calendars,
   onEnterFocusMode,
 }: SettingsViewProps) {
@@ -199,6 +201,7 @@ export function SettingsView({
       t={t}
       connected={connected}
       haUrl={haUrl}
+      onSaveHomeAssistant={onSaveHomeAssistant}
     />
   );
   // ==== DISPLAY ====

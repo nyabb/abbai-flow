@@ -1,6 +1,6 @@
 ---
-title: "Photos"
-description: "Turn Abbai Flow into a digital photo frame — setting up photos, slideshow controls, clock overlay, and music integration."
+title: 'Photos'
+description: 'Turn Abbai Flow into a digital photo frame — setting up photos, slideshow controls, clock overlay, and music integration.'
 order: 7
 ---
 
@@ -36,10 +36,8 @@ You can organize photos in subdirectories if you prefer — Abbai Flow scans the
 
 ### Step 3: Configure the photo directory
 
-Set `PHOTO_DIRECTORY` in Docker, or `VITE_PHOTO_DIRECTORY` in development, to the path used by your Home Assistant media setup. For example:
-
-- **Docker**: Environment variable `PHOTO_DIRECTORY=/media/family-photos`
-- **Development**: `.env` file > `VITE_PHOTO_DIRECTORY=/media/family-photos`
+Set the photo directory in **Settings → Integrations → Photos** to the path
+used by your Home Assistant media setup, for example `/media/family-photos`.
 
 ### Step 4: Verify in Home Assistant
 
@@ -80,6 +78,7 @@ The photo frame is tap-to-interact:
 3. Controls auto-hide after 5 seconds of inactivity
 
 When controls are visible:
+
 - **Left arrow**: Previous photo
 - **Play/Pause**: Toggle automatic slideshow cycling
 - **Right arrow**: Next photo
@@ -88,6 +87,7 @@ When controls are visible:
 ### No photos available
 
 If no photos are found, the view shows:
+
 - "No photos available"
 - A hint: "Add photos to your Home Assistant media directory"
 - A back button to return to the dashboard
@@ -101,6 +101,7 @@ If no photos are found, the view shows:
 The slideshow auto-advances every N seconds. The default is **30 seconds**.
 
 Configure it:
+
 - **Docker**: `PHOTO_INTERVAL=30`
 - **Development**: `VITE_PHOTO_INTERVAL=30`
 
@@ -149,10 +150,10 @@ The music overlay is always visible (it does not auto-hide with the photo contro
 
 Abbai Flow supports two photo sources, configured internally:
 
-| Source | Description |
-|--------|-------------|
-| `ha_media` | Photos from HA's media browser root directory |
-| `local` | Photos from the configured `photo_directory` path |
+| Source     | Description                                       |
+| ---------- | ------------------------------------------------- |
+| `ha_media` | Photos from HA's media browser root directory     |
+| `local`    | Photos from the configured `photo_directory` path |
 
 Both sources are enabled by default. Photos from both sources are combined and shuffled.
 
@@ -182,6 +183,7 @@ The clock overlay only appears when `showClock` is true (it is true by default) 
 ### Music controls do not appear on photos
 
 The music overlay requires:
+
 1. An active media player in the `playing` state
 2. The music hooks (play, pause, next, previous, volume) must be available
 

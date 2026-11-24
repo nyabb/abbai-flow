@@ -72,9 +72,12 @@ See `docs/engineering-review.md` for the full review, findings and open items.
 
 ### Deployment configuration (container)
 
-The image reads `HA_URL` + `HA_TOKEN` — a long-lived access token, created in
-Home Assistant under _Profile → Security_. That is the whole contract; everything
-else has a working default.
+Configure Home Assistant, Encore, and Spotify credentials in **Settings →
+Integrations** after starting the image. The server stores these values in
+`/data/integration-settings.json` with owner-only permissions. Legacy
+integration environment variables remain initial defaults until the first
+settings save; saved values take precedence after that. New Compose examples
+must not require app credentials in environment variables.
 
 Paths, the CSRF allow-list and a private CA use `ABBAI_FLOW_*` names
 (`ABBAI_FLOW_DATA`, `ABBAI_FLOW_DIST`, `ABBAI_FLOW_ALLOWED_ORIGINS`,
@@ -83,11 +86,11 @@ Paths, the CSRF allow-list and a private CA use `ABBAI_FLOW_*` names
 mapping. Do not add silent fallbacks for them: a stale data path would split a
 household's documents across two directories.
 
-`server/app.cjs` serves `/runtime-config.js`, which sets
-`window.__ABBAI_FLOW_CONFIG__` from those env vars. That file is what tells the
-SPA it sits behind the proxy (so it stops asking for a token) — it must never
-contain the token itself. `index.html` loads it before the bundle; the copy in
-`public/` is an empty stub for `npm run dev`.
+`server/app.cjs` serves `/runtime-config.js` with the HA URL and other safe
+defaults. That file is what tells the SPA it sits behind the proxy (so it stops
+asking for a token) — it must never contain integration secrets. `index.html`
+loads it before the bundle; the copy in `public/` is an empty stub for
+`npm run dev`.
 
 ### HA Todo Items: Service Call with `?return_response`
 

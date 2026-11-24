@@ -225,7 +225,7 @@ describe('integration startup diagnostics', () => {
     expect(entries.join('\n')).toContain('Home Assistant API: not checked');
     expect(entries.join('\n')).toContain('Spotify playback (Encore): not configured');
     expect(entries.join('\n')).toContain('Spotify catalog search: not configured');
-    expect(entries.join('\n')).toContain('ENCORE_TOKEN is missing');
+    expect(entries.join('\n')).toContain('add the connection in Settings → Integrations');
     handle.stop();
     expect(onEncoreSnapshot).toBeDefined();
   });
