@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { FamilyStore } from '../api/family';
+import { routineAvailableAt } from '../api/routine-schedule';
 import { Routine, RoutineTaskCompletion } from '../types/family';
 
 export function useRoutines(memberId?: string) {
@@ -55,6 +56,7 @@ export function useRoutines(memberId?: string) {
 
   const toggleTask = useCallback(
     async (routine: Routine, taskId: string): Promise<boolean> => {
+      if (!routineAvailableAt(routine)) return false;
       let persisted: boolean;
       if (isTaskCompletedToday(routine.id, taskId, routine.member_id)) {
         persisted = await store.uncompleteRoutineTask(routine.id, taskId, routine.member_id);

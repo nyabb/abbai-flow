@@ -3,7 +3,6 @@ import { format } from 'date-fns';
 import { useFamily } from '../../hooks/useFamily';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { findUserForMember } from '../../api/choreops';
-import { routineOccursOnDate } from '../../api/routine-schedule';
 import { MemberAvatar } from '../MemberAvatar';
 import { useRoutines } from '../../hooks/useRoutines';
 import { AbbaiSettings } from '../../hooks/useSettings';
@@ -13,7 +12,7 @@ import { RoutineCard } from './RoutineCard';
 import { RoutineEditorDialog } from '../routines/RoutineEditorDialog';
 import type { RoutineEditorRequest } from '../routines/RoutineEditorDialog';
 import { FocusChores } from './FocusChores';
-import { pickRoutine, getTimeOfDay } from './period';
+import { pickRoutines, getTimeOfDay } from './period';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 
 interface FocusViewProps {
@@ -114,19 +113,19 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
     return ids;
   }, [choreOps.data]);
 
-  const pick = pickRoutine(
-    routinesApi.routines.filter((routine) => routineOccursOnDate(routine, now)),
-    now,
-  );
+  const picks = pickRoutines(routinesApi.routines, now);
 
   if (!member) {
     // Member deleted while display active: App-level guard exits on next render
     return null;
   }
 
-  const currentRoutineTasks = pick && pick.isCurrent ? pick.routine.tasks : [];
-  const routineDone = currentRoutineTasks.every((t) =>
-    routinesApi.isTaskCompletedToday(pick!.routine.id, t.id, memberId),
+  const currentPicks = picks.filter((pick) => pick.isCurrent);
+  const currentRoutineTasks = currentPicks.flatMap((pick) => pick.routine.tasks);
+  const routineDone = currentPicks.every((pick) =>
+    pick.routine.tasks.every((task) =>
+      routinesApi.isTaskCompletedToday(pick.routine.id, task.id, memberId),
+    ),
   );
   const choresDone = memberChores.every((c) => completedChoreIds.has(c.id));
   const hadItems = currentRoutineTasks.length + memberChores.length > 0;
@@ -178,8 +177,9 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
           </div>
         ) : (
           <>
-            {pick && (
+            {picks.map((pick) => (
               <RoutineCard
+                key={pick.routine.id}
                 routine={pick.routine}
                 label={pick.label}
                 interactive={pick.isCurrent}
@@ -192,7 +192,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
                 }
                 onDelete={() => void routinesApi.removeRoutine(pick.routine.id)}
               />
-            )}
+            ))}
             <FocusChores
               chores={memberChores}
               completedIds={completedChoreIds}
@@ -202,7 +202,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
                 if (!completedChoreIds.has(choreId)) setConfirmChoreId(choreId);
               }}
             />
-            {!pick && memberChores.length === 0 && (
+            {picks.length === 0 && memberChores.length === 0 && (
               <div className="focus-empty">
                 Nothing scheduled yet. Add a routine from Quick Add or the Chores page.
               </div>

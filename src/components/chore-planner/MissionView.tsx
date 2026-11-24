@@ -4,6 +4,7 @@
  */
 import { Check, ChevronRight } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
+import type { Routine } from '../../types/family';
 import type { I18nValue } from '../../i18n';
 import type { PlannerCopy } from './copy';
 
@@ -14,8 +15,8 @@ export interface MissionViewProps {
   member: PlannerMember;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  /** A child's open chores, already sorted. */
-  openTasks: PlannerTask[];
+  /** Each available routine remains a separate mission choice. */
+  routines: Array<{ routine: Routine; tasks: PlannerTask[] }>;
   /** Points this child earned today. */
   completedPoints: number;
   /** Points this child can still spend. */
@@ -25,17 +26,29 @@ export interface MissionViewProps {
   index: number;
   total: number;
   /** The routine being worked through, and how far into it this chore is. */
-  routineStep?: { name: string; index: number; total: number } | null;
+  routineStep?: {
+    name: string;
+    index: number;
+    total: number;
+    timeOfDay: Routine['time_of_day'];
+    available: boolean;
+  } | null;
   /** Seconds/time string for the current mission. */
   countdown: string;
   online: boolean;
   busy: boolean;
   renderTask: (task: PlannerTask, readOnly?: boolean) => React.ReactNode;
-  onStart: () => void;
+  onStartRoutine: (routineId: string) => void;
   onComplete: () => void;
   /** Parent sign-off when the current chore is waiting for review. */
   onApprove: () => void;
   onPass: () => void;
+}
+
+function timeLabel(time: Routine['time_of_day'], copy: PlannerCopy): string {
+  if (time === 'morning') return copy.morning;
+  if (time === 'afternoon') return copy.afternoon;
+  return copy.evening;
 }
 
 export function MissionView({
@@ -43,7 +56,7 @@ export function MissionView({
   member,
   copy: c,
   t,
-  openTasks,
+  routines,
   completedPoints,
   spendable,
   currentTask,
@@ -55,7 +68,7 @@ export function MissionView({
   online,
   busy,
   renderTask,
-  onStart,
+  onStartRoutine,
   onComplete,
   onApprove,
   onPass,
@@ -65,12 +78,27 @@ export function MissionView({
       <main className="planner-content planner-missions">
         <p className="planner-eyebrow">03 / 04</p>
         <h2>{c.missions}</h2>
-        {openTasks.map((task) => renderTask(task, true))}
-        {openTasks.length === 0 && <p className="planner-empty-copy">{c.nothing}</p>}
-        <button className="planner-primary" disabled={openTasks.length === 0} onClick={onStart}>
-          {c.startMissions}
-          <ChevronRight />
-        </button>
+        {routines.map(({ routine, tasks }) => {
+          const time = timeLabel(routine.time_of_day, c);
+          return (
+            <section className="planner-mission-choice" key={routine.id}>
+              <header>
+                <h3>{routine.name}</h3>
+                <span>{time}</span>
+              </header>
+              {tasks.map((task) => renderTask(task, true))}
+              <button
+                className="planner-primary"
+                aria-label={`${c.startRoutine}: ${routine.name}`}
+                onClick={() => onStartRoutine(routine.id)}
+              >
+                {c.startRoutine}
+                <ChevronRight />
+              </button>
+            </section>
+          );
+        })}
+        {routines.length === 0 && <p className="planner-empty-copy">{c.noMissions}</p>}
       </main>
     );
   }
@@ -90,6 +118,11 @@ export function MissionView({
           <p className="planner-mission-routine">
             {routineStep.name}
             {routineStep.total > 1 && ` \u00b7 ${routineStep.index}/${routineStep.total}`}
+          </p>
+        )}
+        {routineStep && !routineStep.available && (
+          <p className="planner-mission-window" role="status">
+            {t('planner.routineWindowHint', { time: timeLabel(routineStep.timeOfDay, c) })}
           </p>
         )}
         <div className="planner-mission-progress">
