@@ -159,21 +159,17 @@ export function useTheme(preferences?: ThemePreferences) {
   );
 
   /** Resolve the active theme object based on current mode and time */
-  const selectedPreferences = preferences ?? {
-    themeId,
-    autoDarkMode: false,
-    darkModeStart: DEFAULT_DARK_MODE_START,
-    darkModeEnd: DEFAULT_DARK_MODE_END,
-  };
+  const selectedThemeId = preferences?.themeId ?? themeId;
+  const autoDarkMode = preferences?.autoDarkMode ?? false;
+  const darkModeStart = preferences?.darkModeStart ?? DEFAULT_DARK_MODE_START;
+  const darkModeEnd = preferences?.darkModeEnd ?? DEFAULT_DARK_MODE_END;
   const resolvedTheme = useMemo<Theme>(
-    () => resolveTheme(selectedPreferences, autoDarkId),
-    [
-      selectedPreferences.themeId,
-      selectedPreferences.autoDarkMode,
-      selectedPreferences.darkModeStart,
-      selectedPreferences.darkModeEnd,
-      autoDarkId,
-    ],
+    () =>
+      resolveTheme(
+        { themeId: selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd },
+        autoDarkId,
+      ),
+    [selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd, autoDarkId],
   );
 
   const setTheme = useCallback((id: string) => {
@@ -188,21 +184,18 @@ export function useTheme(preferences?: ThemePreferences) {
 
   // For auto mode, re-evaluate every 60 seconds so day/night flips on time
   useEffect(() => {
-    if (!selectedPreferences.autoDarkMode && selectedPreferences.themeId !== 'auto') return;
+    if (!autoDarkMode && selectedThemeId !== 'auto') return;
 
     const interval = setInterval(() => {
-      const next = resolveTheme(selectedPreferences, autoDarkId);
+      const next = resolveTheme(
+        { themeId: selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd },
+        autoDarkId,
+      );
       applyThemeToDOM(next);
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [
-    selectedPreferences.themeId,
-    selectedPreferences.autoDarkMode,
-    selectedPreferences.darkModeStart,
-    selectedPreferences.darkModeEnd,
-    autoDarkId,
-  ]);
+  }, [selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd, autoDarkId]);
 
   const availableThemes = useMemo(
     () => themes.map(({ id, name }) => ({ id, name })),
