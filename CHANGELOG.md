@@ -1,3 +1,15 @@
+# [2.20.0](https://github.com/nyabb/abbai-flow/compare/v2.19.1...v2.20.0) (2026-11-24)
+
+
+### Bug Fixes
+
+* include meals page component ([2f4cb4d](https://github.com/nyabb/abbai-flow/commit/2f4cb4dfcbbb038cdec4b96cef760ba16155c6a9))
+
+
+### Features
+
+* add family meals navigation and page ([bc98e0b](https://github.com/nyabb/abbai-flow/commit/bc98e0bea48fb0e973ae98e378abe9dbf32aa0e5))
+
 ## [2.19.1](https://github.com/nyabb/abbai-flow/compare/v2.19.0...v2.19.1) (2026-11-24)
 
 
