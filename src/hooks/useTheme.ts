@@ -5,16 +5,53 @@ export type ThemeMode = 'auto' | string; // 'auto' or a theme id
 
 const THEME_STORAGE_KEY = 'abbai-flow-theme';
 const AUTO_DARK_THEME_KEY = 'abbai-flow-auto-dark-theme';
-const DARK_START_HOUR = 19; // 7 PM
-const LIGHT_START_HOUR = 6; // 6 AM
+const DEFAULT_DARK_MODE_START = '19:00';
+const DEFAULT_DARK_MODE_END = '06:00';
+
+export interface ThemePreferences {
+  themeId: string;
+  autoDarkMode: boolean;
+  darkModeStart: string;
+  darkModeEnd: string;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function isDaytime(): boolean {
-  const hour = new Date().getHours();
-  return hour >= LIGHT_START_HOUR && hour < DARK_START_HOUR;
+function parseTime(value: string, fallback: number): number {
+  const match = /^(\d{2}):(\d{2})$/.exec(value);
+  if (!match) return fallback;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  return hours < 24 && minutes < 60 ? hours * 60 + minutes : fallback;
+}
+
+function isDarkModeTime(start: string, end: string, now = new Date()): boolean {
+  const startMinutes = parseTime(start, 19 * 60);
+  const endMinutes = parseTime(end, 6 * 60);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  // Equal start and end times mean there is no dark-mode window.
+  if (startMinutes === endMinutes) return false;
+  if (startMinutes < endMinutes) {
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  }
+  return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+}
+
+function resolveTheme(
+  preferences: ThemePreferences,
+  autoDarkId: string,
+  now?: Date,
+): Theme {
+  const automatic = preferences.autoDarkMode || preferences.themeId === 'auto';
+  if (!automatic) return getTheme(preferences.themeId);
+
+  if (isDarkModeTime(preferences.darkModeStart, preferences.darkModeEnd, now)) {
+    return getTheme(autoDarkId);
+  }
+  return getTheme(preferences.themeId === 'auto' ? 'skylight' : preferences.themeId);
 }
 
 /** Apply a Theme's tokens as CSS custom properties on :root */
@@ -82,29 +119,36 @@ function persist(key: string, value: string): void {
 
 export function applyStoredTheme(): void {
   const storedId = loadStored(THEME_STORAGE_KEY, 'skylight');
-  // Also check the settings object for themeId (useSettings stores it there)
-  let themeId = storedId;
+  // The settings object is authoritative when browser storage is enabled.
+  let preferences: ThemePreferences = {
+    themeId: storedId,
+    autoDarkMode: false,
+    darkModeStart: DEFAULT_DARK_MODE_START,
+    darkModeEnd: DEFAULT_DARK_MODE_END,
+  };
   try {
     const settingsRaw = localStorage.getItem('abbai-flow-settings');
     if (settingsRaw) {
       const parsed = JSON.parse(settingsRaw);
-      if (parsed.themeId) themeId = parsed.themeId;
+      preferences = {
+        ...preferences,
+        themeId: parsed.themeId ?? preferences.themeId,
+        autoDarkMode: parsed.autoDarkMode ?? preferences.autoDarkMode,
+        darkModeStart: parsed.darkModeStart ?? preferences.darkModeStart,
+        darkModeEnd: parsed.darkModeEnd ?? preferences.darkModeEnd,
+      };
     }
   } catch { /* ignore */ }
 
-  if (themeId === 'auto') {
-    const autoDarkId = loadStored(AUTO_DARK_THEME_KEY, 'midnight');
-    applyThemeToDOM(getTheme(isDaytime() ? 'skylight' : autoDarkId));
-  } else {
-    applyThemeToDOM(getTheme(themeId));
-  }
+  const autoDarkId = loadStored(AUTO_DARK_THEME_KEY, 'midnight');
+  applyThemeToDOM(resolveTheme(preferences, autoDarkId));
 }
 
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useTheme() {
+export function useTheme(preferences?: ThemePreferences) {
   const [themeId, setThemeIdState] = useState<string>(() =>
     loadStored(THEME_STORAGE_KEY, 'skylight'),
   );
@@ -115,12 +159,18 @@ export function useTheme() {
   );
 
   /** Resolve the active theme object based on current mode and time */
-  const resolvedTheme = useMemo<Theme>(() => {
-    if (themeId === 'auto') {
-      return getTheme(isDaytime() ? 'skylight' : autoDarkId);
-    }
-    return getTheme(themeId);
-  }, [themeId, autoDarkId]);
+  const selectedThemeId = preferences?.themeId ?? themeId;
+  const autoDarkMode = preferences?.autoDarkMode ?? false;
+  const darkModeStart = preferences?.darkModeStart ?? DEFAULT_DARK_MODE_START;
+  const darkModeEnd = preferences?.darkModeEnd ?? DEFAULT_DARK_MODE_END;
+  const resolvedTheme = useMemo<Theme>(
+    () =>
+      resolveTheme(
+        { themeId: selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd },
+        autoDarkId,
+      ),
+    [selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd, autoDarkId],
+  );
 
   const setTheme = useCallback((id: string) => {
     setThemeIdState(id);
@@ -134,15 +184,18 @@ export function useTheme() {
 
   // For auto mode, re-evaluate every 60 seconds so day/night flips on time
   useEffect(() => {
-    if (themeId !== 'auto') return;
+    if (!autoDarkMode && selectedThemeId !== 'auto') return;
 
     const interval = setInterval(() => {
-      const next = getTheme(isDaytime() ? 'skylight' : autoDarkId);
+      const next = resolveTheme(
+        { themeId: selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd },
+        autoDarkId,
+      );
       applyThemeToDOM(next);
     }, 60_000);
 
     return () => clearInterval(interval);
-  }, [themeId, autoDarkId]);
+  }, [selectedThemeId, autoDarkMode, darkModeStart, darkModeEnd, autoDarkId]);
 
   const availableThemes = useMemo(
     () => themes.map(({ id, name }) => ({ id, name })),
