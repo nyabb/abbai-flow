@@ -9,6 +9,7 @@ import './styles/family.css';
 import './styles/dashboard.css';
 import './styles/grocery.css';
 import './styles/music.css';
+import './styles/meals.css';
 import './styles/photos.css';
 import './styles/screensaver.css';
 import './styles/widgets.css';

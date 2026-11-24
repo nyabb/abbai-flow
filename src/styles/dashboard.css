@@ -316,6 +316,29 @@
 }
 
 /* Menu widget */
+.dash-menu-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dash-menu-open {
+  border: 0;
+  padding: 0 0 10px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.dash-menu-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .dash-menu-list {
   list-style: none;
   display: flex;

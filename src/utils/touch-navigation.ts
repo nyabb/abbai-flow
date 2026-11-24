@@ -6,6 +6,7 @@ export const TOUCH_NAV_ORDER: readonly SidebarView[] = [
   'calendar',
   'chores',
   'grocery',
+  'meals',
   'music',
   'photos',
   'timer',

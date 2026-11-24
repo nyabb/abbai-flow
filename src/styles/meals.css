@@ -1,0 +1,250 @@
+.view-page > .meals-page-body {
+  display: block;
+  overflow: auto;
+}
+
+.meals-view {
+  width: min(1120px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.meals-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.meals-tab {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 9px 16px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.meals-tab--active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent, #fff);
+}
+
+.meals-panel,
+.meal-day-card {
+  min-width: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--skin-card-radius);
+  background: var(--bg-surface);
+  box-shadow: var(--skin-card-shadow);
+  padding: 20px;
+}
+
+.meals-panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.meals-panel-heading h2,
+.meal-day-heading h2 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.meals-panel-heading p,
+.meal-source-card p {
+  margin: 5px 0 0;
+  color: var(--text-muted);
+}
+
+.meals-search {
+  width: min(320px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.meals-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+}
+
+.meals-empty h3,
+.meals-empty p {
+  margin: 0;
+}
+
+.meals-empty h3 {
+  color: var(--text-primary);
+}
+
+.meals-empty-icon {
+  font-size: 2rem;
+}
+
+.meals-list,
+.meals-recipe-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.meals-recipe-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+
+.meal-card {
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-primary);
+}
+
+.meal-card-image {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: var(--bg-today);
+}
+
+.meal-card-image--placeholder {
+  display: grid;
+  place-items: center;
+  font-size: 3rem;
+}
+
+.meal-card-content {
+  padding: 18px;
+}
+
+.meal-card-content h3 {
+  margin: 0 0 14px;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+}
+
+.meal-card-section + .meal-card-section {
+  margin-top: 14px;
+}
+
+.meal-card-section h4 {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.meal-card-section ul,
+.meal-card-section ol {
+  margin: 0;
+  padding-left: 22px;
+  color: var(--text-primary);
+}
+
+.meal-card-section li + li {
+  margin-top: 4px;
+}
+
+.meal-muted {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.meal-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.meal-tag {
+  border-radius: 999px;
+  padding: 4px 9px;
+  background: var(--bg-today);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.meals-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(150px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.meal-day-card {
+  padding: 14px;
+}
+
+.meal-day-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 14px;
+}
+
+.meal-day-heading h2 {
+  font-size: 1rem;
+}
+
+.meal-day-heading time {
+  color: var(--text-muted);
+  font-size: 0.825rem;
+}
+
+.meal-day-entry {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.meal-day-entry + .meal-day-entry {
+  margin-top: 9px;
+}
+
+.meal-day-entry img {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.meal-source-card {
+  margin-bottom: 18px;
+  overflow-wrap: anywhere;
+}
+
+.meal-source-status {
+  color: var(--success, #278354);
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .meals-panel {
+    padding: 16px;
+  }
+
+  .meals-week {
+    grid-template-columns: repeat(7, minmax(180px, 1fr));
+  }
+}

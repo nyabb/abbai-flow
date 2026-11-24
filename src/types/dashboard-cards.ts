@@ -61,6 +61,7 @@ export interface DashboardCardContext {
   events: CalendarEvent[];
   weather: WeatherData | null;
   onWeatherClick?: () => void;
+  onOpenMeals?: () => void;
   onEventClick?: (event: CalendarEvent) => void;
   members: FamilyMember[];
   selectedMemberFilter: string | null;

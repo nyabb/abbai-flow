@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { format } from 'date-fns';
 import { loadData } from '../api/abbai-flow-store';
 import { MealPlanEntry, DayMenu } from '../types/meals';
 
@@ -21,7 +22,7 @@ export function useMealPlans() {
     return () => clearInterval(interval);
   }, []);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
 
   const todaysMenu: DayMenu = useMemo(() => {
     const meals = entries

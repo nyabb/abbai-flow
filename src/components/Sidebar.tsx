@@ -10,6 +10,7 @@ import {
   Timer as TimerIcon,
   Tv,
   CloudSun,
+  Utensils,
   MoreHorizontal,
   Plus,
   X,
@@ -22,6 +23,7 @@ export type SidebarView =
   | 'calendar'
   | 'chores'
   | 'grocery'
+  | 'meals'
   | 'music'
   | 'photos'
   | 'timer'
@@ -68,6 +70,11 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: 'nav.grocery',
   },
   {
+    id: 'meals',
+    icon: <Utensils size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.meals',
+  },
+  {
     id: 'music',
     icon: <Music size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.music',
@@ -110,7 +117,7 @@ const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
 /** Everything the phone bar already shows. */
 const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
-const NAV_EXTRA_IDS: SidebarView[] = ['photos', 'weather', 'display'];
+const NAV_EXTRA_IDS: SidebarView[] = ['meals', 'photos', 'weather', 'display'];
 const NAV_MORE_ITEMS = NAV_ITEMS.filter(
   (item) => item.id !== 'settings' && !BAR_IDS.includes(item.id),
 );
