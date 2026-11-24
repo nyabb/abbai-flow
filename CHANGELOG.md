@@ -1,3 +1,11 @@
+## [2.21.3](https://github.com/nyabb/abbai-flow/compare/v2.21.2...v2.21.3) (2026-11-24)
+
+
+### Bug Fixes
+
+* localize meals and rebalance mobile navigation ([83b5f0b](https://github.com/nyabb/abbai-flow/commit/83b5f0bfe6af17b3bfd8d0c4ed16f52f7e679918))
+* persist integration settings without reload ([ad25371](https://github.com/nyabb/abbai-flow/commit/ad253719e897321b2c0a8e64d4157fbd8d73daaa))
+
 ## [2.21.2](https://github.com/nyabb/abbai-flow/compare/v2.21.1...v2.21.2) (2026-11-24)
 
 
