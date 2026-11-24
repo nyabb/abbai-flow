@@ -54,13 +54,6 @@ app UI:
 | `ABBAI_FLOW_HA_CA`                  | Optional CA certificate for a private Home Assistant TLS certificate          | unset       |
 | `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | Host D-Bus socket address; the socket must also be mounted into the container | unset       |
 
-Existing installations can keep using legacy integration variables while
-migrating. If there are no saved integration settings, those values act as
-initial defaults. Saving in **Settings → Integrations** makes the saved values
-authoritative. Supported legacy variables include `HA_URL`, `HA_TOKEN`,
-`SUPERVISOR_TOKEN`, `ENCORE_TOKEN`, `ENCORE_URL`, `SPOTIFY_CLIENT_ID`,
-`SPOTIFY_CLIENT_SECRET`, `SPOTIFY_MARKET`, and `SPOTIFY_REDIRECT_URI`.
-
 Older family and display preference variables (`FAMILY_NAME`, `THEME`,
 `WEATHER_ENTITY`, `PHOTO_DIRECTORY`, `PHOTO_INTERVAL`, and
 `SCREEN_SAVER_TIMEOUT`) are initial defaults only. Set their current values in
@@ -69,9 +62,9 @@ the app.
 ## Local development
 
 Run `npm ci` and `npm run dev`. Enter Home Assistant credentials in onboarding
-or **Settings → Integrations**. `VITE_HA_URL` can optionally set the Vite
-development proxy target; it is not a credential and does not need to be
-compiled into the app. `VITE_APP_VERSION` is an optional build label.
+or **Settings → Integrations**. For browser-based local development, Home
+Assistant must allow requests from the development origin. `VITE_APP_VERSION`
+is an optional build label.
 
 ## Runtime configuration
 

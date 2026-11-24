@@ -241,6 +241,17 @@ export function useHaAuth() {
     });
   }, []);
 
+  /** Remove the saved access/refresh tokens while retaining the Home Assistant URL. */
+  const clearToken = useCallback(async () => {
+    await Promise.all([
+      removeSecureItem(StorageKeys.HA_TOKEN),
+      removeSecureItem(StorageKeys.HA_REFRESH_TOKEN),
+      removeSecureItem(StorageKeys.ONBOARDED),
+    ]);
+
+    setState((current) => ({ ...current, isOnboarded: false, haToken: '', loading: false }));
+  }, []);
+
   return {
     state,
     saveManualToken,
@@ -248,5 +259,6 @@ export function useHaAuth() {
     handleOAuthCallback,
     refreshToken,
     logout,
+    clearToken,
   };
 }

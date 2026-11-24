@@ -342,10 +342,9 @@ export const nl: Record<TranslationKey, string> = {
     'Adres waarmee Abbai Flow verbinding maakt met Home Assistant.',
   'settings.integrations.haTokenLabel': 'Langdurige toegangstoken',
   'settings.integrations.haTokenHelp': 'Maak een token aan in je Home Assistant-profiel.',
-  'settings.integrations.secretSaved': 'Er is een geheim opgeslagen. Laat leeg om het te behouden.',
-  'settings.integrations.secretReplace':
-    'Voer een nieuwe waarde in om het opgeslagen geheim te vervangen',
+  'settings.integrations.secretSaved': 'Er is een geheim opgeslagen.',
   'settings.integrations.clearSecret': 'Opgeslagen geheim verwijderen',
+  'settings.integrations.secretRemoved': 'Opgeslagen geheim verwijderd.',
   'settings.integrations.showSecret': 'Geheim tonen',
   'settings.integrations.hideSecret': 'Geheim verbergen',
   'settings.integrations.notConfigured': 'Niet ingesteld',

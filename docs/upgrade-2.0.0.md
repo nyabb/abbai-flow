@@ -39,9 +39,12 @@ definition if you set any of these:
 | `BEACON_HA_CA` | `ABBAI_FLOW_HA_CA` |
 | `BEACON_PORT` | `PORT` (or `ABBAI_FLOW_PORT`) |
 
-`HA_URL` and `HA_TOKEN` are unchanged, and remain the only two you normally
-need. The browser-side global the server injects is now
-`window.__ABBAI_FLOW_CONFIG__` (served at `/runtime-config.js`).
+Home Assistant, Encore, and Spotify settings are managed in **Settings →
+Integrations** and persisted in the `/data` volume. Environment variables for
+those integrations are ignored. If an old deployment supplied credentials only
+through environment variables, enter them in Settings after upgrading. The
+browser-side global the server injects is now `window.__ABBAI_FLOW_CONFIG__`
+(served at `/runtime-config.js`).
 
 ## Moving from the add-on to the container
 
@@ -55,8 +58,6 @@ need. The browser-side global the server injects is now
 
    ```bash
    docker run -d --name abbai-flow -p 3000:3000 \
-     -e HA_URL=https://homeassistant.local:8123 \
-     -e HA_TOKEN=your_long_lived_access_token \
      -v abbai-flow-data:/data \
      ghcr.io/nyabb/abbai-flow:2.0.0
    ```

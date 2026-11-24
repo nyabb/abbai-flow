@@ -31,7 +31,7 @@ COPY --from=builder /app/server/build /app/server/build
 COPY custom_sentences/ /app/custom_sentences/
 COPY custom_intents/ /app/custom_intents/
 
-# HA_API_URL / HA_TOKEN: point at Home Assistant (env or /data/config).
+# Home Assistant, Encore, and Spotify integration settings are stored in /data.
 VOLUME ["/data"]
 EXPOSE 3000
 

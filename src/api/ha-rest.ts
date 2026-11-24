@@ -1,9 +1,8 @@
 /**
  * Shared helpers for HA REST API calls.
  *
- * In add-on mode (proxy), API calls go through the ingress path to the
- * add-on's server.js which proxies to http://supervisor/core with
- * SUPERVISOR_TOKEN. No browser-side auth needed.
+ * In server-proxy mode, API calls go through Abbai Flow's backend, which uses
+ * the Home Assistant URL and token saved in integration settings.
  *
  * In standalone mode, API calls go directly to the HA instance with a
  * user-provided long-lived access token.
@@ -19,14 +18,8 @@ import { usesServerProxy, getIngressBasePath } from '../utils/ha-env';
 function resolveBaseUrl(): string {
   if (usesServerProxy()) return getIngressBasePath();
 
-  // The dev server proxies /api to HA (see vite.config.ts), so REST calls stay
-  // same-origin there too and CORS is never a factor. Requires VITE_HA_URL,
-  // matching the proxy condition in vite.config.ts.
+  // In standalone mode, use the Home Assistant URL saved by the user.
   const config = getConfig();
-  const devProxyUrl = import.meta.env.VITE_HA_URL?.replace(/\/$/, '');
-  if (import.meta.env.DEV && devProxyUrl && config.ha_url.replace(/\/$/, '') === devProxyUrl) {
-    return '';
-  }
   if (config.ha_url && !config.ha_url.includes('supervisor')) {
     return config.ha_url.replace(/\/$/, '');
   }

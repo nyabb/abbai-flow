@@ -43,11 +43,16 @@ function isGroceryList(name: string): boolean {
 
 interface GroceryViewProps {
   defaultListId?: string;
+  connected?: boolean;
   /** Explicit list of HA todo entity IDs that are grocery/shopping lists */
   groceryListIds?: string[];
 }
 
-export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewProps) {
+export function GroceryView({
+  defaultListId,
+  connected = false,
+  groceryListIds = [],
+}: GroceryViewProps) {
   const { t } = useTranslation();
   const [haLists, setHaLists] = useState<GroceryList[]>([]);
   const [selectedListId, setSelectedListId] = useState<string>(defaultListId || '');
@@ -133,11 +138,12 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
     let cancelled = false;
 
     async function discover() {
-      if (!hasToken()) {
+      if (!connected && !hasToken()) {
         setLoading(false);
         return;
       }
 
+      setLoading(true);
       try {
         const foundLists = await anylistRef.current.getLists();
         if (cancelled) return;
@@ -153,7 +159,7 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [connected]);
 
   // Auto-select first list when lists are available. The selection follows the
   // tab: switching to Taken must not leave a shopping list selected.

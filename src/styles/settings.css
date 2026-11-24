@@ -285,6 +285,33 @@
   outline-offset: 1px;
 }
 
+.settings-secret-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 340px);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.settings-secret-control .settings-secret-input {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.settings-secret-remove {
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+}
+
+.settings-secret-remove:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 /* --- Slider --- */
 .settings-slider-wrapper {
   display: flex;
@@ -680,25 +707,6 @@
   line-height: 1.45;
 }
 
-.settings-clear-secret {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 44px;
-  margin: 0;
-  padding: 8px 20px;
-  line-height: 1.4;
-  cursor: pointer;
-}
-
-.settings-clear-secret input[type='checkbox'] {
-  flex: 0 0 18px;
-  width: 18px;
-  height: 18px;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
 @media (max-width: 768px) {
   .settings-integrations .settings-group {
     min-width: 0;
@@ -728,10 +736,6 @@
     align-self: flex-start;
     max-width: 100%;
     flex-wrap: wrap;
-  }
-
-  .settings-clear-secret {
-    padding: 8px 16px;
   }
 
   .settings-integration-help {

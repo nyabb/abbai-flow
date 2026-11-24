@@ -5,14 +5,17 @@
  * The todo-list lookup only feeds these controls, so the fetch lives here.
  */
 import { useEffect, useState } from 'react';
+import { Trash2 } from 'lucide-react';
 import { AnyListClient } from '../../../api/anylist';
 import {
   loadIntegrationSettings,
   saveIntegrationSettings,
   testHomeAssistantConnection,
+  type IntegrationSettingsPatch,
   type MealDataMapping,
   type IntegrationSettingsStatus,
 } from '../../../api/integration-settings';
+import { hasToken } from '../../../api/ha-rest';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import type { GroceryList } from '../../../types/grocery';
@@ -72,10 +75,65 @@ const MEAL_MAPPING_FIELDS: {
   },
 ];
 
+interface SavedSecretControlProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  configured: boolean;
+  disabled?: boolean;
+  busy: boolean;
+  removeLabel: string;
+  onRemove?: () => void;
+}
+
+function SavedSecretControl({
+  label,
+  value,
+  onChange,
+  configured,
+  disabled = false,
+  busy,
+  removeLabel,
+  onRemove,
+}: SavedSecretControlProps) {
+  return (
+    <div className="settings-secret-control">
+      <SecretInput
+        label={label}
+        value={value}
+        onChange={onChange}
+        autoComplete="new-password"
+        disabled={disabled || configured}
+      />
+      {configured && onRemove && (
+        <button
+          type="button"
+          className="settings-fm-btn settings-fm-btn--danger settings-secret-remove"
+          aria-label={removeLabel}
+          title={removeLabel}
+          onClick={onRemove}
+          disabled={busy}
+        >
+          <Trash2 size={16} aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+type ClearSecretField =
+  | 'clearHaToken'
+  | 'clearEncoreToken'
+  | 'clearSpotifyClientSecret'
+  | 'clearMealSourceToken';
+
 export interface IntegrationsSectionProps extends SettingsSectionContext {
   connected: boolean;
   haUrl: string;
+  haTokenConfigured?: boolean;
   onSaveHomeAssistant?: (url: string, token: string) => Promise<void>;
+  onRemoveHomeAssistantToken?: () => Promise<void>;
+  onIntegrationSettingsSaved?: () => void;
 }
 
 export function IntegrationsSection({
@@ -84,27 +142,27 @@ export function IntegrationsSection({
   t,
   connected,
   haUrl: initialHaUrl,
+  haTokenConfigured,
   onSaveHomeAssistant,
+  onRemoveHomeAssistantToken,
+  onIntegrationSettingsSaved,
 }: IntegrationsSectionProps) {
   const [todoLists, setTodoLists] = useState<GroceryList[]>([]);
   const serverBacked = Boolean(getRuntimeConfig());
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationSettingsStatus | null>(
     null,
   );
+  const [integrationStatusLoading, setIntegrationStatusLoading] = useState(serverBacked);
   const [haUrl, setHaUrl] = useState(initialHaUrl);
   const [haToken, setHaToken] = useState('');
-  const [clearHaToken, setClearHaToken] = useState(false);
   const [encoreUrl, setEncoreUrl] = useState('ws://host.docker.internal:8095/');
   const [encoreToken, setEncoreToken] = useState('');
-  const [clearEncoreToken, setClearEncoreToken] = useState(false);
   const [spotifyClientId, setSpotifyClientId] = useState('');
   const [spotifyClientSecret, setSpotifyClientSecret] = useState('');
-  const [clearSpotifyClientSecret, setClearSpotifyClientSecret] = useState(false);
   const [spotifyMarket, setSpotifyMarket] = useState('NL');
   const [spotifyRedirectUri, setSpotifyRedirectUri] = useState('');
   const [mealSourceUrl, setMealSourceUrl] = useState('');
   const [mealSourceToken, setMealSourceToken] = useState('');
-  const [clearMealSourceToken, setClearMealSourceToken] = useState(false);
   const [mealDataMapping, setMealDataMapping] = useState<MealDataMapping>(EMPTY_MEAL_DATA_MAPPING);
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState('');
@@ -133,6 +191,9 @@ export function IntegrationsSection({
             error instanceof Error ? error.message : t('settings.integrations.saveError'),
           );
         }
+      })
+      .finally(() => {
+        if (!cancelled) setIntegrationStatusLoading(false);
       });
     return () => {
       cancelled = true;
@@ -147,7 +208,6 @@ export function IntegrationsSection({
       await testHomeAssistantConnection({
         haUrl,
         ...(haToken.trim() ? { haToken: haToken.trim() } : {}),
-        ...(clearHaToken ? { clearHaToken: true } : {}),
       });
       setIntegrationNotice(t('settings.integrations.testSuccess'));
     } catch (error) {
@@ -167,18 +227,14 @@ export function IntegrationsSection({
       const status = await saveIntegrationSettings({
         haUrl,
         ...(haToken.trim() ? { haToken: haToken.trim() } : {}),
-        ...(clearHaToken ? { clearHaToken: true } : {}),
         encoreUrl,
         ...(encoreToken.trim() ? { encoreToken: encoreToken.trim() } : {}),
-        ...(clearEncoreToken ? { clearEncoreToken: true } : {}),
         spotifyClientId,
         ...(spotifyClientSecret.trim() ? { spotifyClientSecret: spotifyClientSecret.trim() } : {}),
-        ...(clearSpotifyClientSecret ? { clearSpotifyClientSecret: true } : {}),
         spotifyMarket: spotifyMarket.trim().toUpperCase(),
         spotifyRedirectUri,
         mealSourceUrl,
         ...(mealSourceToken.trim() ? { mealSourceToken: mealSourceToken.trim() } : {}),
-        ...(clearMealSourceToken ? { clearMealSourceToken: true } : {}),
         mealDataMapping,
       });
       setIntegrationStatus(status);
@@ -186,12 +242,8 @@ export function IntegrationsSection({
       setEncoreToken('');
       setSpotifyClientSecret('');
       setMealSourceToken('');
-      setClearHaToken(false);
-      setClearEncoreToken(false);
-      setClearSpotifyClientSecret(false);
-      setClearMealSourceToken(false);
       setIntegrationNotice(t('settings.integrations.saved'));
-      window.location.reload();
+      onIntegrationSettingsSaved?.();
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
@@ -205,26 +257,61 @@ export function IntegrationsSection({
     if (!onSaveHomeAssistant) return;
     setIntegrationBusy(true);
     setIntegrationError('');
+    setIntegrationNotice('');
     try {
       await onSaveHomeAssistant(haUrl, haToken);
+      setHaToken('');
+      setIntegrationNotice(t('settings.integrations.saved'));
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
+
+  const removeSavedSecret = async (clearField: ClearSecretField) => {
+    setIntegrationBusy(true);
+    setIntegrationError('');
+    setIntegrationNotice('');
+    try {
+      const patch = { [clearField]: true } as IntegrationSettingsPatch;
+      const status = await saveIntegrationSettings(patch);
+      setIntegrationStatus(status);
+      setIntegrationNotice(t('settings.integrations.secretRemoved'));
+      if (clearField === 'clearHaToken') onIntegrationSettingsSaved?.();
+    } catch (error) {
+      setIntegrationError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
+    } finally {
       setIntegrationBusy(false);
     }
   };
 
   const haConfigured = serverBacked ? integrationStatus?.haConfigured : connected;
+  const haSecretConfigured = serverBacked
+    ? Boolean(integrationStatus?.haConfigured)
+    : (haTokenConfigured ?? connected);
 
   useEffect(() => {
-    if (!connected) return;
+    if (!hasToken()) {
+      setTodoLists([]);
+      return;
+    }
+    let cancelled = false;
     const client = new AnyListClient();
     client
       .getLists()
-      .then(setTodoLists)
+      .then((lists) => {
+        if (!cancelled) setTodoLists(lists);
+      })
       .catch(() => {});
-  }, [connected]);
+    return () => {
+      cancelled = true;
+    };
+  }, [connected, integrationStatus?.haConfigured]);
 
   return (
     <div className="settings-integrations">
@@ -255,24 +342,23 @@ export function IntegrationsSection({
                 : t('settings.integrations.haTokenHelp')}
             </div>
           </div>
-          <SecretInput
+          <SavedSecretControl
             label={t('settings.integrations.haTokenLabel')}
             value={haToken}
             onChange={setHaToken}
-            placeholder={haConfigured ? t('settings.integrations.secretReplace') : ''}
-            autoComplete="new-password"
+            configured={haSecretConfigured}
+            disabled={serverBacked && integrationStatusLoading}
+            busy={integrationBusy}
+            removeLabel={t('settings.integrations.clearSecret')}
+            onRemove={
+              serverBacked && integrationStatus?.haConfigured
+                ? () => void removeSavedSecret('clearHaToken')
+                : !serverBacked && haSecretConfigured && onRemoveHomeAssistantToken
+                  ? () => void onRemoveHomeAssistantToken()
+                  : undefined
+            }
           />
         </div>
-        {serverBacked && integrationStatus?.haConfigured && (
-          <label className="settings-row-sublabel settings-clear-secret">
-            <input
-              type="checkbox"
-              checked={clearHaToken}
-              onChange={(event) => setClearHaToken(event.target.checked)}
-            />{' '}
-            {t('settings.integrations.clearSecret')}
-          </label>
-        )}
         <div className="settings-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span
@@ -301,7 +387,7 @@ export function IntegrationsSection({
               type="button"
               className="settings-btn"
               onClick={() => void testHa()}
-              disabled={integrationBusy}
+              disabled={integrationBusy || integrationStatusLoading}
             >
               {t('settings.integrations.testConnection')}
             </button>
@@ -309,7 +395,7 @@ export function IntegrationsSection({
               type="button"
               className="settings-btn settings-btn--primary"
               onClick={() => void saveServerIntegrations()}
-              disabled={integrationBusy}
+              disabled={integrationBusy || integrationStatusLoading}
             >
               {integrationBusy
                 ? t('settings.integrations.saving')
@@ -393,28 +479,29 @@ export function IntegrationsSection({
                     : t('settings.integrations.encoreTokenHelp')}
                 </div>
               </div>
-              <SecretInput
+              <SavedSecretControl
                 label={t('settings.integrations.encoreTokenLabel')}
                 value={encoreToken}
                 onChange={setEncoreToken}
-                placeholder={
-                  integrationStatus?.encoreConfigured
-                    ? t('settings.integrations.secretReplace')
-                    : ''
-                }
-                autoComplete="new-password"
+                configured={Boolean(integrationStatus?.encoreConfigured)}
+                disabled={integrationStatusLoading}
+                busy={integrationBusy}
+                removeLabel={t('settings.integrations.clearSecret')}
+                onRemove={() => void removeSavedSecret('clearEncoreToken')}
               />
             </div>
-            {integrationStatus?.encoreConfigured && (
-              <label className="settings-row-sublabel settings-clear-secret">
-                <input
-                  type="checkbox"
-                  checked={clearEncoreToken}
-                  onChange={(event) => setClearEncoreToken(event.target.checked)}
-                />{' '}
-                {t('settings.integrations.clearSecret')}
-              </label>
-            )}
+            <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => void saveServerIntegrations()}
+                disabled={integrationBusy || integrationStatusLoading}
+              >
+                {integrationBusy
+                  ? t('settings.integrations.saving')
+                  : t('settings.integrations.save')}
+              </button>
+            </div>
           </div>
 
           <div className="settings-group">
@@ -446,28 +533,17 @@ export function IntegrationsSection({
                     : t('settings.integrations.spotifyClientHelp')}
                 </div>
               </div>
-              <SecretInput
+              <SavedSecretControl
                 label={t('settings.integrations.spotifyClientSecretLabel')}
                 value={spotifyClientSecret}
                 onChange={setSpotifyClientSecret}
-                placeholder={
-                  integrationStatus?.spotifyClientSecretConfigured
-                    ? t('settings.integrations.secretReplace')
-                    : ''
-                }
-                autoComplete="new-password"
+                configured={Boolean(integrationStatus?.spotifyClientSecretConfigured)}
+                disabled={integrationStatusLoading}
+                busy={integrationBusy}
+                removeLabel={t('settings.integrations.clearSecret')}
+                onRemove={() => void removeSavedSecret('clearSpotifyClientSecret')}
               />
             </div>
-            {integrationStatus?.spotifyClientSecretConfigured && (
-              <label className="settings-row-sublabel settings-clear-secret">
-                <input
-                  type="checkbox"
-                  checked={clearSpotifyClientSecret}
-                  onChange={(event) => setClearSpotifyClientSecret(event.target.checked)}
-                />{' '}
-                {t('settings.integrations.clearSecret')}
-              </label>
-            )}
             <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
@@ -506,7 +582,7 @@ export function IntegrationsSection({
                 type="button"
                 className="settings-btn settings-btn--primary"
                 onClick={() => void saveServerIntegrations()}
-                disabled={integrationBusy}
+                disabled={integrationBusy || integrationStatusLoading}
               >
                 {integrationBusy
                   ? t('settings.integrations.saving')
@@ -549,28 +625,17 @@ export function IntegrationsSection({
                     : t('settings.integrations.mealSourceTokenHelp')}
                 </div>
               </div>
-              <SecretInput
+              <SavedSecretControl
                 label={t('settings.integrations.mealSourceTokenLabel')}
                 value={mealSourceToken}
                 onChange={setMealSourceToken}
-                placeholder={
-                  integrationStatus?.mealSourceTokenConfigured
-                    ? t('settings.integrations.secretReplace')
-                    : ''
-                }
-                autoComplete="new-password"
+                configured={Boolean(integrationStatus?.mealSourceTokenConfigured)}
+                disabled={integrationStatusLoading}
+                busy={integrationBusy}
+                removeLabel={t('settings.integrations.clearSecret')}
+                onRemove={() => void removeSavedSecret('clearMealSourceToken')}
               />
             </div>
-            {integrationStatus?.mealSourceTokenConfigured && (
-              <label className="settings-row-sublabel settings-clear-secret">
-                <input
-                  type="checkbox"
-                  checked={clearMealSourceToken}
-                  onChange={(event) => setClearMealSourceToken(event.target.checked)}
-                />{' '}
-                {t('settings.integrations.clearSecret')}
-              </label>
-            )}
             <div className="settings-row-sublabel settings-integration-help">
               {t('settings.integrations.mealSourceMappingHelp')}
             </div>
@@ -599,7 +664,7 @@ export function IntegrationsSection({
                 type="button"
                 className="settings-btn settings-btn--primary"
                 onClick={() => void saveServerIntegrations()}
-                disabled={integrationBusy}
+                disabled={integrationBusy || integrationStatusLoading}
               >
                 {integrationBusy
                   ? t('settings.integrations.saving')

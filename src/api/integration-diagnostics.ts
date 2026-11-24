@@ -229,7 +229,7 @@ async function checkHomeAssistant(
       '[Integration] Home Assistant API: connection ' +
         (timedOut
           ? `timed out after ${CHECK_TIMEOUT_MS} ms.`
-          : 'failed; check HA_URL and network access.'),
+          : 'failed; check the Home Assistant URL saved in Settings → Integrations and network access.'),
     );
     return;
   }
@@ -351,8 +351,8 @@ async function checkSpotifyCatalog(
   logger: IntegrationDiagnosticLogger,
 ): Promise<void> {
   const missing = [
-    !config.spotifyClientId && 'SPOTIFY_CLIENT_ID',
-    !config.spotifyClientSecret && 'SPOTIFY_CLIENT_SECRET',
+    !config.spotifyClientId && 'client ID',
+    !config.spotifyClientSecret && 'client secret',
   ].filter((name): name is string => Boolean(name));
 
   if (missing.length > 0) {
@@ -395,7 +395,7 @@ async function checkSpotifyPlaylists(
     const status = await verifier();
     if (!status.configured) {
       logger.warn(
-        '[Integration] Spotify playlists: not configured; set Spotify client credentials and a valid SPOTIFY_REDIRECT_URI.',
+        '[Integration] Spotify playlists: not configured; add Spotify credentials and a valid redirect URI in Settings → Integrations.',
       );
     } else if (status.authorized) {
       logger.info('[Integration] Spotify playlists: Spotify account authorization is available.');

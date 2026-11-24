@@ -53,7 +53,10 @@ interface SettingsViewProps {
   // HA connection
   connected: boolean;
   haUrl: string;
+  haTokenConfigured?: boolean;
   onSaveHomeAssistant?: (url: string, token: string) => Promise<void>;
+  onRemoveHomeAssistantToken?: () => Promise<void>;
+  onIntegrationSettingsSaved?: () => void;
   // Calendars
   calendars: Array<{ id: string; name: string; color?: string }>;
   // Kid Display
@@ -98,7 +101,10 @@ export function SettingsView({
   onRemoveMember,
   connected,
   haUrl,
+  haTokenConfigured,
   onSaveHomeAssistant,
+  onRemoveHomeAssistantToken,
+  onIntegrationSettingsSaved,
   calendars,
   onEnterFocusMode,
 }: SettingsViewProps) {
@@ -201,7 +207,10 @@ export function SettingsView({
       t={t}
       connected={connected}
       haUrl={haUrl}
+      haTokenConfigured={haTokenConfigured}
       onSaveHomeAssistant={onSaveHomeAssistant}
+      onRemoveHomeAssistantToken={onRemoveHomeAssistantToken}
+      onIntegrationSettingsSaved={onIntegrationSettingsSaved}
     />
   );
   // ==== DISPLAY ====

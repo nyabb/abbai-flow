@@ -3,7 +3,7 @@
  *
  * A deployment that runs Abbai Flow's own server serves `/runtime-config.js`,
  * which defines window.__ABBAI_FLOW_CONFIG__ (see server/app.cjs). During local
- * development the values fall back to VITE_* environment variables.
+ * development non-integration values can fall back to VITE_* variables.
  */
 
 export interface AbbaiConfig {
@@ -44,7 +44,7 @@ export function getConfig(): AbbaiConfig {
   const runtime = getRuntimeConfig() ?? {};
 
   cached = {
-    ha_url: runtime.ha_url ?? import.meta.env.VITE_HA_URL ?? '',
+    ha_url: runtime.ha_url ?? '',
     ha_token: runtime.ha_token || '',
     family_name: runtime.family_name || import.meta.env.VITE_FAMILY_NAME || 'My Family',
     save_config_in_browser:
