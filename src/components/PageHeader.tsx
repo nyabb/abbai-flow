@@ -30,6 +30,28 @@ export interface PageHeaderProps {
   hideClock?: boolean;
 }
 
+interface PageHeaderActionsProps {
+  children?: ReactNode;
+  className?: string;
+  /** Use a page-specific clock, or pass null to omit the clock. */
+  clock?: ReactNode;
+}
+
+/** Shared header controls keep the language picker in one consistent place. */
+export function PageHeaderActions({
+  children,
+  className = 'page-header-actions',
+  clock,
+}: PageHeaderActionsProps) {
+  return (
+    <div className={className}>
+      {children}
+      <LanguageSwitcher />
+      {clock === undefined ? <Clock /> : clock}
+    </div>
+  );
+}
+
 /**
  * The stacked weekday / day numeral / month block.
  *
@@ -75,11 +97,7 @@ export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }
         </div>
       </div>
 
-      <div className="page-header-actions">
-        {actions}
-        <LanguageSwitcher />
-        {!hideClock && <Clock />}
-      </div>
+      <PageHeaderActions clock={hideClock ? null : undefined}>{actions}</PageHeaderActions>
     </header>
   );
 }

@@ -26,8 +26,8 @@
 
 ## Scene 3: Open and Done (20s–30s)
 
-**Scene:** Click "Open Web UI" or find Abbai Flow in the sidebar. The dashboard loads with the family's data already populated from HA.
+**Scene:** Click "Open Web UI" or find Abbai Flow in the sidebar. Calendar loads with the family's data already populated from HA.
 
-**Voice:** "Open it up and your calendars, lists, and weather are already there — pulled straight from Home Assistant. Mount a tablet, bookmark it on your phone, and your family dashboard is live. Two minutes, zero config."
+**Voice:** "Open it up and your calendars, lists, and weather are already there — pulled straight from Home Assistant. Mount a tablet or bookmark it on your phone to keep your family's plans in view."
 
-**Transitions:** Dashboard loads, hold on the full view, fade to Abbai Flow logo.
+**Transitions:** Calendar loads, hold on the full week and today's summary, fade to Abbai Flow logo.

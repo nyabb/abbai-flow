@@ -25,7 +25,6 @@ export const en = {
   'common.start': 'Start',
 
   // ---- nav (Sidebar) ----
-  'nav.dashboard': 'Dashboard',
   'nav.calendar': 'Calendar',
   'nav.chores': 'Chores',
   'nav.grocery': 'Lists',
@@ -81,32 +80,6 @@ export const en = {
   'debugConsole.copied': 'Copied',
   'debugConsole.clear': 'Clear log',
   'debugConsole.empty': 'No requests or errors logged yet.',
-
-  // ---- dashboard / cards ----
-  'dashboard.editDashboard': '✎ Edit Dashboard',
-  'dashboard.previousDay': 'Previous day',
-  'dashboard.nextDay': 'Next day',
-  'dashboard.nothingScheduledOpen': 'Nothing scheduled — your day is wide open',
-  'dashboard.nothingScheduledToday': 'Nothing scheduled today',
-  'dashboard.nothingScheduledThisDay': 'Nothing scheduled this day',
-  'dashboard.filterChoresFor': 'Filter chores for {name}',
-  'dashboard.other': 'Other',
-  'dashboard.thisWeek': 'This Week',
-  'dashboard.weekEmpty': '—',
-  'dashboard.menu': 'Menu',
-  'dashboard.openMeals': 'Open meal planner',
-  'dashboard.noDinnerPlanned': 'No dinner planned',
-  'dashboard.tasks': 'Tasks',
-  'dashboard.shared': 'Shared',
-  'dashboard.completedItem': 'Completed {name}',
-  'dashboard.completeItem': 'Complete {name}',
-  'dashboard.shopping': 'Shopping',
-  'dashboard.shoppingNotConfigured': 'Configure a shopping list in Settings → Integrations',
-  'dashboard.shoppingAddItemPlaceholder': 'Add item...',
-  'dashboard.shoppingAddItem': 'Add item',
-  'dashboard.shoppingLoading': 'Loading items...',
-  'dashboard.shoppingEmpty': 'No items yet — add one above',
-  'dashboard.shoppingCheckItem': 'Check {name}',
 
   // ---- meal planner ----
   'meals.today': 'Today',
@@ -245,16 +218,6 @@ export const en = {
   'settings.general.debugModeSublabel': 'Show a global log of API calls, responses, and errors.',
   'settings.display.ingressUrlUnavailable':
     'A shareable display URL is unavailable inside Home Assistant. Open Abbai Flow on the target screen and choose “Use on This Device”.',
-  'settings.general.dashboardLayoutTitle': 'Dashboard Layout',
-  'settings.general.dashboardLayoutDesc': 'Choose how your dashboard is organized.',
-  'settings.general.layoutLabel': 'Layout',
-  'settings.general.layoutSublabel': 'Pick a preset layout',
-  'settings.general.layoutFamilyLabel': 'Family',
-  'settings.general.layoutFamilyDesc': 'Per-member calendar columns',
-  'settings.general.layoutClassicLabel': 'Classic',
-  'settings.general.layoutClassicDesc': 'Original 3-column view',
-  'settings.general.layoutCompactLabel': 'Compact',
-  'settings.general.layoutCompactDesc': 'Single column, scrollable',
 
   // ---- settings: appearance ----
   'settings.appearance.title': 'Appearance',
@@ -274,9 +237,6 @@ export const en = {
   'settings.appearance.left': 'Left',
   'settings.appearance.right': 'Right',
   'settings.appearance.bottom': 'Bottom',
-  'settings.appearance.advancedDashboardLabel': 'Advanced Dashboard',
-  'settings.appearance.advancedDashboardSublabel':
-    'Enable customizable dashboard widgets and layouts',
 
   // ---- settings: family ----
   'settings.family.title': 'Family Members',
@@ -289,7 +249,7 @@ export const en = {
   'settings.family.child': 'Child',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Photo',
-  'settings.family.photoHint': 'Shown instead of the emoji on the dashboard and chores screens.',
+  'settings.family.photoHint': "Shown instead of the emoji in family member avatars.",
   'settings.family.photoUpload': 'Upload photo',
   'settings.family.photoRemove': 'Remove photo',
   'settings.family.photoFromHa': 'Use Home Assistant photo',
@@ -384,6 +344,8 @@ export const en = {
   'settings.integrations.secretSaved': 'A secret is saved. Leave blank to keep it.',
   'settings.integrations.secretReplace': 'Enter a new value to replace the saved secret',
   'settings.integrations.clearSecret': 'Remove saved secret',
+  'settings.integrations.showSecret': 'Show secret',
+  'settings.integrations.hideSecret': 'Hide secret',
   'settings.integrations.notConfigured': 'Not configured',
   'settings.integrations.testConnection': 'Test connection',
   'settings.integrations.testSuccess': 'Home Assistant connection succeeded.',
@@ -465,7 +427,7 @@ export const en = {
   'settings.display.fullscreenLabel': 'Start in fullscreen',
   'settings.display.fullscreenSublabel':
     'Browsers only allow this after a tap, so it may need one press.',
-  'settings.display.idleTimeoutLabel': 'Return to the dashboard after',
+  'settings.display.idleTimeoutLabel': "Return to calendar after",
   'settings.display.idleTimeoutSublabel':
     'Never interrupts an open dialog or a field you are typing in.',
   'settings.display.panelsLabel': 'Panels',
@@ -536,24 +498,6 @@ export const en = {
   'settings.about.clearLocalStorage': 'Clear localStorage',
   'settings.about.resetToDefaults': 'Reset to Defaults',
 
-  // ---- dashboard cards: registry (names, config field labels) ----
-  'cards.common.entityLabel': 'Entity',
-  'cards.common.entitiesLabel': 'Entities',
-  'cards.common.titleLabel': 'Title',
-  'cards.common.subtitleLabel': 'Subtitle',
-  'cards.clockWeather.displayName': 'Clock & Weather',
-  'cards.familyCalendar.displayName': 'Family Calendar',
-  'cards.familyCalendar.showOtherLabel': 'Show Other',
-  'cards.familyCalendar.showOtherDescription': 'Display events not assigned to a family member',
-  'cards.agendaToday.displayName': 'Today',
-  'cards.agendaWeek.displayName': 'This Week',
-  'cards.menu.displayName': 'Menu',
-  'cards.tasks.displayName': 'Tasks',
-  'cards.shopping.displayName': 'Shopping',
-  'cards.shopping.entityLabel': 'Shopping List Entity',
-  'cards.haEntity.displayName': 'HA Entity',
-  'cards.haEntitiesList.displayName': 'HA Entities List',
-  'cards.haToggle.displayName': 'HA Toggle',
 
   // ---- weather view (full-screen Weather tab) ----
   'weatherView.loading': 'Loading weather data...',
@@ -593,20 +537,11 @@ export const en = {
   'timer.reset': 'Reset',
   'timer.lapN': 'Lap {n}',
 
-  // ---- countdown widget (Dashboard sidebar) ----
-  'countdown.title': 'Countdown',
-  'countdown.add': 'Add countdown',
-  'countdown.eventNamePlaceholder': 'Event name',
-  'countdown.addBtn': 'Add',
-  'countdown.day': 'day',
-  'countdown.days': 'days',
-  'countdown.remove': 'Remove',
-  'countdown.removeNamed': 'Remove {name}',
 
   // ---- photo frame (screensaver-style slideshow) ----
   'photoFrame.noPhotos': 'No photos available',
   'photoFrame.addPhotosHint': 'Add photos to your Home Assistant media directory',
-  'photoFrame.backToDashboard': 'Back to dashboard',
+  'photoFrame.backToCalendar': "Back to calendar",
   'photoFrame.photoAlt': 'Photo',
   'photoFrame.previousPhoto': 'Previous photo',
   'photoFrame.pauseSlideshow': 'Pause slideshow',

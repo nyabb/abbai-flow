@@ -4,19 +4,19 @@
 
 ---
 
-## Scene 1: Dashboard Overview (0s–15s)
+## Scene 1: Calendar Overview (0s–15s)
 
-**Scene:** Full dashboard view — clock front and center, calendar events down the side, weather widget showing today's forecast, task counts visible.
+**Scene:** Full Calendar view — the week grid fills the screen, with today's schedule, open tasks and chores in the side panel.
 
-**Voice:** "This is Abbai Flow. It's a family dashboard — the kind of screen you put in your kitchen or hallway so everyone knows what's happening today. Right now you can see the time, today's weather, upcoming calendar events, and what's on the family's to-do list."
+**Voice:** "This is Abbai Flow, a family organizer for the kitchen, hallway, or your phone. The Calendar brings the week's events together with today's open tasks and chores."
 
-**Transitions:** Fade in from black. Camera holds steady on the full dashboard.
+**Transitions:** Fade in from black. Camera holds steady on the full week and today's summary.
 
 ---
 
 ## Scene 2: Quick Feature Scan (15s–35s)
 
-**Scene:** Slow pan across the dashboard sections — calendar events with color coding, a grocery list with checked items, weather forecast, a media player showing a song.
+**Scene:** Slow pan across the Calendar week, then show the grocery lists, weather forecast, and media player.
 
 **Voice:** "It pulls in your family's calendars, keeps track of grocery lists and chores, shows the weather forecast, and even lets you control your music. Everything your family checks ten times a day — all in one place."
 
@@ -26,7 +26,7 @@
 
 ## Scene 3: Closing (35s–45s)
 
-**Scene:** Pull back to full dashboard. Abbai Flow logo appears in corner.
+**Scene:** Return to the Calendar view. Abbai Flow logo appears in corner.
 
 **Voice:** "Abbai Flow is free, open source, and runs on any screen — a tablet on the wall, an old laptop in the kitchen, or your phone. That's Abbai Flow."
 

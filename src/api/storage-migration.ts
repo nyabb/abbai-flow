@@ -8,6 +8,8 @@ export function migrateLegacyStorageKeys(storage?: Storage) {
   try {
     const target = storage ?? globalThis.localStorage;
     if (!target) return;
+    // User-created dashboard layouts have no destination in the current app.
+    target.removeItem('abbai-flow-dashboard-layout');
     const legacyKeys: string[] = [];
     for (let index = 0; index < target.length; index += 1) {
       const key = target.key(index);

@@ -16,11 +16,11 @@
 
 ## Scene 2: AI Agent Tools (15s–30s)
 
-**Scene:** Show a terminal or chat interface where an LLM agent (like Claude or ChatGPT with tools) is querying Abbai Flow's MCP tools. "Add milk to the grocery list" — and it appears on the dashboard.
+**Scene:** Show a terminal or chat interface where an LLM agent (like Claude or ChatGPT with tools) is querying Abbai Flow's MCP tools. "Add milk to the grocery list" — and it appears in Lists.
 
 **Voice:** "For the AI-curious — Abbai Flow exposes MCP tools that let language models interact with your family data. Your AI assistant can check the calendar, add to lists, or look up chores. It's like giving your AI agent a window into your household."
 
-**Transitions:** Split screen — AI chat on one side, Abbai Flow dashboard updating on the other.
+**Transitions:** Split screen — AI chat on one side, Abbai Flow Lists updating on the other.
 
 ---
 

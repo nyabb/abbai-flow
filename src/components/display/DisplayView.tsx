@@ -14,7 +14,6 @@
 import {
   CalendarDays,
   CheckSquare,
-  LayoutDashboard,
   Maximize2,
   Minimize2,
   ShoppingCart,
@@ -24,7 +23,7 @@ import { DisplayAgenda } from './DisplayAgenda';
 import { DisplayClock } from './DisplayClock';
 import { DisplayChores } from './DisplayChores';
 import { DisplayFamily } from './DisplayFamily';
-import { LanguageSwitcher } from '../LanguageSwitcher';
+import { PageHeaderActions } from '../PageHeader';
 import { useNow } from './useNow';
 import { DEFAULT_DISPLAY_PANELS, type DisplayConnection, type DisplayPanelFlags } from './types';
 import type { CalendarEvent, WeatherData } from '../../types';
@@ -57,7 +56,6 @@ export interface DisplayViewProps {
 }
 
 const NAV_TARGETS = [
-  { view: 'dashboard' as const, labelKey: 'nav.dashboard' as const, Icon: LayoutDashboard },
   { view: 'calendar' as const, labelKey: 'nav.calendar' as const, Icon: CalendarDays },
   { view: 'chores' as const, labelKey: 'nav.chores' as const, Icon: CheckSquare },
   { view: 'grocery' as const, labelKey: 'nav.grocery' as const, Icon: ShoppingCart },
@@ -93,8 +91,10 @@ export function DisplayView({
       <header className="display-band">
         <DisplayClock timeFormat={timeFormat} />
 
-        <div className="display-band-right">
-          <LanguageSwitcher />
+        <PageHeaderActions
+          className="page-header-actions display-band-right"
+          clock={null}
+        >
           {show.weather && weather && (
             <div className="display-weather">
               <span className="display-weather-temp">
@@ -129,7 +129,7 @@ export function DisplayView({
               )}
             </button>
           )}
-        </div>
+        </PageHeaderActions>
       </header>
 
       <div className={`display-panels display-panels--${panelCount(show)}`}>

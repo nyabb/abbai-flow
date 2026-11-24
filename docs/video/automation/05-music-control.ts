@@ -6,7 +6,7 @@ const baseUrl = 'http://localhost:8099';
 
 // Scene 1: Now Playing Bar (0s–10s)
 navigate(baseUrl);
-wait(2000); // dashboard loads, now playing bar visible at bottom
+wait(2000); // calendar loads, now playing bar visible at bottom
 startRecording('05-now-playing');
 // gentle zoom toward the now playing bar
 wait(5000); // show album art, song title, artist

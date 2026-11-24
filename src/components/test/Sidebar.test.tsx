@@ -9,22 +9,21 @@ const NL = createI18n('nl');
 function renderSidebar(onQuickAdd?: () => void) {
   return render(
     <I18nContext.Provider value={NL}>
-      <Sidebar activeView="dashboard" onChangeView={() => {}} onQuickAdd={onQuickAdd} />
+      <Sidebar activeView="calendar" onChangeView={() => {}} onQuickAdd={onQuickAdd} />
     </I18nContext.Provider>,
   );
 }
 
-/** The bottom bar is seven buttons with quick add dead centre. */
+/** The bottom bar keeps the main views, quick add and More reachable. */
 describe('Sidebar bottom bar', () => {
-  it('has seven elements with quick add in the middle', () => {
+  it('has six elements with quick add in the middle', () => {
     const { container } = renderSidebar(() => {});
     const bar = container.querySelector('.mobile-tab-bar')!;
     const items = [...bar.querySelectorAll('.mobile-tab')];
 
-    expect(items).toHaveLength(7);
-    expect(items[3].classList.contains('mobile-tab--add')).toBe(true);
+    expect(items).toHaveLength(6);
+    expect(items[2].classList.contains('mobile-tab--add')).toBe(true);
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual([
-      'Dashboard',
       'Agenda',
       'Klusjes',
       'Snel toevoegen',
@@ -49,7 +48,7 @@ describe('Sidebar bottom bar', () => {
     const onQuickAdd = vi.fn();
     const { container } = renderSidebar(onQuickAdd);
 
-    const quickAdd = container.querySelectorAll('.mobile-tab')[3];
+    const quickAdd = container.querySelectorAll('.mobile-tab')[2];
     expect(quickAdd.querySelector('svg')).toHaveClass('lucide-plus');
     fireEvent.click(quickAdd);
     expect(onQuickAdd).toHaveBeenCalledTimes(1);
@@ -65,7 +64,7 @@ describe('Sidebar overflow menu', () => {
     const onChangeView = vi.fn();
     const { container } = render(
       <I18nContext.Provider value={NL}>
-        <Sidebar activeView="dashboard" onChangeView={onChangeView} onQuickAdd={() => {}} />
+        <Sidebar activeView="calendar" onChangeView={onChangeView} onQuickAdd={() => {}} />
       </I18nContext.Provider>,
     );
 
@@ -84,7 +83,7 @@ describe('Sidebar overflow menu', () => {
     const onChangeView = vi.fn();
     const { container } = render(
       <I18nContext.Provider value={NL}>
-        <Sidebar activeView="dashboard" onChangeView={onChangeView} onQuickAdd={() => {}} />
+        <Sidebar activeView="calendar" onChangeView={onChangeView} onQuickAdd={() => {}} />
       </I18nContext.Provider>,
     );
 
@@ -130,7 +129,6 @@ describe('Sidebar desktop', () => {
 describe('touch navigation order', () => {
   it('follows the mobile bar and its More menu', () => {
     expect(TOUCH_NAV_ORDER).toEqual([
-      'dashboard',
       'calendar',
       'chores',
       'grocery',

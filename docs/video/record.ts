@@ -203,7 +203,7 @@ export function ffmpegStitchCommand(featuretteId: string, name: string): string 
 
 /**
  * Abbai Flow sidebar nav buttons (inside iframe, stable across navigations):
- *   Dashboard, Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather,
+ *   Calendar, Chores, Lists, Tasks, Music, Photos, Timer, Weather,
  *   Settings
  *
  * Use take_snapshot to get the current uid for each button, then click.
@@ -215,15 +215,15 @@ export const FEATURETTES = {
     title: 'Meet Abbai Flow',
     description: 'Tour of all major views',
     frames: [
-      'Dashboard (full view)',
-      'Dashboard (scrolled)',
+      'Calendar (full week view)',
+      'Calendar (today summary visible)',
       'Calendar (week view, anonymized)',
       'Lists',
       'Weather',
       'Music',
       'Timer',
       'Chores',
-      'Dashboard (return, closing shot)',
+      'Calendar (return, closing shot)',
     ],
   },
 

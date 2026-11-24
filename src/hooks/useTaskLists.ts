@@ -3,7 +3,7 @@ import { hasToken, haFetch, callHaService } from '../api/ha-rest';
 import { useLocalTasks } from './useLocalTasks';
 import { useTaskmate } from './useTaskmate';
 
-export interface DashboardTodoItem {
+export interface TaskTodoItem {
   uid: string;
   summary: string;
   status: 'needs_action' | 'completed';
@@ -11,14 +11,14 @@ export interface DashboardTodoItem {
   userId?: string;
 }
 
-export function useDashboardTasks(
+export function useTaskLists(
   connected: boolean,
   groceryListIds: string[] = [],
   taskListIds: string[] = [],
 ) {
   const localTasks = useLocalTasks();
   const { users, listByUser, completions } = useTaskmate(connected);
-  const [haItems, setHaItems] = useState<Omit<DashboardTodoItem, 'userId'>[]>([]);
+  const [haItems, setHaItems] = useState<Omit<TaskTodoItem, 'userId'>[]>([]);
 
   /*
    * Array *identity*, not contents, is what a dependency array compares. Callers
@@ -71,7 +71,7 @@ export function useDashboardTasks(
          * (`slice(0, 3)`), and because the order comes from /api/states it was
          * not even a predictable three -- lists beyond that simply never showed.
          */
-        const items: Omit<DashboardTodoItem, 'userId'>[] = [];
+        const items: Omit<TaskTodoItem, 'userId'>[] = [];
         for (const entity of todoEntities) {
           try {
             const result = (await callHaService(
@@ -102,7 +102,7 @@ export function useDashboardTasks(
         }
         setHaItems(items);
       } catch (err) {
-        console.warn('Failed to fetch dashboard tasks:', err);
+        console.warn('Failed to fetch task lists:', err);
       }
     }
 
@@ -124,8 +124,8 @@ export function useDashboardTasks(
     };
   }, [connected, groceryKey, taskKey]);
 
-  const items: DashboardTodoItem[] = useMemo(() => {
-    const local: DashboardTodoItem[] = localTasks
+  const items: TaskTodoItem[] = useMemo(() => {
+    const local: TaskTodoItem[] = localTasks
       .getTasksForList('abbai-flow-todo')
       .filter(
         (t) => t.status === 'needs_action' || (t.completedAt ? isToday(t.completedAt) : false),
@@ -137,7 +137,7 @@ export function useDashboardTasks(
         listId: 'abbai-flow-todo',
       }));
 
-    const fromHa: DashboardTodoItem[] = [];
+    const fromHa: TaskTodoItem[] = [];
     for (const i of haItems) {
       const userId = listByUser[i.listId]?.childId;
       if (i.status === 'needs_action' || userId != null) {
@@ -145,7 +145,7 @@ export function useDashboardTasks(
       }
     }
 
-    const done: DashboardTodoItem[] = completions.map((c) => ({
+    const done: TaskTodoItem[] = completions.map((c) => ({
       uid: c.uid,
       summary: c.summary,
       status: 'completed' as const,

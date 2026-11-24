@@ -16,7 +16,7 @@
 
 ### Positioning
 
-Abbai Flow is an open-source, self-hosted family dashboard designed for wall-mounted displays in smart homes. It runs on commodity hardware and integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to give families a single glanceable view of their day.
+Abbai Flow is an open-source, self-hosted family organizer designed for shared displays and personal devices. It runs on commodity hardware and integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to help families coordinate everyday life.
 
 ### Personality
 
@@ -379,7 +379,6 @@ Abbai Flow speaks like a helpful family member, not like software. The tone is w
 | Execute | Run |
 | Modify | Edit |
 | User Profile | Family Member |
-| Dashboard | Home |
 | Toggle | Turn on / Turn off |
 
 ### Greeting Logic

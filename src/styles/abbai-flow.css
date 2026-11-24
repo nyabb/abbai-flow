@@ -221,7 +221,6 @@ a:focus:not(:focus-visible) {
 .abbai-flow-main > .settings-view,
 .abbai-flow-main > .grocery-view,
 .abbai-flow-main > .music-view,
-.abbai-flow-main > .dashboard,
 .abbai-flow-main > .photo-frame {
   flex: 1;
   min-height: 0;
@@ -1887,13 +1886,23 @@ a:focus:not(:focus-visible) {
     grid-column: 1 !important;
   }
 
-  /* Hide calendar sidebar on mobile — content is on dashboard */
+  /* Keep today's schedule, tasks and chores available below the week view. */
   .calendar-sidebar {
-    display: none;
+    width: auto;
+    flex: 0 0 auto;
+    max-height: 34vh;
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+    padding: 12px 4px 16px;
   }
 
   .abbai-flow-body--two-col {
     flex-direction: column;
+  }
+
+  .abbai-flow-body--two-col .abbai-flow-body-calendar {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   /* Hide desktop sidebar on mobile — show bottom tab bar instead */

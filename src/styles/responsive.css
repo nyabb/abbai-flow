@@ -32,8 +32,7 @@
   .timer-mode-btn,
   .timer-preset,
   .grocery-view-tab,
-  .planner-date-chips button,
-  .dash-edit-toggle {
+  .planner-date-chips button {
     min-height: 44px;
   }
 
@@ -141,8 +140,7 @@ input[type='range'] {
    would leave almost nothing for content, so the bands shrink and the content
    area is allowed to scroll instead of being clipped. */
 @media (orientation: landscape) and (max-height: 480px) {
-  .abbai-flow-header,
-  .dash-topbar {
+  .abbai-flow-header {
     min-height: 40px;
     padding-top: 2px;
     padding-bottom: 4px;
@@ -175,8 +173,7 @@ input[type='range'] {
     font-size: calc(16px * var(--font-scale) * 1.0625);
   }
 
-  .abbai-flow-header,
-  .dash-topbar {
+  .abbai-flow-header {
     min-height: calc(var(--header-height) + 8px);
   }
 }
@@ -187,15 +184,9 @@ input[type='range'] {
   }
 }
 
-/* Short landscape (tablet on a stand, 16:9 laptop): the header band and the
-   dashboard paddings eat the vertical budget, so trim the padding rather than
-   the content. */
+/* Short landscape (tablet on a stand, 16:9 laptop): trim the header padding
+   rather than the content. */
 @media (min-width: 900px) and (max-height: 820px) {
-  .dash-topbar {
-    padding-top: 6px;
-    padding-bottom: 10px;
-  }
-
   .abbai-flow-header {
     padding-top: 8px;
     padding-bottom: 10px;

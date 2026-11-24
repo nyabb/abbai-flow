@@ -22,7 +22,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     darkModeEnd: '07:00',
     fontScale: 'normal',
     sidebarPosition: 'left',
-    advancedDashboard: false,
     ...overrides,
   } as AbbaiSettings;
 }
@@ -114,15 +113,4 @@ describe('AppearanceSection', () => {
     expect(onUpdateSettings).toHaveBeenCalledWith({ sidebarPosition: 'right' });
   });
 
-  it('reports the advanced dashboard toggle', () => {
-    const { onUpdateSettings, t } = renderSection();
-
-    const toggle = screen
-      .getByText(t.t('settings.appearance.advancedDashboardLabel'))
-      .closest('.settings-row')!
-      .querySelector('input[type="checkbox"]')!;
-    fireEvent.click(toggle);
-
-    expect(onUpdateSettings).toHaveBeenCalledWith({ advancedDashboard: true });
-  });
 });

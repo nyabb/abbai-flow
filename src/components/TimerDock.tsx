@@ -59,7 +59,7 @@ export function TimerDock({ onOpen }: TimerDockProps) {
    */
   useEffect(() => {
     const measure = () => {
-      // The band at the top of the view: a page header, the dashboard's topbar
+      // The band at the top of the view: a page header or calendar header
       // or a role="banner" wrapper. Anything further down is page content.
       const candidates = Array.from(
         document.querySelectorAll<HTMLElement>('.abbai-flow-header, .planner-header, [role="banner"], header'),

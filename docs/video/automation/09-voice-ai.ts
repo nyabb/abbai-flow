@@ -16,18 +16,18 @@ const baseUrl = 'http://localhost:8099';
 // Save as: 09-voice-commands-manual.mp4
 
 // Scene 2: AI Agent Tools (15s–30s)
-// Split-screen setup: terminal/chat on left, Abbai Flow dashboard on right
+// Split-screen setup: terminal/chat on left, Abbai Flow Calendar on right
 navigate(baseUrl);
 wait(2000);
-startRecording('09-ai-tools-dashboard');
-// dashboard side — show it updating when AI adds an item
+startRecording('09-ai-tools-calendar');
+// calendar side — show today's task summary updating when AI adds an item
 wait(15000); // hold while the AI interaction plays on the left side
 stopRecording();
 
 // MANUAL RECORDING for left side:
 // Record a terminal showing an LLM agent using MCP tools:
 //   - "Add milk to the grocery list"
-//   - Tool call executes, item appears on dashboard
+//   - Tool call executes, item appears in the Calendar task summary
 // Save as: 09-ai-tools-terminal.mp4
 
 // Scene 3: Natural Language (30s–40s)

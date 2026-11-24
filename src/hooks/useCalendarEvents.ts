@@ -22,7 +22,7 @@ interface RawCalendarEvent {
  * Load one calendar's events and normalise them.
  *
  * A failing (or aborted) calendar yields `[]` so the other calendars still
- * populate the view — one unreadable provider must not blank the dashboard.
+ * populate the view — one unreadable provider must not blank the calendar.
  */
 async function loadCalendarEvents(
   cal: CalendarInfo,
@@ -99,8 +99,8 @@ function isNotSupported(err: unknown): boolean {
  * The `connected` flag indicates whether the HA API is reachable.
  *
  * `colorOptions` lets callers pass user-customized calendar colors and
- * family members so calendar/event colors resolve identically here as on
- * the Dashboard (user override > family-member-linked color > positional
+ * family members so calendar/event colors resolve consistently (user override >
+ * family-member-linked color > positional
  * palette fallback) — see resolveCalendarColor in ../types.
  */
 export function useCalendarEvents(

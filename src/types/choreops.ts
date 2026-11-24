@@ -4,7 +4,7 @@
  * ChoreOps exposes one `purpose_chore_status` sensor per assigned user and
  * chore. Its state is the per-user chore status, and its attributes include
  * the chore name, assigned user names, completion criteria, recurrence,
- * labels, and action button entity IDs. Dashboard-helper rows provide
+ * labels, and action button entity IDs. Helper rows provide
  * lightweight grouping metadata and can be split into separate shard sensors.
  * Every ChoreOps entity carries a `purpose` attribute, which is the reliable
  * discovery key (entity_id patterns are not stable).

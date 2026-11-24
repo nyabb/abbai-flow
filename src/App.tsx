@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
-import { startOfWeek, startOfDay, addDays, format } from 'date-fns';
+import { startOfWeek, addDays, format } from 'date-fns';
 import { useHomeAssistant } from './hooks/useHomeAssistant';
 import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
 import { useMergedCalendars } from './hooks/useMergedCalendars';
@@ -8,7 +8,6 @@ import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
 import { resolveMemberForUser } from './api/choreops';
 import { WeekCalendar } from './components/WeekCalendar';
-import { DashboardView } from './components/DashboardView';
 import { EventModal, EventFormData } from './components/EventModal';
 import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
@@ -36,13 +35,12 @@ import { isDisplayUrl } from './display-route';
 import { useDisplayMode } from './hooks/useDisplayMode';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
-import { LanguageSwitcher } from './components/LanguageSwitcher';
 import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
 import { useTouchPageSwipe } from './hooks/useTouchPageSwipe';
 import { TOUCH_NAV_ORDER } from './utils/touch-navigation';
-import { useDashboardTasks } from './hooks/useDashboardTasks';
+import { useTaskLists } from './hooks/useTaskLists';
 import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
 import { getFocusMemberId, clearFocusMode, setDeviceFocusMember } from './focus';
@@ -94,7 +92,7 @@ export function App() {
   const { weather } = useWeather(client);
   const music = useMusic(client, connected);
 
-  const dashboardTasks = useDashboardTasks(
+  const taskLists = useTaskLists(
     connected,
     settings.groceryListIds,
     settings.taskListIds ?? [],
@@ -139,7 +137,8 @@ export function App() {
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';
-    return (stored as SidebarView) || 'dashboard';
+    if (stored === 'dashboard') return 'calendar';
+    return (stored as SidebarView) || 'calendar';
   });
 
   // Kid Display (focus) mode — URL param wins, then device-local storage
@@ -175,9 +174,6 @@ export function App() {
   const [visibleWeekStart, setVisibleWeekStart] = useState<Date>(() =>
     startOfWeek(new Date(), { weekStartsOn: settings.weekStartsOn }),
   );
-
-  // Day currently selected on the Dashboard's day view
-  const [dashboardDate, setDashboardDate] = useState<Date>(() => startOfDay(new Date()));
 
   // Helper: refetch events for a given week, with one extra day on either side
   // so multi-day events that bleed in/out of the visible week still render.
@@ -428,13 +424,12 @@ export function App() {
   );
 
   const handleAddEvent = useCallback(() => {
-    // Default new events to the day currently selected on the dashboard.
     setEventDialog({
       type: 'create',
-      prefillDate: activeView === 'dashboard' ? format(dashboardDate, 'yyyy-MM-dd') : null,
+      prefillDate: null,
       prefillTime: null,
     });
-  }, [activeView, dashboardDate]);
+  }, []);
 
   const handleChangeView = useCallback((view: SidebarView) => {
     setActiveView(view);
@@ -474,7 +469,7 @@ export function App() {
     wakeLock: settings.displayWakeLock,
     fullscreen: settings.displayFullscreen,
     idleMinutes: settings.displayIdleMinutes,
-    onIdle: () => setActiveView('dashboard'),
+    onIdle: () => setActiveView('calendar'),
   });
   const displayConnection = connection.state;
 
@@ -490,12 +485,12 @@ export function App() {
     void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
   }, [choreOpsData?.users, members, syncChoreOpsMembers]);
 
-  const dashboardChores = useMemo(
+  const calendarChores = useMemo(
     () =>
       (choreOpsData?.chores ?? []).map((chore) => {
         /*
          * Resolve ChoreOps' assignee names onto Abbai Flow member ids. Without
-         * this the sidebar checklist showed every chore as "nobody's", which
+         * this the calendar checklist showed every chore as "nobody's", which
          * made three identical chore names look like duplicates.
          */
         const assignees = (
@@ -521,7 +516,7 @@ export function App() {
     [choreOpsData, members],
   );
 
-  const dashboardCompletedChoreIds = useMemo(() => {
+  const calendarCompletedChoreIds = useMemo(() => {
     const ids = new Set<string>();
     for (const chore of choreOpsData?.chores ?? []) {
       if (/^(approved|completed|done)/i.test(chore.status)) ids.add(chore.id);
@@ -529,7 +524,7 @@ export function App() {
     return ids;
   }, [choreOpsData]);
 
-  const handleDashboardToggleChore = useCallback(
+  const handleCalendarToggleChore = useCallback(
     (choreId: string) => {
       // ChoreOps has no "un-complete" action: ticking claims or approves.
       const chore = choreOpsData?.chores.find((c) => c.id === choreId);
@@ -570,11 +565,10 @@ export function App() {
   // Keyboard shortcuts for quick view switching
   useEffect(() => {
     const viewMap: Record<string, SidebarView> = {
-      '1': 'dashboard',
-      '2': 'calendar',
-      '3': 'chores',
-      '4': 'grocery',
-      '7': 'music',
+      '1': 'calendar',
+      '2': 'chores',
+      '3': 'grocery',
+      '4': 'music',
       '8': 'photos',
       '9': 'timer',
       '0': 'settings',
@@ -710,41 +704,23 @@ export function App() {
           onTouchEnd={pageSwipeHandlers.onTouchEnd}
           onTouchCancel={pageSwipeHandlers.onTouchCancel}
         >
-          {activeView === 'dashboard' ? (
-            <>
-              <DashboardView
-                events={visibleEvents}
-                weather={weather}
-                chores={settings.choresEnabled ? dashboardChores : []}
-                completedChoreIds={dashboardCompletedChoreIds}
-                onToggleChore={handleDashboardToggleChore}
-                todoItems={dashboardTasks.items}
-                onToggleTodo={dashboardTasks.toggleItem}
-                onWeatherClick={() => setActiveView('weather')}
-                onOpenMeals={() => setActiveView('meals')}
-                onEventClick={handleEventClick}
-                members={members}
-                taskmateUsers={dashboardTasks.users}
-                layout={settings.dashboardLayout}
-                advancedDashboard={settings.advancedDashboard}
-                timeFormat={settings.timeFormat}
-                selectedDate={dashboardDate}
-                onSelectedDateChange={setDashboardDate}
-              />
-            </>
-          ) : activeView === 'chores' ? (
+          {activeView === 'chores' ? (
             settings.choresEnabled ? (
               <ChorePlanner
                 members={members}
                 locale={settings.locale}
                 weekStartsOn={settings.weekStartsOn}
-                onLocaleChange={(locale) => updateSettings({ locale })}
                 createRequest={choreCreate}
               />
             ) : (
-              <div className="chores-empty chores-empty--disabled" style={{ padding: 48 }}>
-                <LanguageSwitcher />
-                {t('app.choresDisabled')}
+              <div className="view-page">
+                <PageHeader title={t('nav.chores')} />
+                <div
+                  className="view-page-body chores-empty chores-empty--disabled"
+                  style={{ padding: 48 }}
+                >
+                  {t('app.choresDisabled')}
+                </div>
               </div>
             )
           ) : activeView === 'music' ? (
@@ -833,7 +809,7 @@ export function App() {
             />
           ) : activeView === 'photos' ? (
             <div className="view-page">
-              <PageHeader title={t('nav.photos')} onBack={() => setActiveView('dashboard')} />
+              <PageHeader title={t('nav.photos')} onBack={() => setActiveView('calendar')} />
               <PhotoFrame
                 musicPlayer={music.activePlayer}
                 onMusicPlay={() => music.activePlayer && music.play(music.activePlayer.entity_id)}
@@ -886,11 +862,11 @@ export function App() {
                 </div>
                 <CalendarSidebar
                   events={visibleEvents}
-                  chores={settings.choresEnabled ? dashboardChores : []}
-                  completedChoreIds={dashboardCompletedChoreIds}
-                  onToggleChore={handleDashboardToggleChore}
-                  todoItems={dashboardTasks.items}
-                  onToggleTodo={dashboardTasks.toggleItem}
+                  chores={settings.choresEnabled ? calendarChores : []}
+                  completedChoreIds={calendarCompletedChoreIds}
+                  onToggleChore={handleCalendarToggleChore}
+                  todoItems={taskLists.items}
+                  onToggleTodo={taskLists.toggleItem}
                   members={members}
                 />
               </div>

@@ -21,9 +21,10 @@ describe('PageHeader', () => {
   });
 
   it('makes the language selector available in the page header', () => {
-    renderHeader({ title: 'Timer' });
+    const { container } = renderHeader({ title: 'Timer' });
 
     expect(screen.getByRole('combobox', { name: 'Taal / Regio' })).toBeInTheDocument();
+    expect(container.querySelector('.page-header-actions .language-switcher')).not.toBeNull();
   });
 
   it('shows the subtitle when given one', () => {

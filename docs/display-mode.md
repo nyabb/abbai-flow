@@ -34,7 +34,7 @@ the browser except the settings it is given.
 | Agenda     | Today's events, all-day first, past events dimmed             |
 | Chores     | Today's chores grouped per member, done/open per chore        |
 | Family     | One tile per member with points and today's chore count       |
-| Navigation | Four finger-sized buttons: Dashboard, Calendar, Chores, Lists |
+| Navigation | Three finger-sized buttons: Calendar, Chores, Lists |
 
 Everything is **read-only**. A wall screen gets brushed past constantly, so
 approving a chore or editing an event stays on the screen that has a
@@ -48,7 +48,7 @@ Panels are switched in **Settings → Display → Display mode → Panels**.
 | ------------------------- | -------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Keep the screen awake     | `displayWakeLock`    | on      | Screen Wake Lock API. Re-acquired when the page becomes visible again, because browsers drop the lock on every hide. A refusal (low battery, unsupported context) is a state, never an error. |
 | Start in fullscreen       | `displayFullscreen`  | off     | Browsers only allow fullscreen after a user gesture, so a boot-time request is rejected. The view shows a toggle instead; the setting attempts it for kiosk shells that allow it.             |
-| Return to dashboard after | `displayIdleMinutes` | 15      | 0 disables. Suspended while a dialog, planner sheet, overflow menu or settings field has focus — a half-typed event is never lost.                                                            |
+| Return to calendar after  | `displayIdleMinutes` | 15      | 0 disables. Suspended while a dialog, planner sheet, overflow menu or settings field has focus — a half-typed event is never lost.                                                            |
 | Reduced animation         | `reducedMotion`      | off     | Collapses animation/transition durations app-wide. Mirrors `prefers-reduced-motion`, which some kiosk shells do not report.                                                                   |
 
 ## Connection states
@@ -69,7 +69,7 @@ polled.
 
 ## Behaviour on a long-running screen
 
-- Polling (weather, dashboard tasks, ChoreOps) pauses while the document is
+- Polling (weather, task lists, ChoreOps) pauses while the document is
   hidden and refreshes immediately on return.
 - The clock ticks once a second and is the **only** component that re-renders at
   that rate; the panels tick once a minute.

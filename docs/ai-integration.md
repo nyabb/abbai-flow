@@ -79,7 +79,7 @@ curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
 |-----|-------------|
 | `show <view>` / `open <view>` / `go to <view>` | Navigates the Abbai Flow UI |
 
-Valid views: `dashboard`, `calendar`, `grocery`, `chores`, `music`, `photos`, `settings`.
+Valid views: `calendar`, `grocery`, `chores`, `music`, `photos`, `settings`.
 
 ```bash
 curl -X POST http://<abbai-flow-host>:3000/beacon-action/voice \
@@ -273,7 +273,7 @@ Abbai Flow ships with custom sentence and intent handler files for [Home Assista
 | **Abbai FlowCompleteChoreByPerson** | "Alex finished vacuuming", "Sam did the laundry" |
 | **Abbai FlowCalendarToday** | "What's on the calendar today", "Any events today" |
 | **Abbai FlowCalendarTomorrow** | "What's on the calendar tomorrow" |
-| **Abbai FlowShowView** | "Show the dashboard", "Switch to the grocery view" |
+| **Abbai FlowShowView** | "Open the calendar", "Switch to the grocery view" |
 | **Abbai FlowSetTimer** | "Set a timer for 5 minutes", "Start a 10 minute timer" |
 | **Abbai FlowGroceryList** | "What's on the grocery list", "What do we need from the store" |
 | **Abbai FlowChoreStatus** | "What chores are left", "What needs to be done" |

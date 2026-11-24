@@ -4,19 +4,19 @@
 const viewport = { width: 1920, height: 1080 };
 const baseUrl = 'http://localhost:8099';
 
-// Scene 1: Dashboard Widget (0s–10s)
+// Scene 1: Current Conditions (0s–10s)
 navigate(baseUrl);
 wait(2000);
-startRecording('06-widget');
-// zoom toward weather widget on dashboard
-hover('.weather-widget');
-wait(5000); // show current temp, icon, high/low
+click('[data-nav="weather"]');
+wait(2000);
+startRecording('06-current-conditions');
+// show current conditions and the forecast heading
+wait(5000);
 stopRecording();
 
 // Scene 2: Full Forecast (10s–25s)
 startRecording('06-full-forecast');
-click('.weather-widget'); // tap to expand or navigate to forecast view
-wait(2000); // forecast view loads
+// the Weather view already contains the full forecast
 // show 5-7 day forecast
 wait(5000);
 // scroll through days if needed

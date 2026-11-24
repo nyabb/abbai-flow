@@ -4,13 +4,13 @@
 
 ---
 
-## Scene 1: Dashboard Widget (0s–10s)
+## Scene 1: Weather View (0s–10s)
 
-**Scene:** Dashboard view focusing on the weather widget — current temperature, condition icon (sunny, cloudy, etc.), high/low for the day.
+**Scene:** Weather view showing current temperature and conditions, then the seven-day forecast.
 
-**Voice:** "Weather is right on your dashboard — current temp, what it looks like outside, and today's high and low. No app to open, no searching. It's just there."
+**Voice:** "Open Weather for current conditions and the forecast for the week."
 
-**Transitions:** Fade in to dashboard, gentle zoom toward weather widget.
+**Transitions:** Open Weather and scroll through the forecast.
 
 ---
 

@@ -12,7 +12,7 @@ import type { FamilyMember } from '../../types/family';
  * what it must show at a glance: today's agenda, chores per member with their
  * state, the family and their points, the weather, and why it is disconnected.
  *
- * The view is read-only by design — the only interactive elements are the four
+ * The view is read-only by design — the only interactive elements are the three
  * navigation buttons — so nothing here asserts on chore actions.
  *
  * Panels are queried by their region label because several strings repeat

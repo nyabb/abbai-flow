@@ -22,7 +22,7 @@ don't reach for an arbitrary Tailwind hex in a component.
 Cut from the original 14: `Ocean #3b82f6` (literal duplicate of Soft Blue/accent),
 `Rose #ec4899` (least distinguishable from Coral, least-used category slot),
 `Info #06b6d4` (folded into `--color-accent` — info and primary accent serve the
-same "neutral informative" register on a dashboard this size).
+same "neutral informative" register on a shared display this size).
 
 `Warning` was `#f59e0b` (a literal duplicate of Brand Gold) — changed to
 `#d97706` so a warning banner is never visually identical to the brand mark.

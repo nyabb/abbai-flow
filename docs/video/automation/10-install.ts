@@ -35,6 +35,6 @@ stopRecording();
 // Scene 3: Open and Done (20s–30s)
 startRecording('10-open');
 click('.open-webui-button'); // Open Web UI
-wait(3000); // Abbai Flow dashboard loads with HA data
-wait(5000); // hold on the populated dashboard
+wait(3000); // Abbai Flow Calendar loads with HA data
+wait(5000); // hold on the populated week and today's summary
 stopRecording();

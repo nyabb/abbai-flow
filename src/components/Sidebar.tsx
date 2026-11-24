@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  LayoutDashboard,
   Calendar,
   ListChecks,
   ShoppingCart,
@@ -19,7 +18,6 @@ import abbaiIcon from '../assets/abbai-flow-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
 
 export type SidebarView =
-  | 'dashboard'
   | 'calendar'
   | 'chores'
   | 'grocery'
@@ -49,11 +47,6 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  {
-    id: 'dashboard',
-    icon: <LayoutDashboard size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
-    labelKey: 'nav.dashboard',
-  },
   {
     id: 'calendar',
     icon: <Calendar size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
@@ -102,15 +95,14 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * The bar is seven elements with quick add dead centre: three views on the left,
- * the add button, two views on the right and More. Music sits in the bar; Timer
+ * The bar keeps Calendar, Chores, Grocery and Music around quick add. Timer
  * moves one tap away into the overflow menu.
  *
  * The overflow menu only ever holds views that are *not* on the phone bar, so
  * nothing appears twice: Foto's, Timer, Weer and Display (+ Instellingen).
  * Desktop keeps its existing Timer and Music slots.
  */
-const NAV_LEFT_IDS: SidebarView[] = ['dashboard', 'calendar', 'chores'];
+const NAV_LEFT_IDS: SidebarView[] = ['calendar', 'chores'];
 const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'timer', 'music'];
 /** The right side on phones: the last slot is the overflow menu. */
 const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
@@ -153,7 +145,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
           <img src={abbaiIcon} alt="Abbai Flow" width={32} height={32} />
         </div>
 
-        {/* Main nav icons: three above the add button, three below it. */}
+        {/* Main nav icons with quick add between the left and right groups. */}
         <div className="sidebar-nav-group">
           {navLeft.map((item) => (
             <button
@@ -223,7 +215,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
 
       {/* Mobile bottom tab bar (hidden on desktop via CSS) */}
       <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
-        {/* Three views, the quick-add button, two more views and More. */}
+        {/* Calendar and chores, quick add, grocery and music, then More. */}
         {navLeft.map((item) => (
           <button
             key={item.id}

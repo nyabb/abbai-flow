@@ -11,7 +11,7 @@ export interface AbbaiSettings {
   // General
   familyName: string;
   saveConfigInBrowser: boolean;
-  defaultView: 'dashboard' | 'calendar' | 'grocery' | 'music' | 'photos';
+  defaultView: 'calendar' | 'grocery' | 'music' | 'photos';
   timeFormat: '12h' | '24h';
   weekStartsOn: 0 | 1; // 0 = Sunday, 1 = Monday
   locale: string;
@@ -50,10 +50,6 @@ export interface AbbaiSettings {
   photoInterval: number;
   photoTransition: 'fade' | 'slide';
 
-  // Dashboard
-  dashboardLayout: 'default' | 'classic' | 'compact';
-  advancedDashboard: boolean;
-
   // Display
   screenSaverEnabled: boolean;
   dimTimeout: number; // minutes
@@ -67,7 +63,7 @@ export interface AbbaiSettings {
   displayWakeLock: boolean;
   /** Go fullscreen when the display view opens. */
   displayFullscreen: boolean;
-  /** Return to the dashboard after this many idle minutes; 0 = never. */
+  /** Return to the calendar after this many idle minutes; 0 = never. */
   displayIdleMinutes: number;
   /** Which panels the display view shows. */
   displayPanels: { agenda: boolean; chores: boolean; family: boolean; weather: boolean };
@@ -94,7 +90,7 @@ function buildDefaults(): AbbaiSettings {
   return {
     familyName: config.family_name,
     saveConfigInBrowser: config.save_config_in_browser,
-    defaultView: 'dashboard',
+    defaultView: 'calendar',
     timeFormat: '12h',
     weekStartsOn: 0,
     locale: 'en-US',
@@ -124,8 +120,6 @@ function buildDefaults(): AbbaiSettings {
     photoInterval: config.photo_interval,
     photoTransition: 'fade',
 
-    dashboardLayout: 'default',
-    advancedDashboard: false,
 
     screenSaverEnabled: true,
     dimTimeout: 5,
@@ -158,13 +152,12 @@ function buildDefaults(): AbbaiSettings {
 async function loadSettingsAsync(): Promise<AbbaiSettings> {
   const defaults = buildDefaults();
   const configAllowsBrowserStorage = getConfig().save_config_in_browser;
-  const serverStored = await loadServerData<Partial<AbbaiSettings>>(STORAGE_KEY);
+  const serverStored = await loadServerData<PersistedSettings>(STORAGE_KEY);
   const stored =
     serverStored ??
-    (configAllowsBrowserStorage ? loadDataSync<Partial<AbbaiSettings>>(STORAGE_KEY, {}) : {});
+    (configAllowsBrowserStorage ? loadDataSync<PersistedSettings>(STORAGE_KEY, {}) : {});
   return {
-    ...defaults,
-    ...stored,
+    ...normalizeSettings(defaults, stored),
     // The add-on configuration is authoritative: it can disable browser
     // storage, while the user preference can opt out when config allows it.
     saveConfigInBrowser: configAllowsBrowserStorage && (stored.saveConfigInBrowser ?? true),
@@ -181,6 +174,33 @@ function persistSettings(settings: AbbaiSettings): void {
     }
   }
   saveData(STORAGE_KEY, settings, { browserStorage });
+}
+
+type PersistedSettings = Omit<Partial<AbbaiSettings>, 'defaultView'> & {
+  defaultView?: string;
+  dashboardLayout?: unknown;
+  advancedDashboard?: unknown;
+};
+
+function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = {}): AbbaiSettings {
+  const saved = { ...stored } as Record<string, unknown>;
+  delete saved.dashboardLayout;
+  delete saved.advancedDashboard;
+
+  const storedView = saved.defaultView;
+  const defaultView =
+    storedView === 'dashboard'
+      ? 'calendar'
+      : storedView === 'tasks'
+        ? 'grocery'
+        : storedView === 'calendar' ||
+            storedView === 'grocery' ||
+            storedView === 'music' ||
+            storedView === 'photos'
+          ? storedView
+          : defaults.defaultView;
+
+  return { ...defaults, ...saved, defaultView } as AbbaiSettings;
 }
 
 // ---------------------------------------------------------------------------
@@ -254,9 +274,10 @@ export function useSettings() {
   /** Import settings from a JSON string. Invalid JSON is silently ignored. */
   const importSettings = useCallback((json: string) => {
     try {
-      const parsed = JSON.parse(json);
+      const parsed: unknown = JSON.parse(json);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return;
       const defaults = buildDefaults();
-      const imported = { ...defaults, ...parsed } as AbbaiSettings;
+      const imported = normalizeSettings(defaults, parsed as PersistedSettings);
       setDebugCaptureEnabled(imported.debugMode);
       setSettingsState(imported);
     } catch {

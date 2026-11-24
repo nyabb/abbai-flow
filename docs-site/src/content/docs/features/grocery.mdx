@@ -135,21 +135,12 @@ This feature is only available with Grocy (AnyList does not track expiration dat
 
 ---
 
-## Meal plan display
+## Meal plan data
 
-When using Grocy with a meal plan configured, Abbai Flow can display today's planned meals. The meal plan bar shows:
-
-- **Meal type**: Breakfast, Lunch, or Dinner
-- **Recipe name**: The planned recipe
-- **Notes**: Any additional notes
-
-The meal plan data is fetched from `sensor.grocy_meal_plan` and filtered to the current day. The bar is collapsible — tap it to collapse to a small icon, tap again to expand. See [Meal Plan](/docs/features/meal-planning/) for how the data is stored and refreshed.
-
-Meal types are mapped from Grocy's section labels:
-
-- Sections containing "breakfast" or "morning" map to Breakfast
-- Sections containing "lunch" or "noon" map to Lunch
-- Everything else maps to Dinner
+Grocy can expose planned meals through `sensor.grocy_meal_plan`. Abbai Flow's
+Grocy adapter reads those entries and maps Grocy section labels to breakfast,
+lunch, or dinner. The dashboard no longer displays a meal bar; the sensor and
+meal data integration remain available. See [Meal Plan Data](/docs/features/meal-planning/).
 
 ---
 
@@ -158,7 +149,6 @@ Meal types are mapped from Grocy's section labels:
 - The grocery list refreshes automatically every 2 minutes
 - Adding, checking, or unchecking an item triggers an immediate refresh
 - The expiring products alert refreshes with the list
-- The meal plan refreshes every 5 minutes
 
 ---
 

@@ -52,7 +52,7 @@ describe('EventCard', () => {
     expect(card.className).not.toContain('event-card--clickable');
   });
 
-  it('invokes onClick with the event when clicked, enabling edit-from-Dashboard', async () => {
+  it('invokes onClick with the event when clicked, enabling edit from Calendar', async () => {
     const user = userEvent.setup();
     const onClick = vi.fn();
     const event = makeEvent();

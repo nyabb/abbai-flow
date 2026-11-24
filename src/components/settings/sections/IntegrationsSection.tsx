@@ -16,6 +16,7 @@ import {
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import type { GroceryList } from '../../../types/grocery';
+import { SecretInput } from '../SecretInput';
 import { Segment, Slider, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
 
@@ -254,11 +255,10 @@ export function IntegrationsSection({
                 : t('settings.integrations.haTokenHelp')}
             </div>
           </div>
-          <input
-            type="password"
-            className="settings-input settings-input--wide"
+          <SecretInput
+            label={t('settings.integrations.haTokenLabel')}
             value={haToken}
-            onChange={(event) => setHaToken(event.target.value)}
+            onChange={setHaToken}
             placeholder={haConfigured ? t('settings.integrations.secretReplace') : ''}
             autoComplete="new-password"
           />
@@ -393,11 +393,10 @@ export function IntegrationsSection({
                     : t('settings.integrations.encoreTokenHelp')}
                 </div>
               </div>
-              <input
-                type="password"
-                className="settings-input settings-input--wide"
+              <SecretInput
+                label={t('settings.integrations.encoreTokenLabel')}
                 value={encoreToken}
-                onChange={(event) => setEncoreToken(event.target.value)}
+                onChange={setEncoreToken}
                 placeholder={
                   integrationStatus?.encoreConfigured
                     ? t('settings.integrations.secretReplace')
@@ -447,11 +446,10 @@ export function IntegrationsSection({
                     : t('settings.integrations.spotifyClientHelp')}
                 </div>
               </div>
-              <input
-                type="password"
-                className="settings-input settings-input--wide"
+              <SecretInput
+                label={t('settings.integrations.spotifyClientSecretLabel')}
                 value={spotifyClientSecret}
-                onChange={(event) => setSpotifyClientSecret(event.target.value)}
+                onChange={setSpotifyClientSecret}
                 placeholder={
                   integrationStatus?.spotifyClientSecretConfigured
                     ? t('settings.integrations.secretReplace')
@@ -551,11 +549,10 @@ export function IntegrationsSection({
                     : t('settings.integrations.mealSourceTokenHelp')}
                 </div>
               </div>
-              <input
-                type="password"
-                className="settings-input settings-input--wide"
+              <SecretInput
+                label={t('settings.integrations.mealSourceTokenLabel')}
                 value={mealSourceToken}
-                onChange={(event) => setMealSourceToken(event.target.value)}
+                onChange={setMealSourceToken}
                 placeholder={
                   integrationStatus?.mealSourceTokenConfigured
                     ? t('settings.integrations.secretReplace')

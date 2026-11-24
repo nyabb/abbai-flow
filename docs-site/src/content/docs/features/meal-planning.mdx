@@ -1,14 +1,12 @@
 ---
-title: 'Meal Plan'
-description: "Show today's breakfast, lunch, dinner and snacks on the Abbai Flow dashboard, filled by the AnyList sync script or a Grocy meal plan sensor."
+title: 'Meal Plan Data'
+description: "Manage meal plan records through the AnyList sync script, Grocy, or Abbai Flow's MCP tools."
 order: 6
 ---
 
-# Meal Plan
+# Meal Plan Data
 
-Abbai Flow's **Menu** card shows what the household is eating today. It sits in the dashboard
-sidebar for the Family layout and in the right-hand column for the Classic layout, and it
-stays hidden while there is nothing planned for today.
+Meal plan records remain available through the existing data store and MCP tools. The dashboard Menu card has been removed, while meal integrations and stored records remain available.
 
 Each meal is one row, sorted breakfast → lunch → dinner → snack:
 
@@ -23,8 +21,10 @@ Each meal is one row, sorted breakfast → lunch → dinner → snack:
 
 ## Where the data comes from
 
-Abbai Flow does not have a meal editor: the plan is **written by a sync**, and the dashboard
-only reads it.
+Meal plans are written by a sync or MCP tool. AnyList output can be converted
+with `scripts/sync-meals.ts`; Grocy can provide data through
+`sensor.grocy_meal_plan`. The dashboard Menu card has been removed; the meal
+data and its integrations remain available.
 
 ### AnyList
 
@@ -53,19 +53,15 @@ see [Grocery](/docs/features/grocery/) for the sensor setup.
 - Each entry looks like
   `{ "date": "2026-11-07", "meal_type": "Dinner", "name": "Pasta pesto", "recipe_id": "abc123" }`.
 - `meal_type` is one of `Breakfast`, `Lunch`, `Dinner` or `Snack`; `recipe_id` is optional.
-- Only entries whose `date` is today are rendered, so the card rolls over by itself at
-  midnight.
-- The dashboard re-reads the store every 5 minutes, so a fresh sync appears without a page
-  reload.
+- Entries can be queried by date through `beacon_get_meal_plan`.
 
 ---
 
 ## Troubleshooting
 
-### The Menu card is missing
+### A meal plan is missing from the MCP response
 
-That is expected when nothing is planned for today — the card hides itself rather than
-showing an empty block. Check that the sync produced entries with today's date.
+Check that the sync wrote entries for the requested `YYYY-MM-DD` date and that the server's data store is available.
 
 ### Meals show the wrong day
 

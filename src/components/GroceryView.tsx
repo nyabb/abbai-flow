@@ -5,9 +5,7 @@ import { AnyListClient } from '../api/anylist';
 import { callHaService, hasToken } from '../api/ha-rest';
 import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
-import { HeaderDate } from './PageHeader';
-import { LanguageSwitcher } from './LanguageSwitcher';
-import { Clock } from './Clock';
+import { HeaderDate, PageHeaderActions } from './PageHeader';
 import { ActivitySpinner, LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface TodoItem {
@@ -299,10 +297,7 @@ export function GroceryView({ defaultListId, groceryListIds = [] }: GroceryViewP
         <div className="grocery-view-hero">
           <HeaderDate />
           <h1 className="page-header-title">{t('nav.grocery')}</h1>
-          <div className="page-header-actions">
-            <LanguageSwitcher />
-            <Clock />
-          </div>
+          <PageHeaderActions />
         </div>
         <div className="grocery-view-tabs" role="tablist" aria-label={t('grocery.tabsLabel')}>
           <button

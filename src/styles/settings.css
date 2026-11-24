@@ -245,6 +245,46 @@
   width: 300px;
 }
 
+.settings-secret-input {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+}
+
+.settings-secret-input-field {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.settings-secret-input-toggle {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.settings-secret-input-toggle:hover,
+.settings-secret-input-toggle:focus-visible {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.settings-secret-input-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 /* --- Slider --- */
 .settings-slider-wrapper {
   display: flex;

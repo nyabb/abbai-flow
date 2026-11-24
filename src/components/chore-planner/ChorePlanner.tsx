@@ -44,8 +44,7 @@ import { MemberAvatar } from '../MemberAvatar';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 import { usePlannerCopy } from './copy';
 import { FamilyRoutineRow, RewardRow, TaskRow, type RoutineStep } from './rows';
-import { HeaderDate } from '../PageHeader';
-import { LanguageSwitcher } from '../LanguageSwitcher';
+import { HeaderDate, PageHeaderActions } from '../PageHeader';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
@@ -84,11 +83,9 @@ type ToastKind = 'success' | 'error';
 interface ChorePlannerProps {
   /** Abbai Flow family members supply photos, colours, and display names. */
   members: FamilyMember[];
-  /** App language (`AbbaiSettings.locale`); the planner has no own language switch. */
+  /** App language (`AbbaiSettings.locale`), used by the routine editor. */
   locale: string;
   weekStartsOn?: 0 | 1;
-  /** The same updater Settings uses, so picking a language here changes the whole app. */
-  onLocaleChange: (locale: string) => void;
   /**
    * Asks the planner to open its new chore form from quick add.
    */
@@ -99,7 +96,6 @@ export function ChorePlanner({
   members,
   locale,
   weekStartsOn = 1,
-  onLocaleChange,
   createRequest,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
@@ -1202,7 +1198,14 @@ export function ChorePlanner({
             <span className="planner-title-short">{heading}</span>
           </h1>
         </div>
-        <div className="planner-header-actions">
+        <PageHeaderActions
+          className="page-header-actions planner-header-actions"
+          clock={
+            screen === 'board' ? (
+              <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
+            ) : null
+          }
+        >
           {screen === 'board' && (
             <button
               className="planner-icon-button"
@@ -1222,7 +1225,6 @@ export function ChorePlanner({
               <ListPlus />
             </button>
           )}
-          <LanguageSwitcher variant="planner" locale={locale} onLocaleChange={onLocaleChange} />
           <button
             className="planner-icon-button"
             onClick={() => setPrivacy((value) => !value)}
@@ -1237,11 +1239,7 @@ export function ChorePlanner({
           >
             {soundEnabled ? <Volume2 /> : <VolumeX />}
           </button>
-          {/* Keep the wall clock at the far edge, after the header actions. */}
-          {screen === 'board' && (
-            <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
-          )}
-        </div>
+        </PageHeaderActions>
       </header>
       {!online && (
         <div className="planner-offline-banner" role="alert">

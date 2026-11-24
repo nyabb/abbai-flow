@@ -15,7 +15,7 @@ triggers:
 
 ## Overview
 
-Abbai Flow displays today's meals (Breakfast, Lunch, Dinner) on the dashboard sidebar. Meal plan data is stored in `beacon_meal_plans.json` and can be populated from AnyList or manually.
+Meal plan data is stored in `beacon_meal_plans.json` and can be populated from AnyList or MCP tools. The dashboard Menu card has been removed; integrations can continue to read and write the stored entries.
 
 ## Viewing Meals
 
@@ -54,11 +54,3 @@ node --experimental-strip-types scripts/sync-meals.ts anylist-output.txt --from 
 ```
 
 The script auto-detects meal types from `[Breakfast]`/`[Lunch]`/`[Dinner]` brackets and defaults to Dinner.
-
-## Dashboard Display
-
-Meals appear in the dashboard sidebar with icons:
-- 🌅 Breakfast
-- ☀️ Lunch
-- 🌙 Dinner
-- 🍎 Snack

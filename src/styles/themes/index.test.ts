@@ -2,12 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { themes } from './index';
 
 /**
- * Regression test for the bug fixed in the icon/tokens/typography PR:
- * `.dash-topbar-time` used to fall back to `var(--accent, var(--color-blue-full))`,
- * which meant any theme that forgot to set an explicit `accent` silently got
- * a blue clock regardless of its actual palette. The fallback was removed
- * ONLY after confirming every theme sets `accent` explicitly — this test
- * keeps that guarantee true as new themes get added.
+ * Theme accent colors are used throughout the app's headers and controls. Keep
+ * every theme explicit so a missing value cannot silently fall back to blue.
  */
 describe('themes — accent color contract', () => {
   it('every theme defines a non-empty colors.accent', () => {

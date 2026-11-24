@@ -21,7 +21,6 @@ export const de: Record<TranslationKey, string> = {
   'common.start': 'Start',
 
   // ---- nav (Sidebar) ----
-  'nav.dashboard': 'Übersicht',
   'nav.calendar': 'Kalender',
   'nav.chores': 'Aufgaben',
   'nav.grocery': 'Listen',
@@ -78,30 +77,6 @@ export const de: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Protokoll leeren',
   'debugConsole.empty': 'Noch keine Anfragen oder Fehler protokolliert.',
 
-  // ---- dashboard / cards ----
-  'dashboard.editDashboard': '✎ Übersicht bearbeiten',
-  'dashboard.previousDay': 'Vorheriger Tag',
-  'dashboard.nextDay': 'Nächster Tag',
-  'dashboard.nothingScheduledOpen': 'Nichts geplant — dein Tag ist frei',
-  'dashboard.nothingScheduledToday': 'Heute nichts geplant',
-  'dashboard.nothingScheduledThisDay': 'An diesem Tag nichts geplant',
-  'dashboard.filterChoresFor': 'Aufgaben von {name} filtern',
-  'dashboard.other': 'Sonstige',
-  'dashboard.thisWeek': 'Diese Woche',
-  'dashboard.weekEmpty': '—',
-  'dashboard.menu': 'Menü',
-  'dashboard.tasks': 'To-dos',
-  'dashboard.shared': 'Gemeinsam',
-  'dashboard.completedItem': '{name} erledigt',
-  'dashboard.completeItem': '{name} erledigen',
-  'dashboard.shopping': 'Einkauf',
-  'dashboard.shoppingNotConfigured':
-    'Richte unter Einstellungen → Integrationen eine Einkaufsliste ein',
-  'dashboard.shoppingAddItemPlaceholder': 'Artikel hinzufügen...',
-  'dashboard.shoppingAddItem': 'Artikel hinzufügen',
-  'dashboard.shoppingLoading': 'Artikel werden geladen...',
-  'dashboard.shoppingEmpty': 'Noch keine Artikel — füge oben einen hinzu',
-  'dashboard.shoppingCheckItem': '{name} abhaken',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': 'Klare Nacht',
@@ -216,16 +191,6 @@ export const de: Record<TranslationKey, string> = {
     'Ein globales Protokoll mit API-Aufrufen, Antworten und Fehlern anzeigen.',
   'settings.display.ingressUrlUnavailable':
     'Eine teilbare Display-URL ist innerhalb von Home Assistant nicht verfügbar. Öffne Abbai Flow auf dem Zielbildschirm und wähle „Auf diesem Gerät verwenden“.',
-  'settings.general.dashboardLayoutTitle': 'Übersichtslayout',
-  'settings.general.dashboardLayoutDesc': 'Lege fest, wie deine Übersicht aufgebaut ist.',
-  'settings.general.layoutLabel': 'Layout',
-  'settings.general.layoutSublabel': 'Wähle ein vordefiniertes Layout',
-  'settings.general.layoutFamilyLabel': 'Familie',
-  'settings.general.layoutFamilyDesc': 'Kalenderspalten pro Mitglied',
-  'settings.general.layoutClassicLabel': 'Klassisch',
-  'settings.general.layoutClassicDesc': 'Ursprüngliche 3-Spalten-Ansicht',
-  'settings.general.layoutCompactLabel': 'Kompakt',
-  'settings.general.layoutCompactDesc': 'Einzelne, scrollbare Spalte',
 
   // ---- settings: appearance ----
   'settings.appearance.title': 'Erscheinungsbild',
@@ -245,9 +210,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.appearance.left': 'Links',
   'settings.appearance.right': 'Rechts',
   'settings.appearance.bottom': 'Unten',
-  'settings.appearance.advancedDashboardLabel': 'Erweiterte Übersicht',
-  'settings.appearance.advancedDashboardSublabel':
-    'Anpassbare Übersichts-Widgets und -Layouts aktivieren',
 
   // ---- settings: family ----
   'settings.family.title': 'Familienmitglieder',
@@ -260,8 +222,7 @@ export const de: Record<TranslationKey, string> = {
   'settings.family.child': 'Kind',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint':
-    'Wird anstelle des Emojis im Dashboard, bei Aufgaben und in der Bestenliste angezeigt.',
+  'settings.family.photoHint': "Wird bei Familienmitgliedern anstelle des Emojis angezeigt.",
   'settings.family.photoUpload': 'Foto hochladen',
   'settings.family.photoRemove': 'Foto entfernen',
   'settings.family.photoFromHa': 'Home-Assistant-Foto verwenden',
@@ -392,7 +353,7 @@ export const de: Record<TranslationKey, string> = {
   'settings.display.fullscreenLabel': 'Im Vollbild starten',
   'settings.display.fullscreenSublabel':
     'Browser erlauben das erst nach einem Tippen, ein Druck kann nötig sein.',
-  'settings.display.idleTimeoutLabel': 'Zurück zum Dashboard nach',
+  'settings.display.idleTimeoutLabel': "Zum Kalender zurück nach",
   'settings.display.idleTimeoutSublabel':
     'Unterbricht nie einen offenen Dialog oder ein Eingabefeld.',
   'settings.display.panelsLabel': 'Bereiche',
@@ -464,24 +425,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.about.clearLocalStorage': 'Lokalen Speicher löschen',
   'settings.about.resetToDefaults': 'Auf Standardwerte zurücksetzen',
 
-  'cards.common.entityLabel': 'Entität',
-  'cards.common.entitiesLabel': 'Entitäten',
-  'cards.common.titleLabel': 'Titel',
-  'cards.common.subtitleLabel': 'Untertitel',
-  'cards.clockWeather.displayName': 'Uhr & Wetter',
-  'cards.familyCalendar.displayName': 'Familienkalender',
-  'cards.familyCalendar.showOtherLabel': 'Andere anzeigen',
-  'cards.familyCalendar.showOtherDescription':
-    'Termine anzeigen, die keinem Familienmitglied zugeordnet sind',
-  'cards.agendaToday.displayName': 'Heute',
-  'cards.agendaWeek.displayName': 'Diese Woche',
-  'cards.menu.displayName': 'Speiseplan',
-  'cards.tasks.displayName': 'To-dos',
-  'cards.shopping.displayName': 'Einkauf',
-  'cards.shopping.entityLabel': 'Einkaufslisten-Entität',
-  'cards.haEntity.displayName': 'HA-Entität',
-  'cards.haEntitiesList.displayName': 'HA-Entitätenliste',
-  'cards.haToggle.displayName': 'HA-Schalter',
   'weatherView.loading': 'Wetterdaten werden geladen...',
   'weatherView.notConnected': 'Nicht mit Home Assistant verbunden',
   'weatherView.noEntityFound': 'Keine Wetter-Entität gefunden',
@@ -516,17 +459,9 @@ export const de: Record<TranslationKey, string> = {
   'timer.lap': 'Runde',
   'timer.reset': 'Zurücksetzen',
   'timer.lapN': 'Runde {n}',
-  'countdown.title': 'Countdown',
-  'countdown.add': 'Countdown hinzufügen',
-  'countdown.eventNamePlaceholder': 'Ereignisname',
-  'countdown.addBtn': 'Hinzufügen',
-  'countdown.day': 'Tag',
-  'countdown.days': 'Tage',
-  'countdown.remove': 'Entfernen',
-  'countdown.removeNamed': '{name} entfernen',
   'photoFrame.noPhotos': 'Keine Fotos verfügbar',
   'photoFrame.addPhotosHint': 'Fotos zu deinem Home-Assistant-Medienverzeichnis hinzufügen',
-  'photoFrame.backToDashboard': 'Zurück zur Übersicht',
+  'photoFrame.backToCalendar': "Zurück zum Kalender",
   'photoFrame.photoAlt': 'Foto',
   'photoFrame.previousPhoto': 'Vorheriges Foto',
   'photoFrame.pauseSlideshow': 'Diashow pausieren',

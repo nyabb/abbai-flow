@@ -25,7 +25,7 @@
 
 - **Weekly Calendar** -- Beautiful week view with color-coded family members; supports HA calendar entities and a built-in local calendar
 - **Grocery & Shopping Lists** -- AnyList, Home Assistant Shopping List, and local list support
-- **Task / Todo Lists** -- Home Assistant todo entities and local task lists with dashboard integration
+- **Task / Todo Lists** -- Home Assistant todo entities and local task lists, summarized on the calendar
 - **Chore Tracking** -- Assign chores, track streaks, and celebrate completions with a family leaderboard
 - **Music Controls** -- Control Spotify through Encore and Soloist, plus Home Assistant media players
 - **Photo Slideshow** -- Display family photos between interactions
@@ -34,7 +34,7 @@
 - **Weather** -- Real-time weather from your Home Assistant weather entity
 - **8+ Themes** -- Light, Midnight, Midnight Light, Nord, Dracula, Monokai, Rose, Forest, and dark mode (automatic or manual)
 - **Family Management** -- Per-member colors, calendar filtering, and PIN-based profiles
-- **Meal Planning** -- Meal plan bar with weekly dinner overview
+- **Meal Plan Data** -- Existing AnyList sync and MCP meal plan records remain available
 - **Standalone Mode** -- Works without Home Assistant using local calendars, lists, and tasks
 
 ## Installation
@@ -57,7 +57,7 @@ Open `http://<host>:3000`. Images are published for `linux/amd64` and
 `linux/arm64`, so the same tag runs on a server and on a Raspberry Pi.
 
 On first launch, open **Settings → Integrations** to connect Home Assistant,
-Encore, and Spotify, or configure a JSON recipe/menu feed for meal planning.
+Encore, and Spotify, or configure a recipe/menu JSON feed for meal planning.
 Abbai Flow starts in standalone mode until you configure the services you want.
 Integration settings are stored in the `/data` volume.
 

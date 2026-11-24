@@ -48,11 +48,10 @@ body {
 
 /* ---------------------------------------------------------------------------
    Screen bands — the rounded gradient strip at the top of a view.
-   Real markup: Dashboard = header.dash-topbar, Calendar = header.abbai-flow-header,
-   Lists/Tasks = .grocery-view-header. Chores has its own band in
+   Real markup: Calendar = header.abbai-flow-header, Lists/Tasks =
+   .grocery-view-header. Chores has its own band in
    chore-planner.css (sand palette).
    --------------------------------------------------------------------------- */
-.dash-topbar,
 .abbai-flow-header,
 .grocery-view-header {
   border-bottom: 0;
@@ -60,12 +59,6 @@ body {
   color: var(--skin-band-ink);
   background: linear-gradient(140deg, var(--skin-band-a), var(--skin-band-b));
   box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-
-.dash-topbar {
-  height: auto;
-  min-height: var(--header-height);
-  padding: 10px clamp(14px, 2.2vw, 36px) 16px;
 }
 
 .abbai-flow-header {
@@ -79,29 +72,23 @@ body {
 }
 
 /* Text and controls inside a band go white/translucent. */
-.dash-topbar-time,
-.dash-topbar-date,
 .header-family-name,
-.header-date,
-.dash-topbar-weather {
+.header-date {
   color: inherit;
 }
 
-.dash-topbar-time,
 .header-family-name {
   font-family: var(--font-body);
   font-weight: 700;
   letter-spacing: -0.3px;
 }
 
-.dash-topbar-date,
 .header-date {
   color: color-mix(in srgb, var(--skin-band-ink) 72%, transparent);
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-.dash-day-nav-btn,
 .abbai-flow-header .icon-btn,
 .abbai-flow-header .header-action {
   color: inherit;
@@ -110,16 +97,9 @@ body {
   border-radius: var(--skin-pill, 999px);
 }
 
-.dash-day-nav-btn:hover,
 .abbai-flow-header .icon-btn:hover,
 .abbai-flow-header .header-action:hover {
   background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
-}
-
-.dash-topbar-weather {
-  background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
-  border-radius: var(--skin-control-radius);
-  padding: 8px 14px;
 }
 
 /* The list selector keeps its white card look on the coral band. */
@@ -230,11 +210,6 @@ body {
   width: 15px;
   height: 15px;
   pointer-events: none;
-}
-
-.dashboard-language-row {
-  display: flex;
-  justify-content: flex-end;
 }
 
 /* --- Hero layout ----------------------------------------------------------
@@ -365,7 +340,6 @@ body {
    Cards: lists, panels, sections
    --------------------------------------------------------------------------- */
 .grocery-view-section,
-.dash-sidebar-section,
 .settings-section,
 .weather-panel,
 .timer-panel-inner {
@@ -451,22 +425,6 @@ body {
   .abbai-flow {
     --skin-card-radius: 18px;
     --skin-band-radius: 20px;
-  }
-  .dash-topbar {
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 10px 14px 14px;
-  }
-  .dash-topbar-time {
-    font-size: 1.8rem;
-    line-height: 1.1;
-  }
-  .dash-topbar-date {
-    font-size: 0.72rem;
-  }
-  .dash-topbar-weather {
-    padding: 6px 10px;
-    font-size: 0.8rem;
   }
   .abbai-flow-header {
     min-height: 56px;

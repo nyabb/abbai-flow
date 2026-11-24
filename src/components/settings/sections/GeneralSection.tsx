@@ -1,6 +1,6 @@
 /**
  * General settings: family name, start view, time/week format, browser-cache
- * toggle and the dashboard layout presets. Language is changed from every
+ * toggle. Language is changed from every
  * page's header.
  */
 import { getConfig } from '../../../config';
@@ -41,7 +41,6 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             }
             style={{ maxWidth: 180 }}
           >
-            <option value="dashboard">{t('nav.dashboard')}</option>
             <option value="calendar">{t('nav.calendar')}</option>
             <option value="grocery">{t('nav.grocery')}</option>
             <option value="music">{t('nav.music')}</option>
@@ -99,68 +98,6 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
         </div>
       </div>
 
-      <h2 className="settings-section-title" style={{ marginTop: 32 }}>
-        {t('settings.general.dashboardLayoutTitle')}
-      </h2>
-      <p className="settings-section-desc">{t('settings.general.dashboardLayoutDesc')}</p>
-      <div className="settings-group">
-        <div className="settings-row" style={{ alignItems: 'flex-start' }}>
-          <div>
-            <div className="settings-row-label">{t('settings.general.layoutLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.general.layoutSublabel')}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {(
-              [
-                {
-                  id: 'default',
-                  label: t('settings.general.layoutFamilyLabel'),
-                  desc: t('settings.general.layoutFamilyDesc'),
-                },
-                {
-                  id: 'classic',
-                  label: t('settings.general.layoutClassicLabel'),
-                  desc: t('settings.general.layoutClassicDesc'),
-                },
-                {
-                  id: 'compact',
-                  label: t('settings.general.layoutCompactLabel'),
-                  desc: t('settings.general.layoutCompactDesc'),
-                },
-              ] as const
-            ).map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => onUpdateSettings({ dashboardLayout: preset.id })}
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: 10,
-                  border:
-                    settings.dashboardLayout === preset.id
-                      ? '2px solid var(--accent)'
-                      : '1px solid var(--border)',
-                  background:
-                    settings.dashboardLayout === preset.id
-                      ? 'var(--bg-today)'
-                      : 'var(--bg-surface)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  minWidth: 100,
-                  transition: 'all 150ms ease',
-                }}
-              >
-                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
-                  {preset.label}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                  {preset.desc}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
     </>
   );
 }
