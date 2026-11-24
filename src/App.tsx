@@ -97,7 +97,7 @@ export function App() {
   );
 
   // Apply theme at App level so it stays active regardless of which view is shown
-  const { setTheme } = useTheme();
+  const { setTheme } = useTheme(settings);
   useEffect(() => {
     setTheme(settings.themeId);
   }, [settings.themeId, setTheme]);

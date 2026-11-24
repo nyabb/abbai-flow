@@ -9,7 +9,7 @@ import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
 
 export function AppearanceSection({ settings, onUpdateSettings, t }: SettingsSectionContext) {
-  const { setTheme: applyTheme } = useTheme();
+  const { setTheme: applyTheme } = useTheme(settings);
 
   const themeEntries = [
     {

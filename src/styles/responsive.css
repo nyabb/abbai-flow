@@ -172,7 +172,7 @@ input[type='range'] {
    the layout is already fluid. */
 @media (min-width: 1600px) {
   :root {
-    font-size: 1.0625rem;
+    font-size: calc(16px * var(--font-scale) * 1.0625);
   }
 
   .abbai-flow-header,
@@ -183,7 +183,7 @@ input[type='range'] {
 
 @media (min-width: 2200px) {
   :root {
-    font-size: 1.125rem;
+    font-size: calc(16px * var(--font-scale) * 1.125);
   }
 }
 
