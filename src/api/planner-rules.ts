@@ -55,11 +55,10 @@ export type PlannerOp =
   | { type: 'startMission'; user: string; routineId: string }
   | { type: 'markStep'; user: string; routineId: string; taskName: string }
   | { type: 'clearMission'; user: string }
-  | { type: 'toggleRoutinePaused'; id: string; name?: string }
+  | { type: 'toggleRoutinePaused'; id: string }
   | { type: 'upsertRoutine'; name: string; icon?: string }
   | { type: 'addRoutineTask'; id: string; taskName: string }
   | { type: 'removeRoutineTask'; id: string; taskName: string }
-  | { type: 'adoptLabels'; groups: Array<{ label: string; taskNames: string[] }> }
   | { type: 'replace' };
 
 /* -------------------------------------------------------------------------- */
@@ -352,24 +351,6 @@ export function toggleRoutinePaused(meta: PlannerMeta, id: string): PlannerMeta 
   };
 }
 
-/** Adopt existing ChoreOps labels as routines (idempotent). */
-export function adoptLabels(
-  meta: PlannerMeta,
-  groups: Array<{ label: string; taskNames: string[] }>,
-): PlannerMeta {
-  let next = meta;
-  for (const group of groups) {
-    const label = group.label.trim();
-    if (!label) continue;
-    const upserted = upsertRoutine(next, label);
-    next = upserted.meta;
-    for (const taskName of group.taskNames) {
-      next = addRoutineTask(next, upserted.routine.id, taskName);
-    }
-  }
-  return next;
-}
-
 /** Drop routine entries for chores that no longer exist in ChoreOps. */
 export function pruneRoutineTasks(meta: PlannerMeta, knownChoreNames: string[]): PlannerMeta {
   const known = new Set(knownChoreNames.map((name) => normaliseName(name)));
@@ -569,18 +550,10 @@ export function applyPlannerOp(
       case 'clearMission':
         return { document: clearMission(current, op.user), changed: true, result: null };
       case 'toggleRoutinePaused': {
-        // A routine that only exists as a ChoreOps label has no registry entry
-        // yet; adopt it first so the pause is not silently dropped.
-        let next = current;
-        let target = findRoutine(next, op.id);
-        if (!target && typeof op.name === 'string' && op.name.trim()) {
-          const upserted = upsertRoutine(next, op.name);
-          next = upserted.meta;
-          target = upserted.routine;
-        }
+        const target = findRoutine(current, op.id);
         if (!target) return { document: current, changed: false, result: null };
         return {
-          document: toggleRoutinePaused(next, target.id),
+          document: toggleRoutinePaused(current, target.id),
           changed: true,
           result: target.id,
         };
@@ -601,8 +574,6 @@ export function applyPlannerOp(
           changed: true,
           result: null,
         };
-      case 'adoptLabels':
-        return { document: adoptLabels(current, op.groups), changed: true, result: null };
       default:
         throw new Error(`Unknown planner operation: ${op.type}`);
     }

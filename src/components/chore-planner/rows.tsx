@@ -9,6 +9,7 @@ import { Check } from 'lucide-react';
 import { ActivitySpinner } from '../LoadingPlaceholder';
 import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
+import type { Routine as FamilyRoutine } from '../../types/family';
 import type { PlannerCopy } from './copy';
 
 export interface TaskRowProps {
@@ -236,6 +237,106 @@ export function RoutineRow({
                 >
                   {'\u22ef'}
                 </button>
+              )}
+              <span className="planner-sr-only">{step.done ? copy.done : copy.openTodo}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export interface FamilyRoutineRowProps {
+  routine: FamilyRoutine;
+  label: string;
+  bonusPoints: number;
+  steps: RoutineStep[];
+  copy: PlannerCopy;
+  canStart: boolean;
+  busyTaskId?: string | null;
+  onStart?: () => void;
+  onCompleteStep: (taskId: string) => void;
+}
+
+/** Abbai Flow-owned routine: its checklist completion never goes through ChoreOps. */
+export function FamilyRoutineRow({
+  routine,
+  label,
+  bonusPoints,
+  steps,
+  copy,
+  canStart,
+  busyTaskId,
+  onStart,
+  onCompleteStep,
+}: FamilyRoutineRowProps) {
+  const doneCount = steps.filter((step) => step.done).length;
+  const progress = steps.length > 0 ? (doneCount / steps.length) * 100 : 0;
+
+  return (
+    <div className="planner-row planner-row--routine">
+      <div className="planner-routine-head">
+        <span className="planner-row-icon" aria-hidden="true">
+          {'\u23f0'}
+        </span>
+        <span className="planner-row-name">
+          {routine.name}
+          <small>{label}</small>
+        </span>
+        {steps.length > 0 && (
+          <span className="planner-routine-count" aria-label={`${doneCount}/${steps.length}`}>
+            {doneCount}/{steps.length}
+          </span>
+        )}
+        {bonusPoints > 0 && (
+          <span
+            className="planner-row-points"
+            aria-label={`${copy.missions}: ${bonusPoints} ${copy.pointsUnit}`}
+            title={copy.missions}
+          >
+            <span aria-hidden="true">{'\u{1F3C6}'}</span>
+            <small>{copy.missions}</small> +{bonusPoints}
+          </span>
+        )}
+        <span className="planner-row-progress" aria-hidden="true">
+          <i style={{ width: `${progress}%` }} />
+        </span>
+        {onStart && (
+          <button
+            type="button"
+            className="planner-row-more planner-row-start"
+            disabled={!canStart}
+            aria-label={`${copy.startRoutine}: ${routine.name}`}
+            onClick={onStart}
+          >
+            {'\u25b6'}
+          </button>
+        )}
+      </div>
+      {steps.length > 0 && (
+        <ul className="planner-steps">
+          {steps.map((step) => (
+            <li
+              key={step.taskId ?? step.name}
+              className={`planner-step${step.done ? ' is-done' : ''}`}
+            >
+              <span className="planner-step-mark" aria-hidden="true">
+                {step.done ? '\u2713' : '\u25cb'}
+              </span>
+              {step.taskId && !step.done ? (
+                <button
+                  type="button"
+                  className="planner-step-action"
+                  aria-label={`${copy.iDidIt}: ${step.name}`}
+                  disabled={busyTaskId === step.taskId}
+                  onClick={() => onCompleteStep(step.taskId!)}
+                >
+                  <span className="planner-step-label">{step.name}</span>
+                  {busyTaskId === step.taskId ? <ActivitySpinner /> : <Check />}
+                </button>
+              ) : (
+                <span className="planner-step-name">{step.name}</span>
               )}
               <span className="planner-sr-only">{step.done ? copy.done : copy.openTodo}</span>
             </li>

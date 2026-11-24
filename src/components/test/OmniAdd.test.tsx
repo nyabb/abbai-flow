@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, screen } from '@testing-library/react';
 import { OmniAdd } from '../OmniAdd';
 import { I18nContext, createI18n } from '../../i18n';
 
@@ -71,6 +71,17 @@ describe('OmniAdd action fan', () => {
     fireEvent.click(timer);
 
     expect(onNavigateTimer).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('routes the Routine quick action through its callback', () => {
+    const onAddRoutine = vi.fn();
+    const onOpenChange = vi.fn();
+    renderOmniAdd({ open: true, onAddRoutine, onOpenChange });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Routine' }));
+
+    expect(onAddRoutine).toHaveBeenCalledTimes(1);
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 });

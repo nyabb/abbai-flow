@@ -11,14 +11,17 @@ const mocks = vi.hoisted(() => ({
   deleteChore: vi.fn(async () => {}),
   approveReward: vi.fn(async () => {}),
   pressButton: vi.fn(async () => {}),
-  fetchChoreHistory: vi.fn(async () => [] as Array<{
-    id: string;
-    entityId: string;
-    choreName: string;
-    completedAt: string;
-    completedAtMs: number;
-    points: number | null;
-  }>),
+  fetchChoreHistory: vi.fn(
+    async () =>
+      [] as Array<{
+        id: string;
+        entityId: string;
+        choreName: string;
+        completedAt: string;
+        completedAtMs: number;
+        points: number | null;
+      }>,
+  ),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -118,7 +121,8 @@ const NL = createI18n('nl');
 
 function renderPlanner(
   members: FamilyMember[],
-  createRequest?: { kind: 'chore' | 'routine'; token: number },
+  createRequest?: { kind: 'chore'; token: number },
+  onRequestRoutineCreate?: () => void,
 ) {
   return render(
     <I18nContext.Provider value={NL}>
@@ -127,6 +131,7 @@ function renderPlanner(
         locale="nl"
         onLocaleChange={() => {}}
         createRequest={createRequest}
+        onRequestRoutineCreate={onRequestRoutineCreate}
       />
     </I18nContext.Provider>,
   );
@@ -192,7 +197,7 @@ describe('ChorePlanner parent PIN gate', () => {
     await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Afwassen'));
   });
 
-  it('browses household chores, rewards, and routines from the create sheet', async () => {
+  it('keeps ChoreOps routine labels in chores and lists Abbai Flow routines separately', async () => {
     const base = choreOpsState();
     mocks.state.current = {
       ...base,
@@ -216,7 +221,8 @@ describe('ChorePlanner parent PIN gate', () => {
     expect(within(sheet).getByText('Schermtijd')).toBeTruthy();
 
     fireEvent.click(within(sheet).getByRole('tab', { name: /Routines/ }));
-    await waitFor(() => expect(within(sheet).getByText('Ochtendroutine')).toBeTruthy());
+    expect(within(sheet).queryByText('Ochtendroutine')).toBeNull();
+    expect(within(sheet).getByText(NL.t('planner.noRoutines'))).toBeTruthy();
   });
 });
 
@@ -344,7 +350,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     localStorage.clear();
   });
 
-  it('shows a child\'s rewards on the chores board without opening their profile', () => {
+  it("shows a child's rewards on the chores board without opening their profile", () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const zara = column(container, 'Zara');
 
@@ -692,13 +698,13 @@ describe('ChorePlanner board', () => {
     expect(actions?.lastElementChild).toHaveClass('planner-header-clock');
   });
 
-  it('shows a column per child plus the free-chore column, and no header rewards button', () => {
+  it('shows every child and parent plus the free-chore column, without a header rewards button', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
     const names = [...container.querySelectorAll('.planner-col-head strong')].map(
       (element) => element.textContent,
     );
-    expect(names).toEqual(['Maya', 'Zara', 'Vrij te pakken']);
+    expect(names).toEqual(['Maya', 'Zara', 'Papa', 'Vrij te pakken']);
     // Adding a chore never requires picking a child first.
     expect(container.querySelector('.planner-add')).not.toBeNull();
     // Rewards are per child: they live behind each column's points badge.
@@ -714,8 +720,7 @@ describe('ChorePlanner board', () => {
     expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('shows a child’s routines under their chores', () => {
-    // ChoreOps groups daily chores into routines by their label.
+  it('keeps a recurring ChoreOps task as a chore even when it has a routine label', () => {
     const base = twoChildren();
     mocks.state.current = {
       ...base,
@@ -735,34 +740,21 @@ describe('ChorePlanner board', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
     const zara = column(container, 'Zara');
-    expect(zara.textContent).toContain('Ochtendroutine');
-    expect(zara.querySelector('.planner-row--routine')).not.toBeNull();
+    expect(zara.textContent).toContain('Kamer opruimen');
+    expect(zara.querySelector('.planner-row--routine')).toBeNull();
+    expect(zara.querySelectorAll('.planner-row')).toHaveLength(2);
     expect(column(container, 'Maya').querySelector('.planner-row--routine')).toBeNull();
   });
 
-  it('opens the new-chore form when quick add asks for one', () => {
-    const { container } = renderPlanner([PARENT, ZARA], { kind: 'routine', token: 1 });
+  it('opens the one-off chore form when quick add asks for a chore', () => {
+    const { container } = renderPlanner([PARENT, ZARA], { kind: 'chore', token: 1 });
 
     const form = container.querySelector('.planner-sheet--form')!;
     expect(form).not.toBeNull();
-    // A routine starts as a daily chore.
-    expect((form.querySelector('select') as HTMLSelectElement | null)?.value).toBe('daily');
-  });
-
-  /*
-   * A routine *is* a recurring chore carrying a routine label: ChoreOps only
-   * groups daily chores into routines. Recurrence therefore lives here, and a
-   * new routine starts on daily while staying changeable (weekly adds the
-   * weekday pills) -- pinning it would make weekly routines impossible.
-   */
-  it('starts a new routine on daily and leaves the repeat changeable', () => {
-    const { container } = renderPlanner([PARENT, ZARA], { kind: 'routine', token: 1 });
-
-    const form = container.querySelector('.planner-sheet--form')!;
-    const select = form.querySelector('select') as HTMLSelectElement;
-    expect(select.value).toBe('daily');
-    expect(select.disabled).toBe(false);
-    expect(form.textContent).toContain('Routine');
+    expect(form.querySelector('select')).toBeNull();
+    expect(form.textContent).toContain(
+      'Een taakje gebeurt één keer. Gebruik een routine voor iets dat terugkomt.',
+    );
   });
 
   /* A task happens once, so it gets no schedule fields at all and saves as `none`. */
@@ -779,17 +771,19 @@ describe('ChorePlanner board', () => {
   it('opens a child’s detail page from their column header', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
-    fireEvent.click(column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!);
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
 
     const detail = container.querySelector('.planner-detail')!;
     expect(detail).not.toBeNull();
     expect(detail.textContent).toContain('Zara');
     expect(container.querySelector('.planner-title-full')?.textContent).toBe('Zara');
 
-    // Back returns to the board with every column again (two children + free).
+    // Back returns to the board with every family member and free column.
     fireEvent.click(container.querySelector('.planner-header .planner-icon-button')!);
     expect(container.querySelector('.planner-detail')).toBeNull();
-    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(4);
   });
 
   it('shows completed chore history with the same date ranges', async () => {
@@ -801,14 +795,6 @@ describe('ChorePlanner board', () => {
         {
           ...base.chores[0],
           statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
-        },
-        {
-          ...base.chores[0],
-          id: 'status:zara::bed-opmaken',
-          statusEntityId: 'sensor.zara_choreops_chore_status_bed_opmaken',
-          name: 'Bed opmaken',
-          frequency: 'daily',
-          labels: ['Ochtendroutine'],
         },
       ],
     };
@@ -879,160 +865,25 @@ describe('ChorePlanner board', () => {
     expect(container.textContent).toContain('Stel een doel in');
   });
 
-  it('hides a member from the board from the filter sheet', () => {
+  it('hides a parent or child from the board from the filter sheet', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(4);
 
     fireEvent.click(container.querySelector('button[aria-label="Filteren"]')!);
     const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
     fireEvent.click(within(sheet).getByRole('button', { name: /Maya/ }));
 
-    expect(container.querySelectorAll('.planner-col')).toHaveLength(2);
+    expect(container.querySelectorAll('.planner-col')).toHaveLength(3);
   });
 
-  it('pauses and resumes a routine', async () => {
-    const base = twoChildren();
-    mocks.state.current = {
-      ...base,
-      chores: [
-        ...base.chores,
-        {
-          ...base.chores[0],
-          id: 'status:zara::kamer-opruimen',
-          name: 'Kamer opruimen',
-          assignee: 'Zara',
-          frequency: 'daily',
-          labels: ['Ochtendroutine'],
-        },
-      ],
-    };
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+  it('routes routine creation from the Chores add sheet to the shared Family editor', () => {
+    const onRequestRoutineCreate = vi.fn();
+    const { container } = renderPlanner([PARENT, ZARA], undefined, onRequestRoutineCreate);
 
-    const pause = container.querySelector<HTMLButtonElement>(
-      'button[aria-label^="Pauzeren: Ochtendroutine"]',
-    )!;
-    fireEvent.click(pause);
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+    fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
 
-    // Pause is a shared planner operation (server-side in add-on mode), so the
-    // row updates once it has been applied.
-    await waitFor(() => {
-      const row = container.querySelector('.planner-row--routine')!;
-      expect(row.className).toContain('is-paused');
-    });
-    expect(
-      container.querySelector('button[aria-label^="Hervatten: Ochtendroutine"]'),
-    ).not.toBeNull();
-  });
-
-  /*
-   * A child whose whole day is routines has no standalone chores, so the old
-   * `disabled={chores.length === 0}` left the mission button dead — and the
-   * routines themselves were only a name and a bar, with no steps.
-   */
-  it('lists a routine’s steps and lets a routine-only child start missions', () => {
-    const base = twoChildren();
-    mocks.state.current = {
-      ...base,
-      chores: [
-        {
-          ...base.chores[0],
-          id: 'status:zara::kamer-opruimen',
-          name: 'Kamer opruimen',
-          assignee: 'Zara',
-          frequency: 'daily',
-          labels: ['Ochtendroutine'],
-        },
-      ],
-    };
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-
-    const zara = column(container, 'Zara');
-    const row = zara.querySelector<HTMLElement>('.planner-row--routine')!;
-    expect(row.querySelector('.planner-steps')?.textContent).toContain('Kamer opruimen');
-    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('0/1');
-
-    // Nothing loose to do, but there is a routine to run.
-    expect(zara.querySelector<HTMLButtonElement>('.planner-col-play')!.disabled).toBe(false);
-    // 0/1 steps done: the bar starts empty, not at the time-of-day position.
-    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('0%');
-  });
-
-  it('marks routine steps that are already done today', () => {
-    const base = twoChildren();
-    mocks.state.current = {
-      ...base,
-      chores: [
-        {
-          ...base.chores[0],
-          id: 'status:zara::kamer-opruimen',
-          name: 'Kamer opruimen',
-          assignee: 'Zara',
-          frequency: 'daily',
-          status: 'completed',
-          labels: ['Ochtendroutine'],
-        },
-      ],
-    };
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-
-    const row = column(container, 'Zara').querySelector<HTMLElement>('.planner-row--routine')!;
-    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('1/1');
-    expect(row.querySelector('.planner-step')?.className).toContain('is-done');
-    // A completed routine fills its bar, even when the day is only half over.
-    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('100%');
-    // Nothing left to run, so starting a mission is pointless.
-    expect(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!.disabled,
-    ).toBe(true);
-  });
-
-  it('fills the routine bar when all three steps are done', () => {
-    const base = twoChildren();
-    mocks.state.current = {
-      ...base,
-      chores: ['Kamer opruimen', 'Tanden poetsen', 'Afwassen'].map((name, index) => ({
-        ...base.chores[0],
-        id: `status:zara::done-${index}`,
-        name,
-        assignee: 'Zara',
-        frequency: 'daily',
-        status: 'completed',
-        labels: ['Ochtendroutine'],
-      })),
-    };
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-
-    const row = column(container, 'Zara').querySelector<HTMLElement>('.planner-row--routine')!;
-    expect(row.querySelector('.planner-routine-count')?.textContent).toBe('3/3');
-    expect(row.querySelector<HTMLElement>('.planner-row-progress > i')!.style.width).toBe('100%');
-  });
-
-  it('starts just one routine from its row', () => {
-    const base = twoChildren();
-    mocks.state.current = {
-      ...base,
-      chores: [
-        {
-          ...base.chores[0],
-          id: 'status:zara::kamer-opruimen',
-          name: 'Kamer opruimen',
-          assignee: 'Zara',
-          frequency: 'daily',
-          labels: ['Ochtendroutine'],
-        },
-      ],
-    };
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-
-    fireEvent.click(
-      container.querySelector<HTMLButtonElement>(
-        'button[aria-label^="Deze routine starten: Ochtendroutine"]',
-      )!,
-    );
-
-    // The mission screen walks the routine's remaining steps.
-    expect(container.querySelector('.planner-mission-screen')).not.toBeNull();
-    expect(container.textContent).toContain('Kamer opruimen');
+    expect(onRequestRoutineCreate).toHaveBeenCalledTimes(1);
   });
 
   /*

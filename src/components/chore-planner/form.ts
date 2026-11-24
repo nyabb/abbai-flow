@@ -81,8 +81,8 @@ export type FormValue = {
   liveReminder: string;
   liveAutoApprove: boolean;
   liveDescription: string;
-  /** First ChoreOps label: names the daily routine this chore belongs to. */
-  liveLabel: string;
+  /** Comma-separated ordinary ChoreOps labels; these never define routines. */
+  liveLabels: string;
 };
 
 export function localDateTime(date: Date): string {
@@ -136,7 +136,7 @@ export function formFromTask(task: PlannerTask): FormValue {
     liveReminder: '',
     liveAutoApprove: false,
     liveDescription: '',
-    liveLabel: '',
+    liveLabels: '',
   };
 }
 
@@ -149,15 +149,14 @@ export function formFromLiveTask(task: PlannerTask, chore: ChoreOpsChore | null)
     points: chore?.points ?? base.points,
     liveFrequency: (chore?.frequency as ChoreOpsFrequency | null) ?? 'none',
     liveInterval: chore?.customInterval ?? 1,
-    liveIntervalUnit:
-      (chore?.customIntervalUnit as ChoreOpsIntervalUnit | null) ?? 'days',
+    liveIntervalUnit: (chore?.customIntervalUnit as ChoreOpsIntervalUnit | null) ?? 'days',
     liveWeekdays: days
       .map((day) => DAY_KEYS.indexOf(day as (typeof DAY_KEYS)[number]))
       .filter((index) => index >= 0),
     liveWindow: formatChoreOpsOffset(chore?.windowOffset),
     liveAutoApprove: chore?.autoApprove ?? false,
     liveDescription: chore?.description ?? '',
-    liveLabel: chore?.labels?.[0] ?? '',
+    liveLabels: (chore?.labels ?? []).join(', '),
     // A live ChoreOps chore without a due date must stay date-less in the
     // editor. `base.deadlineAt` is a planner fallback and must not be sent back
     // to ChoreOps as though the user had set a due date.
@@ -192,6 +191,6 @@ export function emptyForm(now: Date): FormValue {
     liveReminder: '',
     liveAutoApprove: false,
     liveDescription: '',
-    liveLabel: '',
+    liveLabels: '',
   };
 }

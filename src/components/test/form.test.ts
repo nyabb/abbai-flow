@@ -46,7 +46,7 @@ describe('planner form helpers', () => {
     expect(form.free).toBe(false);
     // Nothing is known about the schedule yet, so it stays "none" for ChoreOps.
     expect(form.liveFrequency).toBe('none');
-    expect(form.liveLabel).toBe('');
+    expect(form.liveLabels).toBe('');
   });
 
   it('marks an unassigned task as free for anyone', () => {
@@ -70,7 +70,7 @@ describe('planner form helpers', () => {
       windowOffset: '0d 1h 0m',
       autoApprove: true,
       description: 'Keuken',
-      labels: ['Ochtendroutine'],
+      labels: ['School', 'Outdoor'],
       dueDate: '2026-02-03T10:00:00.000Z',
       actions: {},
     } as never);
@@ -82,7 +82,7 @@ describe('planner form helpers', () => {
     expect(form.liveWindow).toBe('1h');
     expect(form.liveAutoApprove).toBe(true);
     expect(form.liveDescription).toBe('Keuken');
-    expect(form.liveLabel).toBe('Ochtendroutine');
+    expect(form.liveLabels).toBe('School, Outdoor');
     expect(DAY_KEYS[form.liveWeekdays[1]]).toBe('wed');
   });
 
@@ -109,7 +109,7 @@ describe('planner form helpers', () => {
     expect(form.name).toBe('');
     expect(form.free).toBe(false);
     expect(form.liveReminder).toBe('');
-    expect(form.liveLabel).toBe('');
+    expect(form.liveLabels).toBe('');
   });
 
   it('formats clock times and countdowns with the copy units', () => {

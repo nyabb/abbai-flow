@@ -3,7 +3,7 @@
  * create browser live in adjacent modules to keep each file focused.
  */
 import { CheckCheck, Pencil, RotateCcw, Trash2 } from 'lucide-react';
-import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
@@ -137,23 +137,17 @@ export function AwardSheet({
 
 export interface FilterSheetProps {
   members: PlannerMember[];
-  routines: PlannerRoutine[];
   hiddenMemberIds: string[];
-  pausedRoutineIds: string[];
   copy: PlannerCopy;
   onToggleMember: (memberId: string) => void;
-  onToggleRoutine: (routineId: string) => void;
   onClose: () => void;
 }
 
 export function FilterSheet({
   members,
-  routines,
   hiddenMemberIds,
-  pausedRoutineIds,
   copy: c,
   onToggleMember,
-  onToggleRoutine,
   onClose,
 }: FilterSheetProps) {
   return (
@@ -176,32 +170,6 @@ export function FilterSheet({
           );
         })}
       </div>
-      {routines.length > 0 && (
-        <>
-          <h2>{c.pausedRoutines}</h2>
-          <div className="planner-goal-list">
-            {routines.map((routine) => {
-              const paused = pausedRoutineIds.includes(routine.id);
-              return (
-                <button
-                  type="button"
-                  className="planner-goal"
-                  key={routine.id}
-                  onClick={() => onToggleRoutine(routine.id)}
-                >
-                  <span className="planner-goal-icon" aria-hidden="true">
-                    {routine.icon}
-                  </span>
-                  <span className="planner-goal-copy">
-                    <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                    <small>{paused ? c.paused : c.active}</small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </>
-      )}
       <footer className="planner-sheet-footer">
         <button className="planner-ghost" onClick={onClose}>
           {c.cancel}

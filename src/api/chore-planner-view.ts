@@ -5,27 +5,18 @@
  * module maps ChoreOps' real entities onto it so the same board can be powered
  * by the integration instead of any local sample data.
  *
- * ChoreOps stays authoritative: status, points, and action entity ids all come
- * from its entities, and people are rendered with Abbai Flow family settings
- * (photo, avatar, colour, display name) joined by `choreops_user` or name.
+ * ChoreOps owns chore status and points. Family routines are loaded separately
+ * from Abbai Flow's family store and never inferred from ChoreOps labels.
+ * People are rendered with Abbai Flow family settings (photo, avatar, colour,
+ * display name) joined by `choreops_user` or name.
  */
 import { isChoreOpenToAnyone, resolveMemberForUser } from './choreops';
-import {
-  emptyMeta,
-  findRoutine,
-  normaliseName,
-  routineIdForTask,
-  routineTaskOrder,
-  type PlannerMeta,
-} from './planner-meta';
 import type {
   PlannerGoal,
   PlannerMember,
-  PlannerRoutine,
   PlannerTask,
   PlannerTaskAudience,
   PlannerTaskStatus,
-  PlannerTimeBlock,
 } from './chore-planner-model';
 import type { ChoreOpsChore, ChoreOpsState } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
@@ -35,8 +26,6 @@ export interface ChorePlannerView {
   /** All live chores, including stale completed routine steps kept off the board. */
   allTasks: PlannerTask[];
   tasks: PlannerTask[];
-  /** Daily repeating chores, grouped by their ChoreOps label. */
-  routines: PlannerRoutine[];
   goals: PlannerGoal[];
   /** True when ChoreOps published at least one user or chore. */
   available: boolean;
@@ -96,30 +85,8 @@ function memberIdFor(userName: string, member: FamilyMember | null): string {
  */
 const TAKEN_BY_SOMEONE_ELSE = /completed_by_other/i;
 
-/** ChoreOps repeats that mean "every day" — the raw material for a routine. */
+/** ChoreOps repeats that mean "every day" for stale-completion filtering. */
 const DAILY_FREQUENCY = /^daily/i;
-
-/**
- * A routine is a group of daily chores that share a ChoreOps label, so a
- * household names them in ChoreOps ("Ochtendroutine", "Bedtijd") and Abbai Flow
- * simply shows what ChoreOps published. Returns null when the chore has no
- * label; those chores still count as daily work, just without a routine name.
- */
-function routineLabel(chore: ChoreOpsChore): string | null {
-  const label = (chore.labels ?? []).map((item) => item.trim()).find(Boolean);
-  return label ?? null;
-}
-
-/** Morning/afternoon/evening from the earliest due time in a routine. */
-function timeBlockFor(dueDate: string | null | undefined): PlannerTimeBlock {
-  if (!dueDate) return 'morning';
-  const due = new Date(dueDate);
-  if (Number.isNaN(due.getTime())) return 'morning';
-  const hour = due.getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 17) return 'afternoon';
-  return 'evening';
-}
 
 /**
  * Daily chores reset at midnight in ChoreOps, so a completion from an earlier
@@ -159,9 +126,7 @@ export function choreAudience(
   }
   if (criteria === 'shared_all') {
     const assignedCount = new Set(
-      (chore.assignedUserNames ?? [])
-        .map((name) => name.trim().toLowerCase())
-        .filter(Boolean),
+      (chore.assignedUserNames ?? []).map((name) => name.trim().toLowerCase()).filter(Boolean),
     ).size;
     return assignedCount === 1 ? 'member' : 'everyone';
   }
@@ -177,12 +142,6 @@ export function buildChorePlannerView(
   state: ChoreOpsState | null,
   family: FamilyMember[],
   now: Date = new Date(),
-  /**
-   * Abbai Flow-owned routine registry. ChoreOps has no routine entity and no
-   * ordering, so routine identity and step order come from here; its ChoreOps
-   * label remains the fallback for groups that were never adopted.
-   */
-  meta: PlannerMeta = emptyMeta(),
 ): ChorePlannerView {
   const users = state?.users ?? [];
 
@@ -192,6 +151,7 @@ export function buildChorePlannerView(
       id: memberIdFor(user.name, member),
       name: member?.name ?? user.name,
       avatar: member?.avatar ?? '\u{1F464}',
+      role: member?.role ?? 'child',
       photo: member?.photo,
       color: member?.color ?? '#cf6d55',
       savings: user.points,
@@ -209,15 +169,6 @@ export function buildChorePlannerView(
       const assignedId = chore.assignee ? memberIdFor(chore.assignee, member) : null;
       const status = choreOpsTaskStatus(chore.status);
       const awaitingReview = AWAITING_REVIEW.test(chore.status);
-      // Only daily chores belong to a routine, matching how the routine rows
-      // are grouped; a weekly chore keeps its ChoreOps label but is a one-off.
-      const label = DAILY_FREQUENCY.test(chore.frequency ?? '') ? routineLabel(chore) : null;
-      const routineId = DAILY_FREQUENCY.test(chore.frequency ?? '')
-        ? routineIdForTask(meta, chore.name, label)
-        : null;
-      const routine = routineId ? findRoutine(meta, routineId) : null;
-      const order = routineId ? routineTaskOrder(meta, routineId) : [];
-      const position = order.findIndex((name) => normaliseName(name) === normaliseName(chore.name));
 
       return {
         chore,
@@ -243,12 +194,6 @@ export function buildChorePlannerView(
           awaitingReview,
           autoApprove: chore.autoApprove ?? false,
           actions: chore.actions,
-          routineId: routineId ?? undefined,
-          routineName: routine?.name ?? label ?? undefined,
-          // A routine step is not an individual chore: the board hides these from
-          // the member column and the missions run is the only way to do them.
-          inRoutine: Boolean(routineId),
-          routineOrder: position >= 0 ? position + 1 : undefined,
         } satisfies PlannerTask,
       };
     });
@@ -256,7 +201,8 @@ export function buildChorePlannerView(
   const tasks = choreTasks
     .filter(({ chore }) => {
       // A daily chore finished on an earlier day is yesterday's work and stays
-      // off today's board, but remains available for its routine's edit menu.
+      // off today's board. Its routine schedule belongs to ChoreOps, but its
+      // grouping and task identity do not define an Abbai Flow routine.
       const finished = choreOpsTaskStatus(chore.status) === 'completed';
       return !(
         finished &&
@@ -265,120 +211,6 @@ export function buildChorePlannerView(
       );
     })
     .map(({ task }) => task);
-
-  /*
-   * Routines are the daily chores, grouped by their ChoreOps label. One entry
-   * per label (not per child) so "Ochtendroutine" reads the same whoever the
-   * group happens to be listed under; `memberIds` records who does it.
-   */
-  const routineBuckets = new Map<
-    string,
-    {
-      name: string;
-      icon: string | null;
-      memberIds: Set<string>;
-      points: number;
-      dueDate: string | null;
-      taskNames: Set<string>;
-      paused: boolean;
-    }
-  >();
-
-  /**
-   * Daily chores without a label. They only join the routine section once the
-   * household has at least one *named* routine: on its own this bucket used to
-   * produce a "Routines" bar for plain daily chores, which reads like a bug.
-   * Mixing them in keeps everything that repeats daily in one place as soon as
-   * routines are actually in use.
-   */
-  const unlabelledBucket = {
-    icon: null as string | null,
-    memberIds: new Set<string>(),
-    points: 0,
-    dueDate: null as string | null,
-  };
-
-  for (const chore of state?.chores ?? []) {
-    if (!DAILY_FREQUENCY.test(chore.frequency ?? '')) continue;
-    if (!chore.assignee) continue;
-
-    const member = resolveMemberForUser(chore.assignee, family);
-    const memberId = memberIdFor(chore.assignee, member);
-    const label = routineLabel(chore);
-    const routineId = routineIdForTask(meta, chore.name, label);
-
-    // A daily chore that belongs to no routine at all is collected separately.
-    if (!routineId) {
-      if (memberIds.has(memberId)) unlabelledBucket.memberIds.add(memberId);
-      unlabelledBucket.points += chore.points ?? 0;
-      unlabelledBucket.icon ??= plannerIcon(chore.icon);
-      if (
-        chore.dueDate &&
-        (!unlabelledBucket.dueDate || chore.dueDate < unlabelledBucket.dueDate)
-      ) {
-        unlabelledBucket.dueDate = chore.dueDate;
-      }
-      continue;
-    }
-
-    const definition = findRoutine(meta, routineId);
-    const bucket = routineBuckets.get(routineId) ?? {
-      // The registry owns the display name; a legacy label is only a fallback.
-      name: definition?.name ?? label ?? '',
-      icon: definition?.icon ?? plannerIcon(chore.icon),
-      memberIds: new Set<string>(),
-      points: 0,
-      dueDate: null,
-      taskNames: new Set<string>(),
-      paused: definition?.paused ?? false,
-    };
-
-    if (memberIds.has(memberId)) bucket.memberIds.add(memberId);
-    bucket.points += chore.points ?? 0;
-    bucket.taskNames.add(chore.name);
-    if (chore.dueDate && (!bucket.dueDate || chore.dueDate < bucket.dueDate)) {
-      bucket.dueDate = chore.dueDate;
-    }
-    routineBuckets.set(routineId, bucket);
-  }
-
-  const routines: PlannerRoutine[] = Array.from(routineBuckets.entries()).map(([key, bucket]) => {
-    const order = routineTaskOrder(meta, key);
-    const known = order.filter((name) =>
-      Array.from(bucket.taskNames).some((live) => normaliseName(live) === normaliseName(name)),
-    );
-    const unordered = Array.from(bucket.taskNames).filter(
-      (live) => !known.some((name) => normaliseName(name) === normaliseName(live)),
-    );
-    return {
-      id: key,
-      name: bucket.name,
-      icon: bucket.icon ?? '\u23F0',
-      memberIds: Array.from(bucket.memberIds),
-      frequency: 'daily' as const,
-      timeBlock: timeBlockFor(bucket.dueDate),
-      points: bucket.points,
-      // Registry order first, then anything ChoreOps has that the registry does
-      // not know yet (a chore added in HA without touching Abbai Flow).
-      taskNames: [...known, ...unordered],
-      paused: bucket.paused,
-    };
-  });
-
-  // Only added when a named routine exists, so a household without routines
-  // never gets a bar full of plain daily chores.
-  if (routines.length > 0 && unlabelledBucket.memberIds.size > 0) {
-    routines.push({
-      id: 'routine:__unlabelled__',
-      name: '',
-      icon: unlabelledBucket.icon ?? '\u23F0',
-      memberIds: Array.from(unlabelledBucket.memberIds),
-      frequency: 'daily' as const,
-      timeBlock: timeBlockFor(unlabelledBucket.dueDate),
-      points: unlabelledBucket.points,
-      fallback: true,
-    });
-  }
 
   const goals: PlannerGoal[] = (state?.rewards ?? []).map((reward) => {
     const member = resolveMemberForUser(reward.assignee, family);
@@ -397,7 +229,6 @@ export function buildChorePlannerView(
     members,
     allTasks,
     tasks,
-    routines,
     goals,
     available: Boolean(state?.available && (users.length > 0 || tasks.length > 0)),
   };

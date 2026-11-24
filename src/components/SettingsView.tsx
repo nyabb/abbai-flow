@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   Settings as SettingsIcon,
   Palette,
@@ -37,6 +37,8 @@ type SettingsSection =
   | 'about';
 
 interface SettingsViewProps {
+  initialSection?: SettingsSection;
+  onInitialSectionApplied?: () => void;
   settings: AbbaiSettings;
   onUpdateSettings: (patch: Partial<AbbaiSettings>) => void;
   onResetSettings: () => void;
@@ -81,6 +83,8 @@ const NAV_ITEMS: Array<{ id: SettingsSection; labelKey: TranslationKey; icon: Re
 // ---------------------------------------------------------------------------
 
 export function SettingsView({
+  initialSection,
+  onInitialSectionApplied,
   settings,
   onUpdateSettings,
   onResetSettings,
@@ -98,6 +102,12 @@ export function SettingsView({
 }: SettingsViewProps) {
   const { t } = useTranslation();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
+
+  useEffect(() => {
+    if (!initialSection) return;
+    setActiveSection(initialSection);
+    onInitialSectionApplied?.();
+  }, [initialSection, onInitialSectionApplied]);
 
   // ---- Export/Import ----
   const handleExport = useCallback(() => {

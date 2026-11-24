@@ -1,26 +1,27 @@
 import { useState } from 'react';
 import {
   ChevronDown,
-  Clock3,
   Gift,
   ListChecks,
   MoreHorizontal,
   Pencil,
+  Repeat,
   RotateCcw,
 } from 'lucide-react';
-import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../../api/chore-planner-model';
+import type { PlannerMember, PlannerTask } from '../../../api/chore-planner-model';
 import type { ChoreOpsChore, ChoreOpsReward } from '../../../types/choreops';
+import type { Routine } from '../../../types/family';
 import type { PlannerCopy } from '../copy';
 
 export interface CreateSheetProps {
   copy: PlannerCopy;
   chores: ChoreOpsChore[];
   tasks: PlannerTask[];
-  routines: Array<Pick<PlannerRoutine, 'id' | 'name' | 'taskNames' | 'memberIds' | 'fallback'>>;
+  routines: Routine[];
   rewards: ChoreOpsReward[];
   members: PlannerMember[];
   onChore: () => void;
-  onRoutine: () => void;
+  onRoutine?: () => void;
   onReward: () => void;
   onEditChore: (task: PlannerTask) => void;
   onOpenTaskActions: (task: PlannerTask) => void;
@@ -78,10 +79,12 @@ export function CreateSheet({
           <ListChecks />
           <strong>{c.add}</strong>
         </button>
-        <button className="planner-destination" onClick={onRoutine}>
-          <Clock3 />
-          <strong>{c.routineNew}</strong>
-        </button>
+        {onRoutine && (
+          <button className="planner-destination" onClick={onRoutine}>
+            <Repeat />
+            <strong>{c.routineNew}</strong>
+          </button>
+        )}
         <button className="planner-destination" onClick={onReward}>
           <Gift />
           <strong>{c.newReward}</strong>
@@ -240,42 +243,27 @@ export function CreateSheet({
               <p className="planner-col-empty">{c.noRoutines}</p>
             ) : (
               routines.map((routine) => {
-                const steps = routine.taskNames ?? [];
-                const assigned = memberNames(routine.memberIds);
+                const steps = [...routine.tasks].sort((a, b) => a.order - b.order);
+                const assigned = memberNames([routine.member_id]);
                 return (
                   <details className="planner-create-routine" key={routine.id}>
                     <summary>
                       <span>
-                        <strong>{routine.fallback ? c.otherDaily : routine.name}</strong>
-                        {assigned && <small>{assigned}</small>}
+                        <strong>{routine.name}</strong>
+                        <small>
+                          {assigned} · {routine.time_of_day} · {routine.mission_points ?? 5}{' '}
+                          {c.pointsUnit}
+                        </small>
                       </span>
                       <span className="planner-create-step-count">{steps.length}</span>
                       <ChevronDown className="planner-create-routine-chevron" aria-hidden="true" />
                     </summary>
                     {steps.length > 0 && (
                       <ul>
-                        {steps.map((name) => {
-                          const matchingTasks = tasks.filter(
-                            (item) =>
-                              item.routineId === routine.id &&
-                              item.name.trim().toLowerCase() === name.trim().toLowerCase(),
-                          );
-                          const task = matchingTasks.find(isCompleted) ?? matchingTasks[0];
+                        {steps.map((step) => {
                           return (
-                            <li key={name}>
-                              {task ? (
-                                <button
-                                  type="button"
-                                  className="planner-create-routine-step"
-                                  onClick={() => onOpenTaskActions(task)}
-                                  aria-label={`${c.action}: ${name}`}
-                                >
-                                  <span>{name}</span>
-                                  <MoreHorizontal size={16} aria-hidden="true" />
-                                </button>
-                              ) : (
-                                <span>{name}</span>
-                              )}
+                            <li key={step.id}>
+                              <span>{step.name}</span>
                             </li>
                           );
                         })}

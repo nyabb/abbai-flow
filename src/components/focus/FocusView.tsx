@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { useFamily } from '../../hooks/useFamily';
 import { useChoreOps } from '../../hooks/useChoreOps';
 import { findUserForMember } from '../../api/choreops';
+import { routineOccursOnDate } from '../../api/routine-schedule';
 import { MemberAvatar } from '../MemberAvatar';
 import { useRoutines } from '../../hooks/useRoutines';
 import { AbbaiSettings } from '../../hooks/useSettings';
@@ -108,7 +109,10 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
     return ids;
   }, [choreOps.data]);
 
-  const pick = pickRoutine(routinesApi.routines, now);
+  const pick = pickRoutine(
+    routinesApi.routines.filter((routine) => routineOccursOnDate(routine, now)),
+    now,
+  );
 
   if (!member) {
     // Member deleted while display active: App-level guard exits on next render

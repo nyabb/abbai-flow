@@ -14,6 +14,7 @@ export interface PlannerMember {
   id: string;
   name: string;
   avatar: string;
+  role?: 'parent' | 'child';
   /** Abbai Flow family photo (data URL or HA path); emoji is the fallback. */
   photo?: string;
   color: string;
@@ -66,6 +67,8 @@ export interface PlannerTask {
    */
   routineId?: string;
   routineName?: string;
+  /** Abbai Flow routine step identity when this task is mission-only. */
+  familyRoutineTask?: { routineId: string; taskId: string };
   /**
    * True when the chore is a *step of a routine* rather than an individual
    * chore. Routine steps belong exclusively to their routine: they are not

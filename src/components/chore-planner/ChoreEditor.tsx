@@ -1,6 +1,6 @@
 /**
  * The chore editor sheet: everything a parent can change about a chore —
- * name, points, assignees, routine label, repeat schedule, due date, window,
+ * name, points, assignees, ordinary labels, repeat schedule, due date, window,
  * reminder and parent-free approval.
  *
  * It is a controlled form: the planner owns the `FormValue`, the sheet only
@@ -25,8 +25,6 @@ export interface ChoreEditorProps {
   saving: boolean;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  /** Existing routine names, so the field is a picker instead of free text. */
-  routineNames?: string[];
   onCancel: () => void;
   onSave: () => void;
 }
@@ -39,23 +37,12 @@ export function ChoreEditor({
   saving,
   copy: c,
   t,
-  routineNames = [],
   onCancel,
   onSave,
 }: ChoreEditorProps) {
-  /*
-   * A routine repeats and carries the routine label; a task happens once. The
-   * reference model puts recurrence on routines only, and ChoreOps agrees --
-   * a chore without a repeat is a one-off. So a NEW task hides the label and
-   * schedule fields entirely and is created as `none`, while a new routine
-   * chooses its repeat explicitly (daily by default, weekly adds the weekday
-   * pills).
-   *
-   * Editing always shows them: an existing chore may already be weekly or use
-   * a custom interval, and hiding that would silently rewrite what ChoreOps has
-   * the moment it is saved.
-   */
-  const showSchedule = form.kind === 'routine' || Boolean(editingId);
+  // Existing ChoreOps recurrence can still be edited, but routines are managed
+  // exclusively in Family Settings.
+  const showSchedule = Boolean(editingId);
 
   return (
     <>
@@ -67,6 +54,16 @@ export function ChoreEditor({
           value={form.name}
           onChange={(event) => setForm((value) => ({ ...value, name: event.target.value }))}
         />
+      </label>
+      <label className="planner-field">
+        {c.labels}
+        <input
+          aria-label={c.labels}
+          value={form.liveLabels}
+          placeholder={c.labelsPlaceholder}
+          onChange={(event) => setForm((value) => ({ ...value, liveLabels: event.target.value }))}
+        />
+        <small className="planner-hint">{c.labelsHint}</small>
       </label>
       <label className="planner-field">
         {c.points}
@@ -150,24 +147,6 @@ export function ChoreEditor({
         />
       </label>
       {!showSchedule && <p className="planner-hint">{c.taskOnceHint}</p>}
-      {showSchedule && (
-        <label className="planner-field">
-          {c.routineLabel}
-          <input
-            list="planner-routine-names"
-            value={form.liveLabel}
-            placeholder={c.routinePlaceholder}
-            onChange={(event) => setForm((value) => ({ ...value, liveLabel: event.target.value }))}
-          />
-          {/* Pick an existing routine, or type a new name to create one. */}
-          <datalist id="planner-routine-names">
-            {routineNames.map((name) => (
-              <option key={name} value={name} />
-            ))}
-          </datalist>
-          <small className="planner-hint">{c.routineHint}</small>
-        </label>
-      )}
       {showSchedule && (
         <label className="planner-field">
           {c.frequency}
@@ -288,13 +267,7 @@ export function ChoreEditor({
         <button
           className="planner-primary"
           aria-busy={saving}
-          disabled={
-            !form.name.trim() ||
-            (!form.memberIds.length && !form.free) ||
-            // A routine is only a routine once it has a name to group under.
-            (form.kind === 'routine' && !editingId && !form.liveLabel.trim()) ||
-            saving
-          }
+          disabled={!form.name.trim() || (!form.memberIds.length && !form.free) || saving}
           onClick={onSave}
         >
           {saving && <ActivitySpinner className="activity-spinner--small" />}

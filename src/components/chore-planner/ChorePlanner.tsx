@@ -17,9 +17,12 @@ import {
   PlannerTask,
   getPlannerTaskStatus,
 } from '../../api/chore-planner-model';
-import type { PlannerMember, PlannerRoutine } from '../../api/chore-planner-model';
+import type { PlannerMember } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
 import { resolveMemberForUser } from '../../api/choreops';
+import { FamilyStore } from '../../api/family';
+import { localDayKey } from '../../api/date-keys';
+import { routineOccursOnDate } from '../../api/routine-schedule';
 import {
   activeRedemptions,
   fulfilledRedemptions,
@@ -28,20 +31,19 @@ import {
 import type { ChoreOpsReward } from '../../types/choreops';
 import { recordDebugLog } from '../../api/debug-log';
 import { useChoreOps } from '../../hooks/useChoreOps';
-import { usePlannerMeta } from '../../hooks/usePlannerMeta';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
-import {
-  findRoutine,
-  missionStep,
-  normaliseName,
-  routineTaskOrder,
-} from '../../api/planner-meta';
+import { useRoutines } from '../../hooks/useRoutines';
 import { useTranslation } from '../../i18n';
-import { normalizePin, type FamilyMember } from '../../types/family';
+import {
+  DEFAULT_ROUTINE_MISSION_POINTS,
+  normalizePin,
+  type FamilyMember,
+  type Routine as FamilyRoutine,
+} from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 import { usePlannerCopy } from './copy';
-import { RewardRow, RoutineRow, TaskRow, type RoutineStep } from './rows';
+import { FamilyRoutineRow, RewardRow, TaskRow, type RoutineStep } from './rows';
 import { HeaderDate } from '../PageHeader';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { ChoreBoard } from './ChoreBoard';
@@ -65,44 +67,17 @@ import { usePlannerHistory } from './usePlannerHistory';
 import { useChoreFormActions } from './useChoreFormActions';
 import { usePlannerRewards } from './usePlannerRewards';
 import { errorDiagnosticText } from './planner-utils';
-import {
-  MIN_PIN_LENGTH,
-  clockTime,
-  countdown,
-  emptyForm,
-  toastWith,
-  type FormValue,
-} from './form';
-import {
-  initialPlannerOverlay,
-  plannerOverlayReducer,
-} from './overlay-state';
+import { MIN_PIN_LENGTH, clockTime, countdown, emptyForm, toastWith, type FormValue } from './form';
+import { initialPlannerOverlay, plannerOverlayReducer } from './overlay-state';
 
 /**
- * The planner is one board: a column per family member plus a column of chores
- * anybody may take. The mission screens are the optional step-by-step run
- * through one child's chores.
+ * The planner is one board: routines for every family member and chore lists
+ * for children. Missions guide a member through the same Family routine.
  */
 type Screen = 'board' | 'child' | 'missions' | 'mission' | 'closing';
 
 /** Outcome shown in the bottom-right notification. */
 type ToastKind = 'success' | 'error';
-
-const PAUSED_ROUTINES_KEY = 'abbai_flow_paused_routines';
-
-/**
- * Routines paused on this device before pause state moved into the shared
- * planner metadata. Read once, then imported, so the choice is not lost.
- */
-function readPausedRoutines(): string[] {
-  try {
-    const raw = localStorage.getItem(PAUSED_ROUTINES_KEY);
-    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
-    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 interface ChorePlannerProps {
   /** Abbai Flow family members supply photos, colours, and display names. */
@@ -112,10 +87,11 @@ interface ChorePlannerProps {
   /** The same updater Settings uses, so picking a language here changes the whole app. */
   onLocaleChange: (locale: string) => void;
   /**
-   * Asks the planner to open its "new chore" form for a chore or a routine,
-   * e.g. from quick add. The token makes repeated requests distinct.
+   * Asks the planner to open its new chore form from quick add.
    */
-  createRequest?: { kind: 'chore' | 'routine'; token: number };
+  createRequest?: { kind: 'chore'; token: number };
+  /** Routes routine creation to the shared Family settings editor. */
+  onRequestRoutineCreate?: () => void;
 }
 
 export function ChorePlanner({
@@ -123,54 +99,48 @@ export function ChorePlanner({
   locale,
   onLocaleChange,
   createRequest,
+  onRequestRoutineCreate,
 }: ChorePlannerProps) {
   const choreOps = useChoreOps();
-  /**
-   * Abbai Flow-owned planner metadata: the routine registry (identity + step order)
-   * and per-child mission progress. ChoreOps has neither, so this is the only
-   * place routines can be ordered, renamed or paused.
-   */
-  const plannerMeta = usePlannerMeta(readPausedRoutines());
-  const meta = plannerMeta.meta;
+  const {
+    routines: familyRoutines,
+    isTaskCompletedToday: isRoutineTaskCompletedToday,
+    refresh: refreshRoutines,
+    toggleTask: toggleRoutineTask,
+  } = useRoutines();
+  const familyStore = useMemo(() => new FamilyStore(), []);
   const [now, setNow] = useState(new Date());
-  /**
-   * ChoreOps is the single source of truth. There is no local chore store any
-   * more: the board renders exactly what the integration publishes.
-   */
+  /** ChoreOps owns chore data; routines come from the Family store. */
   const view = useMemo(
-    // `now` is part of the input: a daily routine's "done" only counts for the
-    // day it was completed, so the board must re-evaluate at midnight.
-    () => buildChorePlannerView(choreOps.data, members, now, meta),
-    [choreOps.data, members, now, meta],
+    () => buildChorePlannerView(choreOps.data, members, now),
+    [choreOps.data, members, now],
   );
+  const plannerMembers = [...view.members];
+  for (const familyMember of members) {
+    if (
+      (familyMember.role === 'parent' ||
+        familyRoutines.some((routine) => routine.member_id === familyMember.id)) &&
+      !plannerMembers.some((plannerMember) => plannerMember.id === familyMember.id)
+    ) {
+      plannerMembers.push({
+        id: familyMember.id,
+        name: familyMember.name,
+        avatar: familyMember.avatar,
+        role: familyMember.role,
+        photo: familyMember.photo,
+        color: familyMember.color,
+        savings: familyMember.choreops_state?.points ?? 0,
+      });
+    }
+  }
   const data: ChorePlannerState = {
-    members: view.members,
+    members: plannerMembers,
     tasks: view.tasks,
     goals: view.goals,
-    routines: view.routines,
+    routines: [],
     routinesPaused: false,
     soundEnabled: true,
   };
-  const adminRoutines = [
-    ...meta.routines.map((definition) => {
-      const liveRoutine = data.routines.find((routine) => routine.id === definition.id);
-      return {
-        id: definition.id,
-        name: definition.name,
-        taskNames: definition.taskNames,
-        memberIds: liveRoutine?.memberIds ?? [],
-      };
-    }),
-    ...data.routines
-      .filter((routine) => !meta.routines.some((definition) => definition.id === routine.id))
-      .map((routine) => ({
-        id: routine.id,
-        name: routine.name,
-        taskNames: routine.taskNames,
-        memberIds: routine.memberIds,
-        fallback: routine.fallback,
-      })),
-  ];
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
   const timeLocale = dateLocale.code || lang;
@@ -206,13 +176,9 @@ export function ChorePlanner({
   const [childMemberId, setChildMemberId] = useState<string | null>(null);
   /** Members hidden from the board, and the child whose mission run is open. */
   const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
-  /** Routines paused comes from the shared metadata, not from this device. */
-  const pausedRoutineIds = useMemo(
-    () => meta.routines.filter((routine) => routine.paused).map((routine) => routine.id),
-    [meta.routines],
-  );
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
+  const [missionBonusPoints, setMissionBonusPoints] = useState(0);
   const [pinGate, setPinGate] = useState<{
     /** Heading shown in the PIN sheet ("Verwijderen", "Bewerken", ...). */
     title: string;
@@ -233,48 +199,51 @@ export function ChorePlanner({
   const holdTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const c = usePlannerCopy();
 
-  /**
-   * A save that only reached this device must never look like it was stored.
-   * Both stores (routine metadata and reward progress) report whether the
-   * server accepted the write; when either fails, say so.
-   */
+  const familyMissionTasks = useMemo<PlannerTask[]>(
+    () =>
+      familyRoutines
+        .filter((routine) => routineOccursOnDate(routine, now))
+        .flatMap((routine) =>
+          [...routine.tasks]
+            .sort((a, b) => a.order - b.order)
+            .map((task) => ({
+              id: `family-routine:${routine.id}:${task.id}`,
+              name: task.name,
+              icon: null,
+              points: 0,
+              memberId: routine.member_id,
+              kind: 'task' as const,
+              startsAt: now.toISOString(),
+              deadlineAt: null,
+              expiresAt: null,
+              retryMinutes: null,
+              timeBlock: routine.time_of_day,
+              statusOverride: isRoutineTaskCompletedToday(routine.id, task.id, routine.member_id)
+                ? ('completed' as const)
+                : ('active' as const),
+              audience: 'member' as const,
+              routineId: routine.id,
+              routineName: routine.name,
+              familyRoutineTask: { routineId: routine.id, taskId: task.id },
+            })),
+        ),
+    [now, familyRoutines, isRoutineTaskCompletedToday],
+  );
+
+  /** A save that only reached this device must never look like it was stored. */
   useEffect(() => {
-    const failure = plannerMeta.error ?? rewardsState.error;
+    const failure = rewardsState.error;
     if (failure) showToast(`${c.noFail}: ${failure}`, 'error');
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only on change
-  }, [plannerMeta.error, rewardsState.error]);
+  }, [rewardsState.error]);
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(timer);
   }, []);
-  // One-way cleanup: the legacy per-device pause list is no longer authoritative.
   useEffect(() => {
-    try {
-      localStorage.removeItem(PAUSED_ROUTINES_KEY);
-    } catch {
-      /* Storage is optional. */
-    }
-  }, []);
-  /**
-   * Adopt routines that only exist as a ChoreOps label into the registry.
-   *
-   * A label is a display string with no identity: it cannot be renamed, ordered
-   * or paused reliably. Adopting it once gives it a slug id and a task list, so
-   * "Ochtendroutine" and "ochtendroutine " can never become two routines.
-   */
-  useEffect(() => {
-    const legacy = view.routines.filter(
-      (routine) => !routine.fallback && !findRoutine(meta, routine.id),
-    );
-    if (legacy.length === 0) return;
-    void plannerMeta.runOp({
-      type: 'adoptLabels',
-      groups: legacy.map((routine) => ({
-        label: routine.name,
-        taskNames: routine.taskNames ?? [],
-      })),
-    });
-  }, [view.routines, meta, plannerMeta]);
+    const timer = setInterval(() => void refreshRoutines(), 5 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [refreshRoutines]);
   useEffect(() => {
     if (!toast) return;
     // Errors stay a little longer: a parent needs time to read what ChoreOps
@@ -336,11 +305,18 @@ export function ChorePlanner({
       const member = resolveMemberForUser(user.name, members);
       map.set(member ? member.id : `choreops:${user.name.trim().toLowerCase()}`, user.name);
     }
+    for (const member of members) {
+      const linkedUser = choreOps.data?.users.find(
+        (user) => user.name.trim().toLowerCase() === member.choreops_user?.trim().toLowerCase(),
+      );
+      if (linkedUser) map.set(member.id, linkedUser.name);
+    }
     return map;
   }, [choreOps.data, members]);
   const getTask = (id: string | null) =>
     data.tasks.find((task) => task.id === id) ??
     view.allTasks.find((task) => task.id === id) ??
+    familyMissionTasks.find((task) => task.id === id) ??
     null;
   const memberFor = (id: string | null) => data.members.find((member) => member.id === id) ?? null;
   const editingId = overlay.type === 'form' ? overlay.editingId : null;
@@ -366,24 +342,21 @@ export function ChorePlanner({
    * queue, so a refresh cannot make a child look back at step 1.
    */
   const missionRoutineStep = (() => {
-    const routineId = missionTask?.routineId;
-    if (!routineId) return null;
-    const userName = missionTask?.memberId ? userNameByMemberId.get(missionTask.memberId) : null;
-    const step = missionStep(meta, userName, routineId);
-    const fallback = missionIds.filter((id) => getTask(id)?.routineId === routineId);
+    const link = missionTask?.familyRoutineTask;
+    if (!link) return null;
+    const routine = familyRoutines.find((item) => item.id === link.routineId);
+    if (!routine) return null;
+    const orderedTasks = [...routine.tasks].sort((a, b) => a.order - b.order);
     return {
-      name: missionTask?.routineName ?? '',
-      index:
-        step.total > 0
-          ? Math.min(step.total, step.done + (step.done < step.total ? 1 : 0))
-          : fallback.indexOf(missionTask?.id ?? '') + 1,
-      total: step.total || fallback.length,
+      name: routine.name,
+      index: orderedTasks.findIndex((task) => task.id === link.taskId) + 1,
+      total: orderedTasks.length,
     };
   })();
   const selectedTodayMember = memberFor(todayMemberId);
 
   /**
-   * What a child can still spend: ChoreOps' balance minus the points already
+   * What a family member can still spend: ChoreOps' balance minus the points already
    * promised to a reward. `rewards` is passed in so claims made in Home
    * Assistant also count as spent (approving one still deducts them later).
    */
@@ -394,50 +367,32 @@ export function ChorePlanner({
     return spendableWithRedemptions(member.savings, redemptions, rewards, userName);
   };
 
-  /**
-   * A routine row: name, its part of the day, how far through it we are, and a
-   * pause/resume tap. A paused routine stays visible but greyed out, so a
-   * parent can see it is off and bring it back with one tap.
-   */
-  /**
-   * One routine row for one child: its steps, how many are done, and a way to
-   * start just this routine. Steps are per child, so the member is required.
-   */
-  const routineRow = (routine: PlannerRoutine, memberId: string) => {
-    const paused = pausedRoutineIds.includes(routine.id);
+  /** One Abbai Flow routine row for its assigned family member. */
+  const routineRow = (routine: FamilyRoutine, memberId: string) => {
     const steps = routineStepsFor(routine, memberId);
+    const canEarnMissionPoints = isChildMember(memberId);
+    const bonusPoints = Math.max(
+      0,
+      canEarnMissionPoints ? (routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS) : 0,
+    );
     return (
-      <RoutineRow
+      <FamilyRoutineRow
         key={routine.id}
         routine={routine}
-        paused={paused}
         label={routineLabel(routine)}
-        progress={blockProgress(routine.timeBlock)}
+        bonusPoints={bonusPoints}
         steps={steps}
         copy={c}
-        onToggle={() => toggleRoutinePaused(routine.id, routine.name)}
-        onStart={() => beginRoutine(memberId, routine)}
-        canStart={steps.some((step) => step.open)}
-        online={online}
+        onStart={canEarnMissionPoints ? () => beginRoutine(memberId, routine) : undefined}
+        canStart={
+          steps.some((step) => step.open) &&
+          (bonusPoints === 0 || Boolean(userNameByMemberId.get(memberId)))
+        }
         busyTaskId={pendingTaskId}
         onCompleteStep={(taskId) => {
           const task = getTask(taskId);
-          if (!task) return;
-          if (task.audience === 'anyone') openClaim(task);
-          else void completeTask(task);
+          if (task) void completeFamilyRoutineTask(task, false);
         }}
-        onApproveStep={(name) => {
-          const task = data.tasks.find(
-            (item) =>
-              item.routineId === routine.id &&
-              item.memberId === memberId &&
-              normaliseName(item.name) === normaliseName(name) &&
-              item.awaitingReview &&
-              item.actions?.approve,
-          );
-          if (task) approveTask(task);
-        }}
-        onMoreStep={(taskId) => openActions(taskId, true)}
       />
     );
   };
@@ -528,97 +483,52 @@ export function ChorePlanner({
       />
     );
   };
-  /** Calendar order for a list of chores. */
-  /**
-   * The routines a child can run, in board order, skipping paused ones and
-   * routines that have nothing left to do for them today.
-   */
+  /** Family-owned routines with unfinished steps for this member. */
   const missionsFor = (memberId: string) =>
-    columnRoutines(memberId)
-      .filter((routine) => !routine.paused && !pausedRoutineIds.includes(routine.id))
+    (isChildMember(memberId) ? columnRoutines(memberId) : [])
+      .filter(
+        (routine) =>
+          Boolean(userNameByMemberId.get(memberId)) ||
+          (routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS) <= 0,
+      )
       .map((routine) => ({
         routine,
         tasks: routineTasksFor(routine, memberId),
       }))
       .filter((entry) => entry.tasks.length > 0);
 
-  /**
-   * A routine's own steps for one child, in the order the parent configured.
-   * Order comes from the registry; chores ChoreOps has but the registry does
-   * not know yet follow in ChoreOps order.
-   */
-  function routineTasksFor(routine: PlannerRoutine, memberId: string): PlannerTask[] {
-    const order = routine.taskNames ?? routineTaskOrder(meta, routine.id);
-    const open = data.tasks.filter(
-      (task) =>
-        task.routineId === routine.id &&
-        task.memberId === memberId &&
-        taskStatus(task) !== 'completed' &&
-        taskStatus(task) !== 'expired',
-    );
-    const position = (task: PlannerTask) => {
-      const index = order.findIndex((name) => normaliseName(name) === normaliseName(task.name));
-      return index === -1 ? order.length : index;
-    };
-    return [...open].sort((a, b) => position(a) - position(b));
+  function routineTasksFor(routine: FamilyRoutine, memberId: string): PlannerTask[] {
+    return [...routine.tasks]
+      .sort((a, b) => a.order - b.order)
+      .filter((task) => !isRoutineTaskCompletedToday(routine.id, task.id, memberId))
+      .map((task) =>
+        familyMissionTasks.find(
+          (plannerTask) =>
+            plannerTask.familyRoutineTask?.taskId === task.id &&
+            plannerTask.familyRoutineTask?.routineId === routine.id,
+        ),
+      )
+      .filter((task): task is PlannerTask => Boolean(task));
   }
 
-  /**
-   * A routine's steps for one child, in configured order, with today's state.
-   *
-   * A step counts as done when every ChoreOps row for it is completed today, and
-   * it is open while at least one row still waits. Steps the registry knows but
-   * ChoreOps has not published yet are listed as idle, so a routine that exists
-   * only in Abbai Flow still shows what it is made of.
-   */
-  function routineStepsFor(routine: PlannerRoutine, memberId: string): RoutineStep[] {
-    const order = routine.taskNames ?? routineTaskOrder(meta, routine.id);
-    const mine = data.tasks.filter(
-      (task) => task.routineId === routine.id && task.memberId === memberId,
-    );
-    const allMine = view.allTasks.filter(
-      (task) => task.routineId === routine.id && task.memberId === memberId,
-    );
-    const names = [...order];
-    for (const task of allMine) {
-      if (!names.some((name) => normaliseName(name) === normaliseName(task.name))) {
-        names.push(task.name);
-      }
-    }
-    return names.map((name) => {
-      const rows = mine.filter((task) => normaliseName(task.name) === normaliseName(name));
-      const editRows = allMine.filter((task) => normaliseName(task.name) === normaliseName(name));
-      const editTask = editRows.find((task) => rows.some((row) => row.id === task.id)) ?? editRows[0];
-      const actionableTask = rows.find((task) => {
-        const status = taskStatus(task);
-        return (
-          !task.awaitingReview &&
-          !['upcoming', 'expired', 'completed'].includes(status) &&
-          Boolean(task.actions?.claim ?? task.actions?.approve)
-        );
+  function routineStepsFor(routine: FamilyRoutine, memberId: string): RoutineStep[] {
+    return [...routine.tasks]
+      .sort((a, b) => a.order - b.order)
+      .map((step) => {
+        const done = isRoutineTaskCompletedToday(routine.id, step.id, memberId);
+        return {
+          name: step.name,
+          ...(!done ? { taskId: `family-routine:${routine.id}:${step.id}` } : {}),
+          done,
+          open: !done,
+        };
       });
-      return {
-        name,
-        ...(actionableTask ? { taskId: actionableTask.id } : {}),
-        ...(editTask ? { editTaskId: editTask.id } : {}),
-        done: rows.length > 0 && rows.every((task) => taskStatus(task) === 'completed'),
-        open: rows.some((task) => !['completed', 'expired'].includes(taskStatus(task))),
-        awaiting: rows.some((task) => task.awaitingReview && taskStatus(task) !== 'completed'),
-      };
-    });
   }
 
   /** The overview list is the queue: what it shows is what will be run. */
   const openTasksFor = (memberId: string) =>
     missionsFor(memberId).reduce<PlannerTask[]>((all, entry) => [...all, ...entry.tasks], []);
 
-  /**
-   * Is there anything to run for this child?
-   *
-   * The start button used to be disabled whenever the child had no *standalone*
-   * chores, which is exactly the case for a child whose whole day is routines —
-   * so the mission button looked dead.
-   */
   const canRunMissions = (memberId: string) => missionsFor(memberId).length > 0;
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
     new Date(a.deadlineAt ?? a.expiresAt ?? a.startsAt).getTime() -
@@ -629,20 +539,23 @@ export function ChorePlanner({
    * Chores still up for grabs are excluded here — they belong to the free
    * column until somebody takes one.
    */
-  const columnTasks = (memberId: string) =>
-    data.tasks
+  const isChildMember = (memberId: string) =>
+    members.find((member) => member.id === memberId)?.role !== 'parent';
+
+  const columnTasks = (memberId: string) => {
+    if (!isChildMember(memberId)) return [];
+    return data.tasks
       .filter(
         (task) =>
           task.memberId === memberId &&
           task.audience !== 'anyone' &&
-          // Routine steps live inside their routine, not in the chore list.
-          !task.inRoutine &&
           !['completed', 'expired'].includes(taskStatus(task)),
       )
       .sort((a, b) => {
         const late = (task: PlannerTask) => (['late', 'retry'].includes(taskStatus(task)) ? 0 : 1);
         return late(a) - late(b) || byDeadline(a, b);
       });
+  };
 
   /**
    * Chores still up for grabs. ChoreOps publishes one row per user for a
@@ -651,7 +564,11 @@ export function ChorePlanner({
    */
   const freeTasks = [...data.tasks]
     .filter(
-      (task) => task.audience === 'anyone' && !task.inRoutine && taskStatus(task) !== 'completed',
+      (task) =>
+        task.audience === 'anyone' &&
+        task.memberId !== null &&
+        isChildMember(task.memberId) &&
+        taskStatus(task) !== 'completed',
     )
     .filter((task, index, all) => all.findIndex((other) => other.name === task.name) === index)
     .sort(byDeadline);
@@ -659,7 +576,11 @@ export function ChorePlanner({
   /** Every row of one free chore, i.e. one claim button per child. */
   const claimOptionsFor = (task: PlannerTask) =>
     data.tasks.filter(
-      (other) => other.name === task.name && other.audience === 'anyone' && other.actions?.claim,
+      (other) =>
+        other.name === task.name &&
+        other.audience === 'anyone' &&
+        other.actions?.claim &&
+        Boolean(other.memberId && isChildMember(other.memberId)),
     );
 
   /** Open the "who is taking this?" sheet for a free chore. */
@@ -667,19 +588,20 @@ export function ChorePlanner({
     dispatchOverlay({ type: 'open-claim', taskId: task.id });
   };
 
-  /** The routines that belong to one child (ChoreOps groups them by label). */
+  /** Family Settings is the only routine registry. */
   const columnRoutines = (memberId: string) =>
-    data.routines.filter((routine) => routine.memberIds.includes(memberId));
+    familyRoutines.filter(
+      (routine) => routine.member_id === memberId && routineOccursOnDate(routine, now),
+    );
 
   /** Columns on the board: the ones a parent has not filtered out. */
   const boardMembers = data.members.filter((member) => !hiddenMemberIds.includes(member.id));
 
   /** Completed chores of one child today (the detail page's history). */
   const completedTasksFor = (memberId: string) =>
-    data.tasks.filter(
-      (task) =>
-        task.memberId === memberId && !task.inRoutine && taskStatus(task) === 'completed',
-    );
+    isChildMember(memberId)
+      ? data.tasks.filter((task) => task.memberId === memberId && taskStatus(task) === 'completed')
+      : [];
 
   /** Step to the previous/next child from the detail page. */
   const stepChild = (delta: number) => {
@@ -691,35 +613,19 @@ export function ChorePlanner({
     if (next) setChildMemberId(next.id);
   };
 
-  /** Pause a routine in the shared metadata so every device agrees. */
-  const toggleRoutinePaused = (routineId: string, routineName?: string) => {
-    void plannerMeta.runOp({ type: 'toggleRoutinePaused', id: routineId, name: routineName });
-  };
-
   /**
    * The award sheet asks where the earned points should go as soon as a chore is ticked.
    * We do the same: complete the chore, then offer this child's goals.
    */
-  /**
-   * How far through its part of the day a routine is: the reference app puts a
-   * small time bar on every routine row.
-   */
-  const blockProgress = (block: string) => {
-    const hour = now.getHours() + now.getMinutes() / 60;
-    const [start, end] =
-      block === 'morning' ? [6, 12] : block === 'afternoon' ? [12, 17] : [17, 22];
-    return Math.min(100, Math.max(0, ((hour - start) / (end - start)) * 100));
-  };
-
-  /** "Ochtend · dagelijks" for a routine row's second line. */
-  const routineLabel = (routine: PlannerRoutine) => {
+  /** Localized time of day under a routine name. */
+  const routineLabel = (routine: FamilyRoutine) => {
     const block =
-      routine.timeBlock === 'morning'
+      routine.time_of_day === 'morning'
         ? c.morning
-        : routine.timeBlock === 'evening'
+        : routine.time_of_day === 'evening'
           ? c.evening
           : c.afternoon;
-    return `${block} · ${routine.frequency === 'daily' ? c.daily : routine.frequency}`;
+    return block;
   };
 
   /** Open the goal sheet of one child, where their rewards live. */
@@ -735,17 +641,12 @@ export function ChorePlanner({
     childViewOpen: screen === 'child',
     childUserName,
     chores: choreOps.data?.chores ?? [],
-    meta,
     choreOpsAvailable: choreOps.available,
   });
   /** The filter sheet doubles as the board's filter state indicator. */
   const filterOpen = modal === 'filter';
 
-  const showToast = (
-    message: string,
-    kind: ToastKind = 'success',
-    details?: string,
-  ) => {
+  const showToast = (message: string, kind: ToastKind = 'success', details?: string) => {
     setToast({ message, kind });
     if (kind === 'error') {
       recordDebugLog({
@@ -789,7 +690,75 @@ export function ChorePlanner({
     else setScreen('closing');
   };
 
+  const completeFamilyRoutineTask = async (task: PlannerTask, asMission: boolean) => {
+    const link = task.familyRoutineTask;
+    if (!link || pendingTaskId) return;
+    const routine = familyRoutines.find((item) => item.id === link.routineId);
+    if (!routine || isRoutineTaskCompletedToday(routine.id, link.taskId, routine.member_id)) {
+      return;
+    }
+
+    setPendingTaskId(task.id);
+    let completionSaved = false;
+    try {
+      const persisted = await toggleRoutineTask(routine, link.taskId);
+      if (!persisted) throw new Error('Could not save this routine task completion');
+      completionSaved = true;
+      const missionFinished =
+        asMission &&
+        routine.tasks.every(
+          (step) =>
+            step.id === link.taskId ||
+            isRoutineTaskCompletedToday(routine.id, step.id, routine.member_id),
+        );
+      const bonus = Math.max(0, routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS);
+      let bonusGranted = false;
+
+      if (missionFinished && bonus > 0) {
+        const userName = userNameByMemberId.get(routine.member_id);
+        if (!userName) {
+          throw new Error('Link this family member to a ChoreOps user to award mission points');
+        }
+        const date = localDayKey();
+        const claimed = await familyStore.claimRoutineMissionBonus(
+          routine.id,
+          routine.member_id,
+          date,
+        );
+        if (claimed) {
+          try {
+            await choreOps.adjustPoints(
+              userName,
+              bonus,
+              `Abbai Flow mission: ${routine.name} (${date})`,
+            );
+            setMissionBonusPoints((previous) => previous + bonus);
+            bonusGranted = true;
+            setCelebration('chore');
+            showToast(`${routine.name} +${bonus} ⭐`);
+          } catch (error) {
+            await familyStore.releaseRoutineMissionBonus(routine.id, routine.member_id, date);
+            throw error;
+          }
+        }
+      }
+
+      playCompletionSound();
+      if (!bonusGranted) showToast(toastWith(c.done, task.name));
+      if (asMission) advanceMission();
+    } catch (error) {
+      showError(error);
+      if (completionSaved && asMission) advanceMission();
+    } finally {
+      setPendingTaskId(null);
+    }
+  };
+
   const completeTask = async (task: PlannerTask) => {
+    if (task.familyRoutineTask) {
+      void completeFamilyRoutineTask(task, true);
+      return;
+    }
     if (pendingTaskId) return;
     // Nothing to press on chores that are not open yet or already signed off.
     if (['upcoming', 'expired', 'completed'].includes(taskStatus(task))) return;
@@ -842,21 +811,6 @@ export function ChorePlanner({
       if (celebrate) setCelebration(celebrate);
       playCompletionSound();
       showToast(toastWith(action, label));
-      if (screen === 'mission') {
-        // Remember the step so "2 of 4" survives a refresh and the child is
-        // never asked to redo a step to get back to the right place.
-        const task = getTask(taskId);
-        const userName = task?.memberId ? userNameByMemberId.get(task.memberId) : null;
-        if (task?.routineId && userName) {
-          void plannerMeta.runOp({
-            type: 'markStep',
-            user: userName,
-            routineId: task.routineId,
-            taskName: task.name,
-          });
-        }
-        advanceMission();
-      }
     } catch (err) {
       showError(err);
     } finally {
@@ -911,8 +865,6 @@ export function ChorePlanner({
     choreOps,
     getTask,
     userNameByMemberId,
-    meta,
-    runPlannerOp: plannerMeta.runOp,
     hasParentPin,
     requestPin,
     dispatchOverlay,
@@ -988,20 +940,17 @@ export function ChorePlanner({
    * Open the reward form. A child's goals sheet preselects that child; the
    * header create menu starts empty and lets the parent pick who gets it.
    */
-  /** Start the guided run through one child's first open routine. */
-  /** Start one routine as a mission, without walking the child's other routines. */
-  const beginRoutine = (memberId: string, routine: PlannerRoutine) => {
+  /** Start one routine as a guided mission. */
+  const beginRoutine = (memberId: string, routine: FamilyRoutine) => {
+    if (!isChildMember(memberId)) return;
     const steps = routineTasksFor(routine, memberId);
     setTodayMemberId(memberId);
+    setMissionBonusPoints(0);
     if (steps.length === 0) {
       setMissionIds([]);
       setMissionIndex(0);
       setScreen('closing');
       return;
-    }
-    const userName = userNameByMemberId.get(memberId);
-    if (userName) {
-      void plannerMeta.runOp({ type: 'startMission', user: userName, routineId: routine.id });
     }
     setMissionIds(steps.map((task) => task.id));
     setMissionIndex(0);
@@ -1009,22 +958,17 @@ export function ChorePlanner({
   };
 
   const beginMissions = (memberId: string) => {
+    if (!isChildMember(memberId)) return;
     setTodayMemberId(memberId);
-    // A mission is a run through *routines*, in the order the parent configured;
-    // standalone chores never enter the queue.
-    const runs = missionsFor(memberId);
-    if (runs.length === 0) {
+    setMissionBonusPoints(0);
+    const steps = missionsFor(memberId).flatMap((entry) => entry.tasks);
+    if (steps.length === 0) {
       setMissionIds([]);
       setMissionIndex(0);
       setScreen('closing');
       return;
     }
-    const first = runs[0];
-    const userName = userNameByMemberId.get(memberId);
-    if (userName) {
-      void plannerMeta.runOp({ type: 'startMission', user: userName, routineId: first.routine.id });
-    }
-    setMissionIds(first.tasks.map((task) => task.id));
+    setMissionIds(steps.map((task) => task.id));
     setMissionIndex(0);
     setScreen('mission');
   };
@@ -1038,6 +982,7 @@ export function ChorePlanner({
     setTodayMemberId(memberId);
     setMissionIds([]);
     setMissionIndex(0);
+    setMissionBonusPoints(0);
     setScreen('missions');
   };
 
@@ -1259,7 +1204,7 @@ export function ChorePlanner({
               <SlidersHorizontal />
             </button>
           )}
-          {(screen === 'board' || screen === 'child') && (
+          {(screen === 'board' || (screen === 'child' && childMember?.role !== 'parent')) && (
             <button
               className="planner-add"
               onClick={() => dispatchOverlay({ type: 'open-create' })}
@@ -1296,17 +1241,20 @@ export function ChorePlanner({
       )}
       {screen === 'board' && choreOps.loading && !choreOps.data && (
         <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
-          {Array.from({ length: Math.max(2, Math.min(data.members.length || 3, 4)) }, (_, index) => (
-            <section className="planner-loading-column" key={index} aria-hidden="true">
-              <LoadingPlaceholder
-                label={t('planner.loading')}
-                lines={1}
-                className="loading-placeholder--compact"
-                widths={[64]}
-              />
-              <LoadingPlaceholder label={t('planner.loading')} lines={3} widths={[91, 76, 58]} />
-            </section>
-          ))}
+          {Array.from(
+            { length: Math.max(2, Math.min(data.members.length || 3, 4)) },
+            (_, index) => (
+              <section className="planner-loading-column" key={index} aria-hidden="true">
+                <LoadingPlaceholder
+                  label={t('planner.loading')}
+                  lines={1}
+                  className="loading-placeholder--compact"
+                  widths={[64]}
+                />
+                <LoadingPlaceholder label={t('planner.loading')} lines={3} widths={[91, 76, 58]} />
+              </section>
+            ),
+          )}
         </div>
       )}
       {screen === 'board' && !(choreOps.loading && !choreOps.data) && (
@@ -1336,12 +1284,17 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
+          onNewRoutine={() => {
+            dispatchOverlay({ type: 'close' });
+            onRequestRoutineCreate?.();
+          }}
           onNewGoal={startRewardForm}
         />
       )}{' '}
       {screen === 'child' && childMember && (
         <ChildView
           childMember={childMember}
+          isParent={childMember.role === 'parent'}
           spendableFor={spendableFor}
           columnTasks={columnTasks}
           columnRoutines={columnRoutines}
@@ -1365,6 +1318,10 @@ export function ChorePlanner({
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewGoal={startRewardForm}
+          onNewRoutine={() => {
+            dispatchOverlay({ type: 'close' });
+            onRequestRoutineCreate?.();
+          }}
         />
       )}{' '}
       {(screen === 'missions' || screen === 'mission' || screen === 'closing') &&
@@ -1375,7 +1332,7 @@ export function ChorePlanner({
             copy={c}
             t={t}
             openTasks={openTasksFor(selectedTodayMember.id)}
-            completedPoints={completedTodayPoints(selectedTodayMember.id)}
+            completedPoints={completedTodayPoints(selectedTodayMember.id) + missionBonusPoints}
             spendable={spendableFor(selectedTodayMember)}
             currentTask={missionTask}
             currentStatus={activeMissionStatus}
@@ -1419,15 +1376,17 @@ export function ChorePlanner({
                 form={form}
                 setForm={setForm}
                 members={
-                  !overlay.editingId && screen === 'child' && childMember
+                  !overlay.editingId &&
+                  screen === 'child' &&
+                  childMember &&
+                  isChildMember(childMember.id)
                     ? [childMember]
-                    : data.members
+                    : data.members.filter((member) => isChildMember(member.id))
                 }
                 editingId={overlay.editingId}
                 saving={saving}
                 copy={c}
                 t={t}
-                routineNames={meta.routines.map((routine) => routine.name)}
                 onCancel={() => dispatchOverlay({ type: 'close' })}
                 onSave={() => void saveForm()}
               />
@@ -1481,9 +1440,7 @@ export function ChorePlanner({
             {overlay.type === 'filter' && (
               <FilterSheet
                 members={data.members}
-                routines={data.routines}
                 hiddenMemberIds={hiddenMemberIds}
-                pausedRoutineIds={pausedRoutineIds}
                 copy={c}
                 onToggleMember={(memberId) =>
                   setHiddenMemberIds((ids) =>
@@ -1492,7 +1449,6 @@ export function ChorePlanner({
                       : [...ids, memberId],
                   )
                 }
-                onToggleRoutine={toggleRoutinePaused}
                 onClose={() => dispatchOverlay({ type: 'close' })}
               />
             )}{' '}
@@ -1526,10 +1482,7 @@ export function ChorePlanner({
                   redemptions,
                   userNameByMemberId.get(goalsMember.id) ?? null,
                 ).filter((item) => item.state === 'awaiting_fulfilment')}
-                given={fulfilledRedemptions(
-                  redemptions,
-                  goalsUserName,
-                )}
+                given={fulfilledRedemptions(redemptions, goalsUserName)}
                 ledgerHistory={goalsLedgerHistory}
                 onGive={(id) => {
                   const redemption = redemptions.find((item) => item.id === id);
@@ -1546,21 +1499,31 @@ export function ChorePlanner({
             {overlay.type === 'create' && (
               <CreateSheet
                 copy={c}
-                chores={choreOps.data?.chores ?? []}
+                chores={(choreOps.data?.chores ?? []).filter((chore) =>
+                  view.allTasks.some(
+                    (task) =>
+                      task.name.trim().toLowerCase() === chore.name.trim().toLowerCase() &&
+                      task.memberId !== null &&
+                      isChildMember(task.memberId),
+                  ),
+                )}
                 tasks={view.allTasks}
-                routines={adminRoutines}
+                routines={familyRoutines}
                 rewards={rewards}
                 members={data.members}
+                onRoutine={
+                  onRequestRoutineCreate
+                    ? () => {
+                        dispatchOverlay({ type: 'close' });
+                        onRequestRoutineCreate();
+                      }
+                    : undefined
+                }
                 onChore={() =>
                   openNewForm(
-                    'chore',
-                    screen === 'child' ? (childMember?.id ?? undefined) : undefined,
-                  )
-                }
-                onRoutine={() =>
-                  openNewForm(
-                    'routine',
-                    screen === 'child' ? (childMember?.id ?? undefined) : undefined,
+                    screen === 'child' && childMember && isChildMember(childMember.id)
+                      ? childMember.id
+                      : undefined,
                   )
                 }
                 onReward={() =>
@@ -1569,9 +1532,7 @@ export function ChorePlanner({
                 onEditChore={openEditForm}
                 onOpenTaskActions={(task) => openActions(task.id, task.inRoutine)}
                 onUseAgain={requestUseAgain}
-                onOpenReward={(reward) =>
-                  dispatchOverlay({ type: 'open-reward-actions', reward })
-                }
+                onOpenReward={(reward) => dispatchOverlay({ type: 'open-reward-actions', reward })}
               />
             )}{' '}
             {assigningReward && (

@@ -8,7 +8,6 @@ import {
   fetchChoreOpsRewardHistory,
   type ChoreOpsRewardHistoryEntry,
 } from '../../api/choreops-ledger';
-import { routineIdForTask, type PlannerMeta } from '../../api/planner-meta';
 import type { ChoreOpsChore } from '../../types/choreops';
 
 interface UsePlannerHistoryOptions {
@@ -17,7 +16,6 @@ interface UsePlannerHistoryOptions {
   childViewOpen: boolean;
   childUserName: string | null;
   chores: ChoreOpsChore[];
-  meta: PlannerMeta;
   choreOpsAvailable: boolean;
 }
 
@@ -28,7 +26,6 @@ export function usePlannerHistory({
   childViewOpen,
   childUserName,
   chores,
-  meta,
   choreOpsAvailable,
 }: UsePlannerHistoryOptions) {
   const [rewardHistory, setRewardHistory] = useState<{
@@ -45,13 +42,7 @@ export function usePlannerHistory({
     const userKey = childUserName?.trim().toLocaleLowerCase();
     if (!userKey) return [];
     return chores.flatMap((chore) => {
-      const label = (chore.labels ?? []).map((item) => item.trim()).find(Boolean) ?? null;
-      const isRoutineStep =
-        /^daily/i.test(chore.frequency ?? '') &&
-        routineIdForTask(meta, chore.name, label) !== null;
-      return chore.statusEntityId &&
-        chore.assignee?.trim().toLocaleLowerCase() === userKey &&
-        !isRoutineStep
+      return chore.statusEntityId && chore.assignee?.trim().toLocaleLowerCase() === userKey
         ? [
             {
               entityId: chore.statusEntityId,
@@ -61,7 +52,7 @@ export function usePlannerHistory({
           ]
         : [];
     });
-  }, [chores, childUserName, meta]);
+  }, [chores, childUserName]);
 
   const childHistoryEntityKey = childHistoryEntities
     .map((entity) => entity.entityId)
@@ -122,11 +113,16 @@ export function usePlannerHistory({
     return () => {
       current = false;
     };
-  }, [childViewOpen, childUserName, childHistoryEntities, childHistoryEntityKey, choreOpsAvailable]);
+  }, [
+    childViewOpen,
+    childUserName,
+    childHistoryEntities,
+    childHistoryEntityKey,
+    choreOpsAvailable,
+  ]);
 
   return {
-    goalsLedgerHistory:
-      rewardHistory?.userName === goalsUserName ? rewardHistory.entries : [],
+    goalsLedgerHistory: rewardHistory?.userName === goalsUserName ? rewardHistory.entries : [],
     childChoreHistory:
       choreHistory?.userName === childUserName && choreHistory.entityKey === childHistoryEntityKey
         ? choreHistory.entries

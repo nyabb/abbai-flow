@@ -90,12 +90,7 @@ describe('buildChorePlannerView', () => {
     });
   });
 
-  /*
-   * A labelled daily chore belongs to a routine, and the task carries that so
-   * the mission run can name the routine it is working through -- and so pausing
-   * the routine can keep its chores out of the queue.
-   */
-  it('marks a labelled daily chore with its routine', () => {
+  it('does not turn a labelled daily ChoreOps chore into an Abbai Flow routine', () => {
     const labelled = {
       ...states,
       chores: [{ ...states!.chores[0], frequency: 'daily', labels: ['Ochtendroutine'] }],
@@ -103,12 +98,12 @@ describe('buildChorePlannerView', () => {
 
     const task = buildChorePlannerView(labelled, family).tasks[0];
 
-    expect(task.routineId).toBe('routine:ochtendroutine');
-    expect(task.routineName).toBe('Ochtendroutine');
+    expect(task.routineId).toBeUndefined();
+    expect(task.routineName).toBeUndefined();
+    expect(task.inRoutine).toBeUndefined();
   });
 
-  /* A weekly chore keeps its label but is not part of a routine. */
-  it('leaves a non-daily chore out of any routine', () => {
+  it('does not use ChoreOps labels to infer a routine for weekly chores', () => {
     const weekly = {
       ...states,
       chores: [{ ...states!.chores[0], frequency: 'weekly', labels: ['Ochtendroutine'] }],
@@ -251,11 +246,10 @@ describe('shared chores', () => {
 });
 
 /**
- * Routines are the daily chores ChoreOps already has, grouped by the label the
- * household gave them ("Ochtendroutine"). Completions only count for the day
- * they happened, because a daily chore restarts the next morning.
+ * ChoreOps remains responsible for the recurrence of its chores. Its labels do
+ * not create Abbai Flow routines; only the Family store defines those.
  */
-describe('daily routines', () => {
+describe('daily ChoreOps chores', () => {
   const points = {
     entity_id: 'sensor.maya_choreops_points',
     state: '0',
@@ -282,7 +276,7 @@ describe('daily routines', () => {
     },
   });
 
-  it('groups daily chores by their ChoreOps label', () => {
+  it('keeps daily ChoreOps chores separate from family routines', () => {
     const view = buildChorePlannerView(
       normalizeChoreOps([
         points,
@@ -307,26 +301,17 @@ describe('daily routines', () => {
       new Date('2026-11-06T09:00:00'),
     );
 
-    expect(view.routines).toHaveLength(1);
-    expect(view.routines[0]).toMatchObject({
-      name: 'Ochtendroutine',
-      frequency: 'daily',
-      timeBlock: 'morning',
-      points: 4,
-    });
-    expect(view.routines[0].memberIds).toEqual(['choreops:maya']);
+    expect(view.tasks).toHaveLength(3);
+    expect(view.tasks.every((task) => !task.routineId && !task.inRoutine)).toBe(true);
   });
 
-  it('does not invent a routine for daily chores without a label', () => {
+  it('keeps daily chores without labels as individual chores', () => {
     const view = buildChorePlannerView(
       normalizeChoreOps([points, dailyChore('Tanden poetsen')]),
       [],
       new Date('2026-11-06T09:00:00'),
     );
 
-    // No routine was named in ChoreOps, so no routines bar is shown at all.
-    expect(view.routines).toEqual([]);
-    // The chore itself still shows up as a normal task.
     expect(view.tasks).toHaveLength(1);
   });
 

@@ -14,7 +14,6 @@
  */
 import { loadData, loadDataSync, saveData, type PersistenceResult } from './abbai-flow-store';
 import {
-  findRoutine as sharedFindRoutine,
   normaliseName as sharedNormaliseName,
   sanitizePlannerMeta as sharedSanitizeMeta,
   type MissionProgress,
@@ -23,7 +22,6 @@ import {
 
 export {
   addRoutineTask,
-  adoptLabels,
   clearMission,
   emptyMeta,
   findRoutine,
@@ -42,42 +40,21 @@ export {
   upsertRoutine,
 } from './planner-rules';
 
-export type {
-  MissionProgress,
-  PlannerMeta,
-  RoutineDefinition,
-} from './planner-rules';
+export type { MissionProgress, PlannerMeta, RoutineDefinition } from './planner-rules';
 
 /** Storage key (also the `/abbai-flow/data/:key` path segment). */
 export const PLANNER_META_KEY = 'abbai-flow-planner-meta';
 
 export const PLANNER_META_VERSION = 1;
 
-/**
- * Which routine a chore belongs to.
- *
- * The registry wins (an explicit membership, orderable and rename-safe), and a
- * ChoreOps label is the fallback so chores the household already labelled keep
- * grouping before they are adopted into the registry.
- */
-export function routineIdForTask(
-  meta: PlannerMeta,
-  taskName: string,
-  labelFallback?: string | null,
-): string | null {
+/** Resolve explicit task membership without inferring routines from chore labels. */
+export function routineIdForTask(meta: PlannerMeta, taskName: string): string | null {
   const key = sharedNormaliseName(taskName);
-  if (key) {
-    const owner = meta.routines.find((routine) =>
-      routine.taskNames.some((name) => sharedNormaliseName(name) === key),
-    );
-    if (owner) return owner.id;
-  }
-  const label = (labelFallback ?? '').trim();
-  if (!label) return null;
-  const known = sharedFindRoutine(meta, label);
-  // Unknown labels still group (legacy ChoreOps labels); `routine:slug` is the
-  // synthetic id the view uses until the routine is adopted.
-  return known ? known.id : `routine:${label.toLowerCase().replace(/\s+/g, '-')}`;
+  if (!key) return null;
+  const owner = meta.routines.find((routine) =>
+    routine.taskNames.some((name) => sharedNormaliseName(name) === key),
+  );
+  return owner?.id ?? null;
 }
 
 /** Chore names of a routine in execution order. */

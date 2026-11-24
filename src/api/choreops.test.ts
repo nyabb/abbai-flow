@@ -58,7 +58,7 @@ describe('buildCreateChorePayload', () => {
     });
   });
 
-  it('sends the routine label so Abbai Flow can group daily chores', () => {
+  it('sends ordinary labels with a ChoreOps chore', () => {
     const payload = buildCreateChorePayload({
       entryId: 'entry-1',
       name: 'Tanden poetsen',
@@ -72,7 +72,7 @@ describe('buildCreateChorePayload', () => {
       labels: ['Ochtendroutine'],
     });
 
-    // No label typed → nothing sent, so ChoreOps keeps its own labels.
+    // A blank label is omitted from the ChoreOps service payload.
     const unlabeled = buildCreateChorePayload({
       entryId: 'entry-1',
       name: 'Tanden poetsen',
@@ -507,10 +507,10 @@ describe('normalizeChoreOps — per-user chore status', () => {
 
     expect(result.chores).toHaveLength(2);
     expect(result.chores.map((chore) => chore.assignee).sort()).toEqual(['Maya', 'Nova']);
-    expect(result.chores.every((chore) => chore.assignedUserNames?.join(',') === 'Maya,Nova'))
-      .toBe(true);
-    expect(result.chores.every((chore) => chore.completionCriteria === 'shared_first'))
-      .toBe(true);
+    expect(result.chores.every((chore) => chore.assignedUserNames?.join(',') === 'Maya,Nova')).toBe(
+      true,
+    );
+    expect(result.chores.every((chore) => chore.completionCriteria === 'shared_first')).toBe(true);
   });
 
   it('adds a card for a status sensor whose buttons have not been seen yet', () => {

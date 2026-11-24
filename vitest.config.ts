@@ -24,6 +24,42 @@ export default defineConfig({
       thresholds: {
         'src/api/**': { statements: 50, branches: 50, functions: 42, lines: 51 },
         'src/utils/**': { statements: 72, branches: 64, functions: 67, lines: 70 },
+        // Keep the family-routine scheduling and editor paths above 70% while
+        // the repository-wide baseline is raised independently.
+        'src/api/routine-schedule.ts': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/settings/sections/family/RoutineEditor.tsx': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/settings/sections/FamilySection.tsx': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/hooks/useRoutines.ts': {
+          statements: 70,
+          branches: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/chore-planner/ChorePlanner.tsx': {
+          statements: 70,
+          functions: 70,
+          lines: 70,
+        },
+        'src/components/chore-planner/ChoreBoard.tsx': {
+          statements: 70,
+          branches: 70,
+          lines: 70,
+        },
       },
     },
   },

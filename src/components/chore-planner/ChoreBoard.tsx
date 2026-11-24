@@ -7,7 +7,8 @@
  */
 import { useState } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
-import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
+import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
@@ -18,7 +19,7 @@ export interface ChoreBoardProps {
   /** Open chores of one member, late first. */
   columnTasks: (memberId: string) => PlannerTask[];
   /** Routines that belong to one member. */
-  columnRoutines: (memberId: string) => PlannerRoutine[];
+  columnRoutines: (memberId: string) => Routine[];
   /** Whether the child has anything left to run (routines, not loose chores). */
   canRunMissions: (memberId: string) => boolean;
   /** Chores still up for grabs, deduplicated by name. */
@@ -26,7 +27,7 @@ export interface ChoreBoardProps {
   /** What one member can still spend (ChoreOps balance minus reservations). */
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
-  routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
+  routineRow: (routine: Routine, memberId: string) => React.ReactNode;
   /** A member's goals, rendered inline in the board and phone Doelen tab. */
   renderGoals: (memberId: string) => React.ReactNode;
   copy: PlannerCopy;
@@ -36,6 +37,7 @@ export interface ChoreBoardProps {
   /** Open the missions overview (the mission screen's back destination). */
   onOpenMissions: (memberId: string) => void;
   onNewChore: () => void;
+  onNewRoutine?: () => void;
   onNewGoal: (memberId: string) => void;
 }
 
@@ -55,6 +57,7 @@ export function ChoreBoard({
   onStartMissions,
   onOpenMissions,
   onNewChore,
+  onNewRoutine,
   onNewGoal,
 }: ChoreBoardProps) {
   /*
@@ -77,6 +80,17 @@ export function ChoreBoard({
     const member = boardMembers.find((item) => item.id === activeMemberId) ?? boardMembers[0];
     const chores = member ? columnTasks(member.id) : [];
     const routines = member ? columnRoutines(member.id) : [];
+    const parentMode = member?.role === 'parent';
+    const activeTab = parentMode ? 'routines' : tab;
+    const visibleTabs: Array<['chores' | 'routines' | 'goals' | 'free', string, number | null]> =
+      parentMode
+        ? [['routines', c.routines, routines.length]]
+        : [
+            ['chores', c.choresColumn, chores.length],
+            ['routines', c.routines, routines.length],
+            ['goals', c.goals, null],
+            ['free', c.free, freeTasks.length],
+          ];
 
     return (
       <main className="planner-board planner-board--compact">
@@ -87,9 +101,7 @@ export function ChoreBoard({
               type="button"
               className={`planner-mobile-member${item.id === member?.id ? ' is-active' : ''}`}
               aria-pressed={item.id === member?.id}
-              onClick={() =>
-                compactLandscape ? onOpenChild(item.id) : setActiveMemberId(item.id)
-              }
+              onClick={() => (compactLandscape ? onOpenChild(item.id) : setActiveMemberId(item.id))}
             >
               <span className="planner-mobile-avatar">
                 <MemberAvatar member={item} />
@@ -100,20 +112,13 @@ export function ChoreBoard({
         </div>
 
         <div className="planner-mobile-tabs" role="tablist" aria-label={c.title}>
-          {(
-            [
-              ['chores', c.choresColumn, chores.length],
-              ['routines', c.routines, routines.length],
-              ['goals', c.goals, null],
-              ['free', c.free, freeTasks.length],
-            ] as const
-          ).map(([id, label, count]) => (
+          {visibleTabs.map(([id, label, count]) => (
             <button
               key={id}
               type="button"
               role="tab"
-              aria-selected={tab === id}
-              className={`planner-mobile-tab${tab === id ? ' is-active' : ''}`}
+              aria-selected={activeTab === id}
+              className={`planner-mobile-tab${activeTab === id ? ' is-active' : ''}`}
               onClick={() => setTab(id)}
             >
               {label}
@@ -132,26 +137,28 @@ export function ChoreBoard({
               <ChevronRight aria-hidden="true" />
               {c.openChild}
             </button>
-            <button
-              type="button"
-              className="planner-col-play"
-              disabled={!canRunMissions(member.id)}
-              onClick={() => onStartMissions(member.id)}
-              aria-label={`${c.startMissions}: ${member.name}`}
-            >
-              {'\u25B6'}
-            </button>
+            {!parentMode && (
+              <button
+                type="button"
+                className="planner-col-play"
+                disabled={!canRunMissions(member.id)}
+                onClick={() => onStartMissions(member.id)}
+                aria-label={`${c.startMissions}: ${member.name}`}
+              >
+                {'\u25B6'}
+              </button>
+            )}
           </div>
         )}
 
         <section className="planner-col-body planner-mobile-panel">
-          {tab === 'chores' &&
+          {activeTab === 'chores' &&
             (chores.length === 0 ? (
               <p className="planner-col-empty">{c.nothing}</p>
             ) : (
               chores.map((task) => renderRow(task))
             ))}
-          {tab === 'routines' && (
+          {activeTab === 'routines' && (
             <>
               {member && (
                 <div className="planner-section-head">
@@ -159,14 +166,26 @@ export function ChoreBoard({
                     {c.routines}
                     <span>{routines.length}</span>
                   </h2>
-                  <button
-                    type="button"
-                    className="planner-section-action"
-                    disabled={!canRunMissions(member.id)}
-                    onClick={() => onOpenMissions(member.id)}
-                  >
-                    {'\u25B6'} {c.missions}
-                  </button>
+                  {parentMode ? (
+                    onNewRoutine && (
+                      <button
+                        type="button"
+                        className="planner-section-action"
+                        onClick={onNewRoutine}
+                      >
+                        <Plus aria-hidden="true" /> {c.addRoutine}
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      className="planner-section-action"
+                      disabled={!canRunMissions(member.id)}
+                      onClick={() => onOpenMissions(member.id)}
+                    >
+                      {'\u25B6'} {c.missions}
+                    </button>
+                  )}
                 </div>
               )}
               {routines.length === 0 ? (
@@ -176,8 +195,8 @@ export function ChoreBoard({
               )}
             </>
           )}
-          {tab === 'goals' && member && renderGoals(member.id)}
-          {tab === 'free' &&
+          {activeTab === 'goals' && member && renderGoals(member.id)}
+          {activeTab === 'free' &&
             (freeTasks.length === 0 ? (
               <p className="planner-col-empty">{c.nothing}</p>
             ) : (
@@ -211,68 +230,99 @@ export function ChoreBoard({
                 </span>
                 <strong>{member.name}</strong>
               </button>
-              <button
-                type="button"
-                className="planner-col-points"
-                onClick={() => onOpenGoals(member.id)}
-                aria-label={`${c.goals}: ${member.name}`}
-              >
-                <span aria-hidden="true">{'\u{1FA99}'}</span>
-                {spendableFor(member)}
-              </button>
-              <button
-                type="button"
-                className="planner-col-play"
-                disabled={!canRunMissions(member.id)}
-                onClick={() => onStartMissions(member.id)}
-                aria-label={`${c.startMissions}: ${member.name}`}
-              >
-                {'\u25B6'}
-              </button>
+              {member.role !== 'parent' && (
+                <button
+                  type="button"
+                  className="planner-col-points"
+                  onClick={() => onOpenGoals(member.id)}
+                  aria-label={`${c.goals}: ${member.name}`}
+                >
+                  <span aria-hidden="true">{'\u{1FA99}'}</span>
+                  {spendableFor(member)}
+                </button>
+              )}
+              {member.role !== 'parent' && (
+                <button
+                  type="button"
+                  className="planner-col-play"
+                  disabled={!canRunMissions(member.id)}
+                  onClick={() => onStartMissions(member.id)}
+                  aria-label={`${c.startMissions}: ${member.name}`}
+                >
+                  {'\u25B6'}
+                </button>
+              )}
             </header>
 
             <div className="planner-col-body">
-              <h2>
-                {c.choresColumn}
-                <span>{chores.length}</span>
-              </h2>
-              {chores.length === 0 ? (
-                <p className="planner-col-empty">{c.nothing}</p>
+              {member.role === 'parent' ? (
+                <>
+                  <div className="planner-section-head">
+                    <h2>
+                      {c.routines}
+                      <span>{routines.length}</span>
+                    </h2>
+                    {onNewRoutine && (
+                      <button
+                        type="button"
+                        className="planner-section-action"
+                        onClick={onNewRoutine}
+                      >
+                        <Plus aria-hidden="true" /> {c.addRoutine}
+                      </button>
+                    )}
+                  </div>
+                  {routines.length === 0 ? (
+                    <p className="planner-col-empty">{c.noRoutines}</p>
+                  ) : (
+                    routines.map((routine) => routineRow(routine, member.id))
+                  )}
+                </>
               ) : (
-                chores.map((task) => renderRow(task))
-              )}
+                <>
+                  <h2>
+                    {c.choresColumn}
+                    <span>{chores.length}</span>
+                  </h2>
+                  {chores.length === 0 ? (
+                    <p className="planner-col-empty">{c.nothing}</p>
+                  ) : (
+                    chores.map((task) => renderRow(task))
+                  )}
 
-              <div className="planner-section-head">
-                <h2>
-                  {c.routines}
-                  <span>{routines.length}</span>
-                </h2>
-                <button
-                  type="button"
-                  className="planner-section-action"
-                  disabled={!canRunMissions(member.id)}
-                  onClick={() => onOpenMissions(member.id)}
-                >
-                  {'\u25B6'} {c.missions}
-                </button>
-              </div>
-              {routines.length === 0 ? (
-                <p className="planner-col-empty">{c.noRoutines}</p>
-              ) : (
-                routines.map((routine) => routineRow(routine, member.id))
-              )}
+                  <div className="planner-section-head">
+                    <h2>
+                      {c.routines}
+                      <span>{routines.length}</span>
+                    </h2>
+                    <button
+                      type="button"
+                      className="planner-section-action"
+                      disabled={!canRunMissions(member.id)}
+                      onClick={() => onOpenMissions(member.id)}
+                    >
+                      {'\u25B6'} {c.missions}
+                    </button>
+                  </div>
+                  {routines.length === 0 ? (
+                    <p className="planner-col-empty">{c.noRoutines}</p>
+                  ) : (
+                    routines.map((routine) => routineRow(routine, member.id))
+                  )}
 
-              <div className="planner-section-head">
-                <h2>{c.goals}</h2>
-                <button
-                  type="button"
-                  className="planner-section-action"
-                  onClick={() => onNewGoal(member.id)}
-                >
-                  <Plus aria-hidden="true" /> {c.setGoal}
-                </button>
-              </div>
-              {renderGoals(member.id)}
+                  <div className="planner-section-head">
+                    <h2>{c.goals}</h2>
+                    <button
+                      type="button"
+                      className="planner-section-action"
+                      onClick={() => onNewGoal(member.id)}
+                    >
+                      <Plus aria-hidden="true" /> {c.setGoal}
+                    </button>
+                  </div>
+                  {renderGoals(member.id)}
+                </>
+              )}
             </div>
           </section>
         );

@@ -40,7 +40,7 @@ export interface ChoreOpsChore {
   frequency?: string | null;
   /** Weekday keys (`mon`..`sun`) when the repeat is day-bound. */
   applicableDays?: string[];
-  /** ChoreOps labels; Abbai Flow groups daily chores into routines by label. */
+  /** Ordinary ChoreOps labels; they do not define Abbai Flow routines. */
   labels?: string[];
   /** ChoreOps create-only options retained when an edit must recreate a chore. */
   customInterval?: number | null;

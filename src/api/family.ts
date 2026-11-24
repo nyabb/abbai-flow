@@ -17,7 +17,16 @@ const STORAGE_KEYS = {
   streaks: 'abbai_flow_streaks',
   routines: 'abbai_flow_routines',
   routine_completions: 'abbai_flow_routine_completions',
+  routine_mission_awards: 'abbai_flow_routine_mission_awards',
 } as const;
+
+interface RoutineMissionAwardReceipt {
+  routine_id: string;
+  member_id: string;
+  date: string;
+}
+
+const routineMissionClaims = new Set<string>();
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -323,7 +332,7 @@ export class FamilyStore {
     return completions.filter((c) => localDayKey(c.completed_at) === today);
   }
 
-  async completeRoutineTask(routineId: string, taskId: string, memberId: string): Promise<void> {
+  async completeRoutineTask(routineId: string, taskId: string, memberId: string): Promise<boolean> {
     const completions = await this.getRoutineTaskCompletions();
     const today = localDayKey();
     const exists = completions.some(
@@ -333,14 +342,15 @@ export class FamilyStore {
         c.member_id === memberId &&
         localDayKey(c.completed_at) === today,
     );
-    if (exists) return;
+    if (exists) return true;
     completions.push({
       routine_id: routineId,
       task_id: taskId,
       member_id: memberId,
       completed_at: new Date().toISOString(),
     });
-    await saveData(STORAGE_KEYS.routine_completions, completions);
+    const result = await saveData(STORAGE_KEYS.routine_completions, completions);
+    return result.persisted;
   }
 
   async uncompleteRoutineTask(
@@ -359,7 +369,67 @@ export class FamilyStore {
     );
     if (index === -1) return false;
     completions.splice(index, 1);
-    await saveData(STORAGE_KEYS.routine_completions, completions);
+    const result = await saveData(STORAGE_KEYS.routine_completions, completions);
+    return result.persisted;
+  }
+
+  /** Reserve one mission bonus for this routine/member/local day. */
+  async claimRoutineMissionBonus(
+    routineId: string,
+    memberId: string,
+    date: string = localDayKey(),
+  ): Promise<boolean> {
+    const claimKey = `${date}:${routineId}:${memberId}`;
+    if (routineMissionClaims.has(claimKey)) return false;
+
+    const receipts = await loadData<RoutineMissionAwardReceipt[]>(
+      STORAGE_KEYS.routine_mission_awards,
+      [],
+    );
+    if (
+      receipts.some(
+        (receipt) =>
+          receipt.date === date &&
+          receipt.routine_id === routineId &&
+          receipt.member_id === memberId,
+      )
+    )
+      return false;
+
+    routineMissionClaims.add(claimKey);
+    const cutoff = localDayKey(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const result = await saveData(STORAGE_KEYS.routine_mission_awards, [
+      ...receipts.filter((receipt) => receipt.date >= cutoff),
+      { routine_id: routineId, member_id: memberId, date },
+    ]);
+    if (!result.persisted) {
+      routineMissionClaims.delete(claimKey);
+      throw result.error ?? new Error('Could not save the mission bonus receipt');
+    }
     return true;
+  }
+
+  /** Release a reservation only when ChoreOps rejected the points adjustment. */
+  async releaseRoutineMissionBonus(
+    routineId: string,
+    memberId: string,
+    date: string = localDayKey(),
+  ): Promise<void> {
+    const receipts = await loadData<RoutineMissionAwardReceipt[]>(
+      STORAGE_KEYS.routine_mission_awards,
+      [],
+    );
+    const next = receipts.filter(
+      (receipt) =>
+        !(
+          receipt.date === date &&
+          receipt.routine_id === routineId &&
+          receipt.member_id === memberId
+        ),
+    );
+    const result = await saveData(STORAGE_KEYS.routine_mission_awards, next);
+    if (!result.persisted)
+      throw result.error ?? new Error('Could not release the mission bonus receipt');
+    routineMissionClaims.delete(`${date}:${routineId}:${memberId}`);
   }
 }
