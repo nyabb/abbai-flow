@@ -91,7 +91,9 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
     'Wednesday',
     new Intl.DateTimeFormat('en', { weekday: 'long' }).format(new Date()),
   ]);
-  const expectedSchoolDays = [...new Set([1, 3, new Date().getDay()])].sort((left, right) => left - right);
+  const expectedSchoolDays = [...new Set([1, 3, new Date().getDay()])].sort(
+    (left, right) => left - right,
+  );
   await createRoutine(page, 'School mornings', 'Brush teeth', [...schoolDays]);
 
   await expect
@@ -160,7 +162,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await page.getByRole('button', { name: 'Routine', exact: true }).click();
   const omniDialog = page.getByRole('dialog');
   await expect(omniDialog).toBeVisible();
-  await omniDialog.getByLabel('For whom').selectOption('child-1');
+  await omniDialog.getByRole('button', { name: 'Zara' }).click();
   await omniDialog.getByLabel('Name').fill('Weekend prep');
   await omniDialog.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill('Pack swim bag');
   await omniDialog.getByRole('button', { name: 'Save Routine', exact: true }).click();
@@ -174,7 +176,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await page.getByRole('button', { name: 'New routine', exact: true }).click();
   const choresDialog = page.getByRole('dialog');
   await expect(choresDialog).toBeVisible();
-  await choresDialog.getByLabel('For whom').selectOption('parent-1');
+  await choresDialog.getByRole('button', { name: 'Papa' }).click();
   await choresDialog.getByLabel('Name').fill('After school reset');
   await choresDialog.getByPlaceholder('Task 1 (e.g. Brush teeth)').fill('Put shoes away');
   await choresDialog.getByRole('button', { name: 'Save Routine', exact: true }).click();

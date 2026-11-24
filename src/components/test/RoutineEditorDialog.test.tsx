@@ -70,9 +70,16 @@ describe('RoutineEditorDialog', () => {
     const saveButton = within(dialog).getByRole('button', { name: 'Save Routine' });
     expect(saveButton).toBeDisabled();
 
-    fireEvent.change(within(dialog).getByLabelText('For whom'), {
-      target: { value: PARENT.id },
-    });
+    const assignees = within(dialog).getByRole('group', { name: 'For whom' });
+    fireEvent.click(within(assignees).getByRole('button', { name: 'Papa' }));
+    expect(within(assignees).getByRole('button', { name: 'Papa' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(within(assignees).getByRole('button', { name: 'Zara' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     fireEvent.change(within(dialog).getByLabelText('Name'), {
       target: { value: 'Evening reset' },
     });
