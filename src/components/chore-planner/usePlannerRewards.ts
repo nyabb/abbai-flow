@@ -75,10 +75,16 @@ export function usePlannerRewards({
     );
     return Array.from(userNameByMemberId.entries())
       .filter(([, userName]) => assignedNames.has(normaliseName(userName)))
+      .filter(([memberId]) =>
+        members.some((member) => member.id === memberId && member.role === 'child'),
+      )
       .map(([memberId]) => memberId);
   };
   const startRewardForm = (memberId?: string) => {
-    setRewardForm({ name: '', cost: 10, memberIds: memberId ? [memberId] : [] });
+    const assignedMemberId = members.find(
+      (member) => member.id === memberId && member.role === 'child',
+    )?.id;
+    setRewardForm({ name: '', cost: 10, memberIds: assignedMemberId ? [assignedMemberId] : [] });
     dispatchOverlay({ type: 'open-reward-form' });
   };
 
@@ -93,6 +99,7 @@ export function usePlannerRewards({
     if (saving) return;
 
     const userNames = rewardForm.memberIds
+      .filter((id) => members.some((member) => member.id === id && member.role === 'child'))
       .map((id) => userNameByMemberId.get(id))
       .filter((name): name is string => Boolean(name));
     if (userNames.length === 0) return;
@@ -340,7 +347,6 @@ export function usePlannerRewards({
       canAdd: canSave && saved > 0 && remaining > 0,
     };
   };
-
 
   return {
     rewardForm,

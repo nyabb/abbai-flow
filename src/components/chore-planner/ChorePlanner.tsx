@@ -349,6 +349,7 @@ export function ChorePlanner({
   const givenReward = overlay.type === 'reward-given' ? { name: overlay.name } : null;
   /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
   const rewards = choreOps.data?.rewards ?? [];
+  const goalMembers = data.members.filter((member) => member.role === 'child');
   const missionTask = getTask(missionIds[missionIndex] ?? null);
 
   /**
@@ -1595,8 +1596,8 @@ export function ChorePlanner({
                 editingReward={overlay.editingReward}
                 members={
                   overlay.editingReward || screen !== 'child' || !childMember
-                    ? data.members
-                    : [childMember]
+                    ? goalMembers
+                    : goalMembers.filter((member) => member.id === childMember.id)
                 }
                 saving={saving}
                 copy={c}
