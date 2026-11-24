@@ -74,11 +74,16 @@ function renderPlanner() {
 }
 
 /** Fill the "new chore" sheet just enough to submit it. */
-function submitNewChore(container: HTMLElement) {
+function submitNewChore(container: HTMLElement, labels?: string) {
   fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
   const menu = container.querySelector<HTMLElement>('.planner-sheet')!;
   fireEvent.click(within(menu).getByRole('button', { name: 'Taakje toevoegen' }));
   fireEvent.change(screen.getByLabelText('Naam'), { target: { value: 'Afwassen' } });
+  if (labels !== undefined) {
+    fireEvent.change(screen.getByPlaceholderText(NL.t('planner.labelsPlaceholder')), {
+      target: { value: labels },
+    });
+  }
   const picker = container.querySelector<HTMLElement>('.planner-member-picker')!;
   const zara = Array.from(picker.querySelectorAll('button')).find((button) =>
     button.textContent?.includes('Zara'),
@@ -119,5 +124,19 @@ describe('ChorePlanner notifications', () => {
       expect(container.querySelector('.planner-toast--success')?.textContent).toContain('Afwassen');
     });
     expect(container.querySelector('.planner-toast--error')).toBeNull();
+  });
+
+  it('saves ordinary chore labels without turning them into routines', async () => {
+    mocks.createChore.mockResolvedValue(undefined);
+    const { container } = renderPlanner();
+
+    submitNewChore(container, 'School, Outdoor');
+
+    await waitFor(() =>
+      expect(mocks.createChore).toHaveBeenCalledWith(
+        expect.objectContaining({ labels: ['School', 'Outdoor'] }),
+      ),
+    );
+    expect(container.querySelector('.planner-row--routine')).toBeNull();
   });
 });

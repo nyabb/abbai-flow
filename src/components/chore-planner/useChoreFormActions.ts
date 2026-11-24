@@ -8,7 +8,6 @@ import {
   type ChoreOpsWeekday,
 } from '../../api/choreops';
 import { normaliseName } from '../../api/planner-meta';
-import type { UsePlannerMetaResult } from '../../hooks/usePlannerMeta';
 import type { UseChoreOpsResult } from '../../hooks/useChoreOps';
 import type { I18nValue } from '../../i18n';
 import type { PlannerTask } from '../../api/chore-planner-model';
@@ -27,8 +26,6 @@ interface UseChoreFormActionsOptions {
   choreOps: UseChoreOpsResult;
   getTask: (id: string | null) => PlannerTask | null;
   userNameByMemberId: Map<string, string>;
-  meta: UsePlannerMetaResult['meta'];
-  runPlannerOp: UsePlannerMetaResult['runOp'];
   hasParentPin: boolean;
   requestPin: (title: string, description: string, run: (approverName?: string) => void) => void;
   dispatchOverlay: Dispatch<PlannerOverlayEvent>;
@@ -36,7 +33,7 @@ interface UseChoreFormActionsOptions {
   showError: (error: unknown) => void;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  createRequest?: { kind: 'chore' | 'routine'; token: number };
+  createRequest?: { kind: 'chore'; token: number };
 }
 
 /** Chore creation, editing, persistence and deletion actions. */
@@ -50,8 +47,6 @@ export function useChoreFormActions({
   choreOps,
   getTask,
   userNameByMemberId,
-  meta,
-  runPlannerOp,
   hasParentPin,
   requestPin,
   dispatchOverlay,
@@ -61,18 +56,8 @@ export function useChoreFormActions({
   t,
   createRequest,
 }: UseChoreFormActionsOptions) {
-  const openNewForm = (kind: 'chore' | 'routine' = 'chore', memberId?: string) => {
-    // A routine is a chore that repeats daily and belongs to a named routine.
-    const nextForm =
-      kind === 'routine'
-        ? {
-            ...emptyForm(now),
-            kind: 'routine' as const,
-            frequency: 'daily' as const,
-            liveFrequency: 'daily' as const,
-            timeBlock: 'morning' as const,
-          }
-        : emptyForm(now);
+  const openNewForm = (memberId?: string) => {
+    const nextForm = emptyForm(now);
     if (memberId) nextForm.memberIds = [memberId];
     setForm(nextForm);
     dispatchOverlay({ type: 'open-form' });
@@ -81,7 +66,7 @@ export function useChoreFormActions({
   const createToken = createRequest?.token ?? 0;
   useEffect(() => {
     if (createToken === 0) return;
-    openNewForm(createRequest?.kind ?? 'chore');
+    openNewForm();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only the token counts
   }, [createToken]);
 
@@ -211,19 +196,8 @@ export function useChoreFormActions({
       return;
     }
 
-    /*
-     * Recurrence belongs to routines. A new task is a one-off, so it is created
-     * as `none` rather than carrying whatever the form happened to hold -- the
-     * editor hides the schedule for exactly that case. Edits keep whatever
-     * repeat ChoreOps already has, so nothing is rewritten behind the user.
-     */
-    const frequency = form.kind === 'task' && !editingId ? 'none' : form.liveFrequency;
-    /*
-     * Labels are the routine name. They are only sent when the field differs
-     * from what ChoreOps already has, so editing e.g. the points of a chore
-     * whose label Abbai Flow cannot see never wipes that label. Clearing the field
-     * sends `[]`, which is how a routine is removed again.
-     */
+    /* A new chore is a one-off; edits keep its existing ChoreOps recurrence. */
+    const frequency = form.liveFrequency;
     const originalTask = editingId ? getTask(editingId) : null;
     const originalName = originalTask?.name ?? form.name;
     const originalChore = editingId
@@ -231,6 +205,15 @@ export function useChoreFormActions({
           (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
         ) ?? null)
       : null;
+    const labels = Array.from(
+      new Set(
+        form.liveLabels
+          .split(',')
+          .map((label) => label.trim())
+          .filter(Boolean),
+      ),
+    );
+    const labelsChanged = !originalChore || !sameNames(originalChore.labels, labels);
     let recreateForClaimModeChange = false;
     if (editingId && originalChore) {
       const assignedNames = (originalChore.assignedUserNames ?? []).map((name) =>
@@ -244,9 +227,6 @@ export function useChoreFormActions({
         ((form.free && effectiveCriteria !== 'shared_first') ||
           (!form.free && effectiveCriteria === 'shared_first' && form.memberIds.length > 1));
     }
-    const currentLabel = (originalChore?.labels?.[0] ?? '').trim();
-    const nextLabel = form.liveLabel.trim();
-    const labels = nextLabel === currentLabel ? undefined : nextLabel ? [nextLabel] : [];
     const schedule = {
       frequency,
       customInterval:
@@ -263,7 +243,6 @@ export function useChoreFormActions({
       dueDate: form.deadlineAt ? new Date(form.deadlineAt).toISOString() : undefined,
       description: form.liveDescription,
       autoApprove: form.liveAutoApprove,
-      // The first ChoreOps label groups daily chores into a named routine.
       labels,
     };
     const frequencyChanged = Boolean(
@@ -307,7 +286,7 @@ export function useChoreFormActions({
         ? { autoApprove: form.liveAutoApprove }
         : {}),
       ...(windowChanged ? { windowOffset: form.liveWindow } : {}),
-      ...(labels !== undefined ? { labels } : {}),
+      ...(labelsChanged ? { labels } : {}),
     };
     try {
       setSaving(true);
@@ -343,7 +322,7 @@ export function useChoreFormActions({
             assignedUserNames: userNames,
             completionCriteria: form.free ? 'shared_first' : 'independent',
             points: form.points,
-            labels: labels ?? originalChore?.labels ?? [],
+            labels,
             icon: originalChore?.icon ?? undefined,
             customInterval: form.liveInterval,
             customIntervalUnit: form.liveIntervalUnit,
@@ -381,43 +360,6 @@ export function useChoreFormActions({
       }
       dispatchOverlay({ type: 'close' });
       showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
-
-      /*
-       * Routine membership is Abbai Flow metadata, not a ChoreOps field: the label
-       * names the routine, and the registry remembers the chore belongs to it
-       * (with an order ChoreOps cannot store). A cleared label removes it again.
-       */
-      const taskName = form.name.trim();
-      if (editingId && currentLabel) {
-        const movedOrRenamed =
-          normaliseName(currentLabel) !== normaliseName(nextLabel) ||
-          normaliseName(originalName) !== normaliseName(taskName);
-        if (movedOrRenamed) {
-          const owner = meta.routines.find((routine) =>
-            routine.taskNames.some((name) => normaliseName(name) === normaliseName(originalName)),
-          );
-          if (owner) {
-            await runPlannerOp({
-              type: 'removeRoutineTask',
-              id: owner.id,
-              taskName: originalName,
-            });
-          }
-        }
-      }
-      if (nextLabel) {
-        const routine = (await runPlannerOp({
-          type: 'upsertRoutine',
-          name: nextLabel,
-        })) as { id?: string } | null;
-        if (routine && typeof routine.id === 'string') {
-          await runPlannerOp({
-            type: 'addRoutineTask',
-            id: routine.id,
-            taskName,
-          });
-        }
-      }
     } catch (err) {
       // ChoreOps replies with the exact reason (e.g. "The requested changes
       // require a future due date"); show it verbatim in the red toast.
@@ -440,9 +382,10 @@ export function useChoreFormActions({
   /** Reopen a completed task; standalone chores become shared-first for everyone. */
   const reuseTask = async (task: PlannerTask) => {
     if (saving) return;
-    const choreMatches = choreOps.data?.chores.filter(
-      (item) => normaliseName(item.name) === normaliseName(task.name),
-    ) ?? [];
+    const choreMatches =
+      choreOps.data?.chores.filter(
+        (item) => normaliseName(item.name) === normaliseName(task.name),
+      ) ?? [];
     const taskUserName = task.memberId ? userNameByMemberId.get(task.memberId) : undefined;
     const chore =
       (task.inRoutine && taskUserName

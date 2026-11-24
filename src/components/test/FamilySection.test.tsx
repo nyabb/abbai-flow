@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { FamilySection } from '../settings/sections/FamilySection';
 import { I18nContext, createI18n } from '../../i18n';
 import type { AbbaiSettings } from '../../hooks/useSettings';
@@ -55,14 +55,17 @@ vi.mock('../../utils/member-photo', () => ({
   resolveMemberPhoto: (photo: string) => photo,
 }));
 
-const settings = { themeId: 'skylight' } as AbbaiSettings;
+const settings = { themeId: 'skylight', locale: 'nl', weekStartsOn: 1 } as AbbaiSettings;
 
 const MEMBERS: FamilyMember[] = [
   { id: 'm1', name: 'Noor', avatar: '🧑', color: '#3b82f6', role: 'child' },
   { id: 'm2', name: 'Papa', avatar: '👨', color: '#10b981', role: 'parent' },
 ];
 
-function renderSection(members: FamilyMember[] = MEMBERS) {
+function renderSection(
+  members: FamilyMember[] = MEMBERS,
+  settingsOverride: Partial<AbbaiSettings> = {},
+) {
   const t = createI18n('nl');
   const onAddMember = vi.fn();
   const onUpdateMember = vi.fn();
@@ -70,7 +73,7 @@ function renderSection(members: FamilyMember[] = MEMBERS) {
   const utils = render(
     <I18nContext.Provider value={t}>
       <FamilySection
-        settings={settings}
+        settings={{ ...settings, ...settingsOverride }}
         onUpdateSettings={vi.fn()}
         t={t.t}
         members={members}
@@ -200,6 +203,18 @@ describe('FamilySection', () => {
     );
     // Move the second task above the first.
     fireEvent.click(screen.getAllByLabelText(t.t('settings.family.moveUp'))[1]);
+
+    const repeatDays = screen.getByRole('group', {
+      name: t.t('settings.family.repeatOnLabel'),
+    });
+    const selectedLabels = new Set(['maandag', 'woensdag']);
+    within(repeatDays)
+      .getAllByRole('button')
+      .forEach((button) => {
+        if (!selectedLabels.has(button.getAttribute('aria-label') ?? '')) {
+          fireEvent.click(button);
+        }
+      });
     fireEvent.click(screen.getByText(t.t('settings.family.saveRoutine')));
 
     await waitFor(() => expect(mocks.addRoutine).toHaveBeenCalledTimes(1));
@@ -207,11 +222,42 @@ describe('FamilySection', () => {
       name: 'Ochtend',
       member_id: 'm1',
       time_of_day: 'morning',
+      days_of_week: [1, 3],
+      mission_points: 5,
       tasks: [
         expect.objectContaining({ name: 'Aankleden', order: 0 }),
         expect.objectContaining({ name: 'Tanden poetsen', order: 1 }),
       ],
     });
+  });
+
+  it('saves parent routines without mission points', async () => {
+    const { t } = renderSection();
+
+    fireEvent.click(screen.getByLabelText(t.t('settings.family.routinesFor', { name: 'Papa' })));
+    fireEvent.click(screen.getByText(t.t('settings.family.addRoutine')));
+    fireEvent.change(screen.getByPlaceholderText(t.t('settings.family.routineNamePlaceholder')), {
+      target: { value: 'Evening reset' },
+    });
+    fireEvent.change(
+      screen.getByPlaceholderText(t.t('settings.family.taskPlaceholder', { n: 1 })),
+      {
+        target: { value: 'Prepare lunches' },
+      },
+    );
+
+    expect(screen.queryByText(t.t('settings.family.missionPointsLabel'))).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText(t.t('settings.family.saveRoutine')));
+
+    await waitFor(() => expect(mocks.addRoutine).toHaveBeenCalledTimes(1));
+    expect(mocks.addRoutine).toHaveBeenCalledWith(
+      expect.objectContaining({
+        member_id: 'm2',
+        name: 'Evening reset',
+        mission_points: 0,
+        days_of_week: [0, 1, 2, 3, 4, 5, 6],
+      }),
+    );
   });
 
   it('lists the routines of the selected member and deletes one after confirming', () => {
@@ -235,5 +281,62 @@ describe('FamilySection', () => {
 
     fireEvent.click(screen.getByLabelText(t.t('settings.family.deleteRoutine', { name: 'Avond' })));
     expect(mocks.removeRoutine).toHaveBeenCalledWith('r1');
+  });
+
+  it('edits selected weekdays and tasks without allowing an empty schedule', async () => {
+    mocks.routines = [
+      {
+        id: 'weekday-routine',
+        name: 'School reset',
+        member_id: 'm1',
+        time_of_day: 'morning',
+        days_of_week: [1, 3],
+        mission_points: 6,
+        tasks: [
+          { id: 'task-a', name: 'Pack bag', order: 0 },
+          { id: 'task-b', name: 'Find shoes', order: 1 },
+        ],
+      },
+    ];
+    const { t } = renderSection();
+
+    fireEvent.click(screen.getByLabelText(t.t('settings.family.routinesFor', { name: 'Noor' })));
+    const card = document.querySelector<HTMLElement>('.settings-fm-card')!;
+    expect(card.querySelector('.settings-fm-role')?.textContent).toContain('ma, wo');
+    fireEvent.click(
+      screen.getByLabelText(t.t('settings.family.editRoutine', { name: 'School reset' })),
+    );
+
+    const weekdays = screen.getByRole('group', { name: t.t('settings.family.repeatOnLabel') });
+    const monday = within(weekdays).getByRole('button', { name: 'maandag' });
+    const tuesday = within(weekdays).getByRole('button', { name: 'dinsdag' });
+    const wednesday = within(weekdays).getByRole('button', { name: 'woensdag' });
+    fireEvent.click(monday);
+    fireEvent.click(wednesday);
+    expect(wednesday).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(tuesday);
+
+    fireEvent.click(screen.getAllByLabelText(t.t('settings.family.moveDown'))[0]);
+    fireEvent.click(screen.getAllByLabelText(t.t('settings.family.removeTask'))[0]);
+    fireEvent.click(screen.getByText(t.t('settings.family.saveRoutine')));
+
+    await waitFor(() => expect(mocks.updateRoutine).toHaveBeenCalledTimes(1));
+    expect(mocks.updateRoutine).toHaveBeenCalledWith(
+      'weekday-routine',
+      expect.objectContaining({
+        days_of_week: [2, 3],
+        tasks: [{ id: 'task-a', name: 'Pack bag', order: 0 }],
+      }),
+    );
+  });
+
+  it('orders weekdays from Sunday when the family setting uses a Sunday start', () => {
+    const { t } = renderSection(MEMBERS, { weekStartsOn: 0 });
+
+    fireEvent.click(screen.getByLabelText(t.t('settings.family.routinesFor', { name: 'Noor' })));
+    fireEvent.click(screen.getByText(t.t('settings.family.addRoutine')));
+
+    const weekdays = screen.getByRole('group', { name: t.t('settings.family.repeatOnLabel') });
+    expect(within(weekdays).getAllByRole('button')[0]).toHaveAccessibleName('zondag');
   });
 });

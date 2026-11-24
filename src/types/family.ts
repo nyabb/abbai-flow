@@ -64,7 +64,13 @@ export interface Routine {
   member_id: string;
   tasks: RoutineTask[];
   time_of_day: 'morning' | 'afternoon' | 'evening';
+  /** JavaScript weekday numbers (0 = Sunday); missing or all seven means daily. */
+  days_of_week?: number[];
+  /** Points credited when the member completes this routine as a mission. */
+  mission_points?: number;
 }
+
+export const DEFAULT_ROUTINE_MISSION_POINTS = 5;
 
 export interface RoutineTask {
   id: string;

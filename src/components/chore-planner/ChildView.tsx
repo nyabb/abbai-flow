@@ -5,22 +5,24 @@
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { useState } from 'react';
 import type { ChoreOpsChoreHistoryEntry } from '../../api/choreops-chore-history';
-import type { PlannerMember, PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
+import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
+import type { Routine } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
 
 export interface ChildViewProps {
   childMember: PlannerMember;
+  isParent: boolean;
   spendableFor: (member: PlannerMember) => number;
   columnTasks: (memberId: string) => PlannerTask[];
-  columnRoutines: (memberId: string) => PlannerRoutine[];
+  columnRoutines: (memberId: string) => Routine[];
   completedTasksFor: (memberId: string) => PlannerTask[];
   completedHistory: ChoreOpsChoreHistoryEntry[] | null;
   formatHistoryDate: (value: number) => string;
   rewardsForMember: (memberId: string) => ChoreOpsReward[];
   renderRow: (task: PlannerTask) => React.ReactNode;
-  routineRow: (routine: PlannerRoutine, memberId: string) => React.ReactNode;
+  routineRow: (routine: Routine, memberId: string) => React.ReactNode;
   renderRewardRow: (reward: ChoreOpsReward) => React.ReactNode;
   copy: PlannerCopy;
   onStepChild: (delta: number) => void;
@@ -30,10 +32,12 @@ export interface ChildViewProps {
   /** Whether this child has anything left to run — routines, not loose chores. */
   canRunMissions: (memberId: string) => boolean;
   onNewGoal: (memberId: string) => void;
+  onNewRoutine?: () => void;
 }
 
 export function ChildView({
   childMember,
+  isParent,
   spendableFor,
   columnTasks,
   columnRoutines,
@@ -50,6 +54,7 @@ export function ChildView({
   onOpenMissions,
   canRunMissions,
   onNewGoal,
+  onNewRoutine,
 }: ChildViewProps) {
   const chores = columnTasks(childMember.id);
   const completed = completedTasksFor(childMember.id);
@@ -100,10 +105,12 @@ export function ChildView({
         </span>
         <div className="planner-detail-copy">
           <h2>{childMember.name}</h2>
-          <span className="planner-detail-points">
-            <span aria-hidden="true">{'\u{1FA99}'}</span>
-            {spendableFor(childMember)}
-          </span>
+          {!isParent && (
+            <span className="planner-detail-points">
+              <span aria-hidden="true">{'\u{1FA99}'}</span>
+              {spendableFor(childMember)}
+            </span>
+          )}
         </div>
         <div className="planner-detail-nav">
           <button
@@ -123,82 +130,88 @@ export function ChildView({
             <ChevronRight />
           </button>
         </div>
-        <button
-          type="button"
-          className="planner-col-play planner-col-play--big"
-          // Missions walk routines; a child whose day is all routine steps has
-          // no loose chores, and used to get a dead button.
-          disabled={!canRunMissions(childMember.id)}
-          onClick={() => onStartMissions(childMember.id)}
-          aria-label={`${c.startMissions}: ${childMember.name}`}
-        >
-          {'\u25B6'}
-        </button>
+        {!isParent && (
+          <button
+            type="button"
+            className="planner-col-play planner-col-play--big"
+            disabled={!canRunMissions(childMember.id)}
+            onClick={() => onStartMissions(childMember.id)}
+            aria-label={`${c.startMissions}: ${childMember.name}`}
+          >
+            {'\u25B6'}
+          </button>
+        )}
       </header>
 
-      <section className="planner-detail-section">
-        <h3>
-          {c.goals}
-          <span>{rewards.length}</span>
-        </h3>
-        {rewards.length === 0 && <p className="planner-col-empty">{c.noRewards}</p>}
-        {rewards.map((reward) => renderRewardRow(reward))}
-        <button
-          className="planner-ghost planner-reward-new"
-          onClick={() => onNewGoal(childMember.id)}
-        >
-          <Plus />
-          {c.setGoal}
-        </button>
-      </section>
-
-      <section className="planner-detail-section">
-        <h3>
-          {c.choresColumn}
-          <span>{chores.length}</span>
-        </h3>
-        {chores.length === 0 ? (
-          <p className="planner-col-empty">{c.nothing}</p>
-        ) : (
-          chores.map((task) => renderRow(task))
-        )}
-      </section>
-
-      <section className="planner-detail-section">
-        <h3>
-          {c.completedHistory}
-          <span>{visibleCompletions.length}</span>
-        </h3>
-        <label className="planner-history-filter">
-          <span>{c.historyRange}</span>
-          <select
-            value={historyRange}
-            onChange={(event) =>
-              setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
-            }
+      {!isParent && (
+        <section className="planner-detail-section">
+          <h3>
+            {c.goals}
+            <span>{rewards.length}</span>
+          </h3>
+          {rewards.length === 0 && <p className="planner-col-empty">{c.noRewards}</p>}
+          {rewards.map((reward) => renderRewardRow(reward))}
+          <button
+            className="planner-ghost planner-reward-new"
+            onClick={() => onNewGoal(childMember.id)}
           >
-            <option value="twoDays">{c.historyLastTwoDays}</option>
-            <option value="week">{c.historyLastWeek}</option>
-            <option value="all">{c.historyAllTime}</option>
-          </select>
-        </label>
-        {visibleCompletions.length === 0 ? (
-          <p className="planner-col-empty">{c.historyEmpty}</p>
-        ) : (
-          visibleCompletions.map((entry) => (
-            <article className="planner-reward planner-reward--done" key={entry.id}>
-              <span aria-hidden="true">{'\u2705'}</span>
-              <div className="planner-reward-copy">
-                <strong>{entry.choreName}</strong>
-                <small>
-                  {formatHistoryDate(entry.completedAtMs)}
-                  {entry.points !== null ? ` \u00b7 ${entry.points} ${c.pointsUnit}` : ''}
-                </small>
-              </div>
-            </article>
-          ))
-        )}
-      </section>
+            <Plus />
+            {c.setGoal}
+          </button>
+        </section>
+      )}
+
+      {!isParent && (
+        <section className="planner-detail-section">
+          <h3>
+            {c.choresColumn}
+            <span>{chores.length}</span>
+          </h3>
+          {chores.length === 0 ? (
+            <p className="planner-col-empty">{c.nothing}</p>
+          ) : (
+            chores.map((task) => renderRow(task))
+          )}
+        </section>
+      )}
+
+      {!isParent && (
+        <section className="planner-detail-section">
+          <h3>
+            {c.completedHistory}
+            <span>{visibleCompletions.length}</span>
+          </h3>
+          <label className="planner-history-filter">
+            <span>{c.historyRange}</span>
+            <select
+              value={historyRange}
+              onChange={(event) =>
+                setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
+              }
+            >
+              <option value="twoDays">{c.historyLastTwoDays}</option>
+              <option value="week">{c.historyLastWeek}</option>
+              <option value="all">{c.historyAllTime}</option>
+            </select>
+          </label>
+          {visibleCompletions.length === 0 ? (
+            <p className="planner-col-empty">{c.historyEmpty}</p>
+          ) : (
+            visibleCompletions.map((entry) => (
+              <article className="planner-reward planner-reward--done" key={entry.id}>
+                <span aria-hidden="true">{'\u2705'}</span>
+                <div className="planner-reward-copy">
+                  <strong>{entry.choreName}</strong>
+                  <small>
+                    {formatHistoryDate(entry.completedAtMs)}
+                    {entry.points !== null ? ` \u00b7 ${entry.points} ${c.pointsUnit}` : ''}
+                  </small>
+                </div>
+              </article>
+            ))
+          )}
+        </section>
+      )}
 
       <section className="planner-detail-section">
         <div className="planner-detail-section-head">
@@ -206,14 +219,22 @@ export function ChildView({
             {c.routines}
             <span>{routines.length}</span>
           </h3>
-          <button
-            type="button"
-            className="planner-section-action"
-            disabled={!canRunMissions(childMember.id)}
-            onClick={() => onOpenMissions(childMember.id)}
-          >
-            {'\u25B6'} {c.missions}
-          </button>
+          {isParent ? (
+            onNewRoutine && (
+              <button type="button" className="planner-section-action" onClick={onNewRoutine}>
+                <Plus aria-hidden="true" /> {c.addRoutine}
+              </button>
+            )
+          ) : (
+            <button
+              type="button"
+              className="planner-section-action"
+              disabled={!canRunMissions(childMember.id)}
+              onClick={() => onOpenMissions(childMember.id)}
+            >
+              {'\u25B6'} {c.missions}
+            </button>
+          )}
         </div>
         {routines.length === 0 ? (
           <p className="planner-col-empty">{c.noRoutines}</p>

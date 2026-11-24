@@ -37,6 +37,8 @@ export interface RoutineFormValue {
   id: string | null;
   name: string;
   time_of_day: Routine['time_of_day'];
+  days_of_week: number[];
+  mission_points: number;
   tasks: { id: string | null; name: string }[];
 }
 

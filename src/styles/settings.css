@@ -322,6 +322,38 @@
   font-weight: 500;
 }
 
+.settings-weekday-selector {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  width: min(100%, 350px);
+  flex: 0 1 350px;
+}
+
+.settings-weekday-btn {
+  min-width: 0;
+  min-height: 36px;
+  padding: 5px 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.settings-weekday-btn:hover {
+  border-color: var(--accent);
+}
+
+.settings-weekday-btn.is-active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
 /* --- Theme grid --- */
 .settings-theme-grid {
   display: grid;
@@ -424,7 +456,9 @@
 
 .settings-color-circle--selected {
   border-color: var(--text-primary);
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--text-primary);
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 0 0 4px var(--text-primary);
 }
 
 /* --- Per-calendar color editor --- */
@@ -480,7 +514,7 @@
   cursor: pointer;
 }
 
-.settings-color-custom input[type="color"] {
+.settings-color-custom input[type='color'] {
   width: 26px;
   height: 26px;
   padding: 0;

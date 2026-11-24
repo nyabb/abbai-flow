@@ -88,6 +88,8 @@ export interface UseChoreOpsResult {
    * child's Abbai Flow allocation is released so the visible balance stays put.
    */
   approveReward: (userName: string, rewardName: string, approverName?: string) => Promise<void>;
+  /** Award a positive bonus directly to a ChoreOps user. */
+  adjustPoints: (userName: string, amount: number, reason: string) => Promise<void>;
   /** Delete a ChoreOps chore by name. */
   deleteChore: (choreName: string) => Promise<void>;
   /** Reset a chore to pending by setting or clearing its due date. */
@@ -337,9 +339,9 @@ export function useChoreOps(): UseChoreOpsResult {
         // ChoreOps builds status entity unique IDs from the config entry,
         // assignee UUID, chore UUID and a sensor suffix. The final UUID is the
         // stable chore ID accepted by update_chore, including after a rename.
-        const ids = entry.unique_id.slice(prefix.length).match(
-          /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
-        );
+        const ids = entry.unique_id
+          .slice(prefix.length)
+          .match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
         return ids && ids.length > 0 ? ids[ids.length - 1] : null;
       } catch {
         return null;
@@ -508,6 +510,23 @@ export function useChoreOps(): UseChoreOpsResult {
     [reloadAfterWrite],
   );
 
+  /** Credit a routine mission bonus without creating a chore approval. */
+  const adjustPoints = useCallback(
+    async (userName: string, amount: number, reason: string): Promise<void> => {
+      const entryId = snapshot.data?.entryId ?? null;
+      if (!userName.trim()) throw new Error('ChoreOps user is required to award points');
+      if (!Number.isFinite(amount) || amount <= 0) return;
+      await callHaService('choreops', 'manual_adjust_points', {
+        ...(entryId ? { config_entry_id: entryId } : {}),
+        user_name: userName,
+        amount,
+        reason,
+      });
+      await reloadAfterWrite();
+    },
+    [reloadAfterWrite],
+  );
+
   /** Delete a ChoreOps chore by name (the id ChoreOps publishes). */
   const deleteChore = useCallback(
     async (choreName: string): Promise<void> => {
@@ -574,6 +593,7 @@ export function useChoreOps(): UseChoreOpsResult {
       updateReward,
       deleteReward,
       approveReward,
+      adjustPoints,
       deleteChore,
       setChoreDueDate,
     }),
@@ -589,6 +609,7 @@ export function useChoreOps(): UseChoreOpsResult {
       updateReward,
       deleteReward,
       approveReward,
+      adjustPoints,
       deleteChore,
       setChoreDueDate,
     ],

@@ -1,18 +1,17 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
-import type { FamilyMember } from '../../types/family';
+import type { FamilyMember, Routine } from '../../types/family';
 import type { ChoreOpsState } from '../../types/choreops';
-import { PLANNER_META_KEY } from '../../api/planner-meta';
 
 const mocks = vi.hoisted(() => ({
-  pressButton: vi.fn(async () => {}),
-  createChore: vi.fn(async (..._args: unknown[]) => {}),
-  updateChore: vi.fn(async (..._args: unknown[]) => {}),
-  deleteChore: vi.fn(async () => {}),
-  resolveChoreId: vi.fn(async () => '023e4567-e89b-12d3-a456-426614174000'),
   state: { current: null as ChoreOpsState | null },
+  adjustPoints: vi.fn(async () => {}),
+  pressButton: vi.fn(async () => {}),
+  createChore: vi.fn(async () => {}),
+  updateChore: vi.fn(async () => {}),
+  deleteChore: vi.fn(async () => {}),
 }));
 
 vi.mock('../../hooks/useChoreOps', () => ({
@@ -21,47 +20,45 @@ vi.mock('../../hooks/useChoreOps', () => ({
     loading: false,
     error: null,
     available: true,
-    refresh: () => {},
+    refresh: async () => {},
     pressButton: mocks.pressButton,
     claimChore: async () => {},
     createChore: mocks.createChore,
     updateChore: mocks.updateChore,
     createReward: async () => {},
+    updateReward: async () => {},
     deleteReward: async () => {},
     deleteChore: mocks.deleteChore,
-    resolveChoreId: mocks.resolveChoreId,
     approveReward: async () => {},
+    adjustPoints: mocks.adjustPoints,
   }),
 }));
 
-function member(overrides: Partial<FamilyMember>): FamilyMember {
-  return {
-    id: 'member-1',
-    name: 'Member',
-    avatar: '\u{1F642}',
-    color: '#1f7a5a',
-    role: 'child',
-    ...overrides,
-  };
-}
+const NL = createI18n('nl');
+const PARENT: FamilyMember = {
+  id: 'parent-1',
+  name: 'Papa',
+  avatar: '👨',
+  color: '#10b981',
+  role: 'parent',
+};
+const CHILD: FamilyMember = {
+  id: 'child-1',
+  name: 'Zara',
+  avatar: '🧒',
+  color: '#cf6d55',
+  role: 'child',
+  choreops_user: 'Zara',
+};
 
-const PARENT = member({ id: 'p1', name: 'Papa', role: 'parent', pin: '0123' });
-const ZARA = member({ id: 'c1', name: 'Zara', choreops_user: 'Zara' });
-const MAYA = member({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
-
-/**
- * One child with a two-step morning routine and one standalone chore.
- * `labels` is how the household already names routines in ChoreOps; Abbai Flow
- * adopts it into its own registry.
- */
-function routineState(): ChoreOpsState {
+function choreOpsState(): ChoreOpsState {
   return {
     users: [
       {
         name: 'Zara',
         slug: 'zara',
-        points: 25,
-        dueToday: 3,
+        points: 10,
+        dueToday: 0,
         claimed: 0,
         approved: 0,
         completedToday: 0,
@@ -69,658 +66,230 @@ function routineState(): ChoreOpsState {
     ],
     chores: [
       {
-        id: 'status:zara::tanden poetsen',
-        statusEntityId: 'sensor.zara_choreops_chore_status_tanden_poetsen',
-        name: 'Tanden poetsen',
-        icon: 'mdi:tooth',
+        id: 'old-routine-chore',
+        statusEntityId: 'sensor.zara_choreops_chore_status_old_routine_chore',
+        name: 'Legacy task',
+        icon: null,
         status: 'pending',
         assignee: 'Zara',
-        points: 5,
+        assignedUserNames: ['Zara'],
+        completionCriteria: 'independent',
+        points: 1,
         dueDate: null,
         canClaim: true,
         canApprove: false,
         frequency: 'daily',
-        assignedUserNames: ['Zara'],
-        completionCriteria: 'independent',
-        labels: ['Ochtendroutine'],
-        actions: { claim: 'button.zara_choreops_claim_chore_tanden_poetsen' },
-      },
-      {
-        id: 'status:zara::aankleden',
-        statusEntityId: 'sensor.zara_choreops_chore_status_aankleden',
-        name: 'Aankleden',
-        icon: 'mdi:tshirt',
-        status: 'pending',
-        assignee: 'Zara',
-        points: 5,
-        dueDate: null,
-        canClaim: true,
-        canApprove: false,
-        frequency: 'daily',
-        assignedUserNames: ['Zara'],
-        completionCriteria: 'independent',
-        labels: ['Ochtendroutine'],
-        actions: { claim: 'button.zara_choreops_claim_chore_aankleden' },
-      },
-      {
-        id: 'status:zara::afwassen',
-        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
-        name: 'Afwassen',
-        icon: 'mdi:silverware',
-        status: 'pending',
-        assignee: 'Zara',
-        assignedUserNames: ['Zara'],
-        completionCriteria: 'independent',
-        points: 3,
-        dueDate: null,
-        canClaim: true,
-        canApprove: false,
-        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
+        labels: ['Old ChoreOps routine'],
+        actions: { claim: 'button.zara_claim_legacy_task' },
       },
     ],
     rewards: [],
     people: [],
-    pointsByUser: { zara: 25 },
+    pointsByUser: { zara: 10 },
     pendingApprovals: { chores: 0, rewards: 0 },
     entryId: 'entry-1',
     available: true,
   };
 }
 
-const NL = createI18n('nl');
+function familyRoutine(memberId = CHILD.id, overrides: Partial<Routine> = {}): Routine {
+  return {
+    id: `routine-${memberId}`,
+    name: memberId === PARENT.id ? 'Evening reset' : 'Morning routine',
+    member_id: memberId,
+    time_of_day: 'morning',
+    mission_points: 5,
+    tasks: [
+      { id: 'task-1', name: 'Brush teeth', order: 0 },
+      { id: 'task-2', name: 'Get dressed', order: 1 },
+    ],
+    ...overrides,
+  };
+}
 
-function renderPlanner(members: FamilyMember[]) {
+function seedRoutines(...routines: Routine[]) {
+  localStorage.setItem('abbai_flow_routines', JSON.stringify(routines));
+}
+
+function renderPlanner(
+  members: FamilyMember[] = [PARENT, CHILD],
+  onRequestRoutineCreate?: () => void,
+) {
   return render(
     <I18nContext.Provider value={NL}>
-      <ChorePlanner members={members} locale="nl" onLocaleChange={() => {}} />
+      <ChorePlanner
+        members={members}
+        locale="nl"
+        onLocaleChange={() => {}}
+        onRequestRoutineCreate={onRequestRoutineCreate}
+      />
     </I18nContext.Provider>,
   );
 }
 
 function column(container: HTMLElement, name: string): HTMLElement {
-  const found = [...container.querySelectorAll<HTMLElement>('.planner-col')].find((element) =>
-    element.querySelector('.planner-col-head strong')?.textContent?.includes(name),
-  );
-  return found!;
+  return [...container.querySelectorAll<HTMLElement>('.planner-col')].find(
+    (element) => element.querySelector('.planner-col-head strong')?.textContent === name,
+  )!;
 }
 
-/** Seed the shared metadata document the planner hydrates from. */
-function seedMeta(meta: unknown) {
-  localStorage.setItem(PLANNER_META_KEY, JSON.stringify(meta));
-}
-
-describe('ChorePlanner routines', () => {
+describe('Family routines in the chore planner', () => {
   beforeEach(() => {
     localStorage.clear();
-    mocks.pressButton.mockClear();
-    mocks.createChore.mockClear();
-    mocks.updateChore.mockClear();
-    mocks.deleteChore.mockClear();
-    mocks.resolveChoreId.mockClear();
-    mocks.state.current = routineState();
+    mocks.state.current = choreOpsState();
+    mocks.adjustPoints.mockReset();
+    mocks.pressButton.mockReset();
+    mocks.createChore.mockReset();
   });
 
-  it('keeps routine steps out of the individual chore list', () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
+  it('reads routine definitions from Abbai Flow and keeps old ChoreOps labels as chores', async () => {
+    seedRoutines(familyRoutine());
+    const { container } = renderPlanner();
+
     const zara = column(container, 'Zara');
-    const names = [...zara.querySelectorAll('.planner-row-name')].map((node) => node.textContent);
-
-    // The standalone chore is listed; the two routine steps are not.
-    expect(names).toContain('Afwassen');
-    expect(names).not.toContain('Tanden poetsen');
-    expect(names).not.toContain('Aankleden');
-    // ...and the routine itself is shown, so nothing is hidden from the child.
-    expect(zara.textContent).toContain('Ochtendroutine');
-  });
-
-  it('opens the normal edit and delete actions from a routine step', () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
-      (element) => element.textContent?.includes('Tanden poetsen'),
-    )!;
-
-    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
-
-    expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
-  });
-
-  it('deletes a live routine chore through the parent PIN gate', async () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
-      (element) => element.textContent?.includes('Tanden poetsen'),
-    )!;
-
-    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Verwijderen' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Tanden poetsen'));
-  });
-
-  it('keeps standalone chores on their normal action flow', () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const choreRow = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
-      (row) => row.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
-    );
-    expect(choreRow).toBeTruthy();
-
-    fireEvent.click(choreRow!.querySelector<HTMLButtonElement>('.planner-row-more')!);
-
-    expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
-  });
-
-  it('only offers routine actions for chores still published by ChoreOps', () => {
-    const base = routineState();
-    mocks.state.current = {
-      ...base,
-      chores: base.chores.filter((chore) => chore.name !== 'Tanden poetsen'),
-    };
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const steps = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')];
-
-    expect(steps).toHaveLength(1);
-    expect(steps[0].textContent).toContain('Aankleden');
-    expect(steps[0].querySelector('.planner-step-more')).not.toBeNull();
-  });
-
-  it('can edit a daily routine chore completed yesterday', async () => {
-    const base = routineState();
-    mocks.state.current = {
-      ...base,
-      chores: base.chores.map((chore) =>
-        chore.name === 'Tanden poetsen'
-          ? {
-              ...chore,
-              status: 'completed',
-              lastCompleted: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            }
-          : chore,
-      ),
-    };
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
-      (element) => element.textContent?.includes('Tanden poetsen'),
-    )!;
-
-    fireEvent.click(within(step).getByRole('button', { name: 'Acties: Tanden poetsen' }));
-
-    expect(screen.getByRole('button', { name: 'Bewerken' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Verwijderen' })).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    const routineLabel = await waitFor(() => {
-      const input = container.querySelector<HTMLInputElement>('input[list="planner-routine-names"]');
-      expect(input).not.toBeNull();
-      return input!;
-    });
-    expect(routineLabel.value).toBe('Ochtendroutine');
-
-    fireEvent.change(routineLabel, { target: { value: '' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
-    const update = mocks.updateChore.mock.calls[0][0];
-    expect(update).toMatchObject({
-      name: 'Tanden poetsen',
-      labels: [],
-    });
-    expect(update).not.toHaveProperty('frequency');
-    expect(update).not.toHaveProperty('dueDate');
-    expect(update).not.toHaveProperty('points');
-    expect(update).not.toHaveProperty('status');
-    expect(update).not.toHaveProperty('lastCompleted');
-    expect(mocks.pressButton).not.toHaveBeenCalled();
-  });
-
-  it('recreates a chore when changing to the create-only shared-first claim rule', async () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const row = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
-      (element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
-    )!;
-
-    fireEvent.click(row.querySelector<HTMLButtonElement>('.planner-row-more')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    const free = await waitFor(() => {
-      const input = container.querySelector<HTMLInputElement>('.planner-check-label input');
-      expect(input).not.toBeNull();
-      return input!;
-    });
-    fireEvent.click(free);
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledTimes(1));
-    const temporaryName = mocks.updateChore.mock.calls[0][0].name;
-    expect(mocks.resolveChoreId).toHaveBeenCalledWith(
-      'sensor.zara_choreops_chore_status_afwassen',
-    );
-    expect(temporaryName).toMatch(/^__abbai_flow_recreate_/);
-    expect(mocks.createChore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Afwassen',
-        assignedUserNames: ['*'],
-        completionCriteria: 'shared_first',
-        points: 3,
-        frequency: 'none',
-        labels: [],
-      }),
-    );
-    expect(mocks.deleteChore).toHaveBeenCalledWith(temporaryName);
-    expect(mocks.updateChore.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.createChore.mock.invocationCallOrder[0],
-    );
-    expect(mocks.createChore.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.deleteChore.mock.invocationCallOrder[0],
-    );
-  });
-
-  it('recreates an anyone chore as independent when assigning it to everyone', async () => {
-    const base = routineState();
-    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
-    const shared = {
-      ...afwassen,
-      id: 'status:zara::afwassen',
-      statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
-      completionCriteria: 'shared_first',
-      assignedUserNames: ['Zara', 'Maya'],
-    };
-    mocks.state.current = {
-      ...base,
-      users: [
-        ...base.users,
-        {
-          name: 'Maya',
-          slug: 'maya',
-          points: 10,
-          dueToday: 1,
-          claimed: 0,
-          approved: 0,
-          completedToday: 0,
-        },
-      ],
-      chores: [
-        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
-        shared,
-        {
-          ...shared,
-          id: 'status:maya::afwassen',
-          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
-          assignee: 'Maya',
-          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
-        },
-      ],
-      pointsByUser: { ...base.pointsByUser, maya: 10 },
-    };
-
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    const freeRow = [...column(container, 'Vrij te pakken').querySelectorAll<HTMLElement>('.planner-row')]
-      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
-    fireEvent.click(freeRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-    await waitFor(() => expect(container.querySelector('.planner-member-picker')).not.toBeNull());
-
-    fireEvent.click(screen.getByRole('button', { name: 'Iedereen' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledTimes(1));
-    expect(mocks.createChore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Afwassen',
-        assignedUserNames: ['Zara', 'Maya'],
-        completionCriteria: 'independent',
-      }),
-    );
-    expect(mocks.deleteChore).toHaveBeenCalledWith(
-      expect.stringMatching(/^__abbai_flow_recreate_/),
-    );
-  });
-
-  it('updates an everyone chore natively when narrowing to one child', async () => {
-    const base = routineState();
-    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
-    const assignedToBoth = {
-      ...afwassen,
-      id: 'status:zara::afwassen',
-      completionCriteria: 'independent',
-      assignedUserNames: ['Zara', 'Maya'],
-    };
-    mocks.state.current = {
-      ...base,
-      users: [
-        ...base.users,
-        {
-          name: 'Maya',
-          slug: 'maya',
-          points: 10,
-          dueToday: 1,
-          claimed: 0,
-          approved: 0,
-          completedToday: 0,
-        },
-      ],
-      chores: [
-        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
-        assignedToBoth,
-        {
-          ...assignedToBoth,
-          id: 'status:maya::afwassen',
-          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
-          assignee: 'Maya',
-          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
-        },
-      ],
-      pointsByUser: { ...base.pointsByUser, maya: 10 },
-    };
-
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    const zaraRow = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')]
-      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
-    fireEvent.click(zaraRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-    await waitFor(() => expect(container.querySelector('.planner-member-picker')).not.toBeNull());
-
-    const mayaChoice = [...container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button')]
-      .find((button) => button.textContent?.includes('Maya'))!;
-    fireEvent.click(mayaChoice);
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
-    expect(mocks.updateChore.mock.calls[0][0]).toMatchObject({
-      name: 'Afwassen',
-      assignedUserNames: ['Zara'],
-    });
-    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('frequency');
-    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('dueDate');
+    await waitFor(() => expect(zara.querySelector('.planner-row--routine')).not.toBeNull());
+    const routine = zara.querySelector<HTMLElement>('.planner-row--routine')!;
+    expect(routine.textContent).toContain('Morning routine');
+    expect(routine.querySelector('.planner-steps')?.textContent).toContain('Brush teeth');
+    expect(zara.textContent).toContain('Legacy task');
+    expect(zara.querySelectorAll('.planner-row--routine')).toHaveLength(1);
     expect(mocks.createChore).not.toHaveBeenCalled();
-    expect(mocks.deleteChore).not.toHaveBeenCalled();
   });
 
-  it('restores the original chore name if replacement creation fails', async () => {
-    mocks.createChore.mockRejectedValueOnce(new Error('Create failed'));
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const row = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-row')].find(
-      (element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'),
-    )!;
+  it('saves direct step checkoffs in Abbai Flow without an approval or chore service call', async () => {
+    seedRoutines(familyRoutine());
+    const { container } = renderPlanner();
+    const zara = column(container, 'Zara');
 
-    fireEvent.click(row.querySelector<HTMLButtonElement>('.planner-row-more')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-    fireEvent.click(await waitFor(() => container.querySelector<HTMLInputElement>(
-      '.planner-check-label input',
-    )!));
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(2));
-    const temporaryName = mocks.updateChore.mock.calls[0][0].name;
-    expect(mocks.updateChore.mock.calls[1][0]).toMatchObject({
-      name: 'Afwassen',
-      targetName: temporaryName,
-      choreId: '023e4567-e89b-12d3-a456-426614174000',
-    });
-    expect(mocks.deleteChore).not.toHaveBeenCalled();
-  });
-
-  it('uses native assignment update when a shared-first chore is limited to one child', async () => {
-    const base = routineState();
-    const afwassen = base.chores.find((chore) => chore.name === 'Afwassen')!;
-    const shared = {
-      ...afwassen,
-      id: 'status:zara::afwassen',
-      statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
-      completionCriteria: 'shared_first',
-      assignedUserNames: ['Zara', 'Maya'],
-    };
-    mocks.state.current = {
-      ...base,
-      users: [
-        ...base.users,
-        {
-          name: 'Maya',
-          slug: 'maya',
-          points: 10,
-          dueToday: 1,
-          claimed: 0,
-          approved: 0,
-          completedToday: 0,
-        },
-      ],
-      chores: [
-        ...base.chores.filter((chore) => chore.name !== 'Afwassen'),
-        shared,
-        {
-          ...shared,
-          id: 'status:maya::afwassen',
-          statusEntityId: 'sensor.maya_choreops_chore_status_afwassen',
-          assignee: 'Maya',
-          actions: { claim: 'button.maya_choreops_claim_chore_afwassen' },
-        },
-      ],
-      pointsByUser: { ...base.pointsByUser, maya: 10 },
-    };
-
-    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
-    const freeRow = [...column(container, 'Vrij te pakken').querySelectorAll<HTMLElement>('.planner-row')]
-      .find((element) => element.querySelector('.planner-row-name')?.textContent?.includes('Afwassen'))!;
-    fireEvent.click(freeRow.querySelector<HTMLButtonElement>('.planner-row-more')!);
-    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    const zaraChoice = await waitFor(() => {
-      const button = [...container.querySelectorAll<HTMLButtonElement>('.planner-member-picker button')]
-        .find((item) => item.textContent?.includes('Zara'));
-      expect(button).toBeTruthy();
+    const checkoff = await waitFor(() => {
+      const button = zara.querySelector<HTMLButtonElement>('.planner-step-action');
+      expect(button).not.toBeNull();
       return button!;
     });
-    fireEvent.click(zaraChoice);
-    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-
-    await waitFor(() => expect(mocks.updateChore).toHaveBeenCalledTimes(1));
-    expect(mocks.updateChore.mock.calls[0][0]).toMatchObject({
-      name: 'Afwassen',
-      assignedUserNames: ['Zara'],
-    });
-    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('frequency');
-    expect(mocks.updateChore.mock.calls[0][0]).not.toHaveProperty('dueDate');
-    expect(mocks.createChore).not.toHaveBeenCalled();
-    expect(mocks.deleteChore).not.toHaveBeenCalled();
-  });
-
-  it('opens the missions overview from the routines section', () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const missions = column(container, 'Zara').querySelector<HTMLButtonElement>(
-      '.planner-section-action',
-    )!;
-
-    // The overview is the mission screen's back destination; it is a visible
-    // entry point from the routines UI, not a hidden result of the back arrow.
-    expect(missions.textContent).toContain('Missies');
-    fireEvent.click(missions);
-    expect(container.querySelector('.planner-mission-hero')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Start missies' })).toBeTruthy();
-  });
-
-  it('lets the child complete a routine step directly from the routine list', async () => {
-    const { container } = renderPlanner([PARENT, ZARA]);
-    fireEvent.click(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
-    );
-
-    const step = [...container.querySelectorAll<HTMLElement>('.planner-step')].find((element) =>
-      element.textContent?.includes('Tanden poetsen'),
-    )!;
-    fireEvent.click(step.querySelector<HTMLButtonElement>('.planner-step-action')!);
-
-    fireEvent.click(
-      container.querySelector<HTMLButtonElement>('.planner-sheet--confirm .planner-primary')!,
-    );
-    await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith(
-        'button.zara_choreops_claim_chore_tanden_poetsen',
-      ),
-    );
-  });
-
-  it('lets a parent approve a routine step that waits in review', async () => {
-    const base = routineState();
-    mocks.state.current = {
-      ...base,
-      chores: base.chores.map((chore) =>
-        chore.name === 'Tanden poetsen'
-          ? {
-              ...chore,
-              status: 'claimed',
-              canClaim: false,
-              canApprove: true,
-              actions: { approve: 'button.zara_approve_tanden' },
-            }
-          : chore,
-      ),
-    };
-    const { container } = renderPlanner([PARENT, ZARA]);
-    const step = [...column(container, 'Zara').querySelectorAll<HTMLElement>('.planner-step')].find(
-      (element) => element.textContent?.includes('Tanden poetsen'),
-    )!;
-
-    // A routine step has no row menu, so the step itself carries the action.
-    fireEvent.click(within(step).getByRole('button', { name: 'Voltooiing goedkeuren' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    expect(pin).not.toBeNull();
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_tanden'),
-    );
-  });
-
-  it('offers approval on the read-only missions overview', async () => {
-    const base = routineState();
-    mocks.state.current = {
-      ...base,
-      chores: base.chores.map((chore) =>
-        chore.name === 'Tanden poetsen'
-          ? {
-              ...chore,
-              status: 'claimed',
-              canClaim: false,
-              canApprove: true,
-              actions: { approve: 'button.zara_approve_tanden' },
-            }
-          : chore,
-      ),
-    };
-    const { container } = renderPlanner([PARENT, ZARA]);
-
-    fireEvent.click(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-section-action')!,
-    );
-    const card = [...container.querySelectorAll<HTMLElement>('.planner-task')].find((element) =>
-      element.textContent?.includes('Tanden poetsen'),
-    )!;
-    fireEvent.click(within(card).getByRole('button', { name: 'Voltooiing goedkeuren' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
-
-    await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_tanden'),
-    );
-  });
-
-  it('adopts an existing ChoreOps label as one routine with an ordered task list', async () => {
-    renderPlanner([PARENT, ZARA]);
+    fireEvent.click(checkoff);
 
     await waitFor(() => {
-      const stored = JSON.parse(localStorage.getItem(PLANNER_META_KEY) ?? '{}');
-      const routine = stored.routines?.find(
-        (item: { name: string }) => item.name === 'Ochtendroutine',
-      );
-      expect(routine).toBeTruthy();
-      expect(routine.taskNames).toEqual(['Tanden poetsen', 'Aankleden']);
+      const saved = JSON.parse(localStorage.getItem('abbai_flow_routine_completions') ?? '[]');
+      expect(saved).toEqual([
+        expect.objectContaining({ routine_id: 'routine-child-1', task_id: 'task-1' }),
+      ]);
     });
+    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.adjustPoints).not.toHaveBeenCalled();
   });
 
-  it('runs the routine in the order the registry defines', async () => {
-    seedMeta({
-      version: 1,
-      routines: [
-        {
-          id: 'ochtendroutine',
-          name: 'Ochtendroutine',
-          icon: '\u23F0',
-          taskNames: ['Aankleden', 'Tanden poetsen'],
-        },
-      ],
-      missions: {},
+  it('awards the editable routine bonus through ChoreOps only after a child mission finishes', async () => {
+    seedRoutines(
+      familyRoutine(CHILD.id, {
+        mission_points: 8,
+        tasks: [{ id: 'last-task', name: 'Pack school bag', order: 0 }],
+      }),
+    );
+    const { container } = renderPlanner();
+    const zara = column(container, 'Zara');
+
+    const start = await waitFor(() => {
+      const button = zara.querySelector<HTMLButtonElement>('.planner-row-start');
+      expect(button).not.toBeNull();
+      return button!;
     });
-    const { container } = renderPlanner([PARENT, ZARA]);
-
-    fireEvent.click(
-      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!,
-    );
-    await waitFor(() =>
-      expect(container.querySelector('.planner-mission-hero h2')?.textContent).toBe('Aankleden'),
-    );
-    expect(container.querySelector('.planner-mission-progress')?.textContent).toContain('1');
-
-    // Finishing a step asks "are you sure?" first, then advances to the next.
+    fireEvent.click(start);
     fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-mission-done')!);
-    fireEvent.click(
-      container.querySelector<HTMLButtonElement>('.planner-sheet--confirm .planner-primary')!,
+
+    await waitFor(() => expect(mocks.adjustPoints).toHaveBeenCalledTimes(1));
+    expect(mocks.adjustPoints).toHaveBeenCalledWith(
+      'Zara',
+      8,
+      expect.stringContaining('Abbai Flow mission: Morning routine'),
     );
-    await waitFor(() =>
-      expect(container.querySelector('.planner-mission-hero h2')?.textContent).toBe(
-        'Tanden poetsen',
-      ),
-    );
-    expect(mocks.pressButton).toHaveBeenCalledWith(
-      'button.zara_choreops_claim_chore_aankleden',
-    );
+    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(
+      JSON.parse(localStorage.getItem('abbai_flow_routine_mission_awards') ?? '[]'),
+    ).toHaveLength(1);
   });
 
-  it('leaves a paused routine out of the mission run', async () => {
-    seedMeta({
-      version: 1,
-      routines: [
-        {
-          id: 'ochtendroutine',
-          name: 'Ochtendroutine',
-          icon: '\u23F0',
-          taskNames: ['Tanden poetsen', 'Aankleden'],
-          paused: true,
-        },
-      ],
-      missions: {},
+  it('releases the bonus reservation when ChoreOps rejects a mission award', async () => {
+    mocks.adjustPoints.mockRejectedValueOnce(new Error('ChoreOps unavailable'));
+    seedRoutines(
+      familyRoutine(CHILD.id, {
+        id: 'routine-failed-award',
+        tasks: [{ id: 'last-task', name: 'Pack school bag', order: 0 }],
+      }),
+    );
+    const { container } = renderPlanner();
+    const zara = column(container, 'Zara');
+
+    const start = await waitFor(() => {
+      const button = zara.querySelector<HTMLButtonElement>('.planner-row-start');
+      expect(button).not.toBeNull();
+      return button!;
     });
-    const { container } = renderPlanner([PARENT, ZARA]);
+    fireEvent.click(start);
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-mission-done')!);
 
-    // The only routine is paused, so there is nothing to run: the button says so
-    // instead of starting a mission that immediately ends.
-    const play = column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-play')!;
-    expect(play.disabled).toBe(true);
+    await waitFor(() => expect(mocks.adjustPoints).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      expect(JSON.parse(localStorage.getItem('abbai_flow_routine_mission_awards') ?? '[]')).toEqual(
+        [],
+      );
+    });
+  });
 
-    fireEvent.click(play);
-    expect(container.querySelector('.planner-mission-hero')).toBeNull();
+  it('shows each routine only on its selected weekdays', async () => {
+    const tomorrow = (new Date().getDay() + 1) % 7;
+    seedRoutines(familyRoutine(CHILD.id, { days_of_week: [tomorrow] }));
+    const { container } = renderPlanner();
+
+    await waitFor(() => expect(localStorage.getItem('abbai_flow_routines')).not.toBeNull());
+    expect(column(container, 'Zara').querySelector('.planner-row--routine')).toBeNull();
+  });
+
+  it('gives parents a routine-only page and includes them in the member filter', async () => {
+    seedRoutines(
+      familyRoutine(PARENT.id, {
+        name: 'Kitchen reset',
+        mission_points: 12,
+        tasks: [{ id: 'parent-task', name: 'Clear the counter', order: 0 }],
+      }),
+    );
+    const { container } = renderPlanner();
+
+    const papa = await waitFor(() => {
+      const found = column(container, 'Papa');
+      expect(found.querySelector('.planner-row--routine')).not.toBeNull();
+      return found;
+    });
+    expect(papa.textContent).toContain('Clear the counter');
+    expect(papa.querySelector('.planner-col-points')).toBeNull();
+    expect(papa.querySelector('.planner-col-play')).toBeNull();
+    expect(papa.querySelector('.planner-row-start')).toBeNull();
+    expect(papa.textContent).not.toContain('12');
+
+    fireEvent.click(papa.querySelector<HTMLButtonElement>('.planner-col-open')!);
+    const detail = container.querySelector<HTMLElement>('.planner-detail')!;
+    expect(detail.querySelectorAll('.planner-detail-section')).toHaveLength(1);
+    expect(detail.querySelector('.planner-col-play')).toBeNull();
+    expect(detail.querySelector('.planner-row-start')).toBeNull();
+    expect(detail.textContent).toContain('Clear the counter');
+    expect(detail.textContent).not.toContain('Doelen');
+    expect(detail.textContent).not.toContain('Taakjes');
+
+    fireEvent.click(
+      container.querySelector<HTMLButtonElement>('.planner-header .planner-icon-button')!,
+    );
+    fireEvent.click(container.querySelector<HTMLButtonElement>('button[aria-label="Filteren"]')!);
+    const filter = container.querySelector<HTMLElement>('.planner-sheet')!;
+    expect(within(filter).getByRole('button', { name: /Papa/ })).toBeInTheDocument();
+  });
+
+  it('routes the chore page add button to the shared Family routine editor', () => {
+    const onRequestRoutineCreate = vi.fn();
+    const { container } = renderPlanner([PARENT, CHILD], onRequestRoutineCreate);
+
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+    fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
+
+    expect(onRequestRoutineCreate).toHaveBeenCalledTimes(1);
+    expect(mocks.createChore).not.toHaveBeenCalled();
   });
 });

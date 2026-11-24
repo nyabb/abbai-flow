@@ -79,10 +79,7 @@ export interface CreateChoreInput {
   notificationImportance?: string | null;
   points?: number | null;
   description?: string | null;
-  /**
-   * ChoreOps labels. Abbai Flow groups daily chores into routines by their first
-   * label, so this is how a household names one ("Ochtendroutine").
-   */
+  /** Ordinary chore labels. Abbai Flow routines are stored separately. */
   labels?: string[] | null;
   frequency?: ChoreOpsFrequency | null;
   /** Only sent for `custom` frequency. */
@@ -147,7 +144,8 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
   if (
     ['custom', 'custom_from_complete', 'custom_from_complete_date_only'].includes(
       input.frequency ?? '',
-    ) && input.customInterval
+    ) &&
+    input.customInterval
   ) {
     payload.custom_interval = Math.max(1, Math.round(input.customInterval));
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
@@ -178,7 +176,7 @@ export interface UpdateChoreInput {
   assignedUserNames?: string[];
   points?: number;
   description?: string;
-  /** Replaces the label list when given; drives the routines grouping. */
+  /** Replaces the chore label list when given. */
   labels?: string[];
   frequency?: string;
   customInterval?: number;
@@ -233,8 +231,8 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
   }
   if (input.description !== undefined) payload.description = input.description.trim();
   if (input.labels) {
-    // An empty array is meaningful: it clears the labels (and with them the
-    // routine grouping). Only a missing property means "leave them alone".
+    // An empty array is meaningful: it clears the chore labels. Only a missing
+    // property means "leave them alone".
     payload.labels = Array.from(new Set(input.labels.map((label) => label.trim()).filter(Boolean)));
   }
   if (input.frequency) payload.frequency = input.frequency;

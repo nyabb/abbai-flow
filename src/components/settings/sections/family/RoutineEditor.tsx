@@ -6,7 +6,12 @@
 import { ChevronLeft, Pencil, Trash2 } from 'lucide-react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { I18nValue } from '../../../../i18n';
-import type { FamilyMember, Routine } from '../../../../types/family';
+import {
+  DEFAULT_ROUTINE_MISSION_POINTS,
+  type FamilyMember,
+  type Routine,
+} from '../../../../types/family';
+import { ALL_WEEKDAYS } from '../../../../api/routine-schedule';
 import { MemberAvatar } from '../../../MemberAvatar';
 import { Segment } from '../../controls';
 import type { RoutineFormValue } from './types';
@@ -20,6 +25,8 @@ export interface RoutineEditorProps {
   /** Id of the routine whose delete was armed, if any. */
   confirmDelete: string | null;
   t: I18nValue['t'];
+  locale: string;
+  weekStartsOn: 0 | 1;
   onBack: () => void;
   onStartCreate: () => void;
   onStartEdit: (routine: Routine) => void;
@@ -34,6 +41,8 @@ export function RoutineEditor({
   form,
   confirmDelete,
   t,
+  locale,
+  weekStartsOn,
   onBack,
   onStartCreate,
   onStartEdit,
@@ -41,6 +50,19 @@ export function RoutineEditor({
   onChangeForm,
   onSave,
 }: RoutineEditorProps) {
+  const firstWeekday = weekStartsOn === 1 ? 1 : 0;
+  const weekdayOrder = Array.from({ length: 7 }, (_, index) => (firstWeekday + index) % 7);
+  const shortWeekday = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  const longWeekday = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+  const weekdayDate = (day: number) => new Date(2023, 0, day + 1, 12);
+  const routineDaysLabel = (routine: Routine) => {
+    const days = routine.days_of_week?.length ? routine.days_of_week : [...ALL_WEEKDAYS];
+    const selected = weekdayOrder.filter((day) => days.includes(day));
+    return selected.length === 7
+      ? t('settings.family.everyDay')
+      : selected.map((day) => shortWeekday.format(weekdayDate(day))).join(', ');
+  };
+
   return (
     <>
       <h2 className="settings-section-title">
@@ -70,7 +92,15 @@ export function RoutineEditor({
                   <div className="settings-fm-info">
                     <div className="settings-fm-name">{routine.name}</div>
                     <div className="settings-fm-role">
-                      {routine.time_of_day} ·{' '}
+                      {routineDaysLabel(routine)} · {routine.time_of_day}
+                      {member.role !== 'parent' && (
+                        <>
+                          {' · '}
+                          {routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS}{' '}
+                          {t('settings.family.missionPointsLabel')}
+                        </>
+                      )}
+                      {' · '}
                       {t(
                         routine.tasks.length === 1
                           ? 'settings.family.routineTaskCountSingular'
@@ -141,6 +171,74 @@ export function RoutineEditor({
                 onChange={(v) => onChangeForm((f) => f && { ...f, time_of_day: v })}
               />
             </div>
+            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
+              <div>
+                <div className="settings-row-label">{t('settings.family.repeatOnLabel')}</div>
+                <div className="settings-row-sublabel">{t('settings.family.repeatOnHint')}</div>
+              </div>
+              <div
+                className="settings-weekday-selector"
+                role="group"
+                aria-label={t('settings.family.repeatOnLabel')}
+              >
+                {weekdayOrder.map((day) => {
+                  const selected = form.days_of_week.includes(day);
+                  const date = weekdayDate(day);
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      className={`settings-weekday-btn${selected ? ' is-active' : ''}`}
+                      aria-pressed={selected}
+                      aria-label={longWeekday.format(date)}
+                      title={longWeekday.format(date)}
+                      onClick={() =>
+                        onChangeForm((current) => {
+                          if (!current) return current;
+                          const days = current.days_of_week;
+                          if (days.includes(day) && days.length === 1) return current;
+                          const nextDays = days.includes(day)
+                            ? days.filter((item) => item !== day)
+                            : [...days, day];
+                          return { ...current, days_of_week: nextDays.sort((a, b) => a - b) };
+                        })
+                      }
+                    >
+                      {shortWeekday.format(date)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {member.role !== 'parent' && (
+              <div className="settings-row">
+                <div>
+                  <div className="settings-row-label">
+                    {t('settings.family.missionPointsLabel')}
+                  </div>
+                  <div className="settings-row-sublabel">
+                    {t('settings.family.missionPointsHint')}
+                  </div>
+                </div>
+                <input
+                  type="number"
+                  className="settings-input"
+                  min="0"
+                  step="0.01"
+                  value={form.mission_points}
+                  onChange={(event) =>
+                    onChangeForm((f) =>
+                      f
+                        ? {
+                            ...f,
+                            mission_points: Math.max(0, Number(event.target.value) || 0),
+                          }
+                        : f,
+                    )
+                  }
+                />
+              </div>
+            )}
             <div className="settings-row" style={{ alignItems: 'flex-start' }}>
               <div className="settings-row-label" style={{ paddingTop: 4 }}>
                 {t('settings.family.tasksLabel')}

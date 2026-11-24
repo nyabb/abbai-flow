@@ -69,7 +69,10 @@ export function App() {
     clearLocalStorage,
   } = useSettings();
 
-  const changeLocale = useCallback((locale: string) => updateSettings({ locale }), [updateSettings]);
+  const changeLocale = useCallback(
+    (locale: string) => updateSettings({ locale }),
+    [updateSettings],
+  );
   const i18n = useMemo(
     () => createI18n(settings.locale, changeLocale),
     [settings.locale, changeLocale],
@@ -442,16 +445,23 @@ export function App() {
     enabled: !settings.kioskMode,
   });
 
-  /* Quick add lives in the middle of the tab bar; the chores page listens for a
-     create request so "chore" and "routine" open its form directly. */
+  /* Quick add lives in the middle of the tab bar. ChoreOps owns chores; routine
+     setup always opens Abbai Flow's shared Family editor. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>({
+  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore'; token: number }>({
     kind: 'chore',
     token: 0,
   });
+  const [settingsInitialSection, setSettingsInitialSection] = useState<'family' | undefined>();
   const requestChoreCreate = useCallback((kind: 'chore' | 'routine') => {
+    if (kind === 'routine') {
+      setSettingsInitialSection('family');
+      setActiveView('settings');
+      return;
+    }
+    setSettingsInitialSection(undefined);
     setActiveView('chores');
-    setChoreCreate((previous) => ({ kind, token: previous.token + 1 }));
+    setChoreCreate((previous) => ({ kind: 'chore', token: previous.token + 1 }));
   }, []);
 
   // ---- Chore data ----
@@ -610,7 +620,7 @@ export function App() {
           lines={3}
           className="loading-placeholder--screen"
         />
-      </div>
+      </div>,
     );
   }
 
@@ -654,7 +664,7 @@ export function App() {
           lines={3}
           className="loading-placeholder--screen"
         />
-      </div>
+      </div>,
     );
   }
 
@@ -723,6 +733,7 @@ export function App() {
                 locale={settings.locale}
                 onLocaleChange={(locale) => updateSettings({ locale })}
                 createRequest={choreCreate}
+                onRequestRoutineCreate={() => requestChoreCreate('routine')}
               />
             ) : (
               <div className="chores-empty chores-empty--disabled" style={{ padding: 48 }}>
@@ -749,6 +760,8 @@ export function App() {
             </div>
           ) : activeView === 'settings' ? (
             <SettingsView
+              initialSection={settingsInitialSection}
+              onInitialSectionApplied={() => setSettingsInitialSection(undefined)}
               settings={settings}
               onUpdateSettings={updateSettings}
               onResetSettings={resetSettings}

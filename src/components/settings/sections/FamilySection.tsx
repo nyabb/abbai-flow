@@ -9,7 +9,13 @@ import { useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
 import { useChoreOps } from '../../../hooks/useChoreOps';
 import { useRoutines } from '../../../hooks/useRoutines';
-import { normalizePin, type FamilyMember, type Routine } from '../../../types/family';
+import { ALL_WEEKDAYS } from '../../../api/routine-schedule';
+import {
+  DEFAULT_ROUTINE_MISSION_POINTS,
+  normalizePin,
+  type FamilyMember,
+  type Routine,
+} from '../../../types/family';
 import { imageFileToDataUrl } from '../../../utils/member-photo';
 import { MemberFormView } from './family/MemberFormView';
 import { MemberList } from './family/MemberList';
@@ -38,6 +44,7 @@ export interface FamilySectionProps extends SettingsSectionContext {
 }
 
 export function FamilySection({
+  settings,
   t,
   members,
   onAddMember,
@@ -105,6 +112,8 @@ export function FamilySection({
       await routinesApi.updateRoutine(routineForm.id, {
         name,
         time_of_day: routineForm.time_of_day,
+        days_of_week: [...routineForm.days_of_week].sort((a, b) => a - b),
+        mission_points: routinesFor.role === 'parent' ? 0 : routineForm.mission_points,
         tasks,
       });
     } else {
@@ -112,6 +121,8 @@ export function FamilySection({
         name,
         member_id: routinesFor.id,
         time_of_day: routineForm.time_of_day,
+        days_of_week: [...routineForm.days_of_week].sort((a, b) => a - b),
+        mission_points: routinesFor.role === 'parent' ? 0 : routineForm.mission_points,
         tasks,
       });
     }
@@ -123,20 +134,30 @@ export function FamilySection({
       id: null,
       name: '',
       time_of_day: 'morning',
+      days_of_week: [...ALL_WEEKDAYS],
+      mission_points: routinesFor?.role === 'parent' ? 0 : DEFAULT_ROUTINE_MISSION_POINTS,
       tasks: [{ id: null, name: '' }],
     });
-  }, []);
+  }, [routinesFor]);
 
-  const handleStartEditRoutine = useCallback((routine: Routine) => {
-    setRoutineForm({
-      id: routine.id,
-      name: routine.name,
-      time_of_day: routine.time_of_day,
-      tasks: [...routine.tasks]
-        .sort((a, b) => a.order - b.order)
-        .map((task) => ({ id: task.id, name: task.name })),
-    });
-  }, []);
+  const handleStartEditRoutine = useCallback(
+    (routine: Routine) => {
+      setRoutineForm({
+        id: routine.id,
+        name: routine.name,
+        time_of_day: routine.time_of_day,
+        days_of_week: routine.days_of_week?.length ? [...routine.days_of_week] : [...ALL_WEEKDAYS],
+        mission_points:
+          routinesFor?.role === 'parent'
+            ? 0
+            : (routine.mission_points ?? DEFAULT_ROUTINE_MISSION_POINTS),
+        tasks: [...routine.tasks]
+          .sort((a, b) => a.order - b.order)
+          .map((task) => ({ id: task.id, name: task.name })),
+      });
+    },
+    [routinesFor],
+  );
 
   /** Two-step delete: the first click arms the button, the second removes. */
   const handleDeleteRoutine = useCallback(
@@ -255,6 +276,8 @@ export function FamilySection({
         form={routineForm}
         confirmDelete={confirmDeleteRoutine}
         t={t}
+        locale={settings.locale}
+        weekStartsOn={settings.weekStartsOn}
         onBack={handleBackFromRoutines}
         onStartCreate={handleStartCreateRoutine}
         onStartEdit={handleStartEditRoutine}

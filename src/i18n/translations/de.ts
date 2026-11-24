@@ -212,8 +212,10 @@ export const de: Record<TranslationKey, string> = {
   'settings.general.monday': 'Montag',
   'settings.general.languageLabel': 'Sprache / Region',
   'settings.general.debugModeLabel': 'Debugmodus',
-  'settings.general.debugModeSublabel': 'Ein globales Protokoll mit API-Aufrufen, Antworten und Fehlern anzeigen.',
-  'settings.display.ingressUrlUnavailable': 'Eine teilbare Display-URL ist innerhalb von Home Assistant nicht verfügbar. Öffne Abbai Flow auf dem Zielbildschirm und wähle „Auf diesem Gerät verwenden“.',
+  'settings.general.debugModeSublabel':
+    'Ein globales Protokoll mit API-Aufrufen, Antworten und Fehlern anzeigen.',
+  'settings.display.ingressUrlUnavailable':
+    'Eine teilbare Display-URL ist innerhalb von Home Assistant nicht verfügbar. Öffne Abbai Flow auf dem Zielbildschirm und wähle „Auf diesem Gerät verwenden“.',
   'settings.general.dashboardLayoutTitle': 'Übersichtslayout',
   'settings.general.dashboardLayoutDesc': 'Lege fest, wie deine Übersicht aufgebaut ist.',
   'settings.general.layoutLabel': 'Layout',
@@ -304,6 +306,12 @@ export const de: Record<TranslationKey, string> = {
   'settings.family.routineNameLabel': 'Name',
   'settings.family.routineNamePlaceholder': 'Morgenroutine',
   'settings.family.timeOfDayLabel': 'Tageszeit',
+  'settings.family.repeatOnLabel': 'Wiederholen an',
+  'settings.family.repeatOnHint': 'Wähle einen oder mehrere Wochentage.',
+  'settings.family.everyDay': 'Jeden Tag',
+  'settings.family.missionPointsLabel': 'Missionsbonus',
+  'settings.family.missionPointsHint':
+    'Punkte, die nach Abschluss der gesamten Routine vergeben werden.',
   'settings.family.morning': 'Morgen',
   'settings.family.afternoon': 'Nachmittag',
   'settings.family.evening': 'Abend',
@@ -552,10 +560,6 @@ export const de: Record<TranslationKey, string> = {
   'chores.confirmClaimBody': 'Bist du sicher, dass du diese Aufgabe übernehmen möchtest?',
   'chores.confirmDoneTitle': 'Aufgabe abschließen?',
   'chores.confirmDoneBody': 'Bist du sicher, dass du mit dieser Aufgabe fertig bist?',
-  'chores.routineLabel': 'Routine',
-  'chores.routinePlaceholder': 'z. B. Morgenroutine',
-  'chores.routineHint':
-    'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
   'chores.openTodo': 'offen',
   'chores.created': 'Erstellt',
   'chores.claimedToast': 'Übernommen',
@@ -628,9 +632,12 @@ export const de: Record<TranslationKey, string> = {
   'music.spotifyStatusPlaying': 'Wird abgespielt',
   'music.spotifyStatusPaused': 'Pausiert',
   'music.spotifyStatusBuffering': 'Wird geladen',
-  'music.spotifyConfigure': 'Setze ENCORE_TOKEN in der Serverumgebung, um Spotify über Encore zu verbinden.',
-  'music.spotifyConnectionHelp': 'Encore ist nicht verfügbar. Abbai Flow verbindet sich automatisch erneut.',
-  'music.spotifyLoginHelp': 'Melde dich in der Spotify-App an, um auf dem Soloist-Gerät abzuspielen.',
+  'music.spotifyConfigure':
+    'Setze ENCORE_TOKEN in der Serverumgebung, um Spotify über Encore zu verbinden.',
+  'music.spotifyConnectionHelp':
+    'Encore ist nicht verfügbar. Abbai Flow verbindet sich automatisch erneut.',
+  'music.spotifyLoginHelp':
+    'Melde dich in der Spotify-App an, um auf dem Soloist-Gerät abzuspielen.',
   'music.spotifyDevice': 'Wiedergabegerät',
   'music.spotifyRepeatContext': 'Playlist wiederholen',
   'music.spotifyRepeatTrack': 'Titel wiederholen',
@@ -727,10 +734,9 @@ export const de: Record<TranslationKey, string> = {
   'planner.savedToast': 'Gespeichert',
   'planner.task': 'Aufgabe',
   'planner.routines': 'Routinen',
-  'planner.routineLabel': 'Routine',
-  'planner.routinePlaceholder': 'z. B. Morgenroutine',
-  'planner.routineHint':
-    'Tägliche Aufgaben mit demselben Routinennamen werden unter Routinen gruppiert.',
+  'planner.labels': 'Labels',
+  'planner.labelsPlaceholder': 'z. B. Schule, Draußen',
+  'planner.labelsHint': 'Labels ordnen Aufgaben. Sie erstellen keine Routinen.',
   'planner.taskOnceHint': 'Eine Aufgabe passiert einmal. Für Wiederkehrendes eine Routine anlegen.',
   'planner.onHold': 'Zurückgelegt',
   'planner.useAgain': 'Erneut nutzen',
@@ -742,7 +748,8 @@ export const de: Record<TranslationKey, string> = {
   'planner.everyone': 'Alle',
   'planner.anyone': 'Wer zuerst kommt',
   'planner.freeTask': 'Für alle frei zu übernehmen',
-  'planner.claimModeEditUnavailable': 'ChoreOps kann den Zuweisungsmodus hier nicht ändern. Ändere ihn in ChoreOps und bearbeite danach hier die Zuständigkeiten.',
+  'planner.claimModeEditUnavailable':
+    'ChoreOps kann den Zuweisungsmodus hier nicht ändern. Ändere ihn in ChoreOps und bearbeite danach hier die Zuständigkeiten.',
   'planner.frequency': 'Wiederholung',
   'planner.daily': 'Täglich',
   'planner.weekly': 'Wöchentlich',
@@ -784,7 +791,8 @@ export const de: Record<TranslationKey, string> = {
   'planner.undoneToast': 'Rückgängig gemacht',
   'planner.action': 'Aktionen',
   'planner.sure': 'Wirklich löschen?',
-  'planner.renameUnavailable': 'Diese Aufgabe konnte zum Umbenennen nicht gefunden werden. Aktualisiere die Aufgaben und versuche es erneut.',
+  'planner.renameUnavailable':
+    'Diese Aufgabe konnte zum Umbenennen nicht gefunden werden. Aktualisiere die Aufgaben und versuche es erneut.',
   'planner.renameLocked': 'Umbenennen ist nur in ChoreOps möglich.',
   'planner.create': 'Aufgabe erstellen',
   'planner.noFail': 'Speichern fehlgeschlagen, bitte erneut versuchen',

@@ -25,7 +25,7 @@ export function useRoutines(memberId?: string) {
       await store.addRoutine(routine);
       await refresh();
     },
-    [store, refresh]
+    [store, refresh],
   );
 
   const updateRoutine = useCallback(
@@ -33,7 +33,7 @@ export function useRoutines(memberId?: string) {
       await store.updateRoutine(id, data);
       await refresh();
     },
-    [store, refresh]
+    [store, refresh],
   );
 
   const removeRoutine = useCallback(
@@ -41,31 +41,30 @@ export function useRoutines(memberId?: string) {
       await store.removeRoutine(id);
       await refresh();
     },
-    [store, refresh]
+    [store, refresh],
   );
 
   const isTaskCompletedToday = useCallback(
     (routineId: string, taskId: string, forMemberId: string): boolean => {
       return completionsToday.some(
-        (c) =>
-          c.routine_id === routineId &&
-          c.task_id === taskId &&
-          c.member_id === forMemberId
+        (c) => c.routine_id === routineId && c.task_id === taskId && c.member_id === forMemberId,
       );
     },
-    [completionsToday]
+    [completionsToday],
   );
 
   const toggleTask = useCallback(
-    async (routine: Routine, taskId: string) => {
+    async (routine: Routine, taskId: string): Promise<boolean> => {
+      let persisted: boolean;
       if (isTaskCompletedToday(routine.id, taskId, routine.member_id)) {
-        await store.uncompleteRoutineTask(routine.id, taskId, routine.member_id);
+        persisted = await store.uncompleteRoutineTask(routine.id, taskId, routine.member_id);
       } else {
-        await store.completeRoutineTask(routine.id, taskId, routine.member_id);
+        persisted = await store.completeRoutineTask(routine.id, taskId, routine.member_id);
       }
       await refresh();
+      return persisted;
     },
-    [store, refresh, isTaskCompletedToday]
+    [store, refresh, isTaskCompletedToday],
   );
 
   return {
