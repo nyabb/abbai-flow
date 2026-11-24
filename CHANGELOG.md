@@ -1,3 +1,10 @@
+## [2.21.2](https://github.com/nyabb/abbai-flow/compare/v2.21.1...v2.21.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* restrict goal assignees to children ([2262187](https://github.com/nyabb/abbai-flow/commit/2262187229852c42f873a8ea358efe8d4f172293))
+
 ## [2.21.1](https://github.com/nyabb/abbai-flow/compare/v2.21.0...v2.21.1) (2026-11-24)
 
 
