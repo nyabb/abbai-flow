@@ -1,3 +1,11 @@
+# [2.19.0](https://github.com/nyabb/abbai-flow/compare/v2.18.0...v2.19.0) (2026-11-24)
+
+
+### Features
+
+* configure meal feed in integrations settings ([4fdab82](https://github.com/nyabb/abbai-flow/commit/4fdab82be30f9a3d9f4e47518b33c1ca8edae94c))
+* manage integrations from settings ([fcb46b5](https://github.com/nyabb/abbai-flow/commit/fcb46b56a5ea3cd27668866a3471d8315371ffe3))
+
 # [2.18.0](https://github.com/nyabb/abbai-flow/compare/v2.17.0...v2.18.0) (2026-11-24)
 
 
