@@ -1,3 +1,10 @@
+## [2.21.1](https://github.com/nyabb/abbai-flow/compare/v2.21.0...v2.21.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* use avatar buttons for routine assignees ([e98400f](https://github.com/nyabb/abbai-flow/commit/e98400f1d73d45986b86c3693bc030fd12feaa9d))
+
 # [2.21.0](https://github.com/nyabb/abbai-flow/compare/v2.20.0...v2.21.0) (2026-11-24)
 
 
