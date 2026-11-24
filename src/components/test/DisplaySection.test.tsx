@@ -4,25 +4,18 @@ import { DisplaySection } from '../settings/sections/DisplaySection';
 import { I18nContext, createI18n } from '../../i18n';
 import type { AbbaiSettings } from '../../hooks/useSettings';
 
-/**
- * The display-mode controls: everything the kiosk phase added has to be
- * reachable from Settings > Display, and each control has to write the key the
- * rest of the app reads.
- */
+/** The remaining Display settings include app-wide reduced-motion support. */
 const NL = createI18n('nl');
 
 function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   return {
     screenSaverEnabled: true,
+    screenSaverMode: 'clock',
     dimTimeout: 5,
     screenSaverTimeout: 10,
     alwaysOnDisplay: false,
     showSeconds: false,
     kioskMode: false,
-    displayWakeLock: true,
-    displayFullscreen: false,
-    displayIdleMinutes: 15,
-    displayPanels: { agenda: true, chores: true, family: true, weather: true },
     reducedMotion: false,
     ...overrides,
   } as AbbaiSettings;
@@ -47,68 +40,12 @@ function renderSection(overrides: Partial<AbbaiSettings> = {}) {
 const row = (label: string) => screen.getByText(label).closest('.settings-row') as HTMLElement;
 const checkboxIn = (label: string) => within(row(label)).getByRole('checkbox') as HTMLInputElement;
 
-describe('DisplaySection — display mode', () => {
-  it('shows the display-mode group', () => {
-    renderSection();
-
-    expect(screen.getByText(NL.t('settings.display.displayModeTitle'))).toBeInTheDocument();
-  });
-
-  it('toggles the wake lock', () => {
-    const { onUpdateSettings } = renderSection({ displayWakeLock: true });
-
-    fireEvent.click(checkboxIn(NL.t('settings.display.wakeLockLabel')));
-
-    expect(onUpdateSettings).toHaveBeenCalledWith({ displayWakeLock: false });
-  });
-
-  it('toggles fullscreen', () => {
-    const { onUpdateSettings } = renderSection({ displayFullscreen: false });
-
-    fireEvent.click(checkboxIn(NL.t('settings.display.fullscreenLabel')));
-
-    expect(onUpdateSettings).toHaveBeenCalledWith({ displayFullscreen: true });
-  });
-
-  it('changes the idle timeout, including "never"', () => {
-    const { onUpdateSettings } = renderSection({ displayIdleMinutes: 15 });
-
-    fireEvent.click(screen.getByRole('button', { name: '30 min' }));
-    expect(onUpdateSettings).toHaveBeenCalledWith({ displayIdleMinutes: 30 });
-
-    fireEvent.click(screen.getByRole('button', { name: NL.t('settings.display.never') }));
-    expect(onUpdateSettings).toHaveBeenCalledWith({ displayIdleMinutes: 0 });
-  });
-
-  it('switches individual panels on and off', () => {
-    const { onUpdateSettings } = renderSection();
-
-    const panelRow = screen
-      .getByText(NL.t('settings.display.panelsLabel'))
-      .closest('.settings-row') as HTMLElement;
-    fireEvent.click(within(panelRow).getByLabelText(NL.t('settings.display.panelFamily')));
-
-    expect(onUpdateSettings).toHaveBeenCalledWith({
-      displayPanels: { agenda: true, chores: true, family: false, weather: true },
-    });
-  });
-
+describe('DisplaySection', () => {
   it('toggles reduced motion', () => {
     const { onUpdateSettings } = renderSection({ reducedMotion: false });
 
     fireEvent.click(checkboxIn(NL.t('settings.appearance.reducedMotionLabel')));
 
     expect(onUpdateSettings).toHaveBeenCalledWith({ reducedMotion: true });
-  });
-
-  it('reflects the stored panel selection', () => {
-    renderSection({ displayPanels: { agenda: false, chores: true, family: false, weather: true } });
-
-    const panelRow = screen
-      .getByText(NL.t('settings.display.panelsLabel'))
-      .closest('.settings-row');
-    const checks = within(panelRow as HTMLElement).getAllByRole('checkbox') as HTMLInputElement[];
-
-    expect(checks.map((check) => check.checked)).toEqual([false, true, false, true]);
   });
 });

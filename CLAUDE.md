@@ -6,14 +6,15 @@
 - Home Assistant add-on with ingress support
 - Docker for the server; the browser talks to HA directly
 
-## Display Mode (wall touchscreen)
+## Display and kiosk behavior
 
-`/display` is a dedicated read-only screen for a permanently running Chromium
-kiosk (Raspberry Pi on the wall). Code: `src/components/display/`,
-`src/display-route.ts`, `src/hooks/useDisplayMode.ts` (wake lock, fullscreen,
-idle timeout), `src/hooks/useConnectionStatus.ts`, `src/styles/display.css`.
-Full documentation, kiosk launch line and connection states: see
-`docs/display-mode.md`.
+The app-wide screen saver (clock, photos, or both) lives in
+`src/components/ScreenSaver.tsx`; its photo slideshow reuses `usePhotos`.
+`src/components/settings/sections/DisplaySection.tsx` also holds the sidebar
+kiosk toggle and Kid Display launcher. Kid Display uses `?display=<memberId>`
+and is implemented in `src/focus.ts` and `src/components/focus/`.
+`src/hooks/useScreenWakeLock.ts` applies the Always-On Display preference to
+the whole app.
 
 ## Backend layout (since 2026-11-09)
 

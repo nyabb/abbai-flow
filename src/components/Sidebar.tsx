@@ -4,10 +4,8 @@ import {
   ListChecks,
   ShoppingCart,
   Music,
-  Image,
   Settings,
   Timer as TimerIcon,
-  Tv,
   CloudSun,
   Utensils,
   MoreHorizontal,
@@ -23,10 +21,8 @@ export type SidebarView =
   | 'grocery'
   | 'meals'
   | 'music'
-  | 'photos'
   | 'timer'
   | 'weather'
-  | 'display'
   | 'settings';
 
 interface SidebarProps {
@@ -73,11 +69,6 @@ const NAV_ITEMS: NavItem[] = [
     labelKey: 'nav.music',
   },
   {
-    id: 'photos',
-    icon: <Image size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
-    labelKey: 'nav.photos',
-  },
-  {
     id: 'timer',
     icon: <TimerIcon size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.timer',
@@ -87,11 +78,6 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.weather',
   },
-  {
-    id: 'display',
-    icon: <Tv size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
-    labelKey: 'nav.display',
-  },
 ];
 
 /**
@@ -99,7 +85,7 @@ const NAV_ITEMS: NavItem[] = [
  * and Music after it. Timer moves one tap away into the overflow menu.
  *
  * The overflow menu only ever holds views that are *not* on the phone bar, so
- * nothing appears twice: Foto's, Timer, Weer and Display (+ Instellingen).
+ * nothing appears twice: Timer and Weer (+ Instellingen).
  * Desktop keeps its existing Timer and Music slots.
  */
 const NAV_LEFT_IDS: SidebarView[] = ['calendar', 'chores'];
@@ -111,7 +97,7 @@ const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
 /** Everything the phone bar already shows. */
 const BAR_IDS: SidebarView[] = [...MOBILE_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
-const NAV_EXTRA_IDS: SidebarView[] = ['meals', 'photos', 'weather', 'display'];
+const NAV_EXTRA_IDS: SidebarView[] = ['meals', 'weather'];
 const NAV_MORE_ITEMS = NAV_ITEMS.filter(
   (item) => item.id !== 'settings' && !BAR_IDS.includes(item.id),
 );

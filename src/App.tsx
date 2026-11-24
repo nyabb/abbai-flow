@@ -20,7 +20,6 @@ import { DebugConsole } from './components/DebugConsole';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { MealsView } from './components/MealsView';
-import { PhotoFrame } from './components/PhotoFrame';
 import { NowPlayingBar } from './components/NowPlayingBar';
 import { useMusic } from './hooks/useMusic';
 import { useNotifications } from './hooks/useNotifications';
@@ -29,10 +28,8 @@ import { GroceryView } from './components/GroceryView';
 import { OmniAdd } from './components/OmniAdd';
 import { CalendarSidebar } from './components/CalendarSidebar';
 import { Timer } from './components/Timer';
-import { DisplayView } from './components/display/DisplayView';
 import { useConnectionStatus } from './hooks/useConnectionStatus';
-import { isDisplayUrl } from './display-route';
-import { useDisplayMode } from './hooks/useDisplayMode';
+import { useScreenWakeLock } from './hooks/useScreenWakeLock';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
 import { useIngressDetect } from './hooks/useIngressDetect';
@@ -110,18 +107,30 @@ export function App() {
     setTheme(settings.themeId);
   }, [settings.themeId, setTheme]);
 
-  // Calendar-view visibility state. Seeded from the Settings-level
-  // permanentlyHiddenCalendars list (source of truth) so calendars disabled
-  // in Settings → Calendar are hidden here too, and kept in sync whenever
-  // that setting changes (e.g. edited in another tab/session) rather than
-  // only on first mount.
-  const [hiddenCalendars, setHiddenCalendars] = useState<Set<string>>(
+  // Top-of-calendar filters are temporary. Settings visibility remains the
+  // separate, persistent way to remove a calendar from the view entirely.
+  const [temporarilyHiddenCalendars, setTemporarilyHiddenCalendars] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const permanentlyHiddenCalendars = useMemo(
     () => new Set(settings.permanentlyHiddenCalendars),
+    [settings.permanentlyHiddenCalendars],
+  );
+  const hiddenCalendars = useMemo(
+    () => new Set([...permanentlyHiddenCalendars, ...temporarilyHiddenCalendars]),
+    [permanentlyHiddenCalendars, temporarilyHiddenCalendars],
+  );
+  const filterableCalendars = useMemo(
+    () => calendars.filter((calendar) => !permanentlyHiddenCalendars.has(calendar.id)),
+    [calendars, permanentlyHiddenCalendars],
   );
 
   useEffect(() => {
-    setHiddenCalendars(new Set(settings.permanentlyHiddenCalendars));
-  }, [settings.permanentlyHiddenCalendars]);
+    setTemporarilyHiddenCalendars((previous) => {
+      const next = new Set([...previous].filter((id) => !permanentlyHiddenCalendars.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [permanentlyHiddenCalendars]);
 
   const visibleEvents = useMemo(
     () => events.filter((event) => !hiddenCalendars.has(event.calendarId)),
@@ -133,11 +142,6 @@ export function App() {
   const prefillDate = eventDialog.type === 'create' ? eventDialog.prefillDate : null;
   const prefillTime = eventDialog.type === 'create' ? eventDialog.prefillTime : null;
   const [activeView, setActiveView] = useState<SidebarView>(() => {
-    // A dedicated display device points its browser at /display (or ?display=1
-    // when the app is served under a Home Assistant ingress path that already
-    // owns the path segment). This is read once on boot and never pushed back
-    // into history, so the ingress base path stays intact.
-    if (isDisplayUrl(window.location)) return 'display';
     const requestedView = new URLSearchParams(window.location.search).get('view');
     if (requestedView === 'music' || requestedView === 'meals') return requestedView;
     const stored = settings.defaultView as string;
@@ -239,21 +243,17 @@ export function App() {
 
   const handleToggleCalendar = useCallback(
     (calendarId: string) => {
-      setHiddenCalendars((prev) => {
+      setTemporarilyHiddenCalendars((prev) => {
         const next = new Set(prev);
         if (next.has(calendarId)) {
           next.delete(calendarId);
         } else {
           next.add(calendarId);
         }
-        // Persist to Settings so the Calendar-view selection survives
-        // navigation/remount and reload — settings.permanentlyHiddenCalendars
-        // is the single source of truth for calendar visibility.
-        updateSettings({ permanentlyHiddenCalendars: Array.from(next) });
         return next;
       });
     },
-    [updateSettings],
+    [],
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
@@ -466,25 +466,15 @@ export function App() {
   // integration advertises. There is no local chore store.
   const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
 
-  // Why the app cannot reach anything: no network, Abbai Flow down or Home Assistant
-  // down are three different problems, and Display Mode has to say which.
-  const connection = useConnectionStatus({ haConnected: connected });
-  const isDisplayView = activeView === 'display';
-  const displayMode = useDisplayMode({
-    active: isDisplayView,
-    wakeLock: settings.displayWakeLock,
-    fullscreen: settings.displayFullscreen,
-    idleMinutes: settings.displayIdleMinutes,
-    onIdle: () => setActiveView('calendar'),
-  });
-  const displayConnection = connection.state;
+  const { reconnected } = useConnectionStatus({ haConnected: connected });
+  useScreenWakeLock(settings.alwaysOnDisplay);
 
   // One refresh per recovery. Calendars and events are not polled, so nothing
   // else would notice that the server came back.
   useEffect(() => {
-    if (!connection.reconnected) return;
+    if (!reconnected) return;
     void fetchCalendars();
-  }, [connection.reconnected, fetchCalendars]);
+  }, [reconnected, fetchCalendars]);
 
   useEffect(() => {
     if (!choreOpsData?.users.length) return;
@@ -581,7 +571,6 @@ export function App() {
       '2': 'chores',
       '3': 'grocery',
       '4': 'music',
-      '8': 'photos',
       '9': 'timer',
       '0': 'settings',
     };
@@ -803,42 +792,6 @@ export function App() {
                 <WeatherView />
               </div>
             </div>
-          ) : activeView === 'display' ? (
-            <DisplayView
-              events={visibleEvents}
-              chores={choreOpsData?.chores ?? []}
-              users={choreOpsData?.users ?? []}
-              members={members}
-              weather={weather}
-              timeFormat={settings.timeFormat}
-              connection={displayConnection}
-              panels={settings.displayPanels}
-              fullscreen={{
-                supported: displayMode.fullscreenSupported,
-                active: displayMode.isFullscreen,
-                onToggle: () => {
-                  if (displayMode.isFullscreen) void displayMode.exitFullscreen();
-                  else void displayMode.enterFullscreen();
-                },
-              }}
-              onNavigate={setActiveView}
-            />
-          ) : activeView === 'photos' ? (
-            <div className="view-page">
-              <PageHeader title={t('nav.photos')} onBack={() => setActiveView('calendar')} />
-              <PhotoFrame
-                musicPlayer={music.activePlayer}
-                onMusicPlay={() => music.activePlayer && music.play(music.activePlayer.entity_id)}
-                onMusicPause={() => music.activePlayer && music.pause(music.activePlayer.entity_id)}
-                onMusicNext={() => music.activePlayer && music.next(music.activePlayer.entity_id)}
-                onMusicPrevious={() =>
-                  music.activePlayer && music.previous(music.activePlayer.entity_id)
-                }
-                onMusicSetVolume={(v) =>
-                  music.activePlayer && music.setVolume(v, music.activePlayer.entity_id)
-                }
-              />
-            </div>
           ) : (
             <>
               {/* Header — the shared hero band: big date, page title, live clock. */}
@@ -857,8 +810,8 @@ export function App() {
               {/* Family filter pills — above the calendar */}
               <div className="filter-bar">
                 <FamilyFilter
-                  calendars={calendars}
-                  hiddenCalendars={hiddenCalendars}
+                  calendars={filterableCalendars}
+                  hiddenCalendars={temporarilyHiddenCalendars}
                   onToggle={handleToggleCalendar}
                 />
               </div>
@@ -919,10 +872,8 @@ export function App() {
 
         {/* GroceryView is now rendered as a full view above */}
 
-        {/* Now Playing Bar — shows when music is playing, hidden in photo/music views */}
-        {activeView !== 'music' &&
-          activeView !== 'photos' &&
-          music.activePlayer?.state === 'playing' && (
+        {/* Now Playing Bar — shows when music is playing outside the music view. */}
+        {activeView !== 'music' && music.activePlayer?.state === 'playing' && (
             <NowPlayingBar
               player={music.activePlayer}
               onPlay={() => music.play(music.activePlayer!.entity_id)}
@@ -939,6 +890,12 @@ export function App() {
           enabled={settings.screenSaverEnabled}
           dimTimeoutMin={settings.dimTimeout}
           screenSaverTimeoutMin={settings.screenSaverTimeout}
+          mode={settings.screenSaverMode}
+          timeFormat={settings.timeFormat}
+          showSeconds={settings.showSeconds}
+          photoIntervalSeconds={settings.photoInterval}
+          photoDirectory={settings.photoDirectory}
+          photoTransition={settings.photoTransition}
         />
 
         {/* Preview indicator — only show outside of add-on ingress */}

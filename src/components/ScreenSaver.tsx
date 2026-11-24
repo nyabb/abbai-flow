@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
+import { useTranslation } from '../i18n';
+import { ScreenSaverPhotos } from './ScreenSaverPhotos';
 
 const POSITION_INTERVAL = 30_000; // move clock every 30s
 
@@ -9,13 +11,26 @@ interface ScreenSaverProps {
   enabled?: boolean;
   dimTimeoutMin?: number;
   screenSaverTimeoutMin?: number;
+  mode?: 'clock' | 'photos' | 'mixed';
+  timeFormat?: '12h' | '24h';
+  showSeconds?: boolean;
+  photoIntervalSeconds?: number;
+  photoDirectory?: string;
+  photoTransition?: 'fade' | 'slide';
 }
 
 export function ScreenSaver({
   enabled = true,
   dimTimeoutMin = 5,
   screenSaverTimeoutMin = 10,
+  mode = 'clock',
+  timeFormat = '12h',
+  showSeconds = false,
+  photoIntervalSeconds = 30,
+  photoDirectory = '',
+  photoTransition = 'fade',
 }: ScreenSaverProps) {
+  const { dateLocale } = useTranslation();
   const [phase, setPhase] = useState<Phase>('awake');
   const [now, setNow] = useState(new Date());
   const [position, setPosition] = useState({ x: 50, y: 50 });
@@ -67,7 +82,7 @@ export function ScreenSaver({
 
   // Move screensaver clock position periodically to prevent burn-in
   useEffect(() => {
-    if (phase !== 'screensaver') return;
+    if (phase !== 'screensaver' || mode === 'photos') return;
 
     const move = () => {
       setPosition({
@@ -79,7 +94,7 @@ export function ScreenSaver({
     move(); // initial position
     const interval = setInterval(move, POSITION_INTERVAL);
     return () => clearInterval(interval);
-  }, [phase]);
+  }, [mode, phase]);
 
   if (!enabled || phase === 'awake') return null;
 
@@ -89,13 +104,38 @@ export function ScreenSaver({
 
   return (
     <div className="screensaver-overlay" onClick={wake}>
-      <div
-        className="screensaver-clock"
-        style={{ left: `${position.x}%`, top: `${position.y}%` }}
-      >
-        <div className="screensaver-time">{format(now, 'h:mm')}</div>
-        <div className="screensaver-date">{format(now, 'EEEE, MMMM d')}</div>
-      </div>
+      {mode !== 'clock' && (
+        <ScreenSaverPhotos
+          intervalSeconds={photoIntervalSeconds}
+          photoDirectory={photoDirectory}
+          transition={photoTransition}
+        />
+      )}
+      {mode !== 'photos' && (
+        <div
+          className={`screensaver-clock ${
+            mode === 'mixed' ? 'screensaver-clock--over-photo' : ''
+          }`}
+          style={{ left: `${position.x}%`, top: `${position.y}%` }}
+        >
+          <div className="screensaver-time">
+            {format(
+              now,
+              timeFormat === '12h'
+                ? showSeconds
+                  ? 'h:mm:ss a'
+                  : 'h:mm a'
+                : showSeconds
+                  ? 'HH:mm:ss'
+                  : 'HH:mm',
+              { locale: dateLocale },
+            )}
+          </div>
+          <div className="screensaver-date">
+            {format(now, 'EEEE, MMMM d', { locale: dateLocale })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

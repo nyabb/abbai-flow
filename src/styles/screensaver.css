@@ -22,6 +22,76 @@
   animation: screensaver-fade-in 1.5s ease;
 }
 
+.screensaver-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.screensaver-photo--fade {
+  animation: screensaver-photo-fade 1s ease both;
+}
+
+.screensaver-photo--slide {
+  animation: screensaver-photo-slide 1s ease both;
+}
+
+.screensaver-photo-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 32px;
+  color: rgba(255, 255, 255, 0.72);
+  text-align: center;
+  font-size: 1.1rem;
+}
+
+.screensaver-photo-empty p {
+  margin: 0;
+}
+
+.screensaver-photo-empty p + p {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+@keyframes screensaver-photo-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes screensaver-photo-slide {
+  from {
+    opacity: 0;
+    transform: translateX(4%) scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+.screensaver-clock--over-photo {
+  z-index: 1;
+  padding: 18px 24px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+.abbai-flow--reduce-motion .screensaver-photo,
+.focus-view--reduce-motion .screensaver-photo {
+  animation: none;
+}
+
 /* Force dark background in screensaver regardless of theme */
 [data-theme="light"] .screensaver-overlay {
   background: #0a0a0a;

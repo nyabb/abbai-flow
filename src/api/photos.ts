@@ -99,8 +99,8 @@ async function fetchHAMediaPhotos(): Promise<Photo[]> {
  * Fetches photos from the configured local directory, served via HA's
  * media source (converted from the filesystem-style photo_directory path).
  */
-async function fetchLocalPhotos(): Promise<Photo[]> {
-  return browseAndResolvePhotos(toMediaSourceId(PHOTOS_PATH), 'local');
+async function fetchLocalPhotos(photoDirectory: string): Promise<Photo[]> {
+  return browseAndResolvePhotos(toMediaSourceId(photoDirectory), 'local');
 }
 
 /**
@@ -108,6 +108,7 @@ async function fetchLocalPhotos(): Promise<Photo[]> {
  */
 export async function getPhotos(
   sources: Array<'local' | 'google_photos' | 'ha_media'> = ['ha_media', 'local'],
+  photoDirectory = PHOTOS_PATH,
 ): Promise<Photo[]> {
   const fetchers: Promise<Photo[]>[] = [];
 
@@ -115,7 +116,7 @@ export async function getPhotos(
     fetchers.push(fetchHAMediaPhotos());
   }
   if (sources.includes('local')) {
-    fetchers.push(fetchLocalPhotos());
+    fetchers.push(fetchLocalPhotos(photoDirectory));
   }
   // google_photos would require OAuth — not implemented yet
 

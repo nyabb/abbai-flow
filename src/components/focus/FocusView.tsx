@@ -318,6 +318,12 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
         enabled={settings.screenSaverEnabled}
         dimTimeoutMin={settings.dimTimeout}
         screenSaverTimeoutMin={settings.screenSaverTimeout}
+        mode={settings.screenSaverMode}
+        timeFormat={settings.timeFormat}
+        showSeconds={settings.showSeconds}
+        photoIntervalSeconds={settings.photoInterval}
+        photoDirectory={settings.photoDirectory}
+        photoTransition={settings.photoTransition}
       />
     </div>
   );

@@ -220,8 +220,7 @@ a:focus:not(:focus-visible) {
 /* Ensure views take full height even on mobile */
 .abbai-flow-main > .settings-view,
 .abbai-flow-main > .grocery-view,
-.abbai-flow-main > .music-view,
-.abbai-flow-main > .photo-frame {
+.abbai-flow-main > .music-view {
   flex: 1;
   min-height: 0;
 }

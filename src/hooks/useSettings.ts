@@ -11,7 +11,7 @@ export interface AbbaiSettings {
   // General
   familyName: string;
   saveConfigInBrowser: boolean;
-  defaultView: 'calendar' | 'grocery' | 'music' | 'photos';
+  defaultView: 'calendar' | 'grocery' | 'music';
   timeFormat: '12h' | '24h';
   weekStartsOn: 0 | 1; // 0 = Sunday, 1 = Monday
   locale: string;
@@ -52,21 +52,13 @@ export interface AbbaiSettings {
 
   // Display
   screenSaverEnabled: boolean;
+  screenSaverMode: 'clock' | 'photos' | 'mixed';
   dimTimeout: number; // minutes
   screenSaverTimeout: number; // minutes
   alwaysOnDisplay: boolean;
   showSeconds: boolean;
   kioskMode: boolean;
 
-  // Display Mode (/display): the wall-mounted touchscreen
-  /** Keep the screen awake with the Screen Wake Lock API while on /display. */
-  displayWakeLock: boolean;
-  /** Go fullscreen when the display view opens. */
-  displayFullscreen: boolean;
-  /** Return to the calendar after this many idle minutes; 0 = never. */
-  displayIdleMinutes: number;
-  /** Which panels the display view shows. */
-  displayPanels: { agenda: boolean; chores: boolean; family: boolean; weather: boolean };
   /** Cut animation and transition durations app-wide. */
   reducedMotion: boolean;
 
@@ -122,6 +114,7 @@ function buildDefaults(): AbbaiSettings {
 
 
     screenSaverEnabled: true,
+    screenSaverMode: 'clock',
     dimTimeout: 5,
     screenSaverTimeout: config.screen_saver_timeout,
     alwaysOnDisplay: false,
@@ -134,13 +127,6 @@ function buildDefaults(): AbbaiSettings {
     currencySymbol: '$',
     payoutSchedule: 'weekly',
 
-    // Display Mode defaults: a wall screen wants the screen kept awake, but
-    // fullscreen and an idle timeout are opt-in — they are intrusive on a
-    // device someone is actively using.
-    displayWakeLock: true,
-    displayFullscreen: false,
-    displayIdleMinutes: 15,
-    displayPanels: { agenda: true, chores: true, family: true, weather: true },
     reducedMotion: false,
   };
 }
@@ -186,6 +172,10 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
   const saved = { ...stored } as Record<string, unknown>;
   delete saved.dashboardLayout;
   delete saved.advancedDashboard;
+  delete saved.displayWakeLock;
+  delete saved.displayFullscreen;
+  delete saved.displayIdleMinutes;
+  delete saved.displayPanels;
 
   const storedView = saved.defaultView;
   const defaultView =
@@ -195,8 +185,7 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
         ? 'grocery'
         : storedView === 'calendar' ||
             storedView === 'grocery' ||
-            storedView === 'music' ||
-            storedView === 'photos'
+            storedView === 'music'
           ? storedView
           : defaults.defaultView;
 

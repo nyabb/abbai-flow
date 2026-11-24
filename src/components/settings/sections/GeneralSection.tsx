@@ -44,7 +44,6 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             <option value="calendar">{t('nav.calendar')}</option>
             <option value="grocery">{t('nav.grocery')}</option>
             <option value="music">{t('nav.music')}</option>
-            <option value="photos">{t('nav.photos')}</option>
           </select>
         </div>
         <div className="settings-row">

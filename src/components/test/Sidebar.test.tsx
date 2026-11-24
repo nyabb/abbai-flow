@@ -93,7 +93,7 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(["Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
+    expect(entries).toEqual(['Timer', 'Weer', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
     expect(entries).not.toContain('Maaltijden');
     expect(entries).not.toContain('Lijsten');
@@ -111,7 +111,7 @@ describe('Sidebar overflow menu', () => {
  * appear somewhere else or it becomes unreachable.
  */
 describe('Sidebar desktop', () => {
-  it('keeps photos in the bottom group and the timer in the main group', () => {
+  it('keeps the timer in the main group and weather in the bottom group', () => {
     const { container } = renderSidebar(() => {});
     const main = container.querySelector(
       '.sidebar--desktop .sidebar-nav-group:not(.sidebar-nav-group--bottom)',
@@ -123,7 +123,7 @@ describe('Sidebar desktop', () => {
     expect(labels(main)).toContain('Timer');
     expect(labels(main)).not.toContain("Foto's");
     expect(labels(bottom)).toContain('Maaltijden');
-    expect(labels(bottom)).toContain("Foto's");
+    expect(labels(bottom)).toContain('Weer');
     expect(labels(bottom)).toContain('Instellingen');
   });
 });
@@ -136,10 +136,8 @@ describe('touch navigation order', () => {
       'meals',
       'grocery',
       'music',
-      'photos',
       'timer',
       'weather',
-      'display',
       'settings',
     ]);
   });
