@@ -870,6 +870,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.missionsHint': 'Werk je taakjes af',
   'planner.startMissions': 'Start missies',
   'planner.startRoutine': 'Deze routine starten',
+  'planner.routineWindowHint': 'Deze routine is alleen beschikbaar in de {time}.',
   'planner.missions': 'Missies',
   'planner.continue': 'Verder',
   'planner.iDidIt': 'Ik heb het gedaan!',

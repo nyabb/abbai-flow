@@ -19,6 +19,7 @@ import { TimerDock } from './components/TimerDock';
 import { DebugConsole } from './components/DebugConsole';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
+import { MealsView } from './components/MealsView';
 import { PhotoFrame } from './components/PhotoFrame';
 import { NowPlayingBar } from './components/NowPlayingBar';
 import { useMusic } from './hooks/useMusic';
@@ -131,7 +132,8 @@ export function App() {
     // owns the path segment). This is read once on boot and never pushed back
     // into history, so the ingress base path stays intact.
     if (isDisplayUrl(window.location)) return 'display';
-    if (new URLSearchParams(window.location.search).get('view') === 'music') return 'music';
+    const requestedView = new URLSearchParams(window.location.search).get('view');
+    if (requestedView === 'music' || requestedView === 'meals') return requestedView;
     const stored = settings.defaultView as string;
     // "Tasks" merged into the single lists page; keep older installs working.
     if (stored === 'tasks') return 'grocery';
@@ -735,6 +737,16 @@ export function App() {
                   onPrevious={music.previous}
                   onSetVolume={music.setVolume}
                   onSelectPlayer={music.selectPlayer}
+                />
+              </div>
+            </div>
+          ) : activeView === 'meals' ? (
+            <div className="view-page">
+              <PageHeader title={t('nav.meals')} />
+              <div className="view-page-body meals-page-body">
+                <MealsView
+                  weekStartsOn={settings.weekStartsOn}
+                  onOpenSettings={() => setActiveView('settings')}
                 />
               </div>
             </div>

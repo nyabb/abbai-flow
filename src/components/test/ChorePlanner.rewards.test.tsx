@@ -7,16 +7,21 @@ import type { ChoreOpsState } from '../../types/choreops';
 
 const mocks = vi.hoisted(() => ({
   approveReward: vi.fn(async () => {}),
+  createReward: vi.fn(async () => {}),
   deleteReward: vi.fn(async () => {}),
-  fetchRewardHistory: vi.fn(async () => [] as Array<{
-    id: string;
-    timestamp: string;
-    timestampMs: number;
-    amount: number;
-    balanceAfter: number | null;
-    itemName: string;
-    referenceId: string | null;
-  }>),
+  updateReward: vi.fn(async () => {}),
+  fetchRewardHistory: vi.fn(
+    async () =>
+      [] as Array<{
+        id: string;
+        timestamp: string;
+        timestampMs: number;
+        amount: number;
+        balanceAfter: number | null;
+        itemName: string;
+        referenceId: string | null;
+      }>,
+  ),
   state: { current: null as ChoreOpsState | null },
 }));
 
@@ -31,8 +36,8 @@ vi.mock('../../hooks/useChoreOps', () => ({
     claimChore: async () => {},
     createChore: async () => {},
     updateChore: async () => {},
-    createReward: async () => {},
-    updateReward: async () => {},
+    createReward: mocks.createReward,
+    updateReward: mocks.updateReward,
     deleteReward: mocks.deleteReward,
     deleteChore: async () => {},
     approveReward: mocks.approveReward,
@@ -174,10 +179,86 @@ describe('reward lifecycle', () => {
   beforeEach(() => {
     localStorage.clear();
     mocks.approveReward.mockClear();
+    mocks.createReward.mockClear();
     mocks.deleteReward.mockClear();
+    mocks.updateReward.mockClear();
     mocks.fetchRewardHistory.mockReset();
     mocks.fetchRewardHistory.mockResolvedValue([]);
     mocks.state.current = state();
+  });
+
+  it('offers only child assignees when creating a goal', async () => {
+    const current = state();
+    current.users.push({
+      name: 'Papa',
+      slug: 'papa',
+      points: 0,
+      dueToday: 0,
+      claimed: 0,
+      approved: 0,
+      completedToday: 0,
+    });
+    current.pointsByUser.papa = 0;
+    mocks.state.current = current;
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+    fireEvent.click(screen.getByRole('button', { name: 'Beloning toevoegen' }));
+
+    const assignees = screen.getByRole('group', { name: 'Voor wie' });
+    expect(within(assignees).getByRole('button', { name: 'Zara' })).toBeInTheDocument();
+    expect(within(assignees).queryByRole('button', { name: 'Papa' })).not.toBeInTheDocument();
+    fireEvent.click(within(assignees).getByRole('button', { name: 'Zara' }));
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'New goal' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
+    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
+    fireEvent.change(pin, { target: { value: '0123' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+
+    await waitFor(() => expect(mocks.createReward).toHaveBeenCalledOnce());
+    expect(mocks.createReward).toHaveBeenCalledWith({
+      name: 'New goal',
+      cost: 10,
+      assignedUserNames: ['Zara'],
+    });
+  });
+
+  it('does not restore a parent assignee when editing an existing parent goal', () => {
+    const current = state();
+    current.users.push({
+      name: 'Papa',
+      slug: 'papa',
+      points: 0,
+      dueToday: 0,
+      claimed: 0,
+      approved: 0,
+      completedToday: 0,
+    });
+    current.pointsByUser.papa = 0;
+    current.rewards.push({
+      id: 'parent-goal',
+      name: 'Parent goal',
+      status: 'available',
+      cost: 15,
+      pendingClaims: 0,
+      assignee: 'Papa',
+      actions: {},
+    });
+    mocks.state.current = current;
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-add')!);
+    fireEvent.click(screen.getByRole('tab', { name: /Beloningen/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken: Parent goal' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Bewerken' }));
+
+    const assignees = screen.getByRole('group', { name: 'Voor wie' });
+    expect(within(assignees).queryByRole('button', { name: 'Papa' })).not.toBeInTheDocument();
+    expect(within(assignees).getByRole('button', { name: 'Zara' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+    expect(screen.getByRole('button', { name: 'Opslaan' })).toBeDisabled();
   });
 
   it('shows ChoreOps reward transactions in the reward history', async () => {

@@ -1,3 +1,43 @@
+## [2.21.2](https://github.com/nyabb/abbai-flow/compare/v2.21.1...v2.21.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* restrict goal assignees to children ([2262187](https://github.com/nyabb/abbai-flow/commit/2262187229852c42f873a8ea358efe8d4f172293))
+
+## [2.21.1](https://github.com/nyabb/abbai-flow/compare/v2.21.0...v2.21.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* use avatar buttons for routine assignees ([e98400f](https://github.com/nyabb/abbai-flow/commit/e98400f1d73d45986b86c3693bc030fd12feaa9d))
+
+# [2.21.0](https://github.com/nyabb/abbai-flow/compare/v2.20.0...v2.21.0) (2026-11-24)
+
+
+### Features
+
+* scope missions to routine time windows ([e6c3135](https://github.com/nyabb/abbai-flow/commit/e6c3135d00e519c6ac99ae0db46ce9fddbcbdcfe))
+
+# [2.20.0](https://github.com/nyabb/abbai-flow/compare/v2.19.1...v2.20.0) (2026-11-24)
+
+
+### Bug Fixes
+
+* include meals page component ([2f4cb4d](https://github.com/nyabb/abbai-flow/commit/2f4cb4dfcbbb038cdec4b96cef760ba16155c6a9))
+
+
+### Features
+
+* add family meals navigation and page ([bc98e0b](https://github.com/nyabb/abbai-flow/commit/bc98e0bea48fb0e973ae98e378abe9dbf32aa0e5))
+
+## [2.19.1](https://github.com/nyabb/abbai-flow/compare/v2.19.0...v2.19.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* improve mobile routine and integration layouts ([d9e2f24](https://github.com/nyabb/abbai-flow/commit/d9e2f246329e204b655cf039a7cb2781258da70e))
+
 # [2.19.0](https://github.com/nyabb/abbai-flow/compare/v2.18.0...v2.19.0) (2026-11-24)
 
 

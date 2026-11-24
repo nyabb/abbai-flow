@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
@@ -127,11 +127,17 @@ function column(container: HTMLElement, name: string): HTMLElement {
 
 describe('Family routines in the chore planner', () => {
   beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2024, 0, 1, 8, 0));
     localStorage.clear();
     mocks.state.current = choreOpsState();
     mocks.adjustPoints.mockReset();
     mocks.pressButton.mockReset();
     mocks.createChore.mockReset();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('reads routine definitions from Abbai Flow and keeps old ChoreOps labels as chores', async () => {
@@ -200,6 +206,48 @@ describe('Family routines in the chore planner', () => {
     ).toHaveLength(1);
   });
 
+  it('keeps each mission attached to one selected routine when a child has several', async () => {
+    seedRoutines(
+      familyRoutine(CHILD.id, {
+        id: 'routine-first',
+        name: 'Before school',
+        mission_points: 4,
+        tasks: [{ id: 'first-task', name: 'Make the bed', order: 0 }],
+      }),
+      familyRoutine(CHILD.id, {
+        id: 'routine-second',
+        name: 'Pack up',
+        mission_points: 7,
+        tasks: [{ id: 'second-task', name: 'Pack the bag', order: 0 }],
+      }),
+    );
+    const { container } = renderPlanner();
+    const zara = column(container, 'Zara');
+    const startRoutineLabel = NL.t('planner.startRoutine');
+
+    await waitFor(() => expect(zara.querySelectorAll('.planner-row--routine')).toHaveLength(2));
+    fireEvent.click(zara.querySelector<HTMLButtonElement>('.planner-col-play')!);
+    expect(
+      screen.getByRole('button', { name: `${startRoutineLabel}: Before school` }),
+    ).toBeVisible();
+    expect(screen.getByRole('button', { name: `${startRoutineLabel}: Pack up` })).toBeVisible();
+
+    fireEvent.click(screen.getByRole('button', { name: `${startRoutineLabel}: Pack up` }));
+    expect(container.querySelector('.planner-mission-routine')?.textContent).toContain('Pack up');
+    expect(container.querySelector('.planner-mission-hero')?.textContent).toContain('Pack the bag');
+
+    fireEvent.click(container.querySelector<HTMLButtonElement>('.planner-mission-done')!);
+    await waitFor(() => expect(mocks.adjustPoints).toHaveBeenCalledTimes(1));
+    expect(mocks.adjustPoints).toHaveBeenCalledWith(
+      'Zara',
+      7,
+      expect.stringContaining('Abbai Flow mission: Pack up'),
+    );
+    expect(JSON.parse(localStorage.getItem('abbai_flow_routine_completions') ?? '[]')).toEqual([
+      expect.objectContaining({ routine_id: 'routine-second', task_id: 'second-task' }),
+    ]);
+  });
+
   it('releases the bonus reservation when ChoreOps rejects a mission award', async () => {
     mocks.adjustPoints.mockRejectedValueOnce(new Error('ChoreOps unavailable'));
     seedRoutines(
@@ -234,6 +282,22 @@ describe('Family routines in the chore planner', () => {
 
     await waitFor(() => expect(localStorage.getItem('abbai_flow_routines')).not.toBeNull());
     expect(column(container, 'Zara').querySelector('.planner-row--routine')).toBeNull();
+  });
+
+  it('does not allow a morning routine to be checked off in the evening', async () => {
+    vi.setSystemTime(new Date(2024, 0, 1, 20, 0));
+    seedRoutines(familyRoutine());
+    const { container } = renderPlanner();
+    const zara = column(container, 'Zara');
+
+    const row = await waitFor(() => {
+      const found = zara.querySelector<HTMLElement>('.planner-row--routine');
+      expect(found).not.toBeNull();
+      return found!;
+    });
+    expect(row.querySelector('.planner-step-action')).toBeNull();
+    expect(row.querySelector<HTMLButtonElement>('.planner-row-start')).toBeDisabled();
+    expect(zara.querySelector<HTMLButtonElement>('.planner-col-play')).toBeDisabled();
   });
 
   it('gives parents a routine-only page and includes them in the member filter', async () => {
@@ -335,9 +399,11 @@ describe('Family routines in the chore planner', () => {
     fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(NL.t('planner.forWho')), {
-      target: { value: CHILD.id },
-    });
+    fireEvent.click(
+      within(screen.getByRole('group', { name: NL.t('planner.forWho') })).getByRole('button', {
+        name: CHILD.name,
+      }),
+    );
     fireEvent.change(screen.getByPlaceholderText(NL.t('settings.family.routineNamePlaceholder')), {
       target: { value: 'After school' },
     });

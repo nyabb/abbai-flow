@@ -469,6 +469,10 @@
 }
 
 .routine-editor-dialog {
+  --planner-ink: var(--text-primary);
+  --planner-soft: color-mix(in srgb, var(--text-primary) 7%, var(--bg-surface));
+  --planner-accent: var(--accent);
+  --planner-accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-surface));
   display: flex;
   flex-direction: column;
   width: min(560px, 100%);
@@ -515,9 +519,25 @@
 }
 
 .routine-editor-member {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   padding: 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
+}
+
+.routine-editor-member .member-photo,
+.routine-editor-member > span:first-child {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.routine-editor-assignees {
+  padding: 0;
 }
 
 .routine-editor-body {

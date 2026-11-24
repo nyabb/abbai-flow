@@ -92,14 +92,14 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(["Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
+    expect(entries).toEqual(['Meals', "Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
     expect(entries).not.toContain('Lijsten');
     expect(entries).not.toContain('Muziek');
     expect(entries).not.toContain('Taken');
 
-    fireEvent.click(within(menu).getByText("Foto's"));
-    expect(onChangeView).toHaveBeenCalledWith('photos');
+    fireEvent.click(within(menu).getByText('Meals'));
+    expect(onChangeView).toHaveBeenCalledWith('meals');
     expect(container.querySelector('.mobile-more-menu')).toBeNull();
   });
 });
@@ -120,6 +120,7 @@ describe('Sidebar desktop', () => {
 
     expect(labels(main)).toContain('Timer');
     expect(labels(main)).not.toContain("Foto's");
+    expect(labels(bottom)).toContain('Meals');
     expect(labels(bottom)).toContain("Foto's");
     expect(labels(bottom)).toContain('Instellingen');
   });
@@ -131,6 +132,7 @@ describe('touch navigation order', () => {
       'calendar',
       'chores',
       'grocery',
+      'meals',
       'music',
       'photos',
       'timer',

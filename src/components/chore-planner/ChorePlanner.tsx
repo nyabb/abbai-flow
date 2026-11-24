@@ -22,7 +22,7 @@ import { buildChorePlannerView } from '../../api/chore-planner-view';
 import { resolveMemberForUser } from '../../api/choreops';
 import { FamilyStore } from '../../api/family';
 import { localDayKey } from '../../api/date-keys';
-import { routineOccursOnDate } from '../../api/routine-schedule';
+import { routineAvailableAt, routineOccursOnDate } from '../../api/routine-schedule';
 import {
   activeRedemptions,
   fulfilledRedemptions,
@@ -345,6 +345,7 @@ export function ChorePlanner({
   const givenReward = overlay.type === 'reward-given' ? { name: overlay.name } : null;
   /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
   const rewards = choreOps.data?.rewards ?? [];
+  const goalMembers = data.members.filter((member) => member.role === 'child');
   const missionTask = getTask(missionIds[missionIndex] ?? null);
 
   /**
@@ -365,6 +366,8 @@ export function ChorePlanner({
       name: routine.name,
       index: orderedTasks.findIndex((task) => task.id === link.taskId) + 1,
       total: orderedTasks.length,
+      timeOfDay: routine.time_of_day,
+      available: routineAvailableAt(routine, now),
     };
   })();
   const selectedTodayMember = memberFor(todayMemberId);
@@ -397,7 +400,7 @@ export function ChorePlanner({
         bonusPoints={bonusPoints}
         steps={steps}
         copy={c}
-        onStart={canEarnMissionPoints ? () => beginRoutine(memberId, routine) : undefined}
+        onStart={canEarnMissionPoints ? () => beginRoutine(memberId, routine.id) : undefined}
         onEdit={() => openRoutineEditor(routine, memberId)}
         onDelete={() => void routinesApi.removeRoutine(routine.id)}
         canStart={
@@ -514,6 +517,7 @@ export function ChorePlanner({
       .filter((entry) => entry.tasks.length > 0);
 
   function routineTasksFor(routine: FamilyRoutine, memberId: string): PlannerTask[] {
+    if (!routineAvailableAt(routine, now)) return [];
     return [...routine.tasks]
       .sort((a, b) => a.order - b.order)
       .filter((task) => !isRoutineTaskCompletedToday(routine.id, task.id, memberId))
@@ -528,22 +532,19 @@ export function ChorePlanner({
   }
 
   function routineStepsFor(routine: FamilyRoutine, memberId: string): RoutineStep[] {
+    const available = routineAvailableAt(routine, now);
     return [...routine.tasks]
       .sort((a, b) => a.order - b.order)
       .map((step) => {
         const done = isRoutineTaskCompletedToday(routine.id, step.id, memberId);
         return {
           name: step.name,
-          ...(!done ? { taskId: `family-routine:${routine.id}:${step.id}` } : {}),
+          ...(!done && available ? { taskId: `family-routine:${routine.id}:${step.id}` } : {}),
           done,
-          open: !done,
+          open: !done && available,
         };
       });
   }
-
-  /** The overview list is the queue: what it shows is what will be run. */
-  const openTasksFor = (memberId: string) =>
-    missionsFor(memberId).reduce<PlannerTask[]>((all, entry) => [...all, ...entry.tasks], []);
 
   const canRunMissions = (memberId: string) => missionsFor(memberId).length > 0;
   const byDeadline = (a: PlannerTask, b: PlannerTask) =>
@@ -710,7 +711,11 @@ export function ChorePlanner({
     const link = task.familyRoutineTask;
     if (!link || pendingTaskId) return;
     const routine = familyRoutines.find((item) => item.id === link.routineId);
-    if (!routine || isRoutineTaskCompletedToday(routine.id, link.taskId, routine.member_id)) {
+    if (
+      !routine ||
+      !routineAvailableAt(routine, new Date()) ||
+      isRoutineTaskCompletedToday(routine.id, link.taskId, routine.member_id)
+    ) {
       return;
     }
 
@@ -957,8 +962,10 @@ export function ChorePlanner({
    * header create menu starts empty and lets the parent pick who gets it.
    */
   /** Start one routine as a guided mission. */
-  const beginRoutine = (memberId: string, routine: FamilyRoutine) => {
+  const beginRoutine = (memberId: string, routineId: string) => {
     if (!isChildMember(memberId)) return;
+    const routine = familyRoutines.find((item) => item.id === routineId);
+    if (!routine || !routineAvailableAt(routine, new Date())) return;
     const steps = routineTasksFor(routine, memberId);
     setTodayMemberId(memberId);
     setMissionBonusPoints(0);
@@ -973,26 +980,8 @@ export function ChorePlanner({
     setScreen('mission');
   };
 
-  const beginMissions = (memberId: string) => {
-    if (!isChildMember(memberId)) return;
-    setTodayMemberId(memberId);
-    setMissionBonusPoints(0);
-    const steps = missionsFor(memberId).flatMap((entry) => entry.tasks);
-    if (steps.length === 0) {
-      setMissionIds([]);
-      setMissionIndex(0);
-      setScreen('closing');
-      return;
-    }
-    setMissionIds(steps.map((task) => task.id));
-    setMissionIndex(0);
-    setScreen('mission');
-  };
-
   /**
-   * Open the missions overview — the same screen the mission's back arrow
-   * returns to. The overview is the clear entry point from the routine UI;
-   * "Start missions" on it begins the actual run.
+   * Let the child choose one available routine before starting its mission.
    */
   const openMissions = (memberId: string) => {
     setTodayMemberId(memberId);
@@ -1298,7 +1287,7 @@ export function ChorePlanner({
             setScreen('child');
           }}
           onOpenGoals={openGoals}
-          onStartMissions={beginMissions}
+          onStartMissions={openMissions}
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewChore={() => openNewForm()}
@@ -1329,7 +1318,7 @@ export function ChorePlanner({
           renderRewardRow={renderRewardRow}
           copy={c}
           onStepChild={stepChild}
-          onStartMissions={beginMissions}
+          onStartMissions={openMissions}
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
           onNewGoal={startRewardForm}
@@ -1343,7 +1332,7 @@ export function ChorePlanner({
             member={selectedTodayMember}
             copy={c}
             t={t}
-            openTasks={openTasksFor(selectedTodayMember.id)}
+            routines={missionsFor(selectedTodayMember.id)}
             completedPoints={completedTodayPoints(selectedTodayMember.id) + missionBonusPoints}
             spendable={spendableFor(selectedTodayMember)}
             currentTask={missionTask}
@@ -1351,11 +1340,11 @@ export function ChorePlanner({
             index={missionIndex}
             total={missionIds.length}
             routineStep={missionRoutineStep}
+            onStartRoutine={(routineId) => beginRoutine(selectedTodayMember.id, routineId)}
             countdown={missionTask ? countdown(missionTask.deadlineAt, now, c) : ''}
-            online={online}
+            online={online && (missionRoutineStep?.available ?? true)}
             busy={pendingTaskId === missionTask?.id}
             renderTask={renderTask}
-            onStart={() => beginMissions(selectedTodayMember.id)}
             onComplete={() => {
               if (missionTask) void completeTask(missionTask);
             }}
@@ -1593,8 +1582,8 @@ export function ChorePlanner({
                 editingReward={overlay.editingReward}
                 members={
                   overlay.editingReward || screen !== 'child' || !childMember
-                    ? data.members
-                    : [childMember]
+                    ? goalMembers
+                    : goalMembers.filter((member) => member.id === childMember.id)
                 }
                 saving={saving}
                 copy={c}
