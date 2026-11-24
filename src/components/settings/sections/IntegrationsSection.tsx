@@ -226,13 +226,13 @@ export function IntegrationsSection({
   }, [connected]);
 
   return (
-    <>
+    <div className="settings-integrations">
       <h2 className="settings-section-title">{t('settings.integrations.title')}</h2>
       <p className="settings-section-desc">{t('settings.integrations.desc')}</p>
 
       <div className="settings-group">
         <div className="settings-group-title">{t('settings.integrations.homeAssistantTitle')}</div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">{t('settings.integrations.haUrlLabel')}</div>
             <div className="settings-row-sublabel">{t('settings.integrations.haUrlHelp')}</div>
@@ -245,7 +245,7 @@ export function IntegrationsSection({
             placeholder="http://homeassistant.local:8123"
           />
         </div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">{t('settings.integrations.haTokenLabel')}</div>
             <div className="settings-row-sublabel">
@@ -264,7 +264,7 @@ export function IntegrationsSection({
           />
         </div>
         {serverBacked && integrationStatus?.haConfigured && (
-          <label className="settings-row-sublabel">
+          <label className="settings-row-sublabel settings-clear-secret">
             <input
               type="checkbox"
               checked={clearHaToken}
@@ -343,7 +343,7 @@ export function IntegrationsSection({
             {integrationNotice}
           </div>
         )}
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.weatherEntityLabel')}
@@ -366,7 +366,7 @@ export function IntegrationsSection({
         <>
           <div className="settings-group">
             <div className="settings-group-title">{t('settings.integrations.encoreTitle')}</div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.encoreUrlLabel')}
@@ -382,7 +382,7 @@ export function IntegrationsSection({
                 placeholder="ws://host.docker.internal:8095/"
               />
             </div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.encoreTokenLabel')}
@@ -407,7 +407,7 @@ export function IntegrationsSection({
               />
             </div>
             {integrationStatus?.encoreConfigured && (
-              <label className="settings-row-sublabel">
+              <label className="settings-row-sublabel settings-clear-secret">
                 <input
                   type="checkbox"
                   checked={clearEncoreToken}
@@ -420,7 +420,7 @@ export function IntegrationsSection({
 
           <div className="settings-group">
             <div className="settings-group-title">{t('settings.integrations.spotifyTitle')}</div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyClientIdLabel')}
@@ -436,7 +436,7 @@ export function IntegrationsSection({
                 autoComplete="off"
               />
             </div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyClientSecretLabel')}
@@ -461,7 +461,7 @@ export function IntegrationsSection({
               />
             </div>
             {integrationStatus?.spotifyClientSecretConfigured && (
-              <label className="settings-row-sublabel">
+              <label className="settings-row-sublabel settings-clear-secret">
                 <input
                   type="checkbox"
                   checked={clearSpotifyClientSecret}
@@ -470,7 +470,7 @@ export function IntegrationsSection({
                 {t('settings.integrations.clearSecret')}
               </label>
             )}
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyMarketLabel')}
@@ -486,7 +486,7 @@ export function IntegrationsSection({
                 onChange={(event) => setSpotifyMarket(event.target.value.toUpperCase())}
               />
             </div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyRedirectLabel')}
@@ -519,10 +519,10 @@ export function IntegrationsSection({
 
           <div className="settings-group">
             <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
-            <p className="settings-row-sublabel">
+            <p className="settings-row-sublabel settings-integration-help">
               {t('settings.integrations.mealSourceDescription')}
             </p>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.mealSourceUrlLabel')}
@@ -540,7 +540,7 @@ export function IntegrationsSection({
                 autoComplete="url"
               />
             </div>
-            <div className="settings-row">
+            <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.mealSourceTokenLabel')}
@@ -565,7 +565,7 @@ export function IntegrationsSection({
               />
             </div>
             {integrationStatus?.mealSourceTokenConfigured && (
-              <label className="settings-row-sublabel">
+              <label className="settings-row-sublabel settings-clear-secret">
                 <input
                   type="checkbox"
                   checked={clearMealSourceToken}
@@ -574,11 +574,11 @@ export function IntegrationsSection({
                 {t('settings.integrations.clearSecret')}
               </label>
             )}
-            <div className="settings-row-sublabel">
+            <div className="settings-row-sublabel settings-integration-help">
               {t('settings.integrations.mealSourceMappingHelp')}
             </div>
             {MEAL_MAPPING_FIELDS.map((field) => (
-              <div className="settings-row" key={field.key}>
+              <div className="settings-row settings-integration-field" key={field.key}>
                 <div className="settings-row-label">
                   {t(field.labelKey)}
                   {['itemsPath', 'titlePath', 'stepsPath'].includes(field.key) ? ' *' : ''}
@@ -616,7 +616,7 @@ export function IntegrationsSection({
       {!serverBacked && (
         <div className="settings-group">
           <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
-          <p className="settings-row-sublabel">
+          <p className="settings-row-sublabel settings-integration-help">
             {t('settings.integrations.mealSourceBackendRequired')}
           </p>
         </div>
@@ -778,7 +778,7 @@ export function IntegrationsSection({
             </div>
           )}
         </div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.defaultGroceryListLabel')}
@@ -800,7 +800,7 @@ export function IntegrationsSection({
             ))}
           </select>
         </div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.shoppingEntityLabel')}
@@ -826,7 +826,7 @@ export function IntegrationsSection({
 
       <div className="settings-group">
         <div className="settings-group-title">{t('settings.integrations.musicAssistantTitle')}</div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.defaultPlayerLabel')}
@@ -847,7 +847,7 @@ export function IntegrationsSection({
 
       <div className="settings-group">
         <div className="settings-group-title">{t('settings.integrations.photosTitle')}</div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.sourceDirectoryLabel')}
@@ -864,7 +864,7 @@ export function IntegrationsSection({
             placeholder="/media/beacon/photos"
           />
         </div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div>
             <div className="settings-row-label">
               {t('settings.integrations.slideshowIntervalLabel')}
@@ -882,7 +882,7 @@ export function IntegrationsSection({
             onChange={(v) => onUpdateSettings({ photoInterval: v })}
           />
         </div>
-        <div className="settings-row">
+        <div className="settings-row settings-integration-field">
           <div className="settings-row-label">
             {t('settings.integrations.transitionStyleLabel')}
           </div>
@@ -896,6 +896,6 @@ export function IntegrationsSection({
           />
         </div>
       </div>
-    </>
+    </div>
   );
 }

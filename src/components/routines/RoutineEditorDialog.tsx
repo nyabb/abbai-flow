@@ -166,26 +166,26 @@ export function RoutineEditorDialog({
           </button>
         </header>
 
-        {canChooseMember && (
-          <label className="routine-editor-field">
-            <span>{t('planner.forWho')}</span>
-            <select
-              className="settings-input"
-              value={memberId}
-              aria-label={t('planner.forWho')}
-              onChange={(event) => setMemberId(event.target.value)}
-            >
-              {members.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {!canChooseMember && member && <div className="routine-editor-member">{member.name}</div>}
-
         <div className="routine-editor-body">
+          {canChooseMember && (
+            <label className="routine-editor-field">
+              <span>{t('planner.forWho')}</span>
+              <select
+                className="settings-input"
+                value={memberId}
+                aria-label={t('planner.forWho')}
+                onChange={(event) => setMemberId(event.target.value)}
+              >
+                {members.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {!canChooseMember && member && <div className="routine-editor-member">{member.name}</div>}
+
           <label className="routine-editor-field">
             <span>{t('settings.family.routineNameLabel')}</span>
             <input

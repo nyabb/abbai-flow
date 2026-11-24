@@ -431,19 +431,20 @@
 .routine-editor-dialog {
   display: flex;
   flex-direction: column;
-  width: min(620px, 100%);
+  width: min(560px, 100%);
   max-height: min(92vh, 880px);
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background: var(--bg-surface);
   color: var(--text-primary);
-  box-shadow: 0 24px 72px rgb(0 0 0 / 30%);
+  box-shadow: var(--shadow-lg);
 }
 
 .routine-editor-header,
 .routine-editor-footer {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -474,13 +475,14 @@
 }
 
 .routine-editor-member {
-  padding: 11px 18px 0;
+  padding: 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .routine-editor-body {
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: 16px;
   padding: 16px 18px;
@@ -508,9 +510,25 @@
   font-size: 0.82rem;
 }
 
+.routine-editor-field > .settings-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.routine-editor-task .settings-input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .routine-editor-days .settings-weekday-selector {
   width: 100%;
   max-width: 420px;
+  /* The shared selector's flex-basis is intended for horizontal form rows.
+     In this vertical form it would otherwise become a 350px button height. */
+  flex: 0 0 auto;
 }
 
 .routine-editor-tasks {
@@ -551,13 +569,148 @@
 
   .routine-editor-dialog {
     width: 100%;
-    max-height: 94vh;
+    max-height: 100%;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .routine-editor-header,
+  .routine-editor-footer {
+    padding: 12px 16px;
+  }
+
+  .routine-editor-body {
+    padding: 14px 16px;
+  }
+
+  .routine-editor-days .settings-weekday-selector {
+    max-width: none;
+  }
+
+  .routine-editor-days .settings-weekday-btn {
+    min-height: 44px;
+    padding-inline: 1px;
   }
 
   .routine-editor-task {
     grid-template-columns: minmax(0, 1fr) repeat(3, 32px);
     gap: 4px;
+  }
+
+  .routine-editor-footer > .settings-btn {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
+/* Integrations contain long URLs, credentials, and field mappings. Stack each
+   label and control on phones so inputs stay readable and inside the card. */
+.settings-integrations {
+  width: 100%;
+  min-width: 0;
+}
+
+.settings-integration-field {
+  min-width: 0;
+}
+
+.settings-integration-help {
+  display: block;
+  margin: 0;
+  padding: 8px 20px;
+  line-height: 1.45;
+}
+
+.settings-clear-secret {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 20px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.settings-clear-secret input[type='checkbox'] {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+@media (max-width: 768px) {
+  .settings-integrations .settings-group {
+    min-width: 0;
+  }
+
+  .settings-integrations .settings-integration-field {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .settings-integrations .settings-integration-field > * {
+    min-width: 0;
+  }
+
+  .settings-integrations .settings-integration-field > input.settings-input,
+  .settings-integrations .settings-integration-field > select.settings-input {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .settings-integrations .settings-integration-field > .settings-slider-wrapper {
+    width: 100%;
+  }
+
+  .settings-integrations .settings-integration-field > .settings-segment {
+    align-self: flex-start;
+    max-width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .settings-clear-secret {
+    padding: 8px 16px;
+  }
+
+  .settings-integration-help {
+    padding: 8px 16px;
+  }
+}
+
+/* Keep the routine editor above the persistent phone tab bar, like the shared
+   app dialogs, so the Save and Cancel buttons remain visible. */
+.abbai-flow--compact .routine-editor-backdrop,
+.abbai-flow--sidebar-bottom .routine-editor-backdrop {
+  padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
+}
+
+.abbai-flow--compact .routine-editor-dialog,
+.abbai-flow--sidebar-bottom .routine-editor-dialog {
+  max-height: calc(100vh - var(--mobile-tab-bar-height, 72px) - 24px - env(safe-area-inset-bottom, 0px));
+  max-height: calc(100dvh - var(--mobile-tab-bar-height, 72px) - 24px - env(safe-area-inset-bottom, 0px));
+}
+
+@media (max-width: 768px) {
+  .routine-editor-backdrop {
+    padding: 12px 12px calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
+  }
+
+  .routine-editor-dialog {
+    max-height: calc(100vh - var(--mobile-tab-bar-height, 72px) - 24px - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100dvh - var(--mobile-tab-bar-height, 72px) - 24px - env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@media (max-width: 520px) {
+  .routine-editor-backdrop {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .routine-editor-dialog {
+    max-height: 100%;
   }
 }
 
