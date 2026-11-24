@@ -57,8 +57,9 @@ Open `http://<host>:3000`. Images are published for `linux/amd64` and
 `linux/arm64`, so the same tag runs on a server and on a Raspberry Pi.
 
 On first launch, open **Settings → Integrations** to connect Home Assistant,
-Encore, and Spotify. Abbai Flow starts in standalone mode until you configure
-the services you want. Integration settings are stored in the `/data` volume.
+Encore, and Spotify, or configure a JSON recipe/menu feed for meal planning.
+Abbai Flow starts in standalone mode until you configure the services you want.
+Integration settings are stored in the `/data` volume.
 
 ### Docker Compose
 

@@ -442,18 +442,53 @@ test('integration settings redact secrets and persist saved values across restar
       spotifyClientSecret: 'new-client-secret',
       spotifyMarket: 'us',
       spotifyRedirectUri: 'https://abbai.example/abbai-flow/music/oauth/callback',
+      mealSourceUrl: 'https://food.example/api/recipes',
+      mealSourceToken: 'meal-source-secret',
+      mealDataMapping: {
+        itemsPath: '$.data.recipes',
+        idPath: '$.id',
+        titlePath: '$.name',
+        imagePath: '$.photo.url',
+        ingredientsPath: '$.ingredients[]',
+        stepsPath: '$.instructions[].text',
+        tagsPath: '$.tags[]',
+        datePath: '$.dinner_date',
+        sourceUrlPath: '$.url',
+      },
     },
   });
   assert.equal(saved.status, 200);
   assert.equal(saved.json.spotifyClientId, 'new-client-id');
   assert.equal(saved.json.spotifyMarket, 'US');
   assert.equal(saved.json.spotifyClientSecretConfigured, true);
-  assert.doesNotMatch(JSON.stringify(saved.json), /new-client-secret|legacy-ha-secret/);
+  assert.equal(saved.json.mealSourceUrl, 'https://food.example/api/recipes');
+  assert.equal(saved.json.mealSourceTokenConfigured, true);
+  assert.equal(saved.json.mealDataMapping.stepsPath, '$.instructions[].text');
+  assert.doesNotMatch(
+    JSON.stringify(saved.json),
+    /new-client-secret|legacy-ha-secret|meal-source-secret/,
+  );
+
+  const invalidMapping = await request(app.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { mealDataMapping: { stepsPath: '$.instructions[?(@.done)]' } },
+  });
+  assert.equal(invalidMapping.status, 400);
+
+  const invalidMealUrl = await request(app.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { mealSourceUrl: 'file:///etc/passwd' },
+  });
+  assert.equal(invalidMealUrl.status, 400);
 
   const settingsPath = path.join(dataDir, 'integration-settings.json');
   const persisted = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
   assert.equal(persisted.haToken, 'legacy-ha-secret');
   assert.equal(persisted.spotifyClientSecret, 'new-client-secret');
+  assert.equal(persisted.mealSourceToken, 'meal-source-secret');
+  assert.equal(persisted.mealDataMapping.itemsPath, '$.data.recipes');
   assert.equal(fs.statSync(settingsPath).mode & 0o777, 0o600);
 
   const restarted = await startBeacon(legacy);
@@ -463,6 +498,18 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(afterRestart.json.spotifyClientId, 'new-client-id');
   assert.equal(afterRestart.json.spotifyMarket, 'US');
   assert.equal(afterRestart.json.spotifyClientSecretConfigured, true);
+  assert.equal(afterRestart.json.mealSourceUrl, 'https://food.example/api/recipes');
+  assert.equal(afterRestart.json.mealSourceTokenConfigured, true);
+  assert.equal(afterRestart.json.mealDataMapping.titlePath, '$.name');
+
+  const cleared = await request(restarted.port, {
+    method: 'PUT',
+    path: '/abbai-flow/settings/integrations',
+    body: { clearMealSourceToken: true },
+  });
+  assert.equal(cleared.status, 200);
+  assert.equal(cleared.json.mealSourceTokenConfigured, false);
+  assert.equal(JSON.parse(fs.readFileSync(settingsPath, 'utf8')).mealSourceToken, '');
 });
 
 test('integration settings test connection checks submitted Home Assistant credentials without saving', async (t) => {

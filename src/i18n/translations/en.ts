@@ -377,6 +377,27 @@ export const en = {
   'settings.integrations.spotifyRedirectLabel': 'OAuth redirect URL',
   'settings.integrations.spotifyRedirectHelp':
     'Register this exact callback URL in the Spotify Developer app.',
+  'settings.integrations.mealSourceTitle': 'Meal data source',
+  'settings.integrations.mealSourceDescription':
+    'Connect an external JSON API for recipes or dated menus. The bearer token stays on the Abbai Flow server.',
+  'settings.integrations.mealSourceUrlLabel': 'Feed URL',
+  'settings.integrations.mealSourceUrlHelp': 'HTTP or HTTPS endpoint that returns JSON.',
+  'settings.integrations.mealSourceTokenLabel': 'Bearer token (optional)',
+  'settings.integrations.mealSourceTokenHelp':
+    'Sent as Authorization: Bearer token and stored only on the server.',
+  'settings.integrations.mealSourceMappingHelp':
+    'Map JSON paths to recipe fields. Items path points to the array; other paths are relative to each item. Examples: $.recipes, $.instructions[].text. Items, title and steps are required when a URL is set.',
+  'settings.integrations.mealItemsPathLabel': 'Items array path',
+  'settings.integrations.mealIdPathLabel': 'Recipe ID path',
+  'settings.integrations.mealTitlePathLabel': 'Recipe title path',
+  'settings.integrations.mealImagePathLabel': 'Photo path',
+  'settings.integrations.mealIngredientsPathLabel': 'Ingredients path',
+  'settings.integrations.mealStepsPathLabel': 'Steps path',
+  'settings.integrations.mealTagsPathLabel': 'Tags path',
+  'settings.integrations.mealDatePathLabel': 'Menu date path',
+  'settings.integrations.mealSourceUrlPathLabel': 'Recipe URL path',
+  'settings.integrations.mealSourceBackendRequired':
+    'A server-backed Abbai Flow deployment is required to store bearer tokens securely.',
   'settings.integrations.weatherEntityLabel': 'Weather Entity',
   'settings.integrations.weatherEntitySublabel': 'Entity used for weather display',
   'settings.integrations.grocyTitle': 'Grocy',

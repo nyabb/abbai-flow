@@ -379,6 +379,27 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.spotifyRedirectLabel': 'OAuth-omleidings-URL',
   'settings.integrations.spotifyRedirectHelp':
     'Registreer deze exacte callback-URL in de Spotify-ontwikkelaarsapp.',
+  'settings.integrations.mealSourceTitle': 'Maaltijdgegevensbron',
+  'settings.integrations.mealSourceDescription':
+    'Verbind een externe JSON-API met recepten of menu’s op datum. Het bearer-token blijft op de Abbai Flow-server.',
+  'settings.integrations.mealSourceUrlLabel': 'Feed-URL',
+  'settings.integrations.mealSourceUrlHelp': 'HTTP- of HTTPS-adres dat JSON teruggeeft.',
+  'settings.integrations.mealSourceTokenLabel': 'Bearer-token (optioneel)',
+  'settings.integrations.mealSourceTokenHelp':
+    'Verzonden als Authorization: Bearer-token en alleen op de server opgeslagen.',
+  'settings.integrations.mealSourceMappingHelp':
+    'Koppel JSON-paden aan receptvelden. Het itemspad verwijst naar de lijst; andere paden zijn relatief aan één item. Voorbeelden: $.recipes, $.instructions[].text. Items, titel en stappen zijn verplicht als een URL is ingesteld.',
+  'settings.integrations.mealItemsPathLabel': 'Pad naar itemlijst',
+  'settings.integrations.mealIdPathLabel': 'Pad naar recept-ID',
+  'settings.integrations.mealTitlePathLabel': 'Pad naar recepttitel',
+  'settings.integrations.mealImagePathLabel': 'Pad naar foto',
+  'settings.integrations.mealIngredientsPathLabel': 'Pad naar ingrediënten',
+  'settings.integrations.mealStepsPathLabel': 'Pad naar stappen',
+  'settings.integrations.mealTagsPathLabel': 'Pad naar labels',
+  'settings.integrations.mealDatePathLabel': 'Pad naar menudatum',
+  'settings.integrations.mealSourceUrlPathLabel': 'Pad naar recept-URL',
+  'settings.integrations.mealSourceBackendRequired':
+    'Voor veilige opslag van bearer-tokens is een serverinstallatie van Abbai Flow nodig.',
   'settings.integrations.weatherEntityLabel': 'Weerentiteit',
   'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
   'settings.integrations.grocyTitle': 'Grocy',

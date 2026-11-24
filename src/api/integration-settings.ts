@@ -1,5 +1,17 @@
 import { getRuntimeConfig } from '../config';
 
+export interface MealDataMapping {
+  itemsPath: string;
+  idPath: string;
+  titlePath: string;
+  imagePath: string;
+  ingredientsPath: string;
+  stepsPath: string;
+  tagsPath: string;
+  datePath: string;
+  sourceUrlPath: string;
+}
+
 export interface IntegrationSettingsStatus {
   haUrl: string;
   haConfigured: boolean;
@@ -9,6 +21,9 @@ export interface IntegrationSettingsStatus {
   spotifyClientSecretConfigured: boolean;
   spotifyMarket: string;
   spotifyRedirectUri: string;
+  mealSourceUrl: string;
+  mealSourceTokenConfigured: boolean;
+  mealDataMapping: MealDataMapping;
 }
 
 export interface IntegrationSettingsPatch {
@@ -23,6 +38,10 @@ export interface IntegrationSettingsPatch {
   clearSpotifyClientSecret?: boolean;
   spotifyMarket?: string;
   spotifyRedirectUri?: string;
+  mealSourceUrl?: string;
+  mealSourceToken?: string;
+  clearMealSourceToken?: boolean;
+  mealDataMapping?: Partial<MealDataMapping>;
 }
 
 function integrationSettingsUrl(): string {

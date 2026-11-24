@@ -10,12 +10,66 @@ import {
   loadIntegrationSettings,
   saveIntegrationSettings,
   testHomeAssistantConnection,
+  type MealDataMapping,
   type IntegrationSettingsStatus,
 } from '../../../api/integration-settings';
 import { getRuntimeConfig } from '../../../config';
+import type { TranslationKey } from '../../../i18n';
 import type { GroceryList } from '../../../types/grocery';
 import { Segment, Slider, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
+
+const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
+  itemsPath: '',
+  idPath: '',
+  titlePath: '',
+  imagePath: '',
+  ingredientsPath: '',
+  stepsPath: '',
+  tagsPath: '',
+  datePath: '',
+  sourceUrlPath: '',
+};
+
+const MEAL_MAPPING_FIELDS: {
+  key: keyof MealDataMapping;
+  labelKey: TranslationKey;
+  placeholder: string;
+}[] = [
+  {
+    key: 'itemsPath',
+    labelKey: 'settings.integrations.mealItemsPathLabel',
+    placeholder: '$.recipes',
+  },
+  { key: 'idPath', labelKey: 'settings.integrations.mealIdPathLabel', placeholder: '$.id' },
+  {
+    key: 'titlePath',
+    labelKey: 'settings.integrations.mealTitlePathLabel',
+    placeholder: '$.name',
+  },
+  {
+    key: 'imagePath',
+    labelKey: 'settings.integrations.mealImagePathLabel',
+    placeholder: '$.image.url',
+  },
+  {
+    key: 'ingredientsPath',
+    labelKey: 'settings.integrations.mealIngredientsPathLabel',
+    placeholder: '$.ingredients[]',
+  },
+  {
+    key: 'stepsPath',
+    labelKey: 'settings.integrations.mealStepsPathLabel',
+    placeholder: '$.instructions[].text',
+  },
+  { key: 'tagsPath', labelKey: 'settings.integrations.mealTagsPathLabel', placeholder: '$.tags[]' },
+  { key: 'datePath', labelKey: 'settings.integrations.mealDatePathLabel', placeholder: '$.date' },
+  {
+    key: 'sourceUrlPath',
+    labelKey: 'settings.integrations.mealSourceUrlPathLabel',
+    placeholder: '$.url',
+  },
+];
 
 export interface IntegrationsSectionProps extends SettingsSectionContext {
   connected: boolean;
@@ -47,6 +101,10 @@ export function IntegrationsSection({
   const [clearSpotifyClientSecret, setClearSpotifyClientSecret] = useState(false);
   const [spotifyMarket, setSpotifyMarket] = useState('NL');
   const [spotifyRedirectUri, setSpotifyRedirectUri] = useState('');
+  const [mealSourceUrl, setMealSourceUrl] = useState('');
+  const [mealSourceToken, setMealSourceToken] = useState('');
+  const [clearMealSourceToken, setClearMealSourceToken] = useState(false);
+  const [mealDataMapping, setMealDataMapping] = useState<MealDataMapping>(EMPTY_MEAL_DATA_MAPPING);
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
@@ -65,6 +123,8 @@ export function IntegrationsSection({
         setSpotifyClientId(status.spotifyClientId);
         setSpotifyMarket(status.spotifyMarket);
         setSpotifyRedirectUri(status.spotifyRedirectUri);
+        setMealSourceUrl(status.mealSourceUrl);
+        setMealDataMapping({ ...EMPTY_MEAL_DATA_MAPPING, ...status.mealDataMapping });
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -115,14 +175,20 @@ export function IntegrationsSection({
         ...(clearSpotifyClientSecret ? { clearSpotifyClientSecret: true } : {}),
         spotifyMarket: spotifyMarket.trim().toUpperCase(),
         spotifyRedirectUri,
+        mealSourceUrl,
+        ...(mealSourceToken.trim() ? { mealSourceToken: mealSourceToken.trim() } : {}),
+        ...(clearMealSourceToken ? { clearMealSourceToken: true } : {}),
+        mealDataMapping,
       });
       setIntegrationStatus(status);
       setHaToken('');
       setEncoreToken('');
       setSpotifyClientSecret('');
+      setMealSourceToken('');
       setClearHaToken(false);
       setClearEncoreToken(false);
       setClearSpotifyClientSecret(false);
+      setClearMealSourceToken(false);
       setIntegrationNotice(t('settings.integrations.saved'));
       window.location.reload();
     } catch (error) {
@@ -193,11 +259,7 @@ export function IntegrationsSection({
             className="settings-input settings-input--wide"
             value={haToken}
             onChange={(event) => setHaToken(event.target.value)}
-            placeholder={
-              haConfigured
-                ? t('settings.integrations.secretReplace')
-                : ''
-            }
+            placeholder={haConfigured ? t('settings.integrations.secretReplace') : ''}
             autoComplete="new-password"
           />
         </div>
@@ -260,7 +322,12 @@ export function IntegrationsSection({
               type="button"
               className="settings-btn settings-btn--primary"
               onClick={() => void saveBrowserHomeAssistant()}
-              disabled={integrationBusy || !onSaveHomeAssistant || !haUrl.trim() || (!haToken.trim() && !connected)}
+              disabled={
+                integrationBusy ||
+                !onSaveHomeAssistant ||
+                !haUrl.trim() ||
+                (!haToken.trim() && !connected)
+              }
             >
               {t('settings.integrations.save')}
             </button>
@@ -449,7 +516,110 @@ export function IntegrationsSection({
               </button>
             </div>
           </div>
+
+          <div className="settings-group">
+            <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
+            <p className="settings-row-sublabel">
+              {t('settings.integrations.mealSourceDescription')}
+            </p>
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.mealSourceUrlLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {t('settings.integrations.mealSourceUrlHelp')}
+                </div>
+              </div>
+              <input
+                type="url"
+                className="settings-input settings-input--wide"
+                value={mealSourceUrl}
+                onChange={(event) => setMealSourceUrl(event.target.value)}
+                placeholder="https://api.example.com/recipes"
+                autoComplete="url"
+              />
+            </div>
+            <div className="settings-row">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.mealSourceTokenLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {integrationStatus?.mealSourceTokenConfigured
+                    ? t('settings.integrations.secretSaved')
+                    : t('settings.integrations.mealSourceTokenHelp')}
+                </div>
+              </div>
+              <input
+                type="password"
+                className="settings-input settings-input--wide"
+                value={mealSourceToken}
+                onChange={(event) => setMealSourceToken(event.target.value)}
+                placeholder={
+                  integrationStatus?.mealSourceTokenConfigured
+                    ? t('settings.integrations.secretReplace')
+                    : ''
+                }
+                autoComplete="new-password"
+              />
+            </div>
+            {integrationStatus?.mealSourceTokenConfigured && (
+              <label className="settings-row-sublabel">
+                <input
+                  type="checkbox"
+                  checked={clearMealSourceToken}
+                  onChange={(event) => setClearMealSourceToken(event.target.checked)}
+                />{' '}
+                {t('settings.integrations.clearSecret')}
+              </label>
+            )}
+            <div className="settings-row-sublabel">
+              {t('settings.integrations.mealSourceMappingHelp')}
+            </div>
+            {MEAL_MAPPING_FIELDS.map((field) => (
+              <div className="settings-row" key={field.key}>
+                <div className="settings-row-label">
+                  {t(field.labelKey)}
+                  {['itemsPath', 'titlePath', 'stepsPath'].includes(field.key) ? ' *' : ''}
+                </div>
+                <input
+                  className="settings-input settings-input--wide"
+                  value={mealDataMapping[field.key]}
+                  onChange={(event) =>
+                    setMealDataMapping((current) => ({
+                      ...current,
+                      [field.key]: event.target.value,
+                    }))
+                  }
+                  placeholder={field.placeholder}
+                  autoComplete="off"
+                />
+              </div>
+            ))}
+            <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => void saveServerIntegrations()}
+                disabled={integrationBusy}
+              >
+                {integrationBusy
+                  ? t('settings.integrations.saving')
+                  : t('settings.integrations.save')}
+              </button>
+            </div>
+          </div>
         </>
+      )}
+
+      {!serverBacked && (
+        <div className="settings-group">
+          <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
+          <p className="settings-row-sublabel">
+            {t('settings.integrations.mealSourceBackendRequired')}
+          </p>
+        </div>
       )}
 
       <div className="settings-group">

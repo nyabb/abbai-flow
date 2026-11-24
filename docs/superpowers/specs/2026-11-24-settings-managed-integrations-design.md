@@ -16,6 +16,8 @@ The Integrations page owns connection details and credentials for:
 - Home Assistant URL and access token.
 - Encore URL and token for Spotify playback.
 - Spotify developer app ID, secret, market, and OAuth redirect URL.
+- Meal recipe/menu JSON feed URL, optional bearer token, and response-field
+  mapping for the family meal planner.
 
 The app already has UI settings for family name, theme, weather entity, photo
 directory and interval, and screen-saver timeout. Those remain in their
@@ -26,8 +28,15 @@ The current Integrations page shows Home Assistant status but does not let a
 Docker user set its connection. Add editable fields, a **Test connection**
 action, a save action, and explicit controls to clear stored secrets. Password
 inputs stay blank when a secret is already saved; show only whether a value is
-configured. Spotify and Encore settings use the same pattern. Never echo
-secret values back to the browser.
+configured. Spotify, Encore, and meal-source settings use the same secret
+handling. Never echo secret values back to the browser. The meal mapping
+connects the source's item array and recipe ID, title, image, ingredients,
+steps, tags, menu date, and source URL to Abbai Flow fields. Use a bounded JSON
+path syntax with root `$`, dotted properties, array indexes, and `[]`
+expansion; do not accept arbitrary code or expressions. When a meal feed URL
+is set, require item-array, title, and steps paths. The meal planner uses this
+configuration for feed refresh; refresh status and manual refresh remain in the
+Meals area.
 
 ## Runtime behavior
 
@@ -40,6 +49,9 @@ secret values back to the browser.
   owner-only file permissions. The browser sends a secret only when the parent
   enters a replacement; reads return configured flags and safe non-secret
   fields only.
+- Meal-feed requests use the saved bearer token only from the server. Keep the
+  token out of runtime config, diagnostics, exports, and the browser; return
+  the source URL and mapping because neither is secret.
 - Server-backed settings override environment defaults. Existing deployments
   can continue to use legacy environment values until a parent saves the new
   settings; persist the effective values on the first save so removing the old
@@ -88,6 +100,8 @@ page rather than instructing them to add integration secrets to Compose.
    save, persisted values win over environment defaults.
 6. Spotify and Encore server credentials can be changed and cleared from
    Integrations without exposing them to the browser after save.
-7. New Compose/configuration docs direct users to the app for service
+7. A parent can save a meal feed URL, optional bearer token, and validated
+   mapping in Integrations; the saved token is redacted in API responses.
+8. New Compose/configuration docs direct users to the app for service
    credentials and retain only deployment-level settings as environment
    variables.

@@ -1345,6 +1345,18 @@ function handleUpgrade(req, socket, head, config) {
 /* ------------------------------------------------------------------ */
 
 const INTEGRATION_SETTINGS_FILE = 'integration-settings.json';
+const MEAL_DATA_MAPPING_KEYS = [
+  'itemsPath',
+  'idPath',
+  'titlePath',
+  'imagePath',
+  'ingredientsPath',
+  'stepsPath',
+  'tagsPath',
+  'datePath',
+  'sourceUrlPath',
+];
+const EMPTY_MEAL_DATA_MAPPING = Object.fromEntries(MEAL_DATA_MAPPING_KEYS.map((key) => [key, '']));
 const INTEGRATION_SETTING_KEYS = [
   'haToken',
   'haBaseUrl',
@@ -1355,6 +1367,9 @@ const INTEGRATION_SETTING_KEYS = [
   'spotifyClientSecret',
   'spotifyMarket',
   'spotifyRedirectUri',
+  'mealSourceUrl',
+  'mealSourceToken',
+  'mealDataMapping',
 ];
 
 function integrationSettingsPath(dataDir) {
@@ -1372,6 +1387,21 @@ function readIntegrationSettings(dataDir, fallback) {
           Object.prototype.hasOwnProperty.call(stored, key),
         ).map((key) => [key, stored[key]]),
       ),
+      mealDataMapping: {
+        ...EMPTY_MEAL_DATA_MAPPING,
+        ...(stored.mealDataMapping &&
+        typeof stored.mealDataMapping === 'object' &&
+        !Array.isArray(stored.mealDataMapping)
+          ? Object.fromEntries(
+              MEAL_DATA_MAPPING_KEYS.filter((key) =>
+                Object.prototype.hasOwnProperty.call(stored.mealDataMapping, key),
+              ).map((key) => [
+                key,
+                typeof stored.mealDataMapping[key] === 'string' ? stored.mealDataMapping[key] : '',
+              ]),
+            )
+          : {}),
+      },
     };
   } catch (error) {
     if (error && error.code !== 'ENOENT') {
@@ -1408,6 +1438,8 @@ function mergeIntegrationSettings(current, patch) {
     spotifyClientSecret: 'spotifyClientSecret',
     spotifyMarket: 'spotifyMarket',
     spotifyRedirectUri: 'spotifyRedirectUri',
+    mealSourceUrl: 'mealSourceUrl',
+    mealSourceToken: 'mealSourceToken',
   };
   for (const [input, key] of Object.entries(fields)) {
     if (typeof patch[input] === 'string') {
@@ -1419,7 +1451,30 @@ function mergeIntegrationSettings(current, patch) {
   if (patch.clearHaToken === true) next.haToken = '';
   if (patch.clearEncoreToken === true) next.encoreToken = '';
   if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
+  if (patch.clearMealSourceToken === true) next.mealSourceToken = '';
+  if (patch.mealDataMapping && typeof patch.mealDataMapping === 'object') {
+    next.mealDataMapping = { ...current.mealDataMapping };
+    for (const key of MEAL_DATA_MAPPING_KEYS) {
+      if (typeof patch.mealDataMapping[key] === 'string') {
+        next.mealDataMapping[key] = patch.mealDataMapping[key].trim();
+      }
+    }
+  }
   return next;
+}
+
+function isValidMealMappingPath(value) {
+  let candidate = value.trim();
+  if (!candidate) return true;
+  if (candidate === '$') return true;
+  if (candidate.startsWith('$')) {
+    candidate = candidate.slice(1);
+    if (candidate && !candidate.startsWith('.') && !candidate.startsWith('[')) return false;
+  }
+  if (candidate.startsWith('.')) candidate = candidate.slice(1);
+  return /^(?:[A-Za-z_$][A-Za-z0-9_$-]*|\[\d+\]|\[\])(?:\.(?:[A-Za-z_$][A-Za-z0-9_$-]*|\[\d+\]|\[\])|\[\d+\]|\[\])*$/u.test(
+    candidate,
+  );
 }
 
 function validateIntegrationSettings(settings) {
@@ -1466,6 +1521,31 @@ function validateIntegrationSettings(settings) {
       return 'Enter a valid Spotify redirect URL using http or https.';
     }
   }
+  const mealDataMapping = settings.mealDataMapping || EMPTY_MEAL_DATA_MAPPING;
+  if (settings.mealSourceUrl) {
+    try {
+      const mealSourceUrl = new URL(settings.mealSourceUrl);
+      if (
+        !['http:', 'https:'].includes(mealSourceUrl.protocol) ||
+        !mealSourceUrl.hostname ||
+        mealSourceUrl.username ||
+        mealSourceUrl.password
+      ) {
+        return 'Enter a valid meal source URL using http or https.';
+      }
+    } catch {
+      return 'Enter a valid meal source URL using http or https.';
+    }
+    if (!mealDataMapping.itemsPath || !mealDataMapping.titlePath || !mealDataMapping.stepsPath) {
+      return 'Meal source mapping must include items, title, and steps paths.';
+    }
+  }
+  for (const key of MEAL_DATA_MAPPING_KEYS) {
+    const value = mealDataMapping[key] || '';
+    if (!isValidMealMappingPath(value)) {
+      return `Meal source mapping has an invalid ${key} path.`;
+    }
+  }
   return null;
 }
 
@@ -1482,6 +1562,9 @@ function publicIntegrationSettings(settings) {
     spotifyClientSecretConfigured: Boolean(settings.spotifyClientSecret),
     spotifyMarket: settings.spotifyMarket,
     spotifyRedirectUri: settings.spotifyRedirectUri,
+    mealSourceUrl: settings.mealSourceUrl,
+    mealSourceTokenConfigured: Boolean(settings.mealSourceToken),
+    mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING, ...settings.mealDataMapping },
   };
 }
 
@@ -1523,6 +1606,9 @@ function createApp(options) {
     spotifyClientSecret: options.spotifyClientSecret || '',
     spotifyMarket: (options.spotifyMarket || 'NL').toUpperCase(),
     spotifyRedirectUri: options.spotifyRedirectUri || '',
+    mealSourceUrl: '',
+    mealSourceToken: '',
+    mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING },
   };
   const config = {
     distDir: options.distDir,

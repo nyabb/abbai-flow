@@ -8,9 +8,11 @@ order: 2
 
 Configure service connections after starting Abbai Flow in **Settings →
 Integrations**. Enter the Home Assistant URL and token, Encore connection
-details, and Spotify developer app credentials there. The app verifies the
-Home Assistant connection before saving. Secrets are stored by the server in
-the persistent data directory and are never returned to the browser.
+details, Spotify developer app credentials, and the meal recipe/menu JSON feed
+URL there. Meal feeds can use an optional bearer token and configurable JSON
+paths to map a provider's response to recipe fields. The app verifies the Home
+Assistant connection before saving. Secrets are stored by the server in the
+persistent data directory and are never returned to the browser.
 
 Family name, theme, weather entity, photos, and display behavior are also
 editable in their existing Settings sections. New installations do not need
@@ -32,6 +34,11 @@ volumes:
 
 The `/data` volume keeps family data and server-side integration credentials
 across container restarts.
+
+For meal feeds, set the path to the response's recipe array, then map each
+recipe's title and steps plus any available ID, photo, ingredients, tags, date,
+and source URL fields. Paths support dotted properties, array indexes, and
+`[]` expansion (for example `$.data.recipes` or `$.instructions[].text`).
 
 ## Deployment environment variables
 
