@@ -1,3 +1,10 @@
+## [2.19.1](https://github.com/nyabb/abbai-flow/compare/v2.19.0...v2.19.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* improve mobile routine and integration layouts ([d9e2f24](https://github.com/nyabb/abbai-flow/commit/d9e2f246329e204b655cf039a7cb2781258da70e))
+
 # [2.19.0](https://github.com/nyabb/abbai-flow/compare/v2.18.0...v2.19.0) (2026-11-24)
 
 
