@@ -2137,8 +2137,8 @@
     justify-content: flex-end;
     gap: 6px;
   }
-  /* Phones: the band is too short for the date line, the title carries it. */
-  .planner-header .planner-eyebrow {
+  /* Phones: the band is too short for the date block, the title carries it. */
+  .planner-header .page-header-date {
     display: none;
   }
   .planner-header h1 {

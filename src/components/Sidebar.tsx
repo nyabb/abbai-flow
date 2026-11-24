@@ -95,8 +95,8 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 /**
- * The bar keeps Calendar, Chores, Grocery and Music around quick add. Timer
- * moves one tap away into the overflow menu.
+ * The phone bar keeps Calendar, Chores and Meals before quick add, with Grocery
+ * and Music after it. Timer moves one tap away into the overflow menu.
  *
  * The overflow menu only ever holds views that are *not* on the phone bar, so
  * nothing appears twice: Foto's, Timer, Weer and Display (+ Instellingen).
@@ -104,10 +104,12 @@ const NAV_ITEMS: NavItem[] = [
  */
 const NAV_LEFT_IDS: SidebarView[] = ['calendar', 'chores'];
 const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'timer', 'music'];
+/** Meals fills the open phone-tab slot immediately before quick add. */
+const MOBILE_LEFT_IDS: SidebarView[] = ['calendar', 'chores', 'meals'];
 /** The right side on phones: the last slot is the overflow menu. */
 const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
 /** Everything the phone bar already shows. */
-const BAR_IDS: SidebarView[] = [...NAV_LEFT_IDS, ...MOBILE_RIGHT_IDS];
+const BAR_IDS: SidebarView[] = [...MOBILE_LEFT_IDS, ...MOBILE_RIGHT_IDS];
 /** Desktop keeps these below the divider, next to Settings. */
 const NAV_EXTRA_IDS: SidebarView[] = ['meals', 'photos', 'weather', 'display'];
 const NAV_MORE_ITEMS = NAV_ITEMS.filter(
@@ -121,6 +123,7 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
   const itemFor = (id: SidebarView) => NAV_ITEMS.find((item) => item.id === id)!;
   const navLeft = NAV_LEFT_IDS.map(itemFor);
   const navRight = NAV_RIGHT_IDS.map(itemFor);
+  const mobileLeft = MOBILE_LEFT_IDS.map(itemFor);
   const mobileRight = MOBILE_RIGHT_IDS.map(itemFor);
   const navExtra = NAV_EXTRA_IDS.map(itemFor);
   /** Overflow = every nav item the bar does not already show. */
@@ -215,8 +218,8 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
 
       {/* Mobile bottom tab bar (hidden on desktop via CSS) */}
       <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
-        {/* Calendar and chores, quick add, grocery and music, then More. */}
-        {navLeft.map((item) => (
+        {/* Calendar, chores and meals, quick add, grocery and music, then More. */}
+        {mobileLeft.map((item) => (
           <button
             key={item.id}
             type="button"

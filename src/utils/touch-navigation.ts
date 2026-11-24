@@ -4,8 +4,8 @@ import type { SidebarView } from '../components/Sidebar';
 export const TOUCH_NAV_ORDER: readonly SidebarView[] = [
   'calendar',
   'chores',
-  'grocery',
   'meals',
+  'grocery',
   'music',
   'photos',
   'timer',

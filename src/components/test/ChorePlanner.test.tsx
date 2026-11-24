@@ -689,15 +689,16 @@ describe('ChorePlanner board', () => {
     mocks.fetchChoreHistory.mockResolvedValue([]);
   });
 
-  it('keeps the live clock at the far right after the header actions', () => {
+  it('keeps the language picker at the far right after the live clock', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     const actions = container.querySelector('.planner-header-actions');
+    const language = actions?.querySelector('.language-switcher');
 
-    expect(actions?.querySelector('.language-switcher')).not.toBeNull();
-    expect(actions?.querySelector('.language-switcher')?.nextElementSibling).toHaveClass(
+    expect(language).not.toBeNull();
+    expect(language?.previousElementSibling).toHaveClass(
       'planner-header-clock',
     );
-    expect(actions?.lastElementChild).toHaveClass('planner-header-clock');
+    expect(actions?.lastElementChild).toHaveClass('language-switcher');
   });
 
   it('shows every child and parent plus the free-chore column, without a header rewards button', () => {

@@ -16,16 +16,17 @@ function renderSidebar(onQuickAdd?: () => void) {
 
 /** The bottom bar keeps the main views, quick add and More reachable. */
 describe('Sidebar bottom bar', () => {
-  it('has six elements with quick add in the middle', () => {
+  it('has seven elements with Meals before quick add', () => {
     const { container } = renderSidebar(() => {});
     const bar = container.querySelector('.mobile-tab-bar')!;
     const items = [...bar.querySelectorAll('.mobile-tab')];
 
-    expect(items).toHaveLength(6);
-    expect(items[2].classList.contains('mobile-tab--add')).toBe(true);
+    expect(items).toHaveLength(7);
+    expect(items[3].classList.contains('mobile-tab--add')).toBe(true);
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual([
       'Agenda',
       'Klusjes',
+      'Maaltijden',
       'Snel toevoegen',
       'Lijsten',
       'Muziek',
@@ -44,11 +45,11 @@ describe('Sidebar bottom bar', () => {
     expect(labels).not.toContain("Foto's");
   });
 
-  it('calls quick add from the middle button', () => {
+  it('calls quick add from its centered button', () => {
     const onQuickAdd = vi.fn();
     const { container } = renderSidebar(onQuickAdd);
 
-    const quickAdd = container.querySelectorAll('.mobile-tab')[2];
+    const quickAdd = container.querySelectorAll('.mobile-tab')[3];
     expect(quickAdd.querySelector('svg')).toHaveClass('lucide-plus');
     fireEvent.click(quickAdd);
     expect(onQuickAdd).toHaveBeenCalledTimes(1);
@@ -92,14 +93,15 @@ describe('Sidebar overflow menu', () => {
     const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
       item.textContent?.trim(),
     );
-    expect(entries).toEqual(['Meals', "Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
+    expect(entries).toEqual(["Foto's", 'Timer', 'Weer', 'Displaymodus', 'Instellingen']);
     // Nothing that already has a slot on the bar may be repeated in the menu.
+    expect(entries).not.toContain('Maaltijden');
     expect(entries).not.toContain('Lijsten');
     expect(entries).not.toContain('Muziek');
     expect(entries).not.toContain('Taken');
 
-    fireEvent.click(within(menu).getByText('Meals'));
-    expect(onChangeView).toHaveBeenCalledWith('meals');
+    fireEvent.click(within(menu).getByText('Timer'));
+    expect(onChangeView).toHaveBeenCalledWith('timer');
     expect(container.querySelector('.mobile-more-menu')).toBeNull();
   });
 });
@@ -120,7 +122,7 @@ describe('Sidebar desktop', () => {
 
     expect(labels(main)).toContain('Timer');
     expect(labels(main)).not.toContain("Foto's");
-    expect(labels(bottom)).toContain('Meals');
+    expect(labels(bottom)).toContain('Maaltijden');
     expect(labels(bottom)).toContain("Foto's");
     expect(labels(bottom)).toContain('Instellingen');
   });
@@ -131,8 +133,8 @@ describe('touch navigation order', () => {
     expect(TOUCH_NAV_ORDER).toEqual([
       'calendar',
       'chores',
-      'grocery',
       'meals',
+      'grocery',
       'music',
       'photos',
       'timer',
