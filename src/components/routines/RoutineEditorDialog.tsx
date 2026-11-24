@@ -8,6 +8,7 @@ import {
   type FamilyMember,
   type Routine,
 } from '../../types/family';
+import { MemberAvatar } from '../MemberAvatar';
 
 export interface RoutineEditorRequest {
   token: number;
@@ -168,23 +169,33 @@ export function RoutineEditorDialog({
 
         <div className="routine-editor-body">
           {canChooseMember && (
-            <label className="routine-editor-field">
-              <span>{t('planner.forWho')}</span>
-              <select
-                className="settings-input"
-                value={memberId}
-                aria-label={t('planner.forWho')}
-                onChange={(event) => setMemberId(event.target.value)}
-              >
-                {members.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset className="routine-editor-field routine-editor-assignees">
+              <legend>{t('planner.forWho')}</legend>
+              <div className="planner-member-picker">
+                {members.map((item) => {
+                  const selected = item.id === memberId;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={selected ? 'is-selected' : ''}
+                      aria-pressed={selected}
+                      onClick={() => setMemberId(item.id)}
+                    >
+                      <MemberAvatar member={item} />
+                      {item.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           )}
-          {!canChooseMember && member && <div className="routine-editor-member">{member.name}</div>}
+          {!canChooseMember && member && (
+            <div className="routine-editor-member">
+              <MemberAvatar member={member} size={26} />
+              <span>{member.name}</span>
+            </div>
+          )}
 
           <label className="routine-editor-field">
             <span>{t('settings.family.routineNameLabel')}</span>

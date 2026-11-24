@@ -881,9 +881,11 @@ describe('ChorePlanner board', () => {
     fireEvent.click(screen.getByRole('button', { name: NL.t('planner.routineNew') }));
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(NL.t('planner.forWho')), {
-      target: { value: ZARA.id },
-    });
+    fireEvent.click(
+      within(screen.getByRole('group', { name: NL.t('planner.forWho') })).getByRole('button', {
+        name: ZARA.name,
+      }),
+    );
     fireEvent.change(screen.getByPlaceholderText(NL.t('settings.family.routineNamePlaceholder')), {
       target: { value: 'Before school' },
     });
