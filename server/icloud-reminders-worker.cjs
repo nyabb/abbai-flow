@@ -25,6 +25,32 @@ function safeDiagnosticValue(value, depth = 0) {
   );
 }
 
+function fullSectionDiagnosticValue(value, depth = 0) {
+  if (depth > 10) return '<maximum-depth>';
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'string') {
+    return value.length > 32_000 ? `${value.slice(0, 32_000)}<truncated>` : value;
+  }
+  if (Array.isArray(value)) {
+    const items = value.slice(0, 2_000).map((item) => fullSectionDiagnosticValue(item, depth + 1));
+    if (value.length > 2_000) items.push(`<${value.length - 2_000} more items>`);
+    return items;
+  }
+  if (!value || typeof value !== 'object') return undefined;
+  const entries = Object.entries(value);
+  const result = Object.fromEntries(
+    entries.slice(0, 200).map(([key, item]) => {
+      if (/(url|token|cookie|password|authorization|signature|session|secret)/iu.test(key)) {
+        return [key.slice(0, 100), '<redacted>'];
+      }
+      return [key.slice(0, 100), fullSectionDiagnosticValue(item, depth + 1)];
+    }).filter(([, item]) => item !== undefined),
+  );
+  if (entries.length > 200) result._truncatedKeys = entries.length - 200;
+  return result;
+}
+
 function safeCloudKitDiagnostic(entry) {
   if (!CLOUDKIT_DIAGNOSTIC_OPERATIONS.has(entry.operation)) return null;
   if (!['private', 'shared'].includes(entry.scope)) return null;
@@ -53,7 +79,12 @@ function safeCloudKitDiagnostic(entry) {
         record.sectionCandidates = Object.fromEntries(
           Object.entries(item.sectionCandidates)
             .slice(0, 8)
-            .map(([key, value]) => [key.slice(0, 80), safeDiagnosticValue(value)])
+            .map(([key, value]) => [
+              key.slice(0, 80),
+              /MembershipsOfRemindersInSectionsAsData|SectionIDsOrderingAsData|\.TitleDocument|\.NameDocument/iu.test(key)
+                ? fullSectionDiagnosticValue(value)
+                : safeDiagnosticValue(value),
+            ])
             .filter(([, value]) => value !== undefined),
         );
       }

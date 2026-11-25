@@ -8,6 +8,7 @@ between authenticate and verify requests.
 
 from __future__ import annotations
 
+import base64
 import dataclasses
 from contextlib import contextmanager, redirect_stdout
 import datetime as dt
@@ -53,6 +54,17 @@ _SECTION_NAME_FIELDS = {
 _MAX_DIAGNOSTIC_RECORDS = 30
 _MAX_DIAGNOSTIC_FIELDS = 80
 _MAX_SECTION_CANDIDATES = 8
+_MAX_SECTION_LOG_TEXT = 32_000
+_SECTION_SENSITIVE_KEY_PARTS = (
+    "url",
+    "token",
+    "cookie",
+    "password",
+    "authorization",
+    "signature",
+    "session",
+    "secret",
+)
 
 
 def respond(value: dict[str, Any]) -> None:
@@ -93,6 +105,47 @@ def _safe_section_value(value: Any, depth: int = 0) -> Any:
     return f"<{type(value).__name__}>"
 
 
+def _full_section_value(value: Any, depth: int = 0) -> Any:
+    """Preserve section payload details while removing credentials and URLs."""
+    if depth >= 10:
+        return "<maximum-depth>"
+    if isinstance(value, dict):
+        if "value" in value and "type" in value:
+            wrapped_type = str(value.get("type") or "")
+            wrapped_value = value.get("value")
+            if wrapped_type.upper() in {"BYTES", "BYTES_STRING"} and isinstance(wrapped_value, str):
+                try:
+                    decoded = base64.b64decode(wrapped_value, validate=True)
+                    decoded_json = json.loads(decoded.decode("utf-8"))
+                    return {
+                        "type": wrapped_type,
+                        "decodedJson": _full_section_value(decoded_json, depth + 1),
+                    }
+                except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+                    return {
+                        "type": wrapped_type,
+                        "encodedLength": len(wrapped_value),
+                        "value": wrapped_value[:_MAX_SECTION_LOG_TEXT],
+                        "truncated": len(wrapped_value) > _MAX_SECTION_LOG_TEXT,
+                    }
+        nested: dict[str, Any] = {}
+        for key, item in value.items():
+            key_text = str(key)
+            normalized_key = key_text.lower()
+            if any(part in normalized_key for part in _SECTION_SENSITIVE_KEY_PARTS):
+                nested[key_text[:100]] = "<redacted>"
+            else:
+                nested[key_text[:100]] = _full_section_value(item, depth + 1)
+        return nested
+    if isinstance(value, (list, tuple)):
+        return [_full_section_value(item, depth + 1) for item in value]
+    if isinstance(value, str):
+        return value[:_MAX_SECTION_LOG_TEXT]
+    if value is None or isinstance(value, (int, float, bool)):
+        return value
+    return f"<{type(value).__name__}>"
+
+
 def _section_candidate_value(record_type: str, field_name: str, value: Any) -> Any:
     """Decode section title documents when the wire record identifies one."""
     normalized_name = field_name.lower()
@@ -102,9 +155,15 @@ def _section_candidate_value(record_type: str, field_name: str, value: Any) -> A
             from pyicloud.services.reminders._protocol import _decode_crdt_document
 
             decoded = _decode_crdt_document(wrapped_value)
-            return str(decoded)[:240]
+            return str(decoded)[:_MAX_SECTION_LOG_TEXT]
         except Exception:
             return "<encoded section name; decode unavailable>"
+    if normalized_name in {
+        "memberships of reminders in sectionsasdata",
+        "membershipsofremindersinsectionsasdata",
+        "sectionidsorderingasdata",
+    }:
+        return _full_section_value(value)
     return _safe_section_value(value)
 
 
