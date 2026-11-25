@@ -1,3 +1,10 @@
+## [2.31.2](https://github.com/nyabb/abbai-flow/compare/v2.31.1...v2.31.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* fetch selected iCloud section assets ([719b043](https://github.com/nyabb/abbai-flow/commit/719b0430d9d04957183f1111f106e61d86631918))
+
 ## [2.31.1](https://github.com/nyabb/abbai-flow/compare/v2.31.0...v2.31.1) (2026-11-25)
 
 
