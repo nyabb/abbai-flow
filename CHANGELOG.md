@@ -1,3 +1,15 @@
+# [2.27.0](https://github.com/nyabb/abbai-flow/compare/v2.26.0...v2.27.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* center chores in compact navigation ([8c6a2cf](https://github.com/nyabb/abbai-flow/commit/8c6a2cf20b42288af6839228299dc014fcbc9bfa))
+
+
+### Features
+
+* add iCloud reminders and calendar settings ([77f6b90](https://github.com/nyabb/abbai-flow/commit/77f6b902372ce880a9e61f4ad245ac7efc478421))
+
 # [2.26.0](https://github.com/nyabb/abbai-flow/compare/v2.25.0...v2.26.0) (2026-11-25)
 
 
