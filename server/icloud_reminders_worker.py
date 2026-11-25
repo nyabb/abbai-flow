@@ -126,7 +126,10 @@ def _download_section_asset(raw_client: Any, asset: Any) -> dict[str, Any]:
     declared_size = asset.get("size")
     if isinstance(declared_size, int) and declared_size > _MAX_SECTION_ASSET_BYTES:
         return {"state": "skipped", "reason": "asset_too_large", "declaredBytes": declared_size}
-    downloader = getattr(raw_client, "download_asset_stream", None)
+    asset_client = getattr(raw_client, "_client", None)
+    downloader = getattr(asset_client, "download_asset_stream", None)
+    if not callable(downloader):
+        downloader = getattr(raw_client, "download_asset_stream", None)
     if not callable(downloader):
         return {"state": "unavailable", "reason": "asset_download_not_supported"}
 
