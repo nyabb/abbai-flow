@@ -1,3 +1,10 @@
+# [2.30.0](https://github.com/nyabb/abbai-flow/compare/v2.29.0...v2.30.0) (2026-11-25)
+
+
+### Features
+
+* log raw iCloud reminder diagnostics ([212504a](https://github.com/nyabb/abbai-flow/commit/212504a017b2d763fec2c259e99b3028c564a636))
+
 # [2.29.0](https://github.com/nyabb/abbai-flow/compare/v2.28.0...v2.29.0) (2026-11-25)
 
 
