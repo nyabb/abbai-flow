@@ -192,10 +192,10 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
           aria-hidden="true"
           focusable="false"
         >
-          <path d="M0 26 C190 26 300 26 370 26 C430 26 425 0 500 0 C650 0 760 30 1000 34 V100 H0 Z" />
+          <path d="M0 24 H385 C440 24 440 0 500 0 C560 0 560 24 615 24 H1000 V100 H0 Z" />
           <path
             className="mobile-tab-bar-wave-border"
-            d="M0 26 C190 26 300 26 370 26 C430 26 425 0 500 0 C650 0 760 30 1000 34"
+            d="M0 24 H385 C440 24 440 0 500 0 C560 0 560 24 615 24 H1000"
           />
         </svg>
         {mobileNav.map((item) => (
