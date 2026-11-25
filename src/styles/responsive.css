@@ -139,6 +139,13 @@ input[type='range'] {
    would leave almost nothing for content, so the bands shrink and the content
    area is allowed to scroll instead of being clipped. */
 @media (orientation: landscape) and (max-height: 480px) {
+  :root {
+    --mobile-tab-bar-content-height: 48px;
+    --mobile-tab-bar-height: calc(
+      var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
   .abbai-flow-header {
     min-height: 40px;
     padding-top: 2px;
@@ -150,7 +157,64 @@ input[type='range'] {
   }
 
   .mobile-tab-bar {
-    height: 44px;
+    height: var(--mobile-tab-bar-height);
+  }
+
+  .mobile-tab {
+    min-height: 40px;
+  }
+
+  .mobile-tab-label {
+    font-size: 0.55rem;
+  }
+}
+
+/* Mobile sheets advertise their drag affordance clearly. The handle is the
+   only draggable area, so vertical gestures in form fields and scroll content
+   retain their normal behavior. */
+.sheet-drag-handle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sheet-drag-surface {
+    will-change: transform;
+    transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .sheet-drag-surface[data-sheet-dragging='true'] {
+    transition: none;
+  }
+
+  .sheet-drag-handle {
+    display: block;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 5px;
+    margin: 0 auto 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted, #7b8490) 38%, transparent);
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .sheet-drag-handle:active {
+    background: color-mix(in srgb, var(--accent, #4c8bf5) 68%, transparent);
+    cursor: grabbing;
+  }
+
+  .modal > .sheet-drag-handle,
+  .routine-editor-dialog > .sheet-drag-handle {
+    margin-top: 8px;
+    margin-bottom: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-drag-surface {
+    transition: none;
   }
 }
 
@@ -159,8 +223,8 @@ input[type='range'] {
    is a fixed viewport grid, so the padding has to come from the inset vars. */
 .mobile-tab-bar {
   padding-bottom: env(safe-area-inset-bottom, 0);
-  padding-left: env(safe-area-inset-left, 0);
-  padding-right: env(safe-area-inset-right, 0);
+  padding-left: max(8px, env(safe-area-inset-left, 0px));
+  padding-right: max(8px, env(safe-area-inset-right, 0px));
 }
 
 /* --- Wall display --------------------------------------------------------

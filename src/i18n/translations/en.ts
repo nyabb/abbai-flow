@@ -33,6 +33,7 @@ export const en = {
   'nav.music': 'Music',
   'nav.timer': 'Timer',
   'nav.weather': 'Weather',
+  'nav.more': 'More',
   'settings.appearance.reducedMotionLabel': 'Reduced animation',
   'settings.appearance.reducedMotionSublabel':
     'Shortens every animation and transition in the app.',

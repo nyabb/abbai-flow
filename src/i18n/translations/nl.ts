@@ -29,6 +29,7 @@ export const nl: Record<TranslationKey, string> = {
   'nav.music': 'Muziek',
   'nav.timer': 'Timer',
   'nav.weather': 'Weer',
+  'nav.more': 'Meer',
   /* ---- Displaymodus ---- */
   'settings.appearance.reducedMotionLabel': 'Minder animatie',
   'settings.appearance.reducedMotionSublabel': 'Verkort elke animatie en overgang in de app.',

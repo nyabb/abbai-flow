@@ -29,6 +29,7 @@ export const ko: Record<TranslationKey, string> = {
   'nav.music': '음악',
   'nav.timer': '타이머',
   'nav.weather': '날씨',
+  'nav.more': '더 보기',
   'settings.appearance.reducedMotionLabel': '애니메이션 줄이기',
   'settings.appearance.reducedMotionSublabel': '앱의 모든 애니메이션과 전환을 짧게 합니다.',
   'display.connection.appDown': 'Abbai Flow 연결 불가',

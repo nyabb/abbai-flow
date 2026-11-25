@@ -7,6 +7,7 @@
  *  - `PinSheet` asks for a parent PIN before a destructive or approval action.
  */
 import type { PlannerCopy } from './copy';
+import { useSheetDrag } from '../../hooks/useSheetDrag';
 import { ActivitySpinner } from '../LoadingPlaceholder';
 
 export interface ConfirmAction {
@@ -33,15 +34,18 @@ export function ConfirmSheet({
   onConfirm: (action: ConfirmAction) => void;
 }) {
   const claiming = action.kind === 'claim';
+  const sheetDrag = useSheetDrag(onCancel, !pending);
   return (
     <div className="planner-backdrop" onClick={onCancel}>
       <section
-        className="planner-sheet planner-sheet--confirm"
+        className="planner-sheet planner-sheet--confirm sheet-drag-surface"
         role="dialog"
         aria-modal="true"
         aria-label={claiming ? c.confirmClaimTitle : c.confirmDoneTitle}
+        {...sheetDrag.surfaceProps}
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="sheet-drag-handle" aria-hidden="true" {...sheetDrag.handleProps} />
         <h2>{claiming ? c.confirmClaimTitle : c.confirmDoneTitle}</h2>
         <p>{claiming ? c.confirmClaimBody : c.confirmDoneBody}</p>
         <p className="planner-confirm-target">{action.label}</p>
@@ -81,15 +85,18 @@ export function PinSheet({
   onSubmit: () => void;
   onCancel: () => void;
 }) {
+  const sheetDrag = useSheetDrag(onCancel);
   return (
     <div className="planner-backdrop" onClick={onCancel}>
       <section
-        className="planner-sheet"
+        className="planner-sheet sheet-drag-surface"
         role="dialog"
         aria-modal="true"
         aria-label={c.pinTitle}
+        {...sheetDrag.surfaceProps}
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="sheet-drag-handle" aria-hidden="true" {...sheetDrag.handleProps} />
         <h2>{c.pinTitle}</h2>
         <p>
           {gate.title} · {gate.description}

@@ -357,6 +357,15 @@ body {
   padding: 24px;
 }
 
+/* Meals content flows from the top. Centering its variable-height panels made
+   the tab row jump vertically whenever a different section was selected. */
+.view-page > .meals-page-body {
+  display: block;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 24px;
+}
+
 /* ---------------------------------------------------------------------------
    Cards: lists, panels, sections
    --------------------------------------------------------------------------- */

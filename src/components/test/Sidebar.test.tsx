@@ -34,14 +34,14 @@ describe('Sidebar bottom bar', () => {
     expect(items.every((item) => !item.classList.contains('mobile-tab--featured'))).toBe(true);
   });
 
-  it('moves the curved highlight and magnification to the selected page', () => {
+  it('keeps the selected page highlighted without shifting the other tabs', () => {
     const { container } = renderSidebar('grocery');
     const bar = container.querySelector('.mobile-tab-bar')!;
     const activeTab = bar.querySelector('.mobile-tab--active')!;
 
     expect(activeTab).toHaveAttribute('aria-label', 'Lijsten');
-    expect(bar.style.getPropertyValue('--mobile-active-center')).toBe('35.714285714285715%');
-    expect(bar.style.getPropertyValue('--mobile-bump-width')).toContain('min(240px');
+    expect(activeTab).toHaveAttribute('aria-current', 'page');
+    expect(bar.querySelector('.mobile-tab-bar-wave')).toBeNull();
   });
 
   it('does not put quick add or a More popup in the navigation bar', () => {
@@ -53,7 +53,7 @@ describe('Sidebar bottom bar', () => {
 
 /** Desktop keeps page links in the main group and its bottom utility group. */
 describe('Sidebar desktop', () => {
-  it('keeps the timer in the main group and weather in the bottom group', () => {
+  it('keeps all seven pages in the main group and Settings in the utility group', () => {
     const { container } = renderSidebar('calendar', () => {});
     const main = container.querySelector(
       '.sidebar--desktop .sidebar-nav-group:not(.sidebar-nav-group--bottom)',
@@ -62,10 +62,16 @@ describe('Sidebar desktop', () => {
     const labels = (group: Element) =>
       [...group.querySelectorAll('button')].map((button) => button.getAttribute('aria-label'));
 
-    expect(labels(main)).toContain('Timer');
-    expect(labels(main)).not.toContain("Foto's");
-    expect(labels(bottom)).toContain('Maaltijden');
-    expect(labels(bottom)).toContain('Weer');
+    expect(labels(main)).toEqual([
+      'Agenda',
+      'Maaltijden',
+      'Lijsten',
+      'Klusjes',
+      'Muziek',
+      'Weer',
+      'Timer',
+    ]);
+    expect(labels(bottom)).toContain('Snel toevoegen');
     expect(labels(bottom)).toContain('Instellingen');
   });
 });

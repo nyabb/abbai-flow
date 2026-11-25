@@ -29,6 +29,7 @@ export const ja: Record<TranslationKey, string> = {
   'nav.music': '音楽',
   'nav.timer': 'タイマー',
   'nav.weather': '天気',
+  'nav.more': 'その他',
   'settings.appearance.reducedMotionLabel': 'アニメーションを減らす',
   'settings.appearance.reducedMotionSublabel': 'すべてのアニメーションと遷移を短くします。',
   'display.connection.appDown': 'Abbai Flow に接続できません',

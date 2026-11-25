@@ -29,6 +29,7 @@ export const pt: Record<TranslationKey, string> = {
   'nav.music': 'Música',
   'nav.timer': 'Temporizador',
   'nav.weather': 'Meteorologia',
+  'nav.more': 'Mais',
   'settings.appearance.reducedMotionLabel': 'Menos animação',
   'settings.appearance.reducedMotionSublabel': 'Encurta cada animação e transição.',
   'display.connection.appDown': 'Abbai Flow inacessível',

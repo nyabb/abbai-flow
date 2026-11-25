@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format, parseISO, addMonths } from 'date-fns';
 import { CalendarEvent, CalendarInfo, RecurrenceFrequency } from '../types';
 import { useTranslation } from '../i18n';
+import { useSheetDrag } from '../hooks/useSheetDrag';
 import { ActivitySpinner } from './LoadingPlaceholder';
 
 interface EventModalProps {
@@ -264,9 +265,16 @@ export function EventModal({
     }
   };
 
+  const sheetDrag = useSheetDrag(onClose);
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="modal sheet-drag-surface"
+        {...sheetDrag.surfaceProps}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="sheet-drag-handle" aria-hidden="true" {...sheetDrag.handleProps} />
         <form onSubmit={handleSubmit}>
           <div className="modal-header">
             <h2 className="modal-title">
