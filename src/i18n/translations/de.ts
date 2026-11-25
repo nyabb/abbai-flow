@@ -320,9 +320,9 @@ export const de: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Grocy-Integration',
   'settings.integrations.grocySublabel': 'Einkauf und Essensplanung',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'AnyList-Integration',
-  'settings.integrations.anylistSublabel': 'Gemeinsame Einkaufslisten',
+  'settings.integrations.icloudRemindersTitle': 'iCloud-Erinnerungen',
+  'settings.integrations.icloudRemindersSublabel':
+    'Richte Apple iCloud in Home Assistant ein. Jede Erinnerungsliste erscheint unten als Home-Assistant-To-do-Liste.',
   'settings.integrations.groceryTitle': 'Einkauf',
   'settings.integrations.defaultGroceryListLabel': 'Standard-Einkaufsliste',
   'settings.integrations.defaultGroceryListSublabel':
@@ -330,9 +330,11 @@ export const de: Record<TranslationKey, string> = {
   'settings.integrations.autoFirstAvailable': 'Automatisch (erste verfügbare)',
   'settings.integrations.groceryListsLabel': 'Einkaufslisten',
   'settings.integrations.groceryListsSublabel':
-    'Wähle aus, welche HA-To-do-Entitäten Einkaufslisten sind',
+    'Wähle die Home-Assistant-To-do-Listen für den Bereich Einkäufe aus',
+  'settings.integrations.taskListsSublabel':
+    'Wähle die Home-Assistant-To-do-Listen für den Bereich Aufgaben aus',
   'settings.integrations.noTodoListsFound':
-    'Keine HA-To-do-Listen gefunden. Verbinde Home Assistant, um Listen zu sehen.',
+    'Keine Home-Assistant-To-do-Listen gefunden. Richte iCloud-Erinnerungen in Home Assistant ein, um deine Listen zu synchronisieren.',
   'settings.integrations.shoppingEntityLabel': 'Entität für Einkaufskarte',
   'settings.integrations.shoppingEntitySublabel':
     'HA-To-do-Liste für die Einkaufskarte in der Seitenleiste',
@@ -350,7 +352,7 @@ export const de: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'Anzeige',
-  'settings.display.desc': 'Bildschirmschoner, Helligkeit und Kiosk-Einstellungen.',
+  'settings.display.desc': 'Bildschirmschoner und Kinderanzeige einrichten.',
   'settings.display.screenSaverLabel': 'Bildschirmschoner',
   'settings.display.screenSaverModeLabel': 'Bildschirmschoner-Inhalt',
   'settings.display.screenSaverModeSublabel': 'Wähle, was beim Start des Bildschirmschoners erscheint',
@@ -366,9 +368,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': 'Verhindert, dass der Bildschirm in den Ruhezustand geht',
   'settings.display.showSecondsLabel': 'Sekunden auf der Bildschirmschoner-Uhr anzeigen',
   'settings.display.showSecondsSublabel': 'Zeigt Sekunden auf der Bildschirmschoner-Uhr an',
-  'settings.display.kioskModeLabel': 'Kiosk-Modus',
-  'settings.display.kioskModeSublabel':
-    'Blendet die Seitenleiste für eine aufgeräumtere Anzeige aus',
   'settings.display.kidDisplayTitle': 'Kinderanzeige',
   'settings.display.kidDisplayDesc':
     'Sperrt einen Wandbildschirm auf ein Familienmitglied — zeigt nur dessen Routinen und Aufgaben.',
@@ -378,7 +377,7 @@ export const de: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'Auf diesem Gerät verwenden',
   'settings.display.useOnDeviceSublabel':
     'Sperrt diesen Bildschirm jetzt. Später mit 5-fachem Tippen auf die Uhr beenden.',
-  'settings.display.displayUrlLabel': 'Anzeige-URL',
+  'settings.display.displayUrlLabel': 'URL der Kinderanzeige',
   'settings.display.displayUrlSublabel':
     'Für Kiosk-Browser und Wandpanels — als Lesezeichen oder Startseite speichern.',
   'settings.display.copyUrl': 'URL kopieren',

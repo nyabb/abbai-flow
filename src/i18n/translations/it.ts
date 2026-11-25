@@ -321,18 +321,20 @@ export const it: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Integrazione Grocy',
   'settings.integrations.grocySublabel': 'Spesa e pianificazione dei pasti',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'Integrazione AnyList',
-  'settings.integrations.anylistSublabel': 'Liste della spesa condivise',
+  'settings.integrations.icloudRemindersTitle': 'Promemoria iCloud',
+  'settings.integrations.icloudRemindersSublabel':
+    'Configura Apple iCloud in Home Assistant. Ogni lista di Promemoria apparirà qui sotto come lista di cose da fare di Home Assistant.',
   'settings.integrations.groceryTitle': 'Spesa',
   'settings.integrations.defaultGroceryListLabel': 'Lista della spesa predefinita',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrata aprendo la vista spesa',
   'settings.integrations.autoFirstAvailable': 'Automatico (prima disponibile)',
   'settings.integrations.groceryListsLabel': 'Liste della spesa',
   'settings.integrations.groceryListsSublabel':
-    'Seleziona quali entità di attività HA sono liste della spesa',
+    'Seleziona quali liste di Home Assistant mostrare in Spesa',
+  'settings.integrations.taskListsSublabel':
+    'Seleziona quali liste di Home Assistant mostrare in Attività',
   'settings.integrations.noTodoListsFound':
-    'Nessuna lista di attività HA trovata. Connetti Home Assistant per vedere le liste.',
+    'Nessuna lista di Home Assistant trovata. Configura Promemoria iCloud in Home Assistant per sincronizzare le liste.',
   'settings.integrations.shoppingEntityLabel': 'Entità della scheda Spesa',
   'settings.integrations.shoppingEntitySublabel':
     'Lista di attività HA per la scheda Spesa nella barra laterale',
@@ -351,7 +353,7 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'Schermo',
-  'settings.display.desc': 'Salvaschermo, luminosità e impostazioni modalità chiosco.',
+  'settings.display.desc': 'Configura il salvaschermo e la schermata bambini.',
   'settings.display.screenSaverLabel': 'Salvaschermo',
   'settings.display.screenSaverModeLabel': 'Contenuto salvaschermo',
   'settings.display.screenSaverModeSublabel': 'Scegli cosa mostrare quando si attiva il salvaschermo',
@@ -367,8 +369,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': 'Evita che lo schermo vada in sospensione',
   'settings.display.showSecondsLabel': "Mostra i secondi nell'orologio del salvaschermo",
   'settings.display.showSecondsSublabel': "Mostra i secondi sull'orologio del salvaschermo",
-  'settings.display.kioskModeLabel': 'Modalità chiosco',
-  'settings.display.kioskModeSublabel': 'Nasconde la barra laterale per un display più pulito',
   'settings.display.kidDisplayTitle': 'Display bambini',
   'settings.display.kidDisplayDesc':
     'Blocca uno schermo a parete su un solo membro della famiglia — mostra solo le sue routine e faccende.',
@@ -378,7 +378,7 @@ export const it: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'Usa su questo dispositivo',
   'settings.display.useOnDeviceSublabel':
     "Blocca subito questo schermo. Esci più tardi con 5 tocchi sull'orologio.",
-  'settings.display.displayUrlLabel': 'URL del display',
+  'settings.display.displayUrlLabel': 'URL della schermata bambini',
   'settings.display.displayUrlSublabel':
     'Per browser in modalità chiosco e pannelli a parete — salva come preferito o pagina iniziale.',
   'settings.display.copyUrl': 'Copia URL',

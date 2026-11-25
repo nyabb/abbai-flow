@@ -371,9 +371,9 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Grocy-integratie',
   'settings.integrations.grocySublabel': 'Boodschappen en maaltijdplanning',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'AnyList-integratie',
-  'settings.integrations.anylistSublabel': 'Gedeelde boodschappenlijsten',
+  'settings.integrations.icloudRemindersTitle': 'iCloud-herinneringen',
+  'settings.integrations.icloudRemindersSublabel':
+    'Stel Apple iCloud in via Home Assistant. Elke Herinneringenlijst verschijnt hieronder als Home Assistant-takenlijst.',
   'settings.integrations.groceryTitle': 'Boodschappen',
   'settings.integrations.defaultGroceryListLabel': 'Standaard boodschappenlijst',
   'settings.integrations.defaultGroceryListSublabel':
@@ -381,9 +381,11 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.autoFirstAvailable': 'Automatisch (eerste beschikbare)',
   'settings.integrations.groceryListsLabel': 'Boodschappenlijsten',
   'settings.integrations.groceryListsSublabel':
-    'Kies welke HA-takenentiteiten boodschappenlijsten zijn',
+    'Kies welke Home Assistant-takenlijsten bij Boodschappen worden getoond',
+  'settings.integrations.taskListsSublabel':
+    'Kies welke Home Assistant-takenlijsten bij Taken worden getoond',
   'settings.integrations.noTodoListsFound':
-    'Geen HA-takenlijsten gevonden. Verbind Home Assistant om lijsten te zien.',
+    'Geen Home Assistant-takenlijsten gevonden. Stel iCloud-herinneringen in via Home Assistant om je lijsten te synchroniseren.',
   'settings.integrations.shoppingEntityLabel': 'Entiteit voor boodschappenkaart',
   'settings.integrations.shoppingEntitySublabel':
     'HA-takenlijst voor de boodschappenkaart in de zijbalk',
@@ -401,7 +403,7 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'Scherm',
-  'settings.display.desc': 'Schermbeveiliging, helderheid en kioskmodusinstellingen.',
+  'settings.display.desc': 'Stel de schermbeveiliging en het Kinderscherm in.',
   'settings.display.screenSaverLabel': 'Schermbeveiliging',
   'settings.display.screenSaverModeLabel': 'Inhoud schermbeveiliging',
   'settings.display.screenSaverModeSublabel': 'Kies wat verschijnt zodra de schermbeveiliging start',
@@ -417,8 +419,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': 'Voorkomt dat het scherm in slaapstand gaat',
   'settings.display.showSecondsLabel': 'Seconden tonen op de schermbeveiligingsklok',
   'settings.display.showSecondsSublabel': 'Toont seconden op de klok van de schermbeveiliging',
-  'settings.display.kioskModeLabel': 'Kioskmodus',
-  'settings.display.kioskModeSublabel': 'Verbergt de zijbalk voor een opgeruimder scherm',
   'settings.display.kidDisplayTitle': 'Kinderscherm',
   'settings.display.kidDisplayDesc':
     'Vergrendel een wandscherm voor één gezinslid — toont alleen diens routines en klusjes.',
@@ -428,7 +428,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'Gebruiken op dit apparaat',
   'settings.display.useOnDeviceSublabel':
     'Vergrendelt dit scherm nu. Later verlaten met 5 tikken op de klok.',
-  'settings.display.displayUrlLabel': 'Scherm-URL',
+  'settings.display.displayUrlLabel': 'URL van het Kinderscherm',
   'settings.display.displayUrlSublabel':
     'Voor kioskbrowsers en wandpanelen — sla op als bladwijzer of startpagina.',
   'settings.display.copyUrl': 'URL kopiëren',

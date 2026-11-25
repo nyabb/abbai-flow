@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { startOfWeek, addDays, format } from 'date-fns';
 import { useHomeAssistant } from './hooks/useHomeAssistant';
 import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
 import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
-import { useWeather } from './hooks/useWeather';
 import { useChoreOps } from './hooks/useChoreOps';
 import { resolveMemberForUser } from './api/choreops';
 import { WeekCalendar } from './components/WeekCalendar';
@@ -47,6 +47,14 @@ import { I18nContext, createI18n } from './i18n';
 
 const config = getConfig();
 
+type ViewTransitionDocument = Document & {
+  startViewTransition?: (update: () => void) => { finished: Promise<void> };
+};
+
+const supportsNativeViewTransitions =
+  typeof document !== 'undefined' &&
+  typeof (document as ViewTransitionDocument).startViewTransition === 'function';
+
 type EventDialogState =
   | { type: 'closed' }
   | { type: 'create'; prefillDate: string | null; prefillTime: string | null }
@@ -84,10 +92,17 @@ export function App() {
     calendarColors: settings.calendarColors,
     members,
   });
-  const { calendars, events, fetchCalendars, fetchEvents, createEvent, updateEvent, deleteEvent } =
-    mergedCalendars;
+  const {
+    calendars,
+    events,
+    loading: calendarEventsLoading,
+    fetchCalendars,
+    fetchEvents,
+    createEvent,
+    updateEvent,
+    deleteEvent,
+  } = mergedCalendars;
 
-  const { weather } = useWeather(client);
   const music = useMusic(client, connected);
 
   const taskLists = useTaskLists(
@@ -141,6 +156,10 @@ export function App() {
   const showModal = eventDialog.type !== 'closed';
   const prefillDate = eventDialog.type === 'create' ? eventDialog.prefillDate : null;
   const prefillTime = eventDialog.type === 'create' ? eventDialog.prefillTime : null;
+  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>({
+    kind: 'chore',
+    token: 0,
+  });
   const [activeView, setActiveView] = useState<SidebarView>(() => {
     const requestedView = new URLSearchParams(window.location.search).get('view');
     if (requestedView === 'music' || requestedView === 'meals') return requestedView;
@@ -437,28 +456,56 @@ export function App() {
     });
   }, []);
 
-  const handleChangeView = useCallback((view: SidebarView) => {
-    setActiveView(view);
-  }, []);
+  const handleChangeView = useCallback(
+    (view: SidebarView, afterNavigate?: () => void) => {
+      const updateView = () =>
+        flushSync(() => {
+          // Quick-add requests are one-shot; clear one before leaving so remounting
+          // the planner does not replay an already handled routine/chore request.
+          if (view !== 'chores') setChoreCreate({ kind: 'chore', token: 0 });
+          if (view !== activeView) setActiveView(view);
+          afterNavigate?.();
+        });
+
+      if (view === activeView || settings.reducedMotion || !supportsNativeViewTransitions) {
+        updateView();
+        return;
+      }
+
+      const fromIndex = TOUCH_NAV_ORDER.indexOf(activeView);
+      const toIndex = TOUCH_NAV_ORDER.indexOf(view);
+      document.documentElement.dataset.pageTransitionDirection =
+        toIndex >= fromIndex ? 'forward' : 'backward';
+
+      try {
+        const startViewTransition = (document as ViewTransitionDocument).startViewTransition;
+        if (startViewTransition) startViewTransition.call(document, updateView);
+        else updateView();
+      } catch {
+        // Keep navigation working if a browser cancels or rejects a transition.
+        updateView();
+      }
+    },
+    [activeView, settings.reducedMotion],
+  );
 
   const pageSwipeHandlers = useTouchPageSwipe({
     activeView,
     navigationOrder: TOUCH_NAV_ORDER,
     onNavigate: handleChangeView,
-    enabled: !settings.kioskMode,
   });
 
   /* Quick add lives in the middle of the tab bar. Routines use the same
      Abbai Flow editor from whichever view opens them. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [choreCreate, setChoreCreate] = useState<{ kind: 'chore' | 'routine'; token: number }>({
-    kind: 'chore',
-    token: 0,
-  });
-  const requestChoreCreate = useCallback((kind: 'chore' | 'routine') => {
-    setActiveView('chores');
-    setChoreCreate((previous) => ({ kind, token: previous.token + 1 }));
-  }, []);
+  const requestChoreCreate = useCallback(
+    (kind: 'chore' | 'routine') => {
+      handleChangeView('chores', () =>
+        setChoreCreate((previous) => ({ kind, token: previous.token + 1 })),
+      );
+    },
+    [handleChangeView],
+  );
 
   // ---- Chore data ----
   // ChoreOps owns all chore data: chores are created and edited in Home
@@ -588,13 +635,13 @@ export function App() {
       const view = viewMap[e.key];
       if (view) {
         e.preventDefault();
-        setActiveView(view);
+        handleChangeView(view);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [handleChangeView]);
 
   const sidebarPos = settings.sidebarPosition || 'left';
   const withDebugConsole = (content: ReactNode) => (
@@ -671,7 +718,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`abbai-flow ${settings.kioskMode ? 'abbai-flow--kiosk' : `abbai-flow--sidebar-${sidebarPos}`} ${isIngress ? 'abbai-flow--ingress' : ''} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''}`}
+        className={`abbai-flow abbai-flow--sidebar-${sidebarPos} ${isIngress ? 'abbai-flow--ingress' : ''} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -681,21 +728,18 @@ export function App() {
             </button>
           </div>
         )}
-        {/* Sidebar — hidden entirely in Kiosk Mode (Settings > Display) */}
-        {!settings.kioskMode && (
-          <Sidebar
-            activeView={activeView}
-            onChangeView={handleChangeView}
-            position={sidebarPos}
-            onQuickAdd={() => setQuickAddOpen(true)}
-          />
-        )}
+        <Sidebar
+          activeView={activeView}
+          onChangeView={handleChangeView}
+          position={sidebarPos}
+          onQuickAdd={() => setQuickAddOpen(true)}
+        />
 
         {/* A countdown belongs to the household, not to the timer page: the
             alarm rings and the dock shows what is left on every view, with
             pause/delete right there so the timer page is optional. */}
         <TimerAlarm />
-        {activeView !== 'timer' && <TimerDock onOpen={() => setActiveView('timer')} />}
+        {activeView !== 'timer' && <TimerDock onOpen={() => handleChangeView('timer')} />}
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
@@ -732,6 +776,7 @@ export function App() {
                   activePlayer={music.activePlayer}
                   players={music.players}
                   selectedPlayerId={music.selectedPlayerId}
+                  playersLoading={music.loading}
                   onPlay={music.play}
                   onPause={music.pause}
                   onNext={music.next}
@@ -747,7 +792,7 @@ export function App() {
               <div className="view-page-body meals-page-body">
                 <MealsView
                   weekStartsOn={settings.weekStartsOn}
-                  onOpenSettings={() => setActiveView('settings')}
+                  onOpenSettings={() => handleChangeView('settings')}
                 />
               </div>
             </div>
@@ -821,6 +866,7 @@ export function App() {
                 <div className="abbai-flow-body-calendar">
                   <WeekCalendar
                     events={events}
+                    eventsLoading={calendarEventsLoading}
                     hiddenCalendars={hiddenCalendars}
                     onEventClick={handleEventClick}
                     onSlotClick={handleSlotClick}
@@ -835,6 +881,8 @@ export function App() {
                   completedChoreIds={calendarCompletedChoreIds}
                   onToggleChore={handleCalendarToggleChore}
                   todoItems={taskLists.items}
+                  eventsLoading={calendarEventsLoading}
+                  tasksLoading={taskLists.loading}
                   onToggleTodo={taskLists.toggleItem}
                   members={members}
                 />
@@ -849,10 +897,10 @@ export function App() {
           onOpenChange={setQuickAddOpen}
           showTrigger={false}
           onAddEvent={handleAddEvent}
-          onAddGroceryItem={() => setActiveView('grocery')}
+          onAddGroceryItem={() => handleChangeView('grocery')}
           onAddChore={() => requestChoreCreate('chore')}
           onAddRoutine={() => requestChoreCreate('routine')}
-          onNavigateTimer={() => setActiveView('timer')}
+          onNavigateTimer={() => handleChangeView('timer')}
           sidebarPosition={sidebarPos}
         />
 
@@ -881,7 +929,7 @@ export function App() {
               onNext={() => music.next(music.activePlayer!.entity_id)}
               onPrevious={() => music.previous(music.activePlayer!.entity_id)}
               onSetVolume={(v) => music.setVolume(v, music.activePlayer!.entity_id)}
-              onExpand={() => setActiveView('music')}
+              onExpand={() => handleChangeView('music')}
             />
           )}
 

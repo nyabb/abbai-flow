@@ -301,7 +301,7 @@ async function checkHomeAssistant(
       '.',
   );
   logger.info(
-    `[Integration] AnyList/Home Assistant todo lists: ${todoLists} available entity/entities detected.`,
+    `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
   );
   logger.info(
     `[Integration] ChoreOps: ${choreOpsEntities} related entity/entities detected in Home Assistant.`,

@@ -316,18 +316,20 @@ export const ja: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Grocy連携',
   'settings.integrations.grocySublabel': '買い物と献立の計画',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'AnyList連携',
-  'settings.integrations.anylistSublabel': '共有の買い物リスト',
+  'settings.integrations.icloudRemindersTitle': 'iCloudリマインダー',
+  'settings.integrations.icloudRemindersSublabel':
+    'Home AssistantでApple iCloudを設定すると、各リマインダーリストがHome AssistantのToDoリストとしてここに表示されます。',
   'settings.integrations.groceryTitle': '買い物',
   'settings.integrations.defaultGroceryListLabel': 'デフォルトの買い物リスト',
   'settings.integrations.defaultGroceryListSublabel': '買い物画面を開いたときに表示されるリスト',
   'settings.integrations.autoFirstAvailable': '自動(最初に利用可能なもの)',
   'settings.integrations.groceryListsLabel': '買い物リスト',
   'settings.integrations.groceryListsSublabel':
-    '買い物リストとして使う HA の ToDo エンティティを選択',
+    '買い物に表示するHome AssistantのToDoリストを選択します',
+  'settings.integrations.taskListsSublabel':
+    'タスクに表示するHome AssistantのToDoリストを選択します',
   'settings.integrations.noTodoListsFound':
-    'HA の ToDo リストが見つかりません。リストを表示するには Home Assistant に接続してください。',
+    'Home AssistantのToDoリストが見つかりません。iCloudリマインダーを同期するにはHome Assistantで設定してください。',
   'settings.integrations.shoppingEntityLabel': '買い物カードのエンティティ',
   'settings.integrations.shoppingEntitySublabel':
     'サイドバーの買い物カードに使う HA の ToDo リスト',
@@ -345,7 +347,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'ディスプレイ',
-  'settings.display.desc': 'スクリーンセーバー、明るさ、キオスクモードの設定です。',
+  'settings.display.desc': 'スクリーンセーバーとキッズディスプレイを設定します。',
   'settings.display.screenSaverLabel': 'スクリーンセーバー',
   'settings.display.screenSaverModeLabel': 'スクリーンセーバーの表示内容',
   'settings.display.screenSaverModeSublabel': '起動時に表示する内容を選択します',
@@ -361,8 +363,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': '画面がスリープしないようにします',
   'settings.display.showSecondsLabel': 'スクリーンセーバーの時計に秒を表示',
   'settings.display.showSecondsSublabel': 'スクリーンセーバーの時計に秒を表示します',
-  'settings.display.kioskModeLabel': 'キオスクモード',
-  'settings.display.kioskModeSublabel': 'サイドバーを非表示にしてすっきり表示します',
   'settings.display.kidDisplayTitle': '子供用ディスプレイ',
   'settings.display.kidDisplayDesc':
     '壁掛けディスプレイを1人の家族メンバーに固定し、その人のルーティンと家事のみを表示します。',
@@ -372,7 +372,7 @@ export const ja: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'このデバイスで使用',
   'settings.display.useOnDeviceSublabel':
     '今すぐこの画面をロックします。時計を5回タップすると後で解除できます。',
-  'settings.display.displayUrlLabel': 'ディスプレイのURL',
+  'settings.display.displayUrlLabel': 'キッズディスプレイのURL',
   'settings.display.displayUrlSublabel':
     'キオスクブラウザや壁掛けパネル用です — ブックマークまたはホームページに設定してください。',
   'settings.display.copyUrl': 'URLをコピー',

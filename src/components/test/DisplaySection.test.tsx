@@ -15,7 +15,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     screenSaverTimeout: 10,
     alwaysOnDisplay: false,
     showSeconds: false,
-    kioskMode: false,
     reducedMotion: false,
     ...overrides,
   } as AbbaiSettings;

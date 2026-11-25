@@ -369,18 +369,20 @@ export const en = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Grocy Integration',
   'settings.integrations.grocySublabel': 'Grocery and meal planning',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'AnyList Integration',
-  'settings.integrations.anylistSublabel': 'Shared shopping lists',
+  'settings.integrations.icloudRemindersTitle': 'iCloud Reminders',
+  'settings.integrations.icloudRemindersSublabel':
+    'Set up Apple iCloud in Home Assistant. Each Reminders list appears below as a Home Assistant to-do list.',
   'settings.integrations.groceryTitle': 'Grocery',
   'settings.integrations.defaultGroceryListLabel': 'Default Grocery List',
   'settings.integrations.defaultGroceryListSublabel': 'List shown when opening grocery view',
   'settings.integrations.autoFirstAvailable': 'Auto (first available)',
   'settings.integrations.groceryListsLabel': 'Grocery Lists',
   'settings.integrations.groceryListsSublabel':
-    'Select which HA todo entities are grocery/shopping lists',
+    'Select which Home Assistant to-do lists should appear under Grocery',
+  'settings.integrations.taskListsSublabel':
+    'Select which Home Assistant to-do lists should appear under Tasks',
   'settings.integrations.noTodoListsFound':
-    'No HA todo lists found. Connect Home Assistant to see lists.',
+    'No Home Assistant to-do lists found. Set up iCloud Reminders in Home Assistant to sync your lists.',
   'settings.integrations.shoppingEntityLabel': 'Shopping Card Entity',
   'settings.integrations.shoppingEntitySublabel': 'HA todo list for sidebar shopping card',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
@@ -397,7 +399,7 @@ export const en = {
 
   // ---- settings: display ----
   'settings.display.title': 'Display',
-  'settings.display.desc': 'Screen saver, brightness, and kiosk settings.',
+  'settings.display.desc': 'Configure the screen saver and Kid Display.',
   'settings.display.screenSaverLabel': 'Screen Saver',
   'settings.display.screenSaverModeLabel': 'Screen saver content',
   'settings.display.screenSaverModeSublabel': 'Choose what appears when the screen saver starts',
@@ -413,8 +415,6 @@ export const en = {
   'settings.display.alwaysOnSublabel': 'Prevent screen from sleeping',
   'settings.display.showSecondsLabel': 'Show seconds on screen saver clock',
   'settings.display.showSecondsSublabel': 'Display seconds in the screen saver clock',
-  'settings.display.kioskModeLabel': 'Kiosk Mode',
-  'settings.display.kioskModeSublabel': 'Hide the sidebar for a cleaner display',
   'settings.display.kidDisplayTitle': 'Kid Display',
   'settings.display.kidDisplayDesc':
     'Lock a wall-mounted screen to one family member — shows only their routines and chores.',
@@ -424,7 +424,7 @@ export const en = {
   'settings.display.useOnDeviceLabel': 'Use on This Device',
   'settings.display.useOnDeviceSublabel':
     'Locks this screen now. Exit later with 5 taps on the clock.',
-  'settings.display.displayUrlLabel': 'Display URL',
+  'settings.display.displayUrlLabel': 'Kid Display URL',
   'settings.display.displayUrlSublabel':
     'For kiosk browsers and wall panels — bookmark or set as home page.',
   'settings.display.copyUrl': 'Copy URL',

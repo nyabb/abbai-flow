@@ -1,12 +1,12 @@
 /**
- * Integrations settings: Home Assistant connection status, Grocy, AnyList,
+ * Integrations settings: Home Assistant connection status, Grocy, iCloud Reminders,
  * grocery lists, Music Assistant and the photo slideshow options.
  *
  * The todo-list lookup only feeds these controls, so the fetch lives here.
  */
 import { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
-import { AnyListClient } from '../../../api/anylist';
+import { HomeAssistantTodoClient } from '../../../api/home-assistant-todo';
 import {
   loadIntegrationSettings,
   saveIntegrationSettings,
@@ -19,6 +19,7 @@ import { hasToken } from '../../../api/ha-rest';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import type { GroceryList } from '../../../types/grocery';
+import { LoadingPlaceholder } from '../../LoadingPlaceholder';
 import { SecretInput } from '../SecretInput';
 import { Segment, Slider, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
@@ -301,7 +302,7 @@ export function IntegrationsSection({
       return;
     }
     let cancelled = false;
-    const client = new AnyListClient();
+    const client = new HomeAssistantTodoClient();
     client
       .getLists()
       .then((lists) => {
@@ -317,6 +318,13 @@ export function IntegrationsSection({
     <div className="settings-integrations">
       <h2 className="settings-section-title">{t('settings.integrations.title')}</h2>
       <p className="settings-section-desc">{t('settings.integrations.desc')}</p>
+      {integrationStatusLoading && (
+        <LoadingPlaceholder
+          label={t('app.connecting')}
+          lines={3}
+          className="loading-placeholder--compact"
+        />
+      )}
 
       <div className="settings-group">
         <div className="settings-group-title">{t('settings.integrations.homeAssistantTitle')}</div>
@@ -706,24 +714,12 @@ export function IntegrationsSection({
       </div>
 
       <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.anylistTitle')}</div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${settings.anylistEnabled ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">{t('settings.integrations.anylistLabel')}</div>
-              <div className="settings-row-sublabel">
-                {t('settings.integrations.anylistSublabel')}
-              </div>
-            </div>
-          </div>
-          <Toggle
-            checked={settings.anylistEnabled}
-            onChange={(v) => onUpdateSettings({ anylistEnabled: v })}
-          />
+        <div className="settings-group-title">
+          {t('settings.integrations.icloudRemindersTitle')}
         </div>
+        <p className="settings-row-sublabel settings-integration-help">
+          {t('settings.integrations.icloudRemindersSublabel')}
+        </p>
       </div>
 
       <div className="settings-group">
@@ -793,7 +789,7 @@ export function IntegrationsSection({
           <div>
             <div className="settings-row-label">{t('nav.tasks')}</div>
             <div className="settings-row-sublabel">
-              {t('settings.integrations.groceryListsSublabel')}
+              {t('settings.integrations.taskListsSublabel')}
             </div>
           </div>
           {todoLists.length === 0 ? (

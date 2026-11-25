@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { usePhotos } from '../hooks/usePhotos';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 export interface ScreenSaverPhotosProps {
   intervalSeconds: number;
@@ -12,6 +14,7 @@ export function ScreenSaverPhotos({
   photoDirectory,
   transition,
 }: ScreenSaverPhotosProps) {
+  const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
   const { currentPhoto, loading } = usePhotos(
     ['ha_media', 'local'],
     intervalSeconds,
@@ -22,7 +25,11 @@ export function ScreenSaverPhotos({
   if (loading) {
     return (
       <div className="screensaver-photo-empty">
-        <p>{t('photoFrame.loading')}</p>
+        <LoadingPlaceholder
+          label={t('photoFrame.loading')}
+          lines={3}
+          className="loading-placeholder--screen screensaver-photo-loading"
+        />
       </div>
     );
   }
@@ -36,12 +43,28 @@ export function ScreenSaverPhotos({
     );
   }
 
+  const imageLoaded = loadedUrl === currentPhoto.url;
+
   return (
-    <img
-      key={currentPhoto.url}
-      className={`screensaver-photo screensaver-photo--${transition}`}
-      src={currentPhoto.url}
-      alt={currentPhoto.caption || t('photoFrame.photoAlt')}
-    />
+    <>
+      {!imageLoaded && (
+        <div className="screensaver-photo-empty">
+          <LoadingPlaceholder
+            label={t('photoFrame.loading')}
+            lines={3}
+            className="loading-placeholder--screen screensaver-photo-loading"
+          />
+        </div>
+      )}
+      <img
+        key={currentPhoto.url}
+        className={`screensaver-photo${imageLoaded ? ` screensaver-photo--${transition}` : ''}`}
+        src={currentPhoto.url}
+        alt={currentPhoto.caption || t('photoFrame.photoAlt')}
+        onLoad={() => setLoadedUrl(currentPhoto.url)}
+        onError={() => setLoadedUrl(currentPhoto.url)}
+        style={{ opacity: imageLoaded ? 1 : 0 }}
+      />
+    </>
   );
 }

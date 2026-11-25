@@ -17,6 +17,7 @@ import { EventDetailsPopover } from './EventDetailsPopover';
 import { useWeatherForecast } from '../hooks/useWeatherForecast';
 import { weatherIcon } from '../types/weather-icons';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface WeekCalendarProps {
   events: CalendarEvent[];
@@ -25,6 +26,7 @@ interface WeekCalendarProps {
   onSlotClick: (date: string, hour: number) => void;
   onEventReschedule?: (event: CalendarEvent, newDate: string, newHour: number) => void;
   onVisibleWeekChange?: (weekStart: Date) => void;
+  eventsLoading?: boolean;
   weekStartsOn: 0 | 1;
 }
 
@@ -69,7 +71,7 @@ interface MultiDaySpan {
   lane: number;
 }
 
-export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClick, onEventReschedule, onVisibleWeekChange, weekStartsOn }: WeekCalendarProps) {
+export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClick, onEventReschedule, onVisibleWeekChange, eventsLoading = false, weekStartsOn }: WeekCalendarProps) {
   const today = new Date();
   const todayWeekStart = startOfWeek(today, { weekStartsOn });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -695,6 +697,15 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
             );
           })}
         </div>
+        {eventsLoading && visibleEvents.length === 0 && (
+          <div className="week-calendar-loading">
+            <LoadingPlaceholder
+              label={t('app.connecting')}
+              lines={5}
+              className="loading-placeholder--screen"
+            />
+          </div>
+        )}
       </div>
 
       {/* Inline event details popover */}

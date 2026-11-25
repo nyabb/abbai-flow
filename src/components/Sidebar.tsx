@@ -245,58 +245,66 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
           className={`mobile-tab ${mobileMoreOpen ? 'mobile-tab--active' : ''}`}
           onClick={() => setMobileMoreOpen((prev) => !prev)}
           aria-label={t('nav.more')}
+          aria-expanded={mobileMoreOpen}
+          aria-controls="mobile-more-menu"
         >
           <MoreHorizontal size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
           <span className="mobile-tab-label">{t('nav.more')}</span>
         </button>
 
         {/* Overflow menu */}
-        {mobileMoreOpen && (
-          <>
-            <div className="mobile-more-backdrop" onClick={() => setMobileMoreOpen(false)} />
-            <div className="mobile-more-menu">
-              <div className="mobile-more-header">
-                <span className="mobile-more-title">{t('nav.more')}</span>
-                <button
-                  type="button"
-                  className="mobile-more-close"
-                  onClick={(event) => {
-                    // Keep the tap on the close button: the sheet underneath must
-                    // never receive it as a menu-item click.
-                    event.preventDefault();
-                    event.stopPropagation();
-                    setMobileMoreOpen(false);
-                  }}
-                  aria-label={t('nav.closeMenu')}
-                >
-                  <X size={20} strokeWidth={2} />
-                </button>
-              </div>
-              {navMore.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={`mobile-more-item ${activeView === item.id ? 'mobile-more-item--active' : ''}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    handleMobileNav(item.id);
-                  }}
-                >
-                  {item.icon}
-                  <span>{t(item.labelKey)}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                className={`mobile-more-item ${activeView === 'settings' ? 'mobile-more-item--active' : ''}`}
-                onClick={() => handleMobileNav('settings')}
-              >
-                <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
-                <span>{t('nav.settings')}</span>
-              </button>
-            </div>
-          </>
-        )}
+        <div
+          className={`mobile-more-backdrop${mobileMoreOpen ? ' is-open' : ''}`}
+          aria-hidden={!mobileMoreOpen}
+          inert={!mobileMoreOpen}
+          onClick={() => setMobileMoreOpen(false)}
+        />
+        <div
+          className={`mobile-more-menu${mobileMoreOpen ? ' is-open' : ''}`}
+          id="mobile-more-menu"
+          aria-hidden={!mobileMoreOpen}
+          inert={!mobileMoreOpen}
+        >
+          <div className="mobile-more-header">
+            <span className="mobile-more-title">{t('nav.more')}</span>
+            <button
+              type="button"
+              className="mobile-more-close"
+              onClick={(event) => {
+                // Keep the tap on the close button: the sheet underneath must
+                // never receive it as a menu-item click.
+                event.preventDefault();
+                event.stopPropagation();
+                setMobileMoreOpen(false);
+              }}
+              aria-label={t('nav.closeMenu')}
+            >
+              <X size={20} strokeWidth={2} />
+            </button>
+          </div>
+          {navMore.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={`mobile-more-item ${activeView === item.id ? 'mobile-more-item--active' : ''}`}
+              onClick={(event) => {
+                event.stopPropagation();
+                handleMobileNav(item.id);
+              }}
+            >
+              {item.icon}
+              <span>{t(item.labelKey)}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className={`mobile-more-item ${activeView === 'settings' ? 'mobile-more-item--active' : ''}`}
+            onClick={() => handleMobileNav('settings')}
+          >
+            <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
+            <span>{t('nav.settings')}</span>
+          </button>
+        </div>
       </nav>
     </>
   );

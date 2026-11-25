@@ -2,12 +2,12 @@ import { GroceryItem, GroceryList } from '../types/grocery';
 import { haFetch, callHaService } from './ha-rest';
 
 /**
- * AnyList / Todo integration via Home Assistant's REST API.
+ * Home Assistant to-do lists via the generic REST API.
  *
- * Discovers all todo.* entities (AnyList, Shopping List, etc.) and provides
- * a unified interface for listing, adding, checking, and unchecking items.
+ * Discovers available todo.* entities, including lists supplied by Apple's
+ * iCloud integration, and provides list and item operations for them.
  */
-export class AnyListClient {
+export class HomeAssistantTodoClient {
   private entityIds: string[] | null = null;
 
   /**

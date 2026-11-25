@@ -51,6 +51,7 @@ export function TaskRow({
         className={`planner-row-check ${status === 'completed' ? 'is-done' : ''}`}
         aria-label={`${actionLabel}: ${task.name}`}
         disabled={!online || status === 'upcoming' || busy}
+        aria-busy={busy}
         onClick={onPrimary}
       >
         {busy ? (
@@ -338,6 +339,7 @@ export function FamilyRoutineRow({
                   className="planner-step-action"
                   aria-label={`${copy.iDidIt}: ${step.name}`}
                   disabled={busyTaskId === step.taskId}
+                  aria-busy={busyTaskId === step.taskId}
                   onClick={() => onCompleteStep(step.taskId!)}
                 >
                   <span className="planner-step-label">{step.name}</span>

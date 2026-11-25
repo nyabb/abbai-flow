@@ -143,19 +143,9 @@ export function DisplaySection({
             />
           </div>
         )}
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">{t('settings.display.kioskModeLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.display.kioskModeSublabel')}</div>
-          </div>
-          <Toggle
-            checked={settings.kioskMode}
-            onChange={(v) => onUpdateSettings({ kioskMode: v })}
-          />
-        </div>
       </div>
 
-      {/* Motion: the OS preference cannot be read by every kiosk shell, so it
+      {/* Motion: the OS preference cannot be read by every browser shell, so it
           is also a per-device setting. */}
       <div className="settings-group">
         <div className="settings-row">

@@ -316,18 +316,20 @@ export const ko: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Grocy 연동',
   'settings.integrations.grocySublabel': '장보기 및 식단 계획',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'AnyList 연동',
-  'settings.integrations.anylistSublabel': '공유 장보기 목록',
+  'settings.integrations.icloudRemindersTitle': 'iCloud 미리 알림',
+  'settings.integrations.icloudRemindersSublabel':
+    'Home Assistant에서 Apple iCloud를 설정하면 각 미리 알림 목록이 Home Assistant 할 일 목록으로 아래에 표시됩니다.',
   'settings.integrations.groceryTitle': '장보기',
   'settings.integrations.defaultGroceryListLabel': '기본 장보기 목록',
   'settings.integrations.defaultGroceryListSublabel': '장보기 화면을 열 때 표시되는 목록',
   'settings.integrations.autoFirstAvailable': '자동(첫 번째로 사용 가능한 항목)',
   'settings.integrations.groceryListsLabel': '장보기 목록',
   'settings.integrations.groceryListsSublabel':
-    '장보기 목록으로 사용할 HA 할 일 엔티티를 선택하세요',
+    '장보기에 표시할 Home Assistant 할 일 목록을 선택하세요',
+  'settings.integrations.taskListsSublabel':
+    '작업에 표시할 Home Assistant 할 일 목록을 선택하세요',
   'settings.integrations.noTodoListsFound':
-    'HA 할 일 목록이 없습니다. 목록을 보려면 Home Assistant에 연결하세요.',
+    'Home Assistant 할 일 목록이 없습니다. 목록을 동기화하려면 Home Assistant에서 iCloud 미리 알림을 설정하세요.',
   'settings.integrations.shoppingEntityLabel': '장보기 카드 엔티티',
   'settings.integrations.shoppingEntitySublabel': '사이드바 장보기 카드에 사용할 HA 할 일 목록',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
@@ -344,7 +346,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': '디스플레이',
-  'settings.display.desc': '화면 보호기, 밝기, 키오스크 모드 설정입니다.',
+  'settings.display.desc': '화면 보호기와 어린이 디스플레이를 설정합니다.',
   'settings.display.screenSaverLabel': '화면 보호기',
   'settings.display.screenSaverModeLabel': '화면 보호기 표시 내용',
   'settings.display.screenSaverModeSublabel': '화면 보호기가 시작될 때 표시할 항목을 선택합니다',
@@ -360,8 +362,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': '화면이 절전 모드로 전환되지 않도록 합니다',
   'settings.display.showSecondsLabel': '화면 보호기 시계에 초 표시',
   'settings.display.showSecondsSublabel': '화면 보호기 시계에 초를 표시합니다',
-  'settings.display.kioskModeLabel': '키오스크 모드',
-  'settings.display.kioskModeSublabel': '더 깔끔한 화면을 위해 사이드바를 숨깁니다',
   'settings.display.kidDisplayTitle': '어린이 화면',
   'settings.display.kidDisplayDesc':
     '벽걸이 화면을 한 명의 가족 구성원에게 고정하고, 그 사람의 루틴과 집안일만 표시합니다.',
@@ -371,7 +371,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': '이 기기에서 사용',
   'settings.display.useOnDeviceSublabel':
     '지금 이 화면을 잠급니다. 나중에 시계를 5번 탭하면 나갈 수 있습니다.',
-  'settings.display.displayUrlLabel': '디스플레이 URL',
+  'settings.display.displayUrlLabel': '어린이 디스플레이 URL',
   'settings.display.displayUrlSublabel':
     '키오스크 브라우저와 벽걸이 패널용입니다 — 즐겨찾기하거나 홈페이지로 설정하세요.',
   'settings.display.copyUrl': 'URL 복사',

@@ -112,7 +112,6 @@ input[type='range'] {
      only proof a tap landed is the pressed state. */
   .settings-btn:active,
   .icon-btn:active,
-  .display-nav-button:active,
   .mobile-tab:active,
   .planner-sheet-footer button:active,
   .modal-footer-right button:active {

@@ -319,18 +319,20 @@ export const pt: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Integração Grocy',
   'settings.integrations.grocySublabel': 'Compras e planeamento de refeições',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'Integração AnyList',
-  'settings.integrations.anylistSublabel': 'Listas de compras partilhadas',
+  'settings.integrations.icloudRemindersTitle': 'Lembretes do iCloud',
+  'settings.integrations.icloudRemindersSublabel':
+    'Configure o Apple iCloud no Home Assistant. Cada lista de Lembretes aparece abaixo como uma lista de tarefas do Home Assistant.',
   'settings.integrations.groceryTitle': 'Compras',
   'settings.integrations.defaultGroceryListLabel': 'Lista de compras predefinida',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrada ao abrir a vista de compras',
   'settings.integrations.autoFirstAvailable': 'Automático (primeira disponível)',
   'settings.integrations.groceryListsLabel': 'Listas de compras',
   'settings.integrations.groceryListsSublabel':
-    'Selecione quais entidades de tarefas do HA são listas de compras',
+    'Selecione que listas de tarefas do Home Assistant aparecem em Compras',
+  'settings.integrations.taskListsSublabel':
+    'Selecione que listas de tarefas do Home Assistant aparecem em Tarefas',
   'settings.integrations.noTodoListsFound':
-    'Nenhuma lista de tarefas do HA encontrada. Ligue o Home Assistant para ver as listas.',
+    'Não foram encontradas listas de tarefas do Home Assistant. Configure os Lembretes do iCloud no Home Assistant para sincronizar as suas listas.',
   'settings.integrations.shoppingEntityLabel': 'Entidade do cartão de compras',
   'settings.integrations.shoppingEntitySublabel':
     'Lista de tarefas do HA para o cartão de compras da barra lateral',
@@ -348,7 +350,7 @@ export const pt: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'Ecrã',
-  'settings.display.desc': 'Proteção de ecrã, brilho e definições do modo quiosque.',
+  'settings.display.desc': 'Configure a proteção de ecrã e o Ecrã infantil.',
   'settings.display.screenSaverLabel': 'Proteção de ecrã',
   'settings.display.screenSaverModeLabel': 'Conteúdo da proteção de ecrã',
   'settings.display.screenSaverModeSublabel': 'Escolha o que aparece quando a proteção de ecrã começa',
@@ -364,8 +366,6 @@ export const pt: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': 'Impede que o ecrã entre em suspensão',
   'settings.display.showSecondsLabel': 'Mostrar segundos no relógio da proteção de ecrã',
   'settings.display.showSecondsSublabel': 'Mostra os segundos no relógio da proteção de ecrã',
-  'settings.display.kioskModeLabel': 'Modo quiosque',
-  'settings.display.kioskModeSublabel': 'Oculta a barra lateral para um ecrã mais limpo',
   'settings.display.kidDisplayTitle': 'Ecrã infantil',
   'settings.display.kidDisplayDesc':
     'Bloqueia um ecrã de parede a um único membro da família — mostra apenas as suas rotinas e tarefas.',
@@ -375,7 +375,7 @@ export const pt: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'Usar neste dispositivo',
   'settings.display.useOnDeviceSublabel':
     'Bloqueia este ecrã agora. Saia mais tarde com 5 toques no relógio.',
-  'settings.display.displayUrlLabel': 'URL do ecrã',
+  'settings.display.displayUrlLabel': 'URL do Ecrã infantil',
   'settings.display.displayUrlSublabel':
     'Para navegadores em modo quiosque e painéis de parede — guarde como marcador ou página inicial.',
   'settings.display.copyUrl': 'Copiar URL',

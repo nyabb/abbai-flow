@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
-import { loadData } from '../api/abbai-flow-store';
+import { loadData, loadDataSync } from '../api/abbai-flow-store';
 import { MealPlanEntry, DayMenu } from '../types/meals';
 
 const STORAGE_KEY = 'abbai_flow_meal_plans';
@@ -11,15 +11,29 @@ const REFRESH_INTERVAL = 5 * 60 * 1000; // re-read store every 5 min
  * Data is written externally (MCP sync, CLI script, etc.).
  */
 export function useMealPlans() {
-  const [entries, setEntries] = useState<MealPlanEntry[]>([]);
+  const [entries, setEntries] = useState<MealPlanEntry[]>(() =>
+    loadDataSync<MealPlanEntry[]>(STORAGE_KEY, []),
+  );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     const load = () => {
-      loadData<MealPlanEntry[]>(STORAGE_KEY, []).then(setEntries);
+      void loadData<MealPlanEntry[]>(STORAGE_KEY, [])
+        .then((loadedEntries) => {
+          if (active) setEntries(loadedEntries);
+        })
+        .catch(() => undefined)
+        .finally(() => {
+          if (active) setLoading(false);
+        });
     };
     load();
     const interval = setInterval(load, REFRESH_INTERVAL);
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -34,5 +48,5 @@ export function useMealPlans() {
     return { date: todayStr, meals };
   }, [entries, todayStr]);
 
-  return { entries, todaysMenu };
+  return { entries, todaysMenu, loading };
 }

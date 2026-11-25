@@ -7,11 +7,13 @@ import { useEncoreMusic } from '../hooks/useEncoreMusic';
 import { useBluetoothDevices } from '../hooks/useBluetoothDevices';
 import { useSpotifyPlaylists } from '../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from './SpotifyMusicPanel';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface MusicViewProps {
   players: MediaPlayer[];
   activePlayer: MediaPlayer | null;
   selectedPlayerId: string | null;
+  playersLoading?: boolean;
   onSelectPlayer: (entityId: string) => void;
   onPlay: (entityId?: string) => void;
   onPause: (entityId?: string) => void;
@@ -34,6 +36,7 @@ export function MusicView({
   players,
   activePlayer,
   selectedPlayerId,
+  playersLoading = false,
   onSelectPlayer,
   onPlay,
   onPause,
@@ -108,6 +111,21 @@ export function MusicView({
   // This *must* stay below every hook: `players` is populated asynchronously,
   // so returning early above them changed the hook count between renders and
   // made React throw "Rendered more hooks than during the previous render".
+  if (playersLoading && source === 'ha') {
+    return (
+      <div className="music-page">
+        {sourceTabs}
+        <div className="music-view music-view-loading">
+          <LoadingPlaceholder
+            label={t('app.connecting')}
+            lines={5}
+            className="loading-placeholder--screen"
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (players.length === 0 && source === 'ha') {
     return (
       <div className="music-page">

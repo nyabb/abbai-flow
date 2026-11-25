@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GroceryItem, GroceryList } from '../types/grocery';
 import { GrocyClient } from '../api/grocy';
-import { AnyListClient } from '../api/anylist';
+import { HomeAssistantTodoClient } from '../api/home-assistant-todo';
 
-export type GrocerySource = 'grocy' | 'anylist' | 'none';
+export type GrocerySource = 'grocy' | 'home-assistant' | 'none';
 
 interface UseGroceryResult {
   list: GroceryList | null;
@@ -17,7 +17,7 @@ interface UseGroceryResult {
 }
 
 /**
- * Unified grocery hook. Tries Grocy first, then AnyList, returns the first
+ * Unified grocery hook. Tries Grocy first, then Home Assistant to-do lists, returns the first
  * source that has data. If neither is configured, returns null with source 'none'.
  */
 export function useGrocery(connected: boolean): UseGroceryResult {
@@ -27,8 +27,8 @@ export function useGrocery(connected: boolean): UseGroceryResult {
   const [expiringItems, setExpiringItems] = useState<GroceryItem[]>([]);
 
   const grocyRef = useRef(new GrocyClient());
-  const anylistRef = useRef(new AnyListClient());
-  const anylistEntityRef = useRef<string | null>(null);
+  const todoClientRef = useRef(new HomeAssistantTodoClient());
+  const todoEntityRef = useRef<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!connected) return;
@@ -49,15 +49,15 @@ export function useGrocery(connected: boolean): UseGroceryResult {
         return;
       }
 
-      // Fall back to AnyList
-      const anylistLists = await anylistRef.current.getLists();
-      if (anylistLists.length > 0) {
-        const primaryList = anylistLists[0];
-        const items = await anylistRef.current.getItems(primaryList.id);
-        anylistEntityRef.current = primaryList.id;
+      // Fall back to Home Assistant to-do lists, including iCloud Reminders.
+      const todoLists = await todoClientRef.current.getLists();
+      if (todoLists.length > 0) {
+        const primaryList = todoLists[0];
+        const items = await todoClientRef.current.getItems(primaryList.id);
+        todoEntityRef.current = primaryList.id;
 
         setList({ ...primaryList, items });
-        setSource('anylist');
+        setSource('home-assistant');
         setExpiringItems([]);
         setLoading(false);
         return;
@@ -93,8 +93,8 @@ export function useGrocery(connected: boolean): UseGroceryResult {
   const addItem = useCallback(async (name: string) => {
     if (source === 'grocy') {
       await grocyRef.current.addItem(name);
-    } else if (source === 'anylist' && anylistEntityRef.current) {
-      await anylistRef.current.addItem(anylistEntityRef.current, name);
+    } else if (source === 'home-assistant' && todoEntityRef.current) {
+      await todoClientRef.current.addItem(todoEntityRef.current, name);
     }
     await refresh();
   }, [source, refresh]);
@@ -113,8 +113,8 @@ export function useGrocery(connected: boolean): UseGroceryResult {
 
     if (source === 'grocy') {
       await grocyRef.current.checkItem(id);
-    } else if (source === 'anylist' && anylistEntityRef.current) {
-      await anylistRef.current.checkItem(anylistEntityRef.current, id);
+    } else if (source === 'home-assistant' && todoEntityRef.current) {
+      await todoClientRef.current.checkItem(todoEntityRef.current, id);
     }
   }, [source]);
 
@@ -132,8 +132,8 @@ export function useGrocery(connected: boolean): UseGroceryResult {
 
     if (source === 'grocy') {
       await grocyRef.current.uncheckItem(id);
-    } else if (source === 'anylist' && anylistEntityRef.current) {
-      await anylistRef.current.uncheckItem(anylistEntityRef.current, id);
+    } else if (source === 'home-assistant' && todoEntityRef.current) {
+      await todoClientRef.current.uncheckItem(todoEntityRef.current, id);
     }
   }, [source]);
 

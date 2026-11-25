@@ -70,12 +70,15 @@ describe('Sidebar overflow menu', () => {
     );
 
     fireEvent.click(container.querySelector('button[aria-label="Meer"]')!);
-    expect(container.querySelector('.mobile-more-menu')).not.toBeNull();
+    const menu = container.querySelector<HTMLElement>('.mobile-more-menu')!;
+    expect(menu).toHaveClass('is-open');
 
     const close = screen.getByRole('button', { name: 'Menu sluiten' });
     fireEvent.click(close);
 
-    expect(container.querySelector('.mobile-more-menu')).toBeNull();
+    expect(menu).not.toHaveClass('is-open');
+    expect(menu).toHaveAttribute('aria-hidden', 'true');
+    expect(menu).toHaveAttribute('inert');
     // Closing must never navigate anywhere.
     expect(onChangeView).not.toHaveBeenCalled();
   });
@@ -102,7 +105,9 @@ describe('Sidebar overflow menu', () => {
 
     fireEvent.click(within(menu).getByText('Timer'));
     expect(onChangeView).toHaveBeenCalledWith('timer');
-    expect(container.querySelector('.mobile-more-menu')).toBeNull();
+    expect(menu).not.toHaveClass('is-open');
+    expect(menu).toHaveAttribute('aria-hidden', 'true');
+    expect(menu).toHaveAttribute('inert');
   });
 });
 

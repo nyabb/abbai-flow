@@ -322,9 +322,9 @@ export const fr: Record<TranslationKey, string> = {
   'settings.integrations.grocyTitle': 'Grocy',
   'settings.integrations.grocyLabel': 'Intégration Grocy',
   'settings.integrations.grocySublabel': 'Courses et planification des repas',
-  'settings.integrations.anylistTitle': 'AnyList',
-  'settings.integrations.anylistLabel': 'Intégration AnyList',
-  'settings.integrations.anylistSublabel': 'Listes de courses partagées',
+  'settings.integrations.icloudRemindersTitle': 'Rappels iCloud',
+  'settings.integrations.icloudRemindersSublabel':
+    'Configurez Apple iCloud dans Home Assistant. Chaque liste de Rappels apparaîtra ci-dessous comme une liste de tâches Home Assistant.',
   'settings.integrations.groceryTitle': 'Courses',
   'settings.integrations.defaultGroceryListLabel': 'Liste de courses par défaut',
   'settings.integrations.defaultGroceryListSublabel':
@@ -332,9 +332,11 @@ export const fr: Record<TranslationKey, string> = {
   'settings.integrations.autoFirstAvailable': 'Auto (première disponible)',
   'settings.integrations.groceryListsLabel': 'Listes de courses',
   'settings.integrations.groceryListsSublabel':
-    'Sélectionnez les entités de tâches HA qui sont des listes de courses',
+    'Sélectionnez les listes de tâches Home Assistant à afficher dans Courses',
+  'settings.integrations.taskListsSublabel':
+    'Sélectionnez les listes de tâches Home Assistant à afficher dans Tâches',
   'settings.integrations.noTodoListsFound':
-    'Aucune liste de tâches HA trouvée. Connectez Home Assistant pour voir les listes.',
+    'Aucune liste de tâches Home Assistant trouvée. Configurez Rappels iCloud dans Home Assistant pour synchroniser vos listes.',
   'settings.integrations.shoppingEntityLabel': 'Entité de la carte Courses',
   'settings.integrations.shoppingEntitySublabel':
     'Liste de tâches HA pour la carte Courses de la barre latérale',
@@ -352,7 +354,7 @@ export const fr: Record<TranslationKey, string> = {
 
   // ---- settings: display ----
   'settings.display.title': 'Affichage',
-  'settings.display.desc': 'Écran de veille, luminosité et paramètres du mode kiosque.',
+  'settings.display.desc': "Configurez l'écran de veille et l'affichage enfant.",
   'settings.display.screenSaverLabel': 'Écran de veille',
   'settings.display.screenSaverModeLabel': "Contenu de l’écran de veille",
   'settings.display.screenSaverModeSublabel': "Choisissez ce qui s’affiche au démarrage de l’écran de veille",
@@ -369,8 +371,6 @@ export const fr: Record<TranslationKey, string> = {
   'settings.display.alwaysOnSublabel': "Empêche l'écran de se mettre en veille",
   'settings.display.showSecondsLabel': "Afficher les secondes sur l'horloge de l'écran de veille",
   'settings.display.showSecondsSublabel': "Affiche les secondes sur l'horloge de l'écran de veille",
-  'settings.display.kioskModeLabel': 'Mode kiosque',
-  'settings.display.kioskModeSublabel': 'Masque la barre latérale pour un affichage plus épuré',
   'settings.display.kidDisplayTitle': 'Écran enfant',
   'settings.display.kidDisplayDesc':
     "Verrouille un écran mural sur un seul membre de la famille — n'affiche que ses routines et corvées.",
@@ -380,7 +380,7 @@ export const fr: Record<TranslationKey, string> = {
   'settings.display.useOnDeviceLabel': 'Utiliser sur cet appareil',
   'settings.display.useOnDeviceSublabel':
     "Verrouille cet écran maintenant. Quittez plus tard avec 5 appuis sur l'horloge.",
-  'settings.display.displayUrlLabel': "URL de l'affichage",
+  'settings.display.displayUrlLabel': "URL de l'affichage enfant",
   'settings.display.displayUrlSublabel':
     "Pour les navigateurs en mode kiosque et les panneaux muraux — enregistrez comme favori ou page d'accueil.",
   'settings.display.copyUrl': "Copier l'URL",

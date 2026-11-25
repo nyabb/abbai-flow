@@ -177,9 +177,15 @@
   transform: scale(0.95);
 }
 
-.grocery-view-add-btn:disabled {
+.grocery-view-add-btn:disabled:not(.grocery-view-add-btn--loading) {
   background: var(--border);
   cursor: default;
+  transform: none;
+}
+
+.grocery-view-add-btn--loading:disabled {
+  background: var(--accent, var(--color-blue-full));
+  cursor: wait;
   transform: none;
 }
 

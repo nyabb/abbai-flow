@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { CALENDAR_COLOR_PRESETS, resolveCalendarColor } from '../../../types';
 import type { FamilyMember } from '../../../types/family';
+import { CollapsibleRegion } from '../../CollapsibleRegion';
 import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
 
@@ -83,6 +84,7 @@ export function CalendarSection({
                       title={t('settings.calendar.editColor')}
                       aria-label={t('settings.calendar.editColorFor', { name: cal.name })}
                       aria-expanded={open}
+                      aria-controls={`calendar-color-editor-${cal.id}`}
                     />
                     <div style={{ minWidth: 0 }}>
                       <div className="settings-row-label">{cal.name}</div>
@@ -100,7 +102,11 @@ export function CalendarSection({
                     }}
                   />
                 </div>
-                {open && (
+                <CollapsibleRegion
+                  open={open}
+                  className="settings-color-editor-region"
+                  id={`calendar-color-editor-${cal.id}`}
+                >
                   <div className="settings-color-editor">
                     <div className="settings-color-grid">
                       {CALENDAR_COLOR_PRESETS.map((preset) => (
@@ -139,7 +145,7 @@ export function CalendarSection({
                       </button>
                     </div>
                   </div>
-                )}
+                </CollapsibleRegion>
               </div>
             );
           })

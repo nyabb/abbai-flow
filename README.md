@@ -24,7 +24,7 @@
 ## Features
 
 - **Weekly Calendar** -- Beautiful week view with color-coded family members; supports HA calendar entities and a built-in local calendar
-- **Grocery & Shopping Lists** -- AnyList, Home Assistant Shopping List, and local list support
+- **Grocery & Shopping Lists** -- Apple Reminders via Home Assistant to-do lists, plus local lists
 - **Task / Todo Lists** -- Home Assistant todo entities and local task lists, summarized on the calendar
 - **Chore Tracking** -- Assign chores, track streaks, and celebrate completions with a family leaderboard
 - **Music Controls** -- Control Spotify through Encore and Soloist, plus Home Assistant media players

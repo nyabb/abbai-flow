@@ -35,7 +35,6 @@ export interface AbbaiSettings {
   // Integrations
   weatherEntity: string;
   grocyEnabled: boolean;
-  anylistEnabled: boolean;
   defaultGroceryList: string;
   groceryListIds: string[];
   /**
@@ -57,7 +56,6 @@ export interface AbbaiSettings {
   screenSaverTimeout: number; // minutes
   alwaysOnDisplay: boolean;
   showSeconds: boolean;
-  kioskMode: boolean;
 
   /** Cut animation and transition durations app-wide. */
   reducedMotion: boolean;
@@ -103,7 +101,6 @@ function buildDefaults(): AbbaiSettings {
 
     weatherEntity: config.weather_entity,
     grocyEnabled: false,
-    anylistEnabled: false,
     defaultGroceryList: '',
     groceryListIds: [],
     shoppingEntity: '',
@@ -119,7 +116,6 @@ function buildDefaults(): AbbaiSettings {
     screenSaverTimeout: config.screen_saver_timeout,
     alwaysOnDisplay: false,
     showSeconds: false,
-    kioskMode: false,
 
     choresEnabled: true,
     choresResetTime: '00:00',
@@ -176,6 +172,8 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
   delete saved.displayFullscreen;
   delete saved.displayIdleMinutes;
   delete saved.displayPanels;
+  delete saved.anylistEnabled;
+  delete saved.kioskMode;
 
   const storedView = saved.defaultView;
   const defaultView =

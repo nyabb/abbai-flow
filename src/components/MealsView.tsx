@@ -5,6 +5,7 @@ import { getRuntimeConfig } from '../config';
 import { useMealPlans } from '../hooks/useMealPlans';
 import type { MealPlanEntry } from '../types/meals';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 type MealTab = 'today' | 'week' | 'recipes' | 'manage';
 
@@ -77,7 +78,7 @@ function RecipeDetails({ meal }: { meal: MealPlanEntry }) {
 
 export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
   const { t, dateLocale } = useTranslation();
-  const { entries } = useMealPlans();
+  const { entries, loading } = useMealPlans();
   const [tab, setTab] = useState<MealTab>('today');
   const [search, setSearch] = useState('');
   const [sourceStatus, setSourceStatus] = useState<IntegrationSettingsStatus | null>(null);
@@ -111,6 +112,7 @@ export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
   const filteredRecipes = recipes.filter((recipe) =>
     `${recipe.name} ${(recipe.tags || []).join(' ')}`.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()),
   );
+  const plansReady = !loading || entries.length > 0;
 
   const tabs: { id: MealTab; label: string }[] = [
     { id: 'today', label: t('meals.today') },
@@ -136,7 +138,17 @@ export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
         ))}
       </div>
 
-      {tab === 'today' && (
+      {loading && entries.length === 0 && tab !== 'manage' && (
+        <section className="meals-panel meals-loading">
+          <LoadingPlaceholder
+            label={t('app.connecting')}
+            lines={5}
+            className="loading-placeholder--screen"
+          />
+        </section>
+      )}
+
+      {plansReady && tab === 'today' && (
         <section className="meals-panel" aria-labelledby="meals-today-heading">
           <div className="meals-panel-heading">
             <div>
@@ -165,7 +177,7 @@ export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
         </section>
       )}
 
-      {tab === 'week' && (
+      {plansReady && tab === 'week' && (
         <section className="meals-week" aria-label={t('meals.thisWeek')}>
           {weekDays.map((day) => {
             const dayKey = format(day, 'yyyy-MM-dd');
@@ -196,7 +208,7 @@ export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
         </section>
       )}
 
-      {tab === 'recipes' && (
+      {plansReady && tab === 'recipes' && (
         <section className="meals-panel" aria-labelledby="meals-recipes-heading">
           <div className="meals-panel-heading">
             <div>
