@@ -99,6 +99,7 @@ function safeCloudKitDiagnostic(entry) {
     scope: entry.scope,
     operation: entry.operation,
     list_key: entry.list_key,
+    ...(typeof entry.diagnostic_phase === 'string' ? { diagnostic_phase: entry.diagnostic_phase.slice(0, 80) } : {}),
     ...(typeof entry.selected_record_id_hash === 'string' && /^[a-f0-9]{16}$/u.test(entry.selected_record_id_hash)
       ? { selected_record_id_hash: entry.selected_record_id_hash }
       : {}),
