@@ -12,6 +12,23 @@ export interface MealDataMapping {
   sourceUrlPath: string;
 }
 
+export type CalendarSourceProvider = 'caldav' | 'ics' | 'google';
+
+export interface CalendarSourceSetting {
+  id: string;
+  name: string;
+  provider: CalendarSourceProvider;
+  url: string;
+  username: string;
+  passwordConfigured?: boolean;
+  password?: string;
+  clearPassword?: boolean;
+  clientId: string;
+  clientSecretConfigured?: boolean;
+  clientSecret?: string;
+  clearClientSecret?: boolean;
+}
+
 export interface IntegrationSettingsStatus {
   haUrl: string;
   haConfigured: boolean;
@@ -24,6 +41,9 @@ export interface IntegrationSettingsStatus {
   mealSourceUrl: string;
   mealSourceTokenConfigured: boolean;
   mealDataMapping: MealDataMapping;
+  icloudAppleId: string;
+  icloudPasswordConfigured: boolean;
+  calendarSources: CalendarSourceSetting[];
 }
 
 export interface IntegrationSettingsPatch {
@@ -42,6 +62,10 @@ export interface IntegrationSettingsPatch {
   mealSourceToken?: string;
   clearMealSourceToken?: boolean;
   mealDataMapping?: Partial<MealDataMapping>;
+  icloudAppleId?: string;
+  icloudPassword?: string;
+  clearIcloudPassword?: boolean;
+  calendarSources?: CalendarSourceSetting[];
 }
 
 function integrationSettingsUrl(): string {
@@ -49,8 +73,8 @@ function integrationSettingsUrl(): string {
   return `${base}/abbai-flow/settings/integrations`;
 }
 
-async function request<T>(method: string, body?: IntegrationSettingsPatch): Promise<T> {
-  const response = await fetch(integrationSettingsUrl(), {
+async function request<T>(method: string, body?: unknown, path = ''): Promise<T> {
+  const response = await fetch(`${integrationSettingsUrl()}${path}`, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -75,4 +99,37 @@ export function saveIntegrationSettings(
   values: IntegrationSettingsPatch,
 ): Promise<IntegrationSettingsStatus> {
   return request<IntegrationSettingsStatus>('PUT', values);
+}
+
+export interface ICloudRemindersActionResult {
+  ok: true;
+  state: string;
+  pyicloudVersion?: string | null;
+  devices?: Array<{ index: number; name: string }>;
+  securityKeyNames?: string[];
+  listCount?: number;
+  lists?: Array<{ title: string; reminderCountReturned: number }>;
+  decodedAppleSample?: unknown;
+}
+
+function iCloudAction<T>(action: string, body: unknown = {}): Promise<T> {
+  return request<T>('POST', body, `/icloud-reminders/${action}`);
+}
+
+export function authenticateICloudReminders(): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('authenticate');
+}
+
+export function requestICloudRemindersVerificationCode(
+  deviceIndex: number,
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('request-code', { deviceIndex });
+}
+
+export function verifyICloudRemindersCode(code: string): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('verify-code', { code });
+}
+
+export function fetchICloudRemindersPreview(): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('fetch-preview');
 }

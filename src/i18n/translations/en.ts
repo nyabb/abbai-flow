@@ -66,18 +66,21 @@ export const en = {
   'meals.noDinnerPlanned': 'No dinner planned for this day.',
   'meals.noDinnerPlannedHelp': 'The family meal plan will appear here once a dinner is selected.',
   'meals.noRecipes': 'No recipes are available yet.',
-  'meals.noRecipesHelp': 'Recipes will appear here when they are included in a meal plan or imported from a source.',
+  'meals.noRecipesHelp':
+    'Recipes will appear here when they are included in a meal plan or imported from a source.',
   'meals.catalogFromPlans': 'Recipes from the family meal plan.',
   'meals.searchRecipes': 'Search recipes',
   'meals.recipeDetailsUnavailable': 'Recipe steps are not available for this meal.',
   'meals.unplanned': 'No dinner planned',
   'meals.sourceSettings': 'Meal source settings',
-  'meals.sourceSettingsHelp': 'Set the feed URL, optional bearer token, and JSON field mapping in Settings → Integrations.',
+  'meals.sourceSettingsHelp':
+    'Set the feed URL, optional bearer token, and JSON field mapping in Settings → Integrations.',
   'meals.sourceConfigured': 'Meal source configured',
   'meals.sourceNotConfigured': 'No meal source is configured yet.',
   'meals.bearerConfigured': 'A bearer token is saved securely on the server.',
   'meals.bearerNotConfigured': 'This source does not have a bearer token.',
-  'meals.sourceRequiresServer': 'Configure meal sources in Settings → Integrations on a server-backed install.',
+  'meals.sourceRequiresServer':
+    'Configure meal sources in Settings → Integrations on a server-backed install.',
   'meals.openSettings': 'Open Integrations settings',
 
   // ---- weather conditions ----
@@ -226,7 +229,7 @@ export const en = {
   'settings.family.child': 'Child',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Photo',
-  'settings.family.photoHint': "Shown instead of the emoji in family member avatars.",
+  'settings.family.photoHint': 'Shown instead of the emoji in family member avatars.',
   'settings.family.photoUpload': 'Upload photo',
   'settings.family.photoRemove': 'Remove photo',
   'settings.family.photoFromHa': 'Use Home Assistant photo',
@@ -371,7 +374,49 @@ export const en = {
   'settings.integrations.weatherEntitySublabel': 'Entity used for weather display',
   'settings.integrations.icloudRemindersTitle': 'iCloud Reminders',
   'settings.integrations.icloudRemindersSublabel':
-    'Set up Apple iCloud in Home Assistant. Each Reminders list appears below as a Home Assistant to-do list.',
+    'Connect directly to Apple iCloud to inspect your Reminders lists. The password stays on the server and is never returned to the browser.',
+  'settings.integrations.icloudAppleIdLabel': 'Apple Account email',
+  'settings.integrations.icloudAppleIdHelp': 'The Apple Account used for iCloud Reminders.',
+  'settings.integrations.icloudPasswordLabel': 'Apple Account password',
+  'settings.integrations.icloudPasswordHelp': 'Saved on the server for PyICloud authentication.',
+  'settings.integrations.icloudAuthenticate': 'Authenticate with Apple',
+  'settings.integrations.icloudCodeLabel': 'Apple verification code',
+  'settings.integrations.icloudVerificationSent':
+    'Enter the verification code Apple sent to your trusted device.',
+  'settings.integrations.icloudVerifyCode': 'Verify code',
+  'settings.integrations.icloudChooseDevice': 'Choose a trusted Apple device',
+  'settings.integrations.icloudSendCode': 'Send code',
+  'settings.integrations.icloudSecurityKeyRequired':
+    'Apple requires a security key for this account. Security key verification is not available here yet.',
+  'settings.integrations.icloudAuthenticated': 'Apple authentication succeeded.',
+  'settings.integrations.icloudVerifiedUntrusted':
+    'The code was accepted. Apple did not mark this session as trusted; try fetching the lists.',
+  'settings.integrations.icloudFetchPreview': 'Fetch reminders preview',
+  'settings.integrations.icloudDataRetrieved':
+    'Reminders data was fetched. The preview includes reminder text; it is shown only here and is not logged.',
+  'settings.integrations.icloudPreviewLabel': 'Decoded Apple Reminders response preview',
+  'settings.integrations.icloudBackendRequired':
+    'A server-backed Abbai Flow deployment is required for PyICloud credentials and authentication.',
+  'settings.integrations.calendarSourcesTitle': 'Calendar connection settings',
+  'settings.integrations.calendarSourcesHelp':
+    'Save credentials for multiple calendar sources. Calendar data retrieval and sync will be added separately.',
+  'settings.integrations.calendarNameLabel': 'Calendar name',
+  'settings.integrations.calendarProviderLabel': 'Source type',
+  'settings.integrations.calendarProviderCaldav': 'CalDAV (iCloud or another server)',
+  'settings.integrations.calendarProviderIcs': 'ICS feed (for example, school)',
+  'settings.integrations.calendarProviderGoogle': 'Google Calendar credentials',
+  'settings.integrations.calendarFeedUrlLabel': 'ICS feed URL',
+  'settings.integrations.calendarServerUrlLabel': 'Calendar server URL',
+  'settings.integrations.calendarUsernameLabel': 'Username',
+  'settings.integrations.calendarPasswordLabel': 'Password or app-specific password',
+  'settings.integrations.calendarClientIdLabel': 'Google client ID',
+  'settings.integrations.calendarClientSecretLabel': 'Google client secret',
+  'settings.integrations.calendarCredentialsOnly':
+    'This source configuration is stored only. Calendar data is not connected or syncing yet.',
+  'settings.integrations.calendarAddSource': 'Add calendar source',
+  'settings.integrations.calendarRemoveSource': 'Remove source',
+  'settings.integrations.calendarBackendRequired':
+    'A server-backed Abbai Flow deployment is required to store calendar credentials.',
   'settings.integrations.groceryTitle': 'Home Assistant Lists',
   'settings.integrations.defaultGroceryListLabel': 'Default Grocery List',
   'settings.integrations.defaultGroceryListSublabel': 'List shown when opening grocery view',
@@ -433,7 +478,8 @@ export const en = {
 
   // ---- settings: chores ----
   'settings.chores.title': 'Chores',
-  'settings.chores.desc': 'ChoresMan manages chores, points, and rewards for Abbai Flow family profiles.',
+  'settings.chores.desc':
+    'ChoresMan manages chores, points, and rewards for Abbai Flow family profiles.',
   'settings.chores.sourceLabel': 'ChoresMan',
   'settings.chores.sourceSublabel': 'Chores and rewards are stored locally with Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Daily Reset Time',
@@ -460,7 +506,6 @@ export const en = {
   'settings.about.importSettings': 'Import Settings',
   'settings.about.clearLocalStorage': 'Clear localStorage',
   'settings.about.resetToDefaults': 'Reset to Defaults',
-
 
   // ---- weather view (full-screen Weather tab) ----
   'weatherView.loading': 'Loading weather data...',
@@ -499,7 +544,6 @@ export const en = {
   'timer.lap': 'Lap',
   'timer.reset': 'Reset',
   'timer.lapN': 'Lap {n}',
-
 
   // ---- photo frame (screensaver-style slideshow) ----
   'photoFrame.noPhotos': 'No photos available',
@@ -546,8 +590,7 @@ export const en = {
   'chores.missionsHint': 'Work through your chores',
   'chores.noChoresToday': 'Nothing to do right now.',
   'chores.wellDone': 'Well done!',
-  'chores.missing':
-    'There are no chores in ChoresMan yet.',
+  'chores.missing': 'There are no chores in ChoresMan yet.',
   'chores.stat.due': 'Due today',
   'chores.stat.claimed': 'Claimed',
   'chores.stat.approved': 'Approved',
@@ -871,8 +914,7 @@ export const en = {
   'planner.assigned': 'Assigned · waiting for confirmation',
   'planner.undoShort': 'Undo',
   'planner.locked': 'not enough yet',
-  'planner.assignToClaim':
-    'Choose a family member before assigning this chore.',
+  'planner.assignToClaim': 'Choose a family member before assigning this chore.',
   'planner.pinTitle': 'Parent approval',
   'planner.pinHint': "Enter a parent's PIN to approve.",
   'planner.pinWrong': 'That PIN is not correct.',

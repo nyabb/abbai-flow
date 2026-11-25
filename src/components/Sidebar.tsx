@@ -90,8 +90,8 @@ const MOBILE_NAV_IDS: SidebarView[] = [
   'weather',
   'timer',
 ];
-/** Narrow phones keep the four household destinations visible. */
-const COMPACT_NAV_IDS: SidebarView[] = ['calendar', 'meals', 'grocery', 'chores'];
+/** Narrow phones keep the four household destinations visible, with Chores centered. */
+const COMPACT_NAV_IDS: SidebarView[] = ['calendar', 'meals', 'chores', 'grocery'];
 const COMPACT_MORE_IDS: SidebarView[] = ['music', 'weather', 'timer'];
 
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
