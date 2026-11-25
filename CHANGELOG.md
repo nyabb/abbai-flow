@@ -1,3 +1,10 @@
+# [2.28.0](https://github.com/nyabb/abbai-flow/compare/v2.27.2...v2.28.0) (2026-11-25)
+
+
+### Features
+
+* make iCloud preview copyable ([0744628](https://github.com/nyabb/abbai-flow/commit/074462803523ccc7803675228847ec61a20c7820))
+
 ## [2.27.2](https://github.com/nyabb/abbai-flow/compare/v2.27.1...v2.27.2) (2026-11-25)
 
 
