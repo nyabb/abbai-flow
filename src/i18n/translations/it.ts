@@ -33,8 +33,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Accorcia ogni animazione e transizione.',
   'display.connection.appDown': 'Abbai Flow irraggiungibile',
   'nav.settings': 'Impostazioni',
-  'nav.more': 'Altro',
-  'nav.closeMenu': 'Chiudi menu',
   'nav.mainNavigation': 'Navigazione principale',
 
   // ---- app chrome ----
@@ -318,13 +316,10 @@ export const it: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': 'Disconnesso',
   'settings.integrations.weatherEntityLabel': 'Entità meteo',
   'settings.integrations.weatherEntitySublabel': 'Entità usata per mostrare il meteo',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Integrazione Grocy',
-  'settings.integrations.grocySublabel': 'Spesa e pianificazione dei pasti',
   'settings.integrations.icloudRemindersTitle': 'Promemoria iCloud',
   'settings.integrations.icloudRemindersSublabel':
     'Configura Apple iCloud in Home Assistant. Ogni lista di Promemoria apparirà qui sotto come lista di cose da fare di Home Assistant.',
-  'settings.integrations.groceryTitle': 'Spesa',
+  'settings.integrations.groceryTitle': 'Liste Home Assistant',
   'settings.integrations.defaultGroceryListLabel': 'Lista della spesa predefinita',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrata aprendo la vista spesa',
   'settings.integrations.autoFirstAvailable': 'Automatico (prima disponibile)',

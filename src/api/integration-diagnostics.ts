@@ -288,18 +288,6 @@ async function checkHomeAssistant(
     `[Integration] Home Assistant entities: ${states.length} total; calendars=${calendars}, media_players=${mediaPlayers}, todo_lists=${todoLists}, choreops_entities=${choreOpsEntities}.`,
   );
 
-  const grocyEntities = [
-    'sensor.grocy_shopping_list',
-    'sensor.grocy_expiring_products',
-    'sensor.grocy_meal_plan',
-  ];
-  logger.info(
-    '[Integration] Grocy via Home Assistant: ' +
-      grocyEntities
-        .map((entityId) => `${entityId}=${describeEntity(states, entityId)}`)
-        .join(', ') +
-      '.',
-  );
   logger.info(
     `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
   );

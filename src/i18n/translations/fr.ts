@@ -33,8 +33,6 @@ export const fr: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Raccourcit chaque animation et transition.',
   'display.connection.appDown': 'Abbai Flow inaccessible',
   'nav.settings': 'Paramètres',
-  'nav.more': 'Plus',
-  'nav.closeMenu': 'Fermer le menu',
   'nav.mainNavigation': 'Navigation principale',
 
   // ---- app chrome ----
@@ -319,13 +317,10 @@ export const fr: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': 'Déconnecté',
   'settings.integrations.weatherEntityLabel': 'Entité météo',
   'settings.integrations.weatherEntitySublabel': "Entité utilisée pour l'affichage météo",
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Intégration Grocy',
-  'settings.integrations.grocySublabel': 'Courses et planification des repas',
   'settings.integrations.icloudRemindersTitle': 'Rappels iCloud',
   'settings.integrations.icloudRemindersSublabel':
     'Configurez Apple iCloud dans Home Assistant. Chaque liste de Rappels apparaîtra ci-dessous comme une liste de tâches Home Assistant.',
-  'settings.integrations.groceryTitle': 'Courses',
+  'settings.integrations.groceryTitle': 'Listes Home Assistant',
   'settings.integrations.defaultGroceryListLabel': 'Liste de courses par défaut',
   'settings.integrations.defaultGroceryListSublabel':
     "Liste affichée à l'ouverture de la vue courses",

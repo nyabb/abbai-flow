@@ -14,6 +14,7 @@ function renderOmniAdd(props: Partial<React.ComponentProps<typeof OmniAdd>> = {}
         onAddChore={vi.fn()}
         onAddRoutine={vi.fn()}
         onNavigateTimer={vi.fn()}
+        onNavigateSettings={vi.fn()}
         showTrigger={false}
         {...props}
       />
@@ -23,8 +24,8 @@ function renderOmniAdd(props: Partial<React.ComponentProps<typeof OmniAdd>> = {}
 
 /**
  * The collapsed fan used to be only `opacity: 0`: the buttons stayed hit
- * testable and stole taps from whatever sat underneath them — the More sheet's
- * close X opened the Timer, and Save buttons in the bottom-right did nothing.
+ * testable and stole taps from whatever sat underneath them, so Save buttons
+ * in the bottom-right did nothing.
  */
 describe('OmniAdd action fan', () => {
   it('is inert while collapsed', () => {
@@ -33,7 +34,7 @@ describe('OmniAdd action fan', () => {
 
     expect(actions.hasAttribute('inert')).toBe(true);
     expect(actions.getAttribute('aria-hidden')).toBe('true');
-    expect(actions.querySelectorAll('.omni-add-action')).toHaveLength(5);
+    expect(actions.querySelectorAll('.omni-add-action')).toHaveLength(6);
   });
 
   it('becomes interactive when opened', () => {
@@ -49,6 +50,7 @@ describe('OmniAdd action fan', () => {
           onAddChore={vi.fn()}
           onAddRoutine={vi.fn()}
           onNavigateTimer={vi.fn()}
+          onNavigateSettings={vi.fn()}
           showTrigger={false}
           open
         />

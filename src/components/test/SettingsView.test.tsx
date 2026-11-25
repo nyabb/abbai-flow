@@ -33,7 +33,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     defaultEventDuration: 60,
     notificationMinutes: 10,
     weatherEntity: 'weather.home',
-    grocyEnabled: false,
     defaultGroceryList: '',
     groceryListIds: [],
     shoppingEntity: '',

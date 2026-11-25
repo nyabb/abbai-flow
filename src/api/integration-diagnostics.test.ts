@@ -130,9 +130,6 @@ describe('integration startup diagnostics', () => {
       { entity_id: 'calendar.home', state: 'on' },
       { entity_id: 'todo.groceries', state: '1' },
       { entity_id: 'media_player.abbai', state: 'idle' },
-      { entity_id: 'sensor.grocy_shopping_list', state: '0' },
-      { entity_id: 'sensor.grocy_expiring_products', state: 'unavailable' },
-      { entity_id: 'sensor.grocy_meal_plan', state: 'unknown' },
       { entity_id: 'sensor.family_choreops_points', state: '12' },
       { entity_id: 'weather.home', state: 'sunny' },
     ];
@@ -166,7 +163,6 @@ describe('integration startup diagnostics', () => {
     expect(entries.join('\n')).toContain(
       'calendars=1, media_players=1, todo_lists=1, choreops_entities=1',
     );
-    expect(entries.join('\n')).toContain('sensor.grocy_expiring_products=present but unavailable');
     expect(entries.join('\n')).toContain('Weather entity weather.home: available.');
     expect(entries.join('\n')).toContain(
       'Home Assistant media source: available (2 root item(s)).',

@@ -495,7 +495,7 @@ export function App() {
     onNavigate: handleChangeView,
   });
 
-  /* Quick add lives in the middle of the tab bar. Routines use the same
+  /* Quick add lives at the lower right on mobile. Routines use the same
      Abbai Flow editor from whichever view opens them. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const requestChoreCreate = useCallback(
@@ -891,16 +891,17 @@ export function App() {
           )}
         </div>
 
-        {/* Quick add opened from the middle of the mobile tab bar. */}
+        {/* Omni Add is anchored at the lower right on mobile. */}
         <OmniAdd
           open={quickAddOpen}
           onOpenChange={setQuickAddOpen}
-          showTrigger={false}
+          showTrigger
           onAddEvent={handleAddEvent}
           onAddGroceryItem={() => handleChangeView('grocery')}
           onAddChore={() => requestChoreCreate('chore')}
           onAddRoutine={() => requestChoreCreate('routine')}
           onNavigateTimer={() => handleChangeView('timer')}
+          onNavigateSettings={() => handleChangeView('settings')}
           sidebarPosition={sidebarPos}
         />
 

@@ -639,6 +639,52 @@ a:focus:not(:focus-visible) {
   text-overflow: ellipsis;
 }
 
+.task-checklist-assignees {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-checklist-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 2px 8px 2px 2px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.task-checklist-avatar {
+  display: inline-flex;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.task-checklist-avatar .member-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.task-checklist-assignee-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* --- Week Calendar --- */
 .week-calendar {
   flex: 1;
@@ -1746,27 +1792,50 @@ a:focus:not(:focus-visible) {
   left: 0;
   right: 0;
   height: var(--mobile-tab-bar-height, 72px);
-  background: var(--bg-surface, #ffffff);
-  border-top: 1px solid var(--border, #e5e5e5);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+  background: transparent;
   z-index: 90;
   align-items: stretch;
-  justify-content: space-around;
+  justify-content: space-between;
   padding: 8px 4px 0;
   padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  isolation: isolate;
+  overflow: visible;
+}
+
+.mobile-tab-bar-wave {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.mobile-tab-bar-wave > path:first-child {
+  fill: var(--bg-surface, #fff);
+}
+
+.mobile-tab-bar-wave-border {
+  fill: none;
+  stroke: var(--border, #e5e5e5);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
 }
 
 /* Rows of that bar. Defined at base scope (not inside the phone media query)
    so `Sidebar Position: Bottom` also renders a styled bar on a wall display. */
 .mobile-tab {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
-  min-width: 56px;
+  min-width: 0;
   min-height: 48px;
-  padding: 6px 8px;
+  padding: 4px 2px;
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   transition: color var(--transition);
@@ -1784,26 +1853,30 @@ a:focus:not(:focus-visible) {
   background: color-mix(in srgb, var(--accent) 86%, #000);
 }
 
-/* Quick add sits in the middle of the tab bar, raised above the rest. */
-.mobile-tab--add {
-  flex: 0 0 auto;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  margin-top: -18px;
-  border-radius: 50%;
-  color: var(--planner-on-accent, #fff);
-  background: var(--accent);
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent) 40%, transparent);
-}
-
-.mobile-tab--add svg {
-  width: 26px;
-  height: 26px;
-}
-
 .mobile-tab--active {
   color: var(--accent, #3b82f6);
+}
+
+.mobile-tab--featured {
+  flex-grow: 1.16;
+  transform: translateY(-9px);
+  color: var(--text-primary);
+}
+
+.mobile-tab--featured svg {
+  width: 27px;
+  height: 27px;
+}
+
+.mobile-tab--featured.mobile-tab--active svg {
+  width: 27px;
+  height: 27px;
+  padding: 10px;
+}
+
+.mobile-tab--featured .mobile-tab-label {
+  font-size: 0.64rem;
+  font-weight: 700;
 }
 
 /* Active tab: a soft tinted rounded tile behind the icon (the family-planner
@@ -1827,131 +1900,10 @@ a:focus:not(:focus-visible) {
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.2px;
-}
-
-/* Overflow menu opened by the "More" tab. */
-.mobile-more-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.25);
-  z-index: 99;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 200ms ease, visibility 0s linear 200ms;
-}
-
-.mobile-more-backdrop.is-open {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transition: opacity 200ms ease, visibility 0s;
-}
-
-.mobile-more-menu {
-  position: fixed;
-  bottom: var(--mobile-tab-bar-height, 72px);
-  left: 0;
-  right: 0;
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
-  padding: 8px 0 16px;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(24px);
-  pointer-events: none;
-  transition:
-    transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
-    opacity 180ms ease,
-    visibility 0s linear 240ms;
-}
-
-.mobile-more-menu.is-open {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-  pointer-events: auto;
-  transition:
-    transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
-    opacity 180ms ease,
-    visibility 0s;
-}
-
-.mobile-more-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 20px 12px;
-}
-
-.mobile-more-title {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-/* The close button sits above the list: a tap on it must never reach the item
-   underneath (that used to fire the first menu entry). */
-.mobile-more-close {
-  position: relative;
-  z-index: 2;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  color: var(--text-muted);
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-  -webkit-tap-highlight-color: transparent;
-  transition: all var(--transition);
-}
-
-.mobile-more-close:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.mobile-more-menu {
-  /* Own stacking context, so the header stays above the scrollable list. */
-  isolation: isolate;
-}
-
-.mobile-more-item {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: 100%;
-  padding: 14px 24px;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: var(--text-primary);
-  min-height: 48px;
-  transition: background var(--transition);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.mobile-more-item:hover,
-.mobile-more-item:active {
-  background: var(--bg-hover);
-}
-
-.mobile-more-item--active {
-  color: var(--accent, #3b82f6);
-}
-
-.mobile-more-theme {
-  padding: 8px 24px 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Hide mobile calendar nav on desktop */
@@ -2292,14 +2244,14 @@ a:focus:not(:focus-visible) {
     padding: 12px 16px;
   }
 
-  /* Mobile tab bar slightly shorter */
+  /* Keep enough height for the direct seven-page bar and the raised Chores tab. */
   .mobile-tab-bar {
-    height: 56px;
+    height: var(--mobile-tab-bar-height, 72px);
   }
 
   .mobile-tab {
-    min-width: 48px;
-    padding: 4px 6px;
+    min-width: 0;
+    padding: 4px 1px;
   }
 
   .mobile-tab-label {

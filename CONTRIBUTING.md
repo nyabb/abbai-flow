@@ -59,7 +59,7 @@ The built files land in the `dist/` directory.
 
 ```
 src/
-  api/           # External API integrations (Home Assistant, Grocy, HA to-do lists)
+  api/           # External API integrations (Home Assistant and HA to-do lists)
   components/    # React components
   hooks/         # Custom React hooks
   styles/        # CSS and theme definitions

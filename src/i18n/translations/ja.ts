@@ -33,8 +33,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'すべてのアニメーションと遷移を短くします。',
   'display.connection.appDown': 'Abbai Flow に接続できません',
   'nav.settings': '設定',
-  'nav.more': 'その他',
-  'nav.closeMenu': 'メニューを閉じる',
   'nav.mainNavigation': 'メインナビゲーション',
 
   // ---- app chrome ----
@@ -313,13 +311,10 @@ export const ja: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': '未接続',
   'settings.integrations.weatherEntityLabel': '天気エンティティ',
   'settings.integrations.weatherEntitySublabel': '天気表示に使用するエンティティ',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Grocy連携',
-  'settings.integrations.grocySublabel': '買い物と献立の計画',
   'settings.integrations.icloudRemindersTitle': 'iCloudリマインダー',
   'settings.integrations.icloudRemindersSublabel':
     'Home AssistantでApple iCloudを設定すると、各リマインダーリストがHome AssistantのToDoリストとしてここに表示されます。',
-  'settings.integrations.groceryTitle': '買い物',
+  'settings.integrations.groceryTitle': 'Home Assistant のリスト',
   'settings.integrations.defaultGroceryListLabel': 'デフォルトの買い物リスト',
   'settings.integrations.defaultGroceryListSublabel': '買い物画面を開いたときに表示されるリスト',
   'settings.integrations.autoFirstAvailable': '自動(最初に利用可能なもの)',

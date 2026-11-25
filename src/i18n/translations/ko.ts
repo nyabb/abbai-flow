@@ -33,8 +33,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': '앱의 모든 애니메이션과 전환을 짧게 합니다.',
   'display.connection.appDown': 'Abbai Flow 연결 불가',
   'nav.settings': '설정',
-  'nav.more': '더보기',
-  'nav.closeMenu': '메뉴 닫기',
   'nav.mainNavigation': '기본 탐색',
 
   // ---- app chrome ----
@@ -313,13 +311,10 @@ export const ko: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': '연결 안 됨',
   'settings.integrations.weatherEntityLabel': '날씨 엔티티',
   'settings.integrations.weatherEntitySublabel': '날씨 표시에 사용되는 엔티티',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Grocy 연동',
-  'settings.integrations.grocySublabel': '장보기 및 식단 계획',
   'settings.integrations.icloudRemindersTitle': 'iCloud 미리 알림',
   'settings.integrations.icloudRemindersSublabel':
     'Home Assistant에서 Apple iCloud를 설정하면 각 미리 알림 목록이 Home Assistant 할 일 목록으로 아래에 표시됩니다.',
-  'settings.integrations.groceryTitle': '장보기',
+  'settings.integrations.groceryTitle': 'Home Assistant 목록',
   'settings.integrations.defaultGroceryListLabel': '기본 장보기 목록',
   'settings.integrations.defaultGroceryListSublabel': '장보기 화면을 열 때 표시되는 목록',
   'settings.integrations.autoFirstAvailable': '자동(첫 번째로 사용 가능한 항목)',
