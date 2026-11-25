@@ -1,3 +1,10 @@
+# [2.25.0](https://github.com/nyabb/abbai-flow/compare/v2.24.0...v2.25.0) (2026-11-25)
+
+
+### Features
+
+* polish responsive navigation and sheets ([04b9e99](https://github.com/nyabb/abbai-flow/commit/04b9e9942f0aafd256f8e95893972a70aa9c1d4e))
+
 # [2.24.0](https://github.com/nyabb/abbai-flow/compare/v2.23.2...v2.24.0) (2026-11-25)
 
 
