@@ -137,7 +137,13 @@ async function openMusic(page: Page) {
   await page.goto(stack.appUrl);
   const mobileNavigation = page.locator('.mobile-tab-bar');
   if (await mobileNavigation.isVisible()) {
-    await mobileNavigation.getByRole('button', { name: 'Music', exact: true }).click();
+    const directMusicTab = mobileNavigation.getByRole('button', { name: 'Music', exact: true });
+    if (await directMusicTab.count()) {
+      await directMusicTab.click();
+    } else {
+      await mobileNavigation.getByRole('button', { name: 'More', exact: true }).click();
+      await mobileNavigation.getByRole('menuitem', { name: 'Music', exact: true }).click();
+    }
     return;
   }
   await page

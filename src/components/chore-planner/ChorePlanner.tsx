@@ -68,6 +68,7 @@ import { RoutineEditorDialog } from '../routines/RoutineEditorDialog';
 import type { RoutineEditorRequest } from '../routines/RoutineEditorDialog';
 import { isStringArray, usePersistentState } from '../../hooks/usePersistentState';
 import { useSoundPreference } from '../../hooks/useSoundPreference';
+import { useSheetDrag } from '../../hooks/useSheetDrag';
 
 /**
  * The planner is one board: routines for every family member and chore lists
@@ -178,6 +179,10 @@ export function ChorePlanner({
     action: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+  const sheetDrag = useSheetDrag(
+    () => dispatchOverlay({ type: 'close' }),
+    overlay.type !== 'closed' && !saving,
+  );
   /** Bottom-right notification: green for "done", red for "that failed". */
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
   const [celebration, setCelebration] = useState<'chore' | 'goal' | null>(null);
@@ -1346,11 +1351,15 @@ export function ChorePlanner({
       {overlay.type !== 'closed' && (
         <div className="planner-backdrop" onClick={() => dispatchOverlay({ type: 'close' })}>
           <section
-            className={`planner-sheet ${overlay.type === 'form' ? 'planner-sheet--form' : ''}`}
+            className={`planner-sheet sheet-drag-surface${
+              overlay.type === 'form' ? ' planner-sheet--form' : ''
+            }`}
             role="dialog"
             aria-modal="true"
+            {...sheetDrag.surfaceProps}
             onClick={(event) => event.stopPropagation()}
           >
+            <div className="sheet-drag-handle" aria-hidden="true" {...sheetDrag.handleProps} />
             <button
               className="planner-sheet-close"
               onClick={() => dispatchOverlay({ type: 'close' })}

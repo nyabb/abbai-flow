@@ -3,6 +3,7 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { ALL_WEEKDAYS } from '../../api/routine-schedule';
 import { useRoutines } from '../../hooks/useRoutines';
 import { useTranslation } from '../../i18n';
+import { useSheetDrag } from '../../hooks/useSheetDrag';
 import {
   DEFAULT_ROUTINE_MISSION_POINTS,
   type FamilyMember,
@@ -139,6 +140,7 @@ export function RoutineEditorDialog({
   const title = request.routine
     ? t('settings.family.editRoutine', { name: request.routine.name })
     : t('settings.family.addRoutine');
+  const sheetDrag = useSheetDrag(onClose, !saving);
 
   return (
     <div
@@ -148,12 +150,14 @@ export function RoutineEditorDialog({
       }}
     >
       <section
-        className="routine-editor-dialog"
+        className="routine-editor-dialog sheet-drag-surface"
         role="dialog"
         aria-modal="true"
         aria-labelledby="routine-editor-title"
+        {...sheetDrag.surfaceProps}
         onClick={(event) => event.stopPropagation()}
       >
+        <div className="sheet-drag-handle" aria-hidden="true" {...sheetDrag.handleProps} />
         <header className="routine-editor-header">
           <h2 id="routine-editor-title">{title}</h2>
           <button

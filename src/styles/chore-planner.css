@@ -2611,14 +2611,62 @@
   gap: 8px;
   min-width: 0;
   padding: 10px;
-  border: 1px dashed color-mix(in srgb, var(--planner-ink) 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--planner-ink) 12%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--planner-surface) 72%, transparent);
+  background: color-mix(in srgb, var(--planner-surface) 90%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--planner-ink) 7%, transparent);
+  transition:
+    border-color 160ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .planner-col--free {
-  border-color: color-mix(in srgb, var(--planner-accent) 45%, transparent);
-  background: color-mix(in srgb, var(--planner-accent) 6%, var(--planner-surface));
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  border-color: color-mix(in srgb, var(--planner-accent) 24%, transparent);
+  background: color-mix(in srgb, var(--planner-accent) 5%, var(--planner-surface));
+}
+
+.planner-col--free .planner-col-head {
+  grid-column: 1;
+}
+
+.planner-col--free .planner-col-body {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  align-items: start;
+  gap: 8px;
+}
+
+.planner-col--free .planner-col-body > h2,
+.planner-col--free .planner-col-body > .planner-col-empty {
+  grid-column: 1 / -1;
+}
+
+.planner-col--free > .planner-col-start {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  padding-inline: 12px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .planner-col:hover {
+    border-color: color-mix(in srgb, var(--planner-ink) 20%, transparent);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--planner-ink) 11%, transparent);
+    transform: translateY(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planner-col {
+    transition: none;
+  }
 }
 
 .planner-col-head {

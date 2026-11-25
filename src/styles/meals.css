@@ -14,25 +14,47 @@
 .meals-tabs {
   display: flex;
   gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-primary) 6%, var(--bg-surface));
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .meals-tab {
   flex: 0 0 auto;
-  border: 1px solid var(--border);
+  min-height: 44px;
+  border: 1px solid transparent;
   border-radius: 999px;
-  padding: 9px 16px;
-  background: var(--bg-surface);
+  padding: 0 16px;
+  background: transparent;
   color: var(--text-secondary);
   font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.meals-tab:hover:not(.meals-tab--active) {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-surface) 72%, transparent);
 }
 
 .meals-tab--active {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--text-on-accent, #fff);
+  color: var(--accent);
+  background: var(--bg-surface);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+.meals-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .meals-panel,

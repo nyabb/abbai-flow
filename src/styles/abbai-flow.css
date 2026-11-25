@@ -131,10 +131,12 @@ a:focus:not(:focus-visible) {
 /* --- Sidebar width variable --- */
 :root {
   --sidebar-width: 64px;
-  /* Height the bottom tab bar reserves. Declared globally (not only in the
-     phone media query) so `Sidebar Position: Bottom` pads correctly on wide
-     screens too. */
-  --mobile-tab-bar-height: 72px;
+  /* Include the device safe area in both the bar and the space reserved below
+     page content. */
+  --mobile-tab-bar-content-height: 72px;
+  --mobile-tab-bar-height: calc(
+    var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
+  );
 }
 
 /* --- Main Layout (sidebar + content grid) --- */
@@ -1792,47 +1794,23 @@ a:focus:not(:focus-visible) {
   left: 0;
   right: 0;
   height: var(--mobile-tab-bar-height, 72px);
-  background: var(--bg-surface, #fff);
-  border-top: 1px solid var(--border, #e5e5e5);
+  padding: 8px max(8px, env(safe-area-inset-left, 0px)) env(safe-area-inset-bottom, 0px)
+    max(8px, env(safe-area-inset-right, 0px));
+  border-top: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 78%, transparent);
+  background: color-mix(in srgb, var(--bg-surface, #fff) 90%, transparent);
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.1);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
   z-index: 90;
   align-items: stretch;
-  justify-content: space-between;
-  padding: 8px 4px 0;
-  padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  justify-content: space-around;
   isolation: isolate;
   overflow: visible;
 }
 
-.mobile-tab-bar-wave {
-  position: absolute;
-  top: -32px;
-  left: var(--mobile-active-center, 50%);
-  transform: translateX(-50%);
-  z-index: 0;
-  width: var(--mobile-bump-width, 0px);
-  height: calc(100% + 32px);
-  pointer-events: none;
-  transition:
-    left 360ms cubic-bezier(0.22, 1, 0.36, 1),
-    width 360ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.mobile-tab-bar-wave > path:first-child {
-  fill: var(--bg-surface, #fff);
-}
-
-.mobile-tab-bar-wave-border {
-  fill: none;
-  stroke: var(--border, #e5e5e5);
-  stroke-width: 1px;
-  vector-effect: non-scaling-stroke;
-}
-
-/* Rows of that bar. Defined at base scope (not inside the phone media query)
-   so `Sidebar Position: Bottom` also renders a styled bar on a wall display. */
+/* A stable dock keeps every destination in the same place as people navigate. */
 .mobile-tab {
   position: relative;
-  z-index: 1;
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
@@ -1840,13 +1818,13 @@ a:focus:not(:focus-visible) {
   justify-content: center;
   gap: 2px;
   min-width: 0;
-  min-height: 48px;
-  padding: 4px 2px;
-  border-radius: var(--radius-sm);
+  min-height: 52px;
+  padding: 4px 3px;
+  border-radius: 16px;
   color: var(--text-muted);
   transition:
-    color 220ms ease,
-    transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+    color 160ms ease,
+    background-color 160ms ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -1863,21 +1841,18 @@ a:focus:not(:focus-visible) {
 
 .mobile-tab--active {
   color: var(--accent, #3b82f6);
-  z-index: 2;
-  transform: translateY(-8px) scale(1.08);
+  background: color-mix(in srgb, var(--accent, #3b82f6) 8%, transparent);
 }
 
-/* Active tab: a soft tinted rounded tile behind the icon (the family-planner
-   pattern) instead of an underline. The tile is painted on the icon itself so
-   the markup stays a plain icon + label. */
+/* The selected icon gets a quiet pill while the tab itself stays in place. */
 .mobile-tab--active svg {
   box-sizing: content-box;
   flex: 0 0 auto;
   width: 22px;
   height: 22px;
-  padding: 9px;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--accent, #3b82f6) 14%, transparent);
+  padding: 5px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, transparent);
 }
 
 .mobile-tab--active .mobile-tab-label {
@@ -1885,13 +1860,79 @@ a:focus:not(:focus-visible) {
 }
 
 .mobile-tab-label {
-  font-size: 0.6rem;
+  font-size: 0.66rem;
   font-weight: 600;
-  letter-spacing: 0.2px;
+  line-height: 1.1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mobile-tab-more {
+  position: relative;
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+}
+
+.mobile-tab-more > .mobile-tab {
+  width: 100%;
+}
+
+.mobile-more-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 10px);
+  z-index: 5;
+  display: grid;
+  gap: 4px;
+  width: min(232px, calc(100vw - 24px));
+  padding: 7px;
+  border: 1px solid color-mix(in srgb, var(--border, #e5e5e5) 78%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--bg-surface, #fff) 94%, transparent);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  animation: mobile-more-enter 160ms ease-out both;
+}
+
+.mobile-more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  text-align: left;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.mobile-more-menu-item svg {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-more-menu-item:hover,
+.mobile-more-menu-item.is-active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.mobile-more-menu-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+@keyframes mobile-more-enter {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* Hide mobile calendar nav on desktop */
@@ -1907,7 +1948,10 @@ a:focus:not(:focus-visible) {
     --time-axis-width: 44px;
     --hour-height: 56px;
     --sidebar-width: 0px;
-    --mobile-tab-bar-height: 72px;
+    --mobile-tab-bar-content-height: 72px;
+    --mobile-tab-bar-height: calc(
+      var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   /* --- Layout: remove sidebar column, add bottom padding for tab bar --- */
@@ -2242,9 +2286,7 @@ a:focus:not(:focus-visible) {
     padding: 4px 1px;
   }
 
-  .mobile-tab-label {
-    font-size: 0.55rem;
-  }
+  .mobile-tab-label { font-size: 0.62rem; }
 }
 
 /* --- HA Ingress mode --- */
