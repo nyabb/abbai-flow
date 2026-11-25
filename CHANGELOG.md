@@ -1,3 +1,10 @@
+# [2.24.0](https://github.com/nyabb/abbai-flow/compare/v2.23.2...v2.24.0) (2026-11-25)
+
+
+### Features
+
+* add Choresman chore provider ([f62c209](https://github.com/nyabb/abbai-flow/commit/f62c2098e7d07fdf722f92935473dcbcf282951c))
+
 ## [2.23.2](https://github.com/nyabb/abbai-flow/compare/v2.23.1...v2.23.2) (2026-11-25)
 
 
