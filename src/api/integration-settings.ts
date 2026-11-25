@@ -68,19 +68,28 @@ export interface IntegrationSettingsPatch {
   calendarSources?: CalendarSourceSetting[];
 }
 
-function integrationSettingsUrl(): string {
+function integrationSettingsUrl(path = '/abbai-flow/settings/integrations'): string {
   const base = getRuntimeConfig() ? window.location.pathname.replace(/\/$/, '') : '';
-  return `${base}/abbai-flow/settings/integrations`;
+  return `${base}${path}`;
 }
 
-async function request<T>(method: string, body?: unknown, path = ''): Promise<T> {
-  const response = await fetch(`${integrationSettingsUrl()}${path}`, {
+async function request<T>(
+  method: string,
+  body?: unknown,
+  path = '/abbai-flow/settings/integrations',
+): Promise<T> {
+  const response = await fetch(integrationSettingsUrl(path), {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
     cache: 'no-store',
   });
-  const payload = (await response.json().catch(() => ({}))) as { error?: string } & T;
+  if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
+    throw new Error('The integration server returned a non-JSON response.');
+  }
+  const payload = (await response.json().catch(() => {
+    throw new Error('The integration server returned invalid JSON.');
+  })) as { error?: string } & T;
   if (!response.ok) throw new Error(payload.error || `Request failed (HTTP ${response.status})`);
   return payload;
 }
@@ -113,7 +122,7 @@ export interface ICloudRemindersActionResult {
 }
 
 function iCloudAction<T>(action: string, body: unknown = {}): Promise<T> {
-  return request<T>('POST', body, `/icloud-reminders/${action}`);
+  return request<T>('POST', body, `/abbai-flow/settings/icloud-reminders/${action}`);
 }
 
 export function authenticateICloudReminders(): Promise<ICloudRemindersActionResult> {
