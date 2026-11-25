@@ -1,5 +1,5 @@
-/** Chores settings: the single on/off switch that shows the chores screen. */
-import { Toggle } from '../controls';
+/** Chores settings: choose the active chore provider. */
+import { Segment } from '../controls';
 import type { SettingsSectionContext } from './context';
 
 export function ChoresSection({ settings, onUpdateSettings, t }: SettingsSectionContext) {
@@ -11,12 +11,16 @@ export function ChoresSection({ settings, onUpdateSettings, t }: SettingsSection
       <div className="settings-group">
         <div className="settings-row">
           <div>
-            <div className="settings-row-label">{t('settings.chores.enableLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.chores.enableSublabel')}</div>
+            <div className="settings-row-label">{t('settings.chores.providerLabel')}</div>
+            <div className="settings-row-sublabel">{t('settings.chores.providerSublabel')}</div>
           </div>
-          <Toggle
-            checked={settings.choresEnabled}
-            onChange={(v) => onUpdateSettings({ choresEnabled: v })}
+          <Segment
+            value={settings.choresProvider}
+            options={[
+              { value: 'choreops', label: t('settings.chores.providerChoreOps') },
+              { value: 'choresman', label: t('settings.chores.providerChoresman') },
+            ]}
+            onChange={(value) => onUpdateSettings({ choresProvider: value })}
           />
         </div>
       </div>

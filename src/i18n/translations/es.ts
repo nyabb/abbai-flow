@@ -40,8 +40,6 @@ export const es: Record<TranslationKey, string> = {
     'No se encontró el miembro de la pantalla infantil — mostrando la aplicación completa.',
   'app.dismiss': 'Descartar',
   'app.connecting': 'Conectando...',
-  'app.choresDisabled':
-    'Las tareas están desactivadas. Actívalas en Ajustes → Tareas para usar esta pantalla.',
   'app.previewMode': 'Modo de vista previa',
   'debugConsole.tab': 'Depuración',
   'debugConsole.title': 'Actividad de depuración',
@@ -383,8 +381,6 @@ export const es: Record<TranslationKey, string> = {
   'settings.chores.title': 'Tareas',
   'settings.chores.desc':
     'Las tareas y los puntos se gestionan en Home Assistant con la integración ChoreOps.',
-  'settings.chores.enableLabel': 'Activar tareas',
-  'settings.chores.enableSublabel': 'Muestra el seguimiento de tareas y recompensas',
   'settings.chores.dailyResetTimeLabel': 'Hora de reinicio diario',
   'settings.chores.dailyResetTimeSublabel': 'Cuándo se reinician las tareas diarias',
   'settings.chores.streakDurationLabel': 'Duración de la racha',

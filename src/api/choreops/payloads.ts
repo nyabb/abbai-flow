@@ -77,6 +77,9 @@ export interface CreateChoreInput {
   claimLockUntilWindow?: boolean;
   notificationChannel?: string | null;
   notificationImportance?: string | null;
+  notificationPriority?: string | null;
+  notificationTtl?: number | null;
+  showOnCalendar?: boolean;
   points?: number | null;
   description?: string | null;
   /** Ordinary chore labels. Abbai Flow routines are stored separately. */
@@ -131,6 +134,11 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
   if (input.notificationImportance) {
     payload.notification_importance = input.notificationImportance;
   }
+  if (input.notificationPriority) payload.notification_priority = input.notificationPriority;
+  if (typeof input.notificationTtl === 'number' && Number.isInteger(input.notificationTtl)) {
+    payload.notification_ttl = input.notificationTtl;
+  }
+  if (typeof input.showOnCalendar === 'boolean') payload.show_on_calendar = input.showOnCalendar;
   if (typeof input.points === 'number' && Number.isFinite(input.points)) {
     payload.points = Math.max(0, Math.round(input.points));
   }
@@ -189,6 +197,11 @@ export interface UpdateChoreInput {
   /** Due reminder offset; omitted means "leave the current reminder alone". */
   reminderOffset?: string;
   autoApprove?: boolean;
+  notificationChannel?: string | null;
+  notificationImportance?: string | null;
+  notificationPriority?: string | null;
+  notificationTtl?: number | null;
+  showOnCalendar?: boolean;
 }
 
 /**
@@ -258,6 +271,13 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
   }
   if (input.reminderOffset?.trim()) payload.due_reminder_offset = input.reminderOffset.trim();
   if (typeof input.autoApprove === 'boolean') payload.auto_approve = input.autoApprove;
+  if (input.notificationChannel) payload.notification_channel = input.notificationChannel;
+  if (input.notificationImportance) payload.notification_importance = input.notificationImportance;
+  if (input.notificationPriority) payload.notification_priority = input.notificationPriority;
+  if (typeof input.notificationTtl === 'number' && Number.isInteger(input.notificationTtl)) {
+    payload.notification_ttl = input.notificationTtl;
+  }
+  if (typeof input.showOnCalendar === 'boolean') payload.show_on_calendar = input.showOnCalendar;
 
   return payload;
 }

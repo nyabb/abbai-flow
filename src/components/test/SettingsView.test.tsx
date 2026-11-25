@@ -47,7 +47,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     alwaysOnDisplay: false,
     showSeconds: false,
     reducedMotion: false,
-    choresEnabled: true,
     choresResetTime: '00:00',
     streakDays: 5,
     ...overrides,

@@ -40,8 +40,6 @@ export const nl: Record<TranslationKey, string> = {
   'app.kidDisplayNotFound': 'Lid voor kinderscherm niet gevonden — de volledige app wordt getoond.',
   'app.dismiss': 'Negeren',
   'app.connecting': 'Verbinden...',
-  'app.choresDisabled':
-    'Klusjes zijn uitgeschakeld. Schakel ze in bij Instellingen → Klusjes om dit scherm te gebruiken.',
   'app.previewMode': 'Voorbeeldmodus',
   'debugConsole.tab': 'Debug',
   'debugConsole.title': 'Debugactiviteit',
@@ -434,8 +432,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.chores.title': 'Klusjes',
   'settings.chores.desc':
     'Karweitjes en punten worden in Home Assistant beheerd door de ChoreOps-integratie.',
-  'settings.chores.enableLabel': 'Klusjes inschakelen',
-  'settings.chores.enableSublabel': 'Toont het bijhouden van klusjes en beloningen',
   'settings.chores.dailyResetTimeLabel': 'Dagelijkse reset-tijd',
   'settings.chores.dailyResetTimeSublabel': 'Wanneer dagelijkse klusjes resetten',
   'settings.chores.streakDurationLabel': 'Duur van reeks',

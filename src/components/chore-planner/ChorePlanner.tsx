@@ -31,6 +31,7 @@ import {
 import type { ChoreOpsReward } from '../../types/choreops';
 import { recordDebugLog } from '../../api/debug-log';
 import { useChoreOps } from '../../hooks/useChoreOps';
+import type { ChoreProvider } from '../../api/choresman';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
 import { useRoutines } from '../../hooks/useRoutines';
 import { useTranslation } from '../../i18n';
@@ -83,6 +84,7 @@ type ToastKind = 'success' | 'error';
 interface ChorePlannerProps {
   /** Abbai Flow family members supply photos, colours, and display names. */
   members: FamilyMember[];
+  provider?: ChoreProvider;
   /** App language (`AbbaiSettings.locale`), used by the routine editor. */
   locale: string;
   weekStartsOn?: 0 | 1;
@@ -94,11 +96,12 @@ interface ChorePlannerProps {
 
 export function ChorePlanner({
   members,
+  provider = 'choreops',
   locale,
   weekStartsOn = 1,
   createRequest,
 }: ChorePlannerProps) {
-  const choreOps = useChoreOps();
+  const choreOps = useChoreOps(provider, provider === 'choresman' ? members : []);
   const routinesApi = useRoutines();
   const {
     routines: familyRoutines,
@@ -109,9 +112,19 @@ export function ChorePlanner({
   const familyStore = useMemo(() => new FamilyStore(), []);
   const [now, setNow] = useState(new Date());
   /** ChoreOps owns chore data; routines come from the Family store. */
+  const choreFamily = useMemo(
+    () => provider === 'choresman'
+      ? members.map((member) => {
+          const localMember = { ...member };
+          delete localMember.choreops_user;
+          return localMember;
+        })
+      : members,
+    [members, provider],
+  );
   const view = useMemo(
-    () => buildChorePlannerView(choreOps.data, members, now),
-    [choreOps.data, members, now],
+    () => buildChorePlannerView(choreOps.data, choreFamily, now),
+    [choreOps.data, choreFamily, now],
   );
   const plannerMembers = [...view.members];
   for (const familyMember of members) {

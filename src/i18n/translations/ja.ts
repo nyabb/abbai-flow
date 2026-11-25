@@ -40,7 +40,6 @@ export const ja: Record<TranslationKey, string> = {
     '子供用ディスプレイのメンバーが見つかりません — 通常のアプリを表示します。',
   'app.dismiss': '閉じる',
   'app.connecting': '接続中...',
-  'app.choresDisabled': '家事機能は無効です。この画面を使うには設定 → 家事で有効にしてください。',
   'app.previewMode': 'プレビューモード',
   'debugConsole.tab': 'デバッグ',
   'debugConsole.title': 'デバッグ履歴',
@@ -377,8 +376,6 @@ export const ja: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': '家事',
   'settings.chores.desc': '家事とポイントは Home Assistant の ChoreOps 統合で管理されます。',
-  'settings.chores.enableLabel': '家事機能を有効にする',
-  'settings.chores.enableSublabel': '家事の記録と報酬を表示します',
   'settings.chores.dailyResetTimeLabel': '毎日のリセット時刻',
   'settings.chores.dailyResetTimeSublabel': '毎日の家事がリセットされる時刻',
   'settings.chores.streakDurationLabel': '連続記録の日数',

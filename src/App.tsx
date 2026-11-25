@@ -508,10 +508,13 @@ export function App() {
   );
 
   // ---- Chore data ----
-  // ChoreOps owns all chore data: chores are created and edited in Home
-  // Assistant, so Abbai Flow only reads them and presses the action buttons the
-  // integration advertises. There is no local chore store.
-  const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps();
+  // The selected provider owns chore, member, points and reward records. The
+  // Choresman adapter uses the app's local family profiles as its unlinked,
+  // persistent member identities.
+  const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps(
+    settings.choresProvider,
+    settings.choresProvider === 'choresman' ? members : [],
+  );
 
   const { reconnected } = useConnectionStatus({ haConnected: connected });
   useScreenWakeLock(settings.alwaysOnDisplay);
@@ -524,13 +527,31 @@ export function App() {
   }, [reconnected, fetchCalendars]);
 
   useEffect(() => {
-    if (!choreOpsData?.users.length) return;
+    if (settings.choresProvider !== 'choreops' || !choreOpsData?.users.length) return;
     void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
-  }, [choreOpsData?.users, members, syncChoreOpsMembers]);
+  }, [settings.choresProvider, choreOpsData?.users, members, syncChoreOpsMembers]);
+
+  const choreIdentityMembers = useMemo(
+    () => settings.choresProvider === 'choresman'
+      ? members.map((member) => {
+          const localMember = { ...member };
+          delete localMember.choreops_user;
+          return localMember;
+        })
+      : members,
+    [members, settings.choresProvider],
+  );
 
   const calendarChores = useMemo(
     () =>
-      (choreOpsData?.chores ?? []).map((chore) => {
+      (choreOpsData?.chores ?? [])
+        .filter((chore) => {
+          if (chore.showOnCalendar === false) return false;
+          if (settings.choresProvider !== 'choresman') return true;
+          if (!chore.dueDate) return ['none', 'daily'].includes(chore.frequency ?? 'none');
+          return new Date(chore.dueDate).toDateString() === new Date().toDateString();
+        })
+        .map((chore) => {
         /*
          * Resolve ChoreOps' assignee names onto Abbai Flow member ids. Without
          * this the calendar checklist showed every chore as "nobody's", which
@@ -543,7 +564,7 @@ export function App() {
               ? [chore.assignee]
               : []
         )
-          .map((name) => resolveMemberForUser(name, members))
+          .map((name) => resolveMemberForUser(name, choreIdentityMembers))
           .filter((member): member is NonNullable<typeof member> => Boolean(member))
           .map((member) => member.id);
 
@@ -551,12 +572,12 @@ export function App() {
           id: chore.id,
           name: chore.name,
           assigned_to: Array.from(new Set(assignees)),
-          frequency: 'once' as const,
+          frequency: chore.frequency === 'daily' ? ('daily' as const) : ('once' as const),
           value_cents: 0,
           icon: chore.icon ?? undefined,
         };
-      }),
-    [choreOpsData, members],
+        }),
+    [choreOpsData, choreIdentityMembers, settings.choresProvider],
   );
 
   const calendarCompletedChoreIds = useMemo(() => {
@@ -750,24 +771,13 @@ export function App() {
           onTouchCancel={pageSwipeHandlers.onTouchCancel}
         >
           {activeView === 'chores' ? (
-            settings.choresEnabled ? (
-              <ChorePlanner
-                members={members}
-                locale={settings.locale}
-                weekStartsOn={settings.weekStartsOn}
-                createRequest={choreCreate}
-              />
-            ) : (
-              <div className="view-page">
-                <PageHeader title={t('nav.chores')} />
-                <div
-                  className="view-page-body chores-empty chores-empty--disabled"
-                  style={{ padding: 48 }}
-                >
-                  {t('app.choresDisabled')}
-                </div>
-              </div>
-            )
+            <ChorePlanner
+              members={members}
+              provider={settings.choresProvider}
+              locale={settings.locale}
+              weekStartsOn={settings.weekStartsOn}
+              createRequest={choreCreate}
+            />
           ) : activeView === 'music' ? (
             <div className="view-page">
               <PageHeader title={t('nav.music')} />
@@ -877,7 +887,7 @@ export function App() {
                 </div>
                 <CalendarSidebar
                   events={visibleEvents}
-                  chores={settings.choresEnabled ? calendarChores : []}
+                  chores={calendarChores}
                   completedChoreIds={calendarCompletedChoreIds}
                   onToggleChore={handleCalendarToggleChore}
                   todoItems={taskLists.items}

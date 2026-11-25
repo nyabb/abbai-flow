@@ -40,8 +40,6 @@ export const fr: Record<TranslationKey, string> = {
     "Membre de l'écran enfant introuvable — affichage de l'application complète.",
   'app.dismiss': 'Ignorer',
   'app.connecting': 'Connexion...',
-  'app.choresDisabled':
-    'Les corvées sont désactivées. Activez-les dans Paramètres → Corvées pour utiliser cet écran.',
   'app.previewMode': 'Mode apercu',
   'debugConsole.tab': 'Débogage',
   'debugConsole.title': 'Activité de débogage',
@@ -386,8 +384,6 @@ export const fr: Record<TranslationKey, string> = {
   'settings.chores.title': 'Corvées',
   'settings.chores.desc':
     'Les tâches et les points sont gérés dans Home Assistant par l’intégration ChoreOps.',
-  'settings.chores.enableLabel': 'Activer les corvées',
-  'settings.chores.enableSublabel': 'Affiche le suivi des corvées et des récompenses',
   'settings.chores.dailyResetTimeLabel': 'Heure de réinitialisation quotidienne',
   'settings.chores.dailyResetTimeSublabel': 'Quand les corvées quotidiennes se réinitialisent',
   'settings.chores.streakDurationLabel': 'Durée de la série',

@@ -24,6 +24,8 @@ export type ChoreOpsActions = Partial<Record<ChoreOpsActionKind, string>>;
 export interface ChoreOpsChore {
   /** Stable key: ChoreOps `eid` when present, otherwise a name-derived id. */
   id: string;
+  /** Stable source chore id when a provider exposes multiple member rows. */
+  sourceId?: string;
   /** Per-user ChoreOps status sensor, used to read its Recorder history. */
   statusEntityId?: string;
   name: string;
@@ -34,6 +36,8 @@ export interface ChoreOpsChore {
   points: number | null;
   /** Due date/time ChoreOps publishes for this chore, when available. */
   dueDate?: string | null;
+  /** Whether this chore should appear in the calendar's today checklist. */
+  showOnCalendar?: boolean;
   /** Free-text description, mirrored from the per-user status sensor. */
   description?: string | null;
   /** Repeat setting as ChoreOps names it (`daily`, `weekly`, `custom`, ...). */
@@ -51,6 +55,8 @@ export interface ChoreOpsChore {
   claimLockUntilWindow?: boolean;
   notificationChannel?: string | null;
   notificationImportance?: string | null;
+  notificationPriority?: string | null;
+  notificationTtl?: number | null;
   /**
    * ISO timestamp of the last completion. Daily chores reset at midnight, so
    * this is what tells a "done today" card apart from yesterday's.

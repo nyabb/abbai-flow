@@ -40,8 +40,6 @@ export const it: Record<TranslationKey, string> = {
     "Membro per lo schermo bambini non trovato — viene mostrata l'app completa.",
   'app.dismiss': 'Ignora',
   'app.connecting': 'Connessione in corso...',
-  'app.choresDisabled':
-    'Le faccende sono disattivate. Attivale in Impostazioni → Faccende per usare questa schermata.',
   'app.previewMode': 'Modalita anteprima',
   'debugConsole.tab': 'Debug',
   'debugConsole.title': 'Attività di debug',
@@ -384,8 +382,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.chores.title': 'Faccende',
   'settings.chores.desc':
     'Le faccende e i punti sono gestiti in Home Assistant dall’integrazione ChoreOps.',
-  'settings.chores.enableLabel': 'Attiva faccende',
-  'settings.chores.enableSublabel': 'Mostra il monitoraggio delle faccende e i premi',
   'settings.chores.dailyResetTimeLabel': 'Orario di reset giornaliero',
   'settings.chores.dailyResetTimeSublabel': 'Quando si azzerano le faccende giornaliere',
   'settings.chores.streakDurationLabel': 'Durata della serie',

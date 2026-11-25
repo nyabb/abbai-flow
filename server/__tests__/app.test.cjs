@@ -61,11 +61,12 @@ function close(server) {
 /** Start the Abbai Flow app on an ephemeral port. */
 async function startBeacon(overrides = {}) {
   const distDir = overrides.distDir || tmpDir('dist');
+  const dataDir = overrides.dataDir || tmpDir('data');
   fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>beacon</title>');
 
   const { server } = createApp({
     distDir,
-    dataDir: overrides.dataDir || tmpDir('data'),
+    dataDir,
     haToken: overrides.haToken ?? 'test-token',
     haBaseUrl: overrides.haBaseUrl,
     haWsUrl: overrides.haWsUrl,
@@ -82,7 +83,7 @@ async function startBeacon(overrides = {}) {
     bluetoothDbusAddress: overrides.bluetoothDbusAddress,
   });
   const port = await listen(server);
-  return { server, port, dataDir: overrides.dataDir, close: () => close(server) };
+  return { server, port, dataDir, close: () => close(server) };
 }
 
 /** Minimal HTTP(S) request helper. */
@@ -804,6 +805,58 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
 
   const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
   assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
+});
+
+test('Choresman serves and persists local chores without a Home Assistant token', async (t) => {
+  const app = await startBeacon({ haToken: '' });
+  t.after(() => app.close());
+
+  const initial = await request(app.port, { path: '/abbai-flow/choresman' });
+  assert.equal(initial.status, 200);
+  assert.deepEqual(initial.json.snapshot.members, []);
+
+  const sync = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/choresman',
+    body: {
+      action: 'family.sync_members',
+      data: {
+        members: [{ id: 'local-member-1', name: 'Maya', role: 'child', avatar: '👧', color: '#22c55e' }],
+      },
+    },
+  });
+  assert.equal(sync.status, 200);
+  assert.equal(sync.json.snapshot.members[0].name, 'Maya');
+
+  const created = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/choresman',
+    body: {
+      action: 'choresman.create_chore',
+      data: {
+        name: 'Water plants',
+        assigned_user_names: ['Maya'],
+        frequency: 'daily',
+        points: 3,
+      },
+    },
+  });
+  assert.equal(created.status, 200);
+  assert.equal(created.json.snapshot.chores[0].name, 'Water plants');
+  assert.equal(created.json.snapshot.chores[0].assigned_user_names[0], 'Maya');
+
+  const stored = JSON.parse(fs.readFileSync(path.join(app.dataDir, 'choresman.json'), 'utf8'));
+  assert.equal(stored.chores[0].name, 'Water plants');
+  assert.equal(stored.members[0].id, 'local-member-1');
+  assert.equal(stored.members[0].family_member_id, 'local-member-1');
+
+  const rejected = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/choresman',
+    headers: { Origin: 'https://untrusted.example' },
+    body: { action: 'family.sync_members', data: { members: [] } },
+  });
+  assert.equal(rejected.status, 403);
 });
 
 /* ------------------------------------------------------------------ */

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { getConfig } from '../config';
 import { loadDataSync, loadServerData, saveData } from '../api/abbai-flow-store';
 import { setDebugCaptureEnabled } from '../api/debug-log';
+import type { ChoreProvider } from '../api/choresman';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,7 +61,7 @@ export interface AbbaiSettings {
   reducedMotion: boolean;
 
   // Chores
-  choresEnabled: boolean;
+  choresProvider: ChoreProvider;
   choresResetTime: string; // "HH:mm"
   streakDays: number;
   currencySymbol: string;
@@ -115,7 +116,7 @@ function buildDefaults(): AbbaiSettings {
     alwaysOnDisplay: false,
     showSeconds: false,
 
-    choresEnabled: true,
+    choresProvider: 'choreops',
     choresResetTime: '00:00',
     streakDays: 7,
     currencySymbol: '$',
@@ -172,6 +173,7 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
   delete saved.displayPanels;
   delete saved.anylistEnabled;
   delete saved.kioskMode;
+  delete saved.choresEnabled;
 
   const storedView = saved.defaultView;
   const defaultView =
@@ -185,7 +187,12 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
           ? storedView
           : defaults.defaultView;
 
-  return { ...defaults, ...saved, defaultView } as AbbaiSettings;
+  return {
+    ...defaults,
+    ...saved,
+    defaultView,
+    choresProvider: saved.choresProvider === 'choresman' ? 'choresman' : 'choreops',
+  } as AbbaiSettings;
 }
 
 // ---------------------------------------------------------------------------
