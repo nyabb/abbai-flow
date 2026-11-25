@@ -41,7 +41,7 @@ function fullSectionDiagnosticValue(value, depth = 0) {
   const entries = Object.entries(value);
   const result = Object.fromEntries(
     entries.slice(0, 200).map(([key, item]) => {
-      if (/(url|token|cookie|password|authorization|signature|session|secret)/iu.test(key)) {
+      if (/(url|token|cookie|password|authorization|signature|session|wrappingkey|secret)/iu.test(key)) {
         return [key.slice(0, 100), '<redacted>'];
       }
       return [key.slice(0, 100), fullSectionDiagnosticValue(item, depth + 1)];
@@ -75,6 +75,9 @@ function safeCloudKitDiagnostic(entry) {
           ? item.fieldNames.filter((field) => typeof field === 'string').slice(0, 80).map((field) => field.slice(0, 100))
           : [],
       };
+      if (typeof item.matchesSelectedList === 'boolean') {
+        record.matchesSelectedList = item.matchesSelectedList;
+      }
       if (item.sectionCandidates && typeof item.sectionCandidates === 'object' && !Array.isArray(item.sectionCandidates)) {
         record.sectionCandidates = Object.fromEntries(
           Object.entries(item.sectionCandidates)
@@ -96,6 +99,9 @@ function safeCloudKitDiagnostic(entry) {
     scope: entry.scope,
     operation: entry.operation,
     list_key: entry.list_key,
+    ...(typeof entry.selected_record_id_hash === 'string' && /^[a-f0-9]{16}$/u.test(entry.selected_record_id_hash)
+      ? { selected_record_id_hash: entry.selected_record_id_hash }
+      : {}),
     ...(typeof entry.request_id === 'string' ? { request_id: entry.request_id.slice(0, 100) } : {}),
     record_count: Number.isInteger(entry.record_count) ? entry.record_count : 0,
     record_type_counts: recordTypeCounts,
