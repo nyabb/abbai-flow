@@ -1,3 +1,15 @@
+# [2.26.0](https://github.com/nyabb/abbai-flow/compare/v2.25.0...v2.26.0) (2026-11-25)
+
+
+### Bug Fixes
+
+* remove unused family test import ([fc1c062](https://github.com/nyabb/abbai-flow/commit/fc1c0620bdca66234a9221bb06da73975e0cbc57))
+
+
+### Features
+
+* migrate chores to ChoresMan ([2293eef](https://github.com/nyabb/abbai-flow/commit/2293eef80326393f296e3a5a60a632a05ddc9515))
+
 # [2.25.0](https://github.com/nyabb/abbai-flow/compare/v2.24.0...v2.25.0) (2026-11-25)
 
 
