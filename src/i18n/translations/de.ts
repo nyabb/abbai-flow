@@ -101,12 +101,15 @@ export const de: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'To-dos',
   'calendarSidebar.allClear': 'Alles erledigt',
   'calendarSidebar.completeItem': '{name} erledigen',
+  'calendarSidebar.household': 'Haushalt',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': 'Heute keine Aufgaben — genieße die freie Zeit',
   'taskChecklist.allDone': 'Alles erledigt — gut gemacht!',
   'taskChecklist.complete': '{name} erledigen',
   'taskChecklist.undo': '{name} rückgängig machen',
+  'taskChecklist.markDone': 'Erledigen',
+  'taskChecklist.done': 'Erledigt',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Aufgabe',
@@ -381,7 +384,7 @@ export const de: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': 'Aufgaben',
   'settings.chores.desc':
-    'Aufgaben und Punkte werden in Home Assistant von der ChoreOps-Integration verwaltet.',
+    'ChoresMan verwaltet Aufgaben, Punkte und Belohnungen für Abbai-Flow-Familienprofile.',
   'settings.chores.dailyResetTimeLabel': 'Tägliche Rücksetzzeit',
   'settings.chores.dailyResetTimeSublabel': 'Wann tägliche Aufgaben zurückgesetzt werden',
   'settings.chores.streakDurationLabel': 'Serien-Dauer',
@@ -460,7 +463,7 @@ export const de: Record<TranslationKey, string> = {
   'chores.pinRequired':
     'Lege eine PIN für ein Elternteil unter Einstellungen → Familie fest, um hier Aufgaben zu genehmigen.',
   'chores.pendingApprovals': '{count} warten auf Freigabe',
-  'chores.assignToClaim': 'Ordne diese Aufgabe in ChoreOps zu, damit sie übernommen werden kann.',
+  'chores.assignToClaim': 'Wähle ein Familienmitglied für diese Aufgabe aus.',
   'chores.awaitingApproval': 'Wartet auf ein Elternteil',
   'chores.refresh': 'Aktualisieren',
   'chores.everyone': 'Alle',
@@ -487,7 +490,7 @@ export const de: Record<TranslationKey, string> = {
   'chores.noChoresToday': 'Gerade steht nichts an.',
   'chores.wellDone': 'Super gemacht!',
   'chores.missing':
-    'ChoreOps wurde in Home Assistant nicht gefunden. Installiere und konfiguriere die ChoreOps-Integration, um hier Aufgaben zu sehen.',
+    'In ChoresMan sind noch keine Aufgaben vorhanden.',
   'chores.stat.due': 'Heute fällig',
   'chores.stat.claimed': 'Übernommen',
   'chores.stat.approved': 'Genehmigt',
@@ -661,7 +664,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.anyone': 'Wer zuerst kommt',
   'planner.freeTask': 'Für alle frei zu übernehmen',
   'planner.claimModeEditUnavailable':
-    'ChoreOps kann den Zuweisungsmodus hier nicht ändern. Ändere ihn in ChoreOps und bearbeite danach hier die Zuständigkeiten.',
+    'ChoresMan kann den Zuweisungsmodus hier nicht ändern. Ändere ihn in ChoresMan und bearbeite danach hier die Zuständigkeiten.',
   'planner.frequency': 'Wiederholung',
   'planner.daily': 'Täglich',
   'planner.weekly': 'Wöchentlich',
@@ -705,7 +708,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.sure': 'Wirklich löschen?',
   'planner.renameUnavailable':
     'Diese Aufgabe konnte zum Umbenennen nicht gefunden werden. Aktualisiere die Aufgaben und versuche es erneut.',
-  'planner.renameLocked': 'Umbenennen ist nur in ChoreOps möglich.',
+  'planner.renameLocked': 'Belohnungsnamen können hier nicht geändert werden.',
   'planner.create': 'Aufgabe erstellen',
   'planner.noFail': 'Speichern fehlgeschlagen, bitte erneut versuchen',
   'planner.errorDetailsTitle': 'Vollständige Fehlerdetails',
@@ -730,7 +733,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.privacy': 'Privatsphäre',
   'planner.sound': 'Ton',
   'planner.rewards': 'Belohnungen',
-  'planner.noRewards': 'Noch keine Belohnungen in ChoreOps.',
+  'planner.noRewards': 'Noch keine Belohnungen in ChoresMan.',
   'planner.newReward': 'Belohnung hinzufügen',
   'planner.cost': 'Kosten (Punkte)',
   'planner.assign': 'Zuweisen',
@@ -738,7 +741,7 @@ export const de: Record<TranslationKey, string> = {
   'planner.undoShort': 'Zurück',
   'planner.locked': 'noch nicht genug',
   'planner.assignToClaim':
-    'Diese Aufgabe hat noch keinen ChoreOps-Button; weise sie zuerst in Home Assistant zu.',
+    'Wähle zuerst ein Familienmitglied für diese Aufgabe aus.',
   'planner.pinTitle': 'Elternfreigabe',
   'planner.pinHint': 'Gib die PIN eines Elternteils ein.',
   'planner.pinWrong': 'Diese PIN ist nicht korrekt.',

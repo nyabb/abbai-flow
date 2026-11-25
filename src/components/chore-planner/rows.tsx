@@ -5,10 +5,10 @@
  * need the data they display and the callbacks for their buttons, so they live
  * separately: the board decides *what* to show, these decide *how* it looks.
  */
-import { Check } from 'lucide-react';
+import { Check, CirclePlus } from 'lucide-react';
 import { ActivitySpinner } from '../LoadingPlaceholder';
 import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
-import type { ChoreOpsReward } from '../../types/choreops';
+import type { ChoresManReward } from '../../types/choresman';
 import type { Routine as FamilyRoutine } from '../../types/family';
 import type { PlannerCopy } from './copy';
 import { RoutineActionsMenu } from '../routines/RoutineActionsMenu';
@@ -87,9 +87,9 @@ export function TaskRow({
 /** One step of a routine, as it stands for one child today. */
 export interface RoutineStep {
   name: string;
-  /** ChoreOps task to complete directly from the routine list. */
+  /** ChoresMan task to complete directly from the routine list. */
   taskId?: string;
-  /** ChoreOps task whose edit/delete actions are available from this step. */
+  /** ChoresMan task whose edit/delete actions are available from this step. */
   editTaskId?: string;
   /** Already ticked off today. */
   done: boolean;
@@ -263,7 +263,7 @@ export interface FamilyRoutineRowProps {
   onCompleteStep: (taskId: string) => void;
 }
 
-/** Abbai Flow-owned routine: its checklist completion never goes through ChoreOps. */
+/** Abbai Flow-owned routine: its checklist completion never goes through ChoresMan. */
 export function FamilyRoutineRow({
   routine,
   label,
@@ -358,15 +358,17 @@ export function FamilyRoutineRow({
 }
 
 export interface RewardRowProps {
-  reward: ChoreOpsReward;
+  reward: ChoresManReward;
   /** Points put aside towards this reward so far. */
   allocated: number;
   /** What is still missing before the cost is covered. */
   remaining: number;
   /** The full cost is set aside: the reward is on hold and belongs under Done. */
   done: boolean;
-  /** A claim made outside Abbai Flow, which a parent settles in ChoreOps. */
+  /** A claim made outside Abbai Flow, which a parent settles in ChoresMan. */
   pending: boolean;
+  /** A proposed reward definition that needs parent approval. */
+  approvalPending?: boolean;
   /** There are unallocated points available for this reward. */
   canAdd: boolean;
   copy: PlannerCopy;
@@ -385,6 +387,7 @@ export function RewardRow({
   remaining,
   done,
   pending,
+  approvalPending = false,
   canAdd,
   copy,
   onUndo,
@@ -404,9 +407,11 @@ export function RewardRow({
         <strong>{reward.name}</strong>
         <small>
           {`${allocated} / ${reward.cost} ${copy.pointsUnit}`}
-          {done
-            ? ` \u00b7 ${copy.goalAchieved} \u00b7 ${copy.waitingForReward}`
-            : ` \u00b7 ${copy.stillNeeded.replace('{points}', String(remaining))}`}
+          {approvalPending
+            ? ` \u00b7 ${copy.awaitingApproval}`
+            : done
+              ? ` \u00b7 ${copy.goalAchieved} \u00b7 ${copy.waitingForReward}`
+              : ` \u00b7 ${copy.stillNeeded.replace('{points}', String(remaining))}`}
           {pending ? ` \u00b7 ${copy.claimed}` : ''}
         </small>
         <i>
@@ -414,7 +419,14 @@ export function RewardRow({
         </i>
       </div>
       <div className="planner-reward-actions">
-        {pending ? (
+        {approvalPending ? (
+          <>
+            <span className="planner-hint">{copy.awaitingApproval}</span>
+            <button className="planner-primary planner-reward-action" onClick={onApprove}>
+              {copy.approvePayout}
+            </button>
+          </>
+        ) : pending ? (
           <button className="planner-primary planner-reward-action" onClick={onApprove}>
             {copy.confirm}
           </button>
@@ -435,10 +447,12 @@ export function RewardRow({
             {canAdd && (
               <button
                 type="button"
-                className="planner-primary planner-reward-action"
+                className="planner-primary planner-reward-action planner-reward-action--icon"
                 onClick={onAssign}
+                aria-label={`${copy.assignPoints}: ${reward.name}`}
+                title={copy.assignPointsHint}
               >
-                {copy.assign}
+                <CirclePlus size={19} aria-hidden="true" />
               </button>
             )}
             {allocated > 0 && (

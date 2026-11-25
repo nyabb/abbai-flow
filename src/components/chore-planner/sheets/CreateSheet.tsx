@@ -9,17 +9,17 @@ import {
   RotateCcw,
 } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../../api/chore-planner-model';
-import type { ChoreOpsChore, ChoreOpsReward } from '../../../types/choreops';
+import type { ChoresManChore, ChoresManReward } from '../../../types/choresman';
 import type { Routine } from '../../../types/family';
 import type { PlannerCopy } from '../copy';
 import { RoutineActionsMenu } from '../../routines/RoutineActionsMenu';
 
 export interface CreateSheetProps {
   copy: PlannerCopy;
-  chores: ChoreOpsChore[];
+  chores: ChoresManChore[];
   tasks: PlannerTask[];
   routines: Routine[];
-  rewards: ChoreOpsReward[];
+  rewards: ChoresManReward[];
   members: PlannerMember[];
   onChore: () => void;
   onRoutine?: () => void;
@@ -27,7 +27,7 @@ export interface CreateSheetProps {
   onEditChore: (task: PlannerTask) => void;
   onOpenTaskActions: (task: PlannerTask) => void;
   onUseAgain: (task: PlannerTask) => void;
-  onOpenReward: (reward: ChoreOpsReward) => void;
+  onOpenReward: (reward: ChoresManReward) => void;
   onEditRoutine: (routine: Routine) => void;
   onDeleteRoutine: (routine: Routine) => void;
 }
@@ -54,14 +54,14 @@ export function CreateSheet({
   onDeleteRoutine,
 }: CreateSheetProps) {
   const [browse, setBrowse] = useState<'chores' | 'rewards' | 'routines'>('chores');
-  const choreGroups = new Map<string, ChoreOpsChore[]>();
+  const choreGroups = new Map<string, ChoresManChore[]>();
   for (const chore of chores) {
     const key = chore.name.trim().toLowerCase();
     const group = choreGroups.get(key) ?? [];
     group.push(chore);
     choreGroups.set(key, group);
   }
-  const rewardGroups = new Map<string, ChoreOpsReward[]>();
+  const rewardGroups = new Map<string, ChoresManReward[]>();
   for (const reward of rewards) {
     const key = `${reward.name.trim().toLowerCase()}::${reward.cost}`;
     const group = rewardGroups.get(key) ?? [];

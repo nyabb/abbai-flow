@@ -1,36 +1,35 @@
 import { describe, it, expect } from 'vitest';
-import { buildUpdateChorePayload, formatChoreOpsOffset } from './choreops';
+import { buildUpdateChorePayload, formatChoresManOffset } from './chore-model';
 
-describe('formatChoreOpsOffset', () => {
-  it('turns the sensor format into the service format', () => {
-    expect(formatChoreOpsOffset('0d 1h 0m')).toBe('1h');
-    expect(formatChoreOpsOffset('1d 0h 0m')).toBe('1d');
-    expect(formatChoreOpsOffset('0d 0h 30m')).toBe('30m');
-    expect(formatChoreOpsOffset('1d 6h 15m')).toBe('1d 6h 15m');
+describe('formatChoresManOffset', () => {
+  it('normalizes expanded ChoresMan offset strings', () => {
+    expect(formatChoresManOffset('0d 1h 0m')).toBe('1h');
+    expect(formatChoresManOffset('1d 0h 0m')).toBe('1d');
+    expect(formatChoresManOffset('0d 0h 30m')).toBe('30m');
+    expect(formatChoresManOffset('1d 6h 15m')).toBe('1d 6h 15m');
   });
 
   it('returns an empty string for a zero or missing offset', () => {
-    expect(formatChoreOpsOffset('0d 0h 0m')).toBe('');
-    expect(formatChoreOpsOffset(null)).toBe('');
-    expect(formatChoreOpsOffset(undefined)).toBe('');
+    expect(formatChoresManOffset('0d 0h 0m')).toBe('');
+    expect(formatChoresManOffset(null)).toBe('');
+    expect(formatChoresManOffset(undefined)).toBe('');
   });
 });
 
 describe('buildUpdateChorePayload', () => {
-  it('requires a config entry and the chore name ChoreOps resolves by', () => {
-    expect(buildUpdateChorePayload({ entryId: null, name: 'Afwassen' })).toBeNull();
-    expect(buildUpdateChorePayload({ entryId: 'e1', name: '   ' })).toBeNull();
+  it('requires a chore name and a matching lookup name when there is no id', () => {
+    expect(buildUpdateChorePayload({ name: '   ' })).toBeNull();
+    expect(buildUpdateChorePayload({ name: 'Nieuwe naam', targetName: 'Oude naam' })).toBeNull();
   });
 
   it('only sends the fields that changed', () => {
-    const payload = buildUpdateChorePayload({ entryId: 'e1', name: ' Afwassen ', points: 7.4 });
+    const payload = buildUpdateChorePayload({ name: ' Afwassen ', points: 7.4 });
 
-    expect(payload).toEqual({ config_entry_id: 'e1', name: 'Afwassen', points: 7 });
+    expect(payload).toEqual({ name: 'Afwassen', points: 7 });
   });
 
   it('replaces the assignee list explicitly', () => {
     const payload = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Afwassen',
       assignedUserNames: ['Maya', ' Maya ', 'Nova'],
     });
@@ -41,27 +40,24 @@ describe('buildUpdateChorePayload', () => {
     });
   });
 
-  it('sends ChoreOps the stable chore ID, new name, and all-users sentinel', () => {
+  it('sends the stable chore ID, new name, and all-users sentinel', () => {
     const payload = buildUpdateChorePayload({
-      entryId: 'e1',
       choreId: '023e4567-e89b-12d3-a456-426614174000',
       name: 'Tafel dekken',
       assignedUserNames: ['*'],
     });
 
     expect(payload).toEqual({
-      config_entry_id: 'e1',
       id: '023e4567-e89b-12d3-a456-426614174000',
       name: 'Tafel dekken',
       assignment_action: 'replace',
       assigned_user_names: ['*'],
     });
-    // ChoreOps resolves this request sentinel to all assignable user IDs.
+    // ChoresMan resolves this sentinel to all current family members.
   });
 
   it('does not send the create-only completion rule on updates', () => {
     const payload = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Afwassen',
       assignedUserNames: ['Maya'],
     });
@@ -69,9 +65,8 @@ describe('buildUpdateChorePayload', () => {
     expect(payload).not.toHaveProperty('completion_criteria');
   });
 
-  it('sends schedule fields together with the due date ChoreOps requires', () => {
+  it('sends schedule fields together with the due date ChoresMan requires', () => {
     const payload = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Stofzuigen',
       frequency: 'weekly',
       applicableDays: ['mon', 'thu', 'nope'],
@@ -93,7 +88,6 @@ describe('buildUpdateChorePayload', () => {
 
   it('preserves calendar visibility and notification delivery options', () => {
     const payload = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Afwassen',
       notificationChannel: 'mobile_app',
       notificationImportance: 'high',
@@ -111,12 +105,11 @@ describe('buildUpdateChorePayload', () => {
   });
 
   it('clears the due window with 0 and omits an untouched reminder', () => {
-    const cleared = buildUpdateChorePayload({ entryId: 'e1', name: 'Afwassen', windowOffset: '' });
+    const cleared = buildUpdateChorePayload({ name: 'Afwassen', windowOffset: '' });
     expect(cleared).toMatchObject({ due_window_offset: '0' });
     expect(cleared).not.toHaveProperty('due_reminder_offset');
 
     const withReminder = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Afwassen',
       reminderOffset: ' 30m ',
     });
@@ -126,7 +119,6 @@ describe('buildUpdateChorePayload', () => {
   it('can clear weekly applicable days with the native update service', () => {
     expect(
       buildUpdateChorePayload({
-        entryId: 'e1',
         name: 'Afwassen',
         applicableDays: [],
       }),
@@ -135,7 +127,6 @@ describe('buildUpdateChorePayload', () => {
 
   it('sends the custom interval only for custom repeats', () => {
     const custom = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Planten',
       frequency: 'custom',
       customInterval: 3,
@@ -144,7 +135,6 @@ describe('buildUpdateChorePayload', () => {
     expect(custom).toMatchObject({ custom_interval: 3, custom_interval_unit: 'weeks' });
 
     const daily = buildUpdateChorePayload({
-      entryId: 'e1',
       name: 'Planten',
       frequency: 'daily',
       customInterval: 3,

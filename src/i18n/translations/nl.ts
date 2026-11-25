@@ -100,12 +100,15 @@ export const nl: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'Taken',
   'calendarSidebar.allClear': 'Alles gedaan',
   'calendarSidebar.completeItem': '{name} voltooien',
+  'calendarSidebar.household': 'Gezin',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': 'Geen klusjes voor vandaag — geniet van je vrije tijd',
   'taskChecklist.allDone': 'Helemaal klaar — goed gedaan!',
   'taskChecklist.complete': '{name} voltooien',
   'taskChecklist.undo': '{name} ongedaan maken',
+  'taskChecklist.markDone': 'Markeer als gedaan',
+  'taskChecklist.done': 'Gedaan',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Klusje',
@@ -432,7 +435,7 @@ export const nl: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': 'Klusjes',
   'settings.chores.desc':
-    'Karweitjes en punten worden in Home Assistant beheerd door de ChoreOps-integratie.',
+    'ChoresMan beheert taken, punten en beloningen voor de gezinsprofielen in Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Dagelijkse reset-tijd',
   'settings.chores.dailyResetTimeSublabel': 'Wanneer dagelijkse klusjes resetten',
   'settings.chores.streakDurationLabel': 'Duur van reeks',
@@ -511,7 +514,7 @@ export const nl: Record<TranslationKey, string> = {
   'chores.pinRequired':
     'Stel een pincode in bij een ouder via Instellingen → Gezin om hier taken goed te keuren.',
   'chores.pendingApprovals': '{count} wacht op goedkeuring',
-  'chores.assignToClaim': 'Wijs deze taak toe in ChoreOps zodat iemand hem kan claimen.',
+  'chores.assignToClaim': 'Kies een gezinslid voor deze taak.',
   'chores.awaitingApproval': 'Wacht op een ouder',
   'chores.refresh': 'Vernieuwen',
   'chores.everyone': 'Iedereen',
@@ -538,7 +541,7 @@ export const nl: Record<TranslationKey, string> = {
   'chores.noChoresToday': 'Nu even niets te doen.',
   'chores.wellDone': 'Goed gedaan!',
   'chores.missing':
-    'ChoreOps is niet gevonden in Home Assistant. Installeer en configureer de ChoreOps-integratie om hier taken te zien.',
+    'Er staan nog geen taken in ChoresMan.',
   'chores.stat.due': 'Vandaag te doen',
   'chores.stat.claimed': 'Geclaimd',
   'chores.stat.approved': 'Goedgekeurd',
@@ -788,7 +791,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.anyone': 'Wie het eerst is',
   'planner.freeTask': 'Vrij te pakken door iedereen',
   'planner.claimModeEditUnavailable':
-    'ChoreOps kan de claimmodus niet via deze wijziging aanpassen. Wijzig dit in ChoreOps en pas daarna hier de toegewezen kinderen aan.',
+    'ChoresMan kan de claimmodus niet via deze wijziging aanpassen. Wijzig dit in ChoresMan en pas daarna hier de toegewezen kinderen aan.',
   'planner.frequency': 'Frequentie',
   'planner.daily': 'Dagelijks',
   'planner.weekly': 'Wekelijks',
@@ -832,7 +835,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.sure': 'Zeker weten?',
   'planner.renameUnavailable':
     'Dit karweitje kon niet worden gevonden om te hernoemen. Vernieuw de lijst en probeer het opnieuw.',
-  'planner.renameLocked': 'Naam wijzigen kan alleen in ChoreOps.',
+  'planner.renameLocked': 'Beloningsnamen kunnen hier niet worden gewijzigd.',
   'planner.create': 'Taakje aanmaken',
   'planner.noFail': 'Niet gelukt, probeer opnieuw',
   'planner.errorDetailsTitle': 'Volledige foutdetails',
@@ -858,7 +861,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.privacy': 'Privacy',
   'planner.sound': 'Geluid',
   'planner.rewards': 'Beloningen',
-  'planner.noRewards': 'Nog geen beloningen in ChoreOps.',
+  'planner.noRewards': 'Nog geen beloningen in ChoresMan.',
   'planner.newReward': 'Beloning toevoegen',
   'planner.cost': 'Kosten (punten)',
   'planner.assign': 'Toewijzen',
@@ -866,7 +869,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.undoShort': 'Terug',
   'planner.locked': 'nog niet genoeg',
   'planner.assignToClaim':
-    'Deze taak heeft nog geen ChoreOps-knop; wijs hem eerst toe in Home Assistant.',
+    'Kies eerst een gezinslid voordat je deze taak toewijst.',
   'planner.pinTitle': 'Goedkeuring door ouder',
   'planner.pinHint': 'Voer de pincode van een ouder in.',
   'planner.pinWrong': 'Die pincode klopt niet.',

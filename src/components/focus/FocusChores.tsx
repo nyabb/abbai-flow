@@ -17,7 +17,7 @@ export function FocusChores({ chores, completedIds, currencySymbol, onToggle }: 
   /**
    * Tapping only *asks* to complete the chore — the parent screen shows an
    * "are you sure?" dialog — so no celebration or success haptic happens here;
-   * the row turns done when ChoreOps confirms the claim.
+   * the row turns done when ChoresMan confirms the claim.
    */
   const handleToggle = (choreId: string) => {
     if (!completedIds.has(choreId)) hapticMedium();

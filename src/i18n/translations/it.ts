@@ -101,12 +101,15 @@ export const it: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'Attività',
   'calendarSidebar.allClear': 'Tutto fatto',
   'calendarSidebar.completeItem': 'Completa {name}',
+  'calendarSidebar.household': 'Famiglia',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': 'Nessuna faccenda per oggi — goditi il tempo libero',
   'taskChecklist.allDone': 'Tutto fatto, ottimo lavoro!',
   'taskChecklist.complete': 'Completa {name}',
   'taskChecklist.undo': 'Annulla {name}',
+  'taskChecklist.markDone': 'Segna come fatta',
+  'taskChecklist.done': 'Fatto',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Faccenda',
@@ -382,7 +385,7 @@ export const it: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': 'Faccende',
   'settings.chores.desc':
-    'Le faccende e i punti sono gestiti in Home Assistant dall’integrazione ChoreOps.',
+    'ChoresMan gestisce le faccende, i punti e i premi per i profili familiari di Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Orario di reset giornaliero',
   'settings.chores.dailyResetTimeSublabel': 'Quando si azzerano le faccende giornaliere',
   'settings.chores.streakDurationLabel': 'Durata della serie',
@@ -461,7 +464,7 @@ export const it: Record<TranslationKey, string> = {
   'chores.pinRequired':
     'Imposta un PIN su un genitore in Impostazioni → Famiglia per approvare le faccende qui.',
   'chores.pendingApprovals': '{count} in attesa di approvazione',
-  'chores.assignToClaim': 'Assegna questa faccenda in ChoreOps per consentire di rivendicarla.',
+  'chores.assignToClaim': 'Scegli un familiare per questa attività.',
   'chores.awaitingApproval': 'In attesa di un genitore',
   'chores.refresh': 'Aggiorna',
   'chores.everyone': 'Tutti',
@@ -488,7 +491,7 @@ export const it: Record<TranslationKey, string> = {
   'chores.noChoresToday': 'Niente da fare per ora.',
   'chores.wellDone': 'Ben fatto!',
   'chores.missing':
-    'ChoreOps non è stato trovato in Home Assistant. Installa e configura l’integrazione ChoreOps per vedere le faccende qui.',
+    'Non ci sono ancora attività in ChoresMan.',
   'chores.stat.due': 'In scadenza oggi',
   'chores.stat.claimed': 'Rivendicate',
   'chores.stat.approved': 'Approvate',
@@ -661,7 +664,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.anyone': 'Il primo che arriva',
   'planner.freeTask': 'Libera per chiunque',
   'planner.claimModeEditUnavailable':
-    'ChoreOps non consente di modificare qui la modalità di assegnazione. Cambiala in ChoreOps, poi modifica qui gli assegnatari.',
+    'ChoresMan non consente di modificare qui la modalità di assegnazione. Cambiala in ChoresMan, poi modifica qui gli assegnatari.',
   'planner.frequency': 'Frequenza',
   'planner.daily': 'Giornaliera',
   'planner.weekly': 'Settimanale',
@@ -705,7 +708,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.sure': 'Eliminare davvero?',
   'planner.renameUnavailable':
     'Impossibile identificare questa faccenda per rinominarla. Aggiorna le faccende e riprova.',
-  'planner.renameLocked': 'La rinomina è possibile solo in ChoreOps.',
+  'planner.renameLocked': 'Qui non è possibile modificare i nomi dei premi.',
   'planner.create': 'Crea attività',
   'planner.noFail': 'Salvataggio non riuscito, riprova',
   'planner.errorDetailsTitle': 'Dettagli completi dell’errore',
@@ -730,7 +733,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.privacy': 'Privacy',
   'planner.sound': 'Audio',
   'planner.rewards': 'Ricompense',
-  'planner.noRewards': 'Nessuna ricompensa in ChoreOps per ora.',
+  'planner.noRewards': 'Nessuna ricompensa in ChoresMan per ora.',
   'planner.newReward': 'Aggiungi ricompensa',
   'planner.cost': 'Costo (punti)',
   'planner.assign': 'Assegna',
@@ -738,7 +741,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.undoShort': 'Annulla',
   'planner.locked': 'non basta ancora',
   'planner.assignToClaim':
-    'Questa attività non ha ancora un pulsante ChoreOps; assegnala prima in Home Assistant.',
+    'Scegli un familiare prima di assegnare questa attività.',
   'planner.pinTitle': 'Approvazione genitore',
   'planner.pinHint': 'Inserisci il PIN di un genitore.',
   'planner.pinWrong': 'Questo PIN non è corretto.',

@@ -105,7 +105,7 @@ describe('routine task membership', () => {
     expect(toggleRoutinePaused(paused, base.id).routines[0].paused).toBe(false);
   });
 
-  it('drops chores that no longer exist in ChoreOps', () => {
+  it('drops chores that no longer exist in ChoresMan', () => {
     const meta = setRoutineTasks(base.meta, base.id, ['A', 'B']);
     expect(routineTaskOrder(pruneRoutineTasks(meta, ['A']), base.id)).toEqual(['A']);
   });

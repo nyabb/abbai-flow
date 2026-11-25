@@ -5,14 +5,14 @@ import { I18nContext, createI18n } from '../../i18n';
 import { LOCALE_OPTIONS } from '../../i18n/locales';
 import type { FamilyMember } from '../../types/family';
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: null,
     loading: false,
     error: null,
     available: false,
     refresh: () => {},
-    pressButton: async () => {},
+    runActionId: async () => {},
     claimChore: async () => {},
     createChore: async () => {},
     updateChore: async () => {},

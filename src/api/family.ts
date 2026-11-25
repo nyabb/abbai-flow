@@ -6,7 +6,6 @@ import {
   Routine,
   RoutineTaskCompletion,
 } from '../types/family';
-import type { ChoreOpsUser } from '../types/choreops';
 import { loadData, loadDataSync, saveData } from './abbai-flow-store';
 import { localDayKey } from './date-keys';
 
@@ -32,6 +31,15 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function cleanLegacyChoreLinks(members: FamilyMember[]): FamilyMember[] {
+  return members.map((member) => {
+    const clean = { ...(member as FamilyMember & Record<string, unknown>) };
+    delete clean.choreops_user;
+    delete clean.choreops_state;
+    return clean as FamilyMember;
+  });
+}
+
 /**
  * Family data store.
  *
@@ -47,11 +55,16 @@ export class FamilyStore {
   // --- Members ---
 
   async getMembers(): Promise<FamilyMember[]> {
-    return loadData<FamilyMember[]>(STORAGE_KEYS.members, []);
+    const stored = await loadData<FamilyMember[]>(STORAGE_KEYS.members, []);
+    const members = cleanLegacyChoreLinks(stored);
+    if (JSON.stringify(stored) !== JSON.stringify(members)) {
+      await saveData(STORAGE_KEYS.members, members);
+    }
+    return members;
   }
 
   getMembersSync(): FamilyMember[] {
-    return loadDataSync<FamilyMember[]>(STORAGE_KEYS.members, []);
+    return cleanLegacyChoreLinks(loadDataSync<FamilyMember[]>(STORAGE_KEYS.members, []));
   }
 
   async addMember(member: Omit<FamilyMember, 'id'>): Promise<FamilyMember> {
@@ -80,67 +93,6 @@ export class FamilyStore {
     if (filtered.length === members.length) return false;
     await saveData(STORAGE_KEYS.members, filtered);
     return true;
-  }
-
-  async syncChoreOpsMembers(users: readonly ChoreOpsUser[]): Promise<boolean> {
-    if (users.length === 0) return false;
-
-    const members = await this.getMembers();
-    let changed = false;
-
-    for (const user of users) {
-      const key = user.name.trim().toLowerCase();
-      if (!key) continue;
-
-      const linkedMember = members.find(
-        (candidate) => candidate.choreops_user?.trim().toLowerCase() === key,
-      );
-      const namedMember = members.find(
-        (candidate) =>
-          candidate.name.trim().toLowerCase() === key &&
-          (!candidate.choreops_user || candidate.choreops_user.trim().toLowerCase() === key),
-      );
-      const member = linkedMember ?? namedMember;
-
-      if (import.meta.env.DEV) {
-        console.info('[Abbai Flow] ChoreOps family profile match', {
-          choreOpsUser: user.name,
-          choreOpsUserSlug: user.slug,
-          matchedBy: linkedMember ? 'choreops_user' : namedMember ? 'name' : 'none',
-          familyMemberId: member?.id ?? null,
-          familyMemberName: member?.name ?? null,
-          familyMemberRole: member?.role ?? null,
-        });
-      }
-      if (!member) continue;
-
-      const nextState = {
-        points: user.points,
-        dueToday: user.dueToday,
-        claimed: user.claimed,
-        approved: user.approved,
-        completedToday: user.completedToday,
-      };
-      const previousState = member.choreops_state;
-      if (
-        previousState?.points !== nextState.points ||
-        previousState?.dueToday !== nextState.dueToday ||
-        previousState?.claimed !== nextState.claimed ||
-        previousState?.approved !== nextState.approved ||
-        previousState?.completedToday !== nextState.completedToday
-      ) {
-        member.choreops_state = nextState;
-        changed = true;
-      }
-
-      if (!member.choreops_user) {
-        member.choreops_user = user.name.trim();
-        changed = true;
-      }
-    }
-
-    if (changed) await saveData(STORAGE_KEYS.members, members);
-    return changed;
   }
 
   // --- Chores ---
@@ -409,7 +361,7 @@ export class FamilyStore {
     return true;
   }
 
-  /** Release a reservation only when ChoreOps rejected the points adjustment. */
+  /** Release a reservation only when ChoresMan rejected the points adjustment. */
   async releaseRoutineMissionBonus(
     routineId: string,
     memberId: string,

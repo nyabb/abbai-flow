@@ -2,7 +2,7 @@
  * Abbai Flow-owned planner metadata: routines, routine step order and mission
  * progress.
  *
- * ChoreOps has no routine entity and no ordering field on a chore (verified
+ * ChoresMan has no routine records or step-order field on chores (verified
  * against its service registry and entity attributes), so anything that gives
  * a routine a stable identity — or says "task 2 comes after task 1" — has to
  * live in Abbai Flow.

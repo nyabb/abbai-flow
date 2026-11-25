@@ -5,8 +5,9 @@ import { useHomeAssistant } from './hooks/useHomeAssistant';
 import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
 import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
-import { useChoreOps } from './hooks/useChoreOps';
-import { resolveMemberForUser } from './api/choreops';
+import { useChoresMan } from './hooks/useChoresMan';
+import { resolveMemberForUser } from './api/chore-model';
+import { choreIconForDisplay } from './api/chore-planner-view';
 import { WeekCalendar } from './components/WeekCalendar';
 import { EventModal, EventFormData } from './components/EventModal';
 import { FamilyFilter } from './components/FamilyFilter';
@@ -85,7 +86,7 @@ export function App() {
   );
   const { t } = i18n;
 
-  const { members, addMember, updateMember, removeMember, syncChoreOpsMembers } = useFamily();
+  const { members, addMember, updateMember, removeMember } = useFamily();
 
   const mergedCalendars = useMergedCalendars({
     connected,
@@ -511,13 +512,9 @@ export function App() {
   );
 
   // ---- Chore data ----
-  // The selected provider owns chore, member, points and reward records. The
-  // Choresman adapter uses the app's local family profiles as its unlinked,
-  // persistent member identities.
-  const { data: choreOpsData, pressButton: pressChoreOpsButton } = useChoreOps(
-    settings.choresProvider,
-    settings.choresProvider === 'choresman' ? members : [],
-  );
+  // ChoresMan owns chores, points and rewards; family profiles stay in sync
+  // with its local member records through the shared hook.
+  const { data: choresManData, runActionId: runChoresManAction } = useChoresMan(members);
 
   const { reconnected } = useConnectionStatus({ haConnected: connected });
   useScreenWakeLock(settings.alwaysOnDisplay);
@@ -529,76 +526,60 @@ export function App() {
     void fetchCalendars();
   }, [reconnected, fetchCalendars]);
 
-  useEffect(() => {
-    if (settings.choresProvider !== 'choreops' || !choreOpsData?.users.length) return;
-    void syncChoreOpsMembers(choreOpsData.users).catch(() => undefined);
-  }, [settings.choresProvider, choreOpsData?.users, members, syncChoreOpsMembers]);
-
-  const choreIdentityMembers = useMemo(
-    () => settings.choresProvider === 'choresman'
-      ? members.map((member) => {
-          const localMember = { ...member };
-          delete localMember.choreops_user;
-          return localMember;
-        })
-      : members,
-    [members, settings.choresProvider],
-  );
-
   const calendarChores = useMemo(
     () =>
-      (choreOpsData?.chores ?? [])
+      (choresManData?.chores ?? [])
         .filter((chore) => {
+          if (chore.status === 'completed_by_other') return false;
           if (chore.showOnCalendar === false) return false;
-          if (settings.choresProvider !== 'choresman') return true;
-          if (!chore.dueDate) return ['none', 'daily'].includes(chore.frequency ?? 'none');
+          if (!chore.dueDate) {
+            return chore.frequency === 'none' || /^daily/.test(chore.frequency ?? '');
+          }
           return new Date(chore.dueDate).toDateString() === new Date().toDateString();
         })
         .map((chore) => {
-        /*
-         * Resolve ChoreOps' assignee names onto Abbai Flow member ids. Without
-         * this the calendar checklist showed every chore as "nobody's", which
-         * made three identical chore names look like duplicates.
-         */
-        const assignees = (
-          chore.assignedUserNames?.length
-            ? chore.assignedUserNames
-            : chore.assignee
-              ? [chore.assignee]
-              : []
-        )
-          .map((name) => resolveMemberForUser(name, choreIdentityMembers))
-          .filter((member): member is NonNullable<typeof member> => Boolean(member))
-          .map((member) => member.id);
+          /* ChoresMan publishes a row per assignee, so the calendar can show
+           * each child's work under their own name and complete it independently. */
+          const member = chore.assignee ? resolveMemberForUser(chore.assignee, members) : null;
 
-        return {
-          id: chore.id,
-          name: chore.name,
-          assigned_to: Array.from(new Set(assignees)),
-          frequency: chore.frequency === 'daily' ? ('daily' as const) : ('once' as const),
-          value_cents: 0,
-          icon: chore.icon ?? undefined,
-        };
+          return {
+            id: chore.id,
+            name: chore.name,
+            assigned_to: member ? [member.id] : [],
+            frequency: /^daily/.test(chore.frequency ?? '') ? ('daily' as const) : ('once' as const),
+            value_cents: 0,
+            icon: choreIconForDisplay(chore.icon),
+          };
         }),
-    [choreOpsData, choreIdentityMembers, settings.choresProvider],
+    [choresManData, members],
   );
 
   const calendarCompletedChoreIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const chore of choreOpsData?.chores ?? []) {
-      if (/^(approved|completed|done)/i.test(chore.status)) ids.add(chore.id);
+    for (const chore of choresManData?.chores ?? []) {
+      if (/^(approved|completed|done)/i.test(chore.status)) {
+        ids.add(chore.id);
+      }
     }
     return ids;
-  }, [choreOpsData]);
+  }, [choresManData]);
+
+  const calendarWaitingChoreIds = useMemo(
+    () => new Set((choresManData?.chores ?? [])
+      .filter((chore) => chore.status === 'claimed')
+      .map((chore) => chore.id)),
+    [choresManData],
+  );
 
   const handleCalendarToggleChore = useCallback(
     (choreId: string) => {
-      // ChoreOps has no "un-complete" action: ticking claims or approves.
-      const chore = choreOpsData?.chores.find((c) => c.id === choreId);
-      const buttonEid = chore?.actions.claim ?? chore?.actions.approve;
-      if (buttonEid) void pressChoreOpsButton(buttonEid);
+      // The calendar only lets a member claim a chore. Parent approval stays
+      // in the PIN-gated planner flow.
+      const chore = choresManData?.chores.find((item) => item.id === choreId);
+      const actionId = chore?.actions.claim;
+      if (actionId) void runChoresManAction(actionId);
     },
-    [choreOpsData, pressChoreOpsButton],
+    [choresManData, runChoresManAction],
   );
 
   // Handle onboarding completion
@@ -776,7 +757,6 @@ export function App() {
           {activeView === 'chores' ? (
             <ChorePlanner
               members={members}
-              provider={settings.choresProvider}
               locale={settings.locale}
               weekStartsOn={settings.weekStartsOn}
               createRequest={choreCreate}
@@ -892,6 +872,7 @@ export function App() {
                   events={visibleEvents}
                   chores={calendarChores}
                   completedChoreIds={calendarCompletedChoreIds}
+                  waitingChoreIds={calendarWaitingChoreIds}
                   onToggleChore={handleCalendarToggleChore}
                   todoItems={taskLists.items}
                   eventsLoading={calendarEventsLoading}

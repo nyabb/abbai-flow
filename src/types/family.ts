@@ -11,16 +11,6 @@ export interface FamilyMember {
   pin?: string; // 4-6 digit PIN
   role: 'parent' | 'child';
   calendar_entity?: string; // HA calendar entity_id (primary calendar)
-  /** ChoreOps `user_name` this member is linked to (used when the
-   *  chore_backend is 'choreops' so points/chores map to the right person). */
-  choreops_user?: string;
-  choreops_state?: {
-    points: number;
-    dueToday: number;
-    claimed: number;
-    approved: number;
-    completedToday: number;
-  };
   /** Additional HA calendar entity_ids linked to this member (e.g. a
    *  kid's sports team calendar), so their events group under this member
    *  too instead of falling into the "Other" bucket. `calendar_entity`
@@ -41,7 +31,7 @@ export interface Chore {
   assigned_to: string[]; // member IDs
   frequency: 'daily' | 'weekly' | 'once';
   value_cents: number;
-  icon?: string; // emoji
+  icon?: string | null; // emoji or a supported display icon
 }
 
 export interface ChoreCompletion {

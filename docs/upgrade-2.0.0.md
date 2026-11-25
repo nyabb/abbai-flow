@@ -1,5 +1,8 @@
 # Upgrading to Abbai Flow 2.0.0
 
+> Historical upgrade notes: chore integration details refer to the former Home Assistant ChoreOps
+> backend. Current chores and rewards use the local ChoresMan store.
+
 2.0.0 is the rename release. The application is now **Abbai Flow**, it ships as a
 standalone container, and the Home Assistant add-on packaging is gone.
 

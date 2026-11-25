@@ -1,5 +1,8 @@
 # Migrating an existing household (Phase 6)
 
+> Historical document: this describes the former Home Assistant ChoreOps integration. The current
+> app uses the local ChoresMan store; integration-specific details below are retained for history.
+
 What happens to data that already exists when Abbai Flow gains explicit routines and
 an explicit reward lifecycle. The guiding rule: **nothing is deleted, nothing is
 re-awarded, and no reward is ever marked as given by a migration.**

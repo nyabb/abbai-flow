@@ -1,24 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FamilyStore } from './family';
-import type { ChoreOpsUser } from '../types/choreops';
 import type { FamilyMember } from '../types/family';
 import { localDayKey } from './date-keys';
 
-const choreOpsUser: ChoreOpsUser = {
-  name: 'Maya',
-  slug: 'maya',
-  points: 24,
-  dueToday: 3,
-  claimed: 1,
-  approved: 2,
-  completedToday: 4,
-};
-
-describe('FamilyStore.syncChoreOpsMembers', () => {
+describe('FamilyStore legacy profile cleanup', () => {
   afterEach(() => localStorage.clear());
 
-  it('merges ChoreOps state into the linked profile and preserves Abbai Flow fields', async () => {
-    const linkedMember: FamilyMember = {
+  it('removes the retired chore account link and keeps Abbai Flow profile fields', async () => {
+    const legacyMember = {
       id: 'member-1',
       name: 'Maya',
       avatar: '👧',
@@ -26,37 +15,23 @@ describe('FamilyStore.syncChoreOpsMembers', () => {
       role: 'parent',
       pin: '0123',
       choreops_user: 'Maya',
+      choreops_state: { points: 24, dueToday: 3, claimed: 1, approved: 2, completedToday: 4 },
     };
-    localStorage.setItem('abbai_flow_family_members', JSON.stringify([linkedMember]));
+    localStorage.setItem('abbai_flow_family_members', JSON.stringify([legacyMember]));
 
     const store = new FamilyStore();
-    expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(true);
-    expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(false);
-
-    const members = JSON.parse(
-      localStorage.getItem('abbai_flow_family_members') ?? '[]',
-    ) as FamilyMember[];
+    const members = await store.getMembers();
     expect(members).toHaveLength(1);
     expect(members[0]).toMatchObject({
       id: 'member-1',
       role: 'parent',
       pin: '0123',
-      choreops_user: 'Maya',
-      choreops_state: {
-        points: 24,
-        dueToday: 3,
-        claimed: 1,
-        approved: 2,
-        completedToday: 4,
-      },
     });
-  });
-
-  it('does not create Abbai Flow members for unlinked ChoreOps users', async () => {
-    const store = new FamilyStore();
-
-    expect(await store.syncChoreOpsMembers([choreOpsUser])).toBe(false);
-    expect(localStorage.getItem('abbai_flow_family_members')).toBeNull();
+    expect(members[0]).not.toHaveProperty('choreops_user');
+    expect(members[0]).not.toHaveProperty('choreops_state');
+    expect(JSON.parse(localStorage.getItem('abbai_flow_family_members') ?? '[]')[0]).not.toHaveProperty(
+      'choreops_user',
+    );
   });
 });
 

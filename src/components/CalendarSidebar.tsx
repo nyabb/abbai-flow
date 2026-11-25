@@ -11,6 +11,7 @@ interface CalendarSidebarProps {
   events: CalendarEvent[];
   chores: Chore[];
   completedChoreIds: Set<string>;
+  waitingChoreIds: Set<string>;
   onToggleChore: (choreId: string) => void;
   todoItems: TaskTodoItem[];
   eventsLoading?: boolean;
@@ -23,6 +24,7 @@ export function CalendarSidebar({
   events,
   chores,
   completedChoreIds,
+  waitingChoreIds,
   onToggleChore,
   todoItems,
   eventsLoading = false,
@@ -115,8 +117,10 @@ export function CalendarSidebar({
           <TaskChecklist
             chores={chores}
             completedIds={completedChoreIds}
+            waitingIds={waitingChoreIds}
             onToggle={onToggleChore}
             members={members}
+            groupByAssignee
           />
         </section>
       )}

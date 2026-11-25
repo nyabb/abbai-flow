@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { FamilyStore } from '../api/family';
 import { FamilyMember } from '../types/family';
-import type { ChoreOpsUser } from '../types/choreops';
 
 export function useFamily() {
   const store = useMemo(() => new FamilyStore(), []);
@@ -41,14 +40,6 @@ export function useFamily() {
     [store, refresh],
   );
 
-  const syncChoreOpsMembers = useCallback(
-    async (users: readonly ChoreOpsUser[]) => {
-      const changed = await store.syncChoreOpsMembers(users);
-      if (changed) await refresh();
-    },
-    [store, refresh],
-  );
-
   const getMemberById = useCallback(
     (id: string) => members.find((m) => m.id === id) ?? null,
     [members],
@@ -59,7 +50,6 @@ export function useFamily() {
     addMember,
     updateMember,
     removeMember,
-    syncChoreOpsMembers,
     getMemberById,
     refresh,
   };

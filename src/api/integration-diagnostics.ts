@@ -282,17 +282,13 @@ async function checkHomeAssistant(
   const todoLists = states.filter(
     (entity) => entity.entity_id.startsWith('todo.') && entity.state !== 'unavailable',
   ).length;
-  const choreOpsEntities = states.filter((entity) => /_choreops_/i.test(entity.entity_id)).length;
 
   logger.info(
-    `[Integration] Home Assistant entities: ${states.length} total; calendars=${calendars}, media_players=${mediaPlayers}, todo_lists=${todoLists}, choreops_entities=${choreOpsEntities}.`,
+    `[Integration] Home Assistant entities: ${states.length} total; calendars=${calendars}, media_players=${mediaPlayers}, todo_lists=${todoLists}.`,
   );
 
   logger.info(
     `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
-  );
-  logger.info(
-    `[Integration] ChoreOps: ${choreOpsEntities} related entity/entities detected in Home Assistant.`,
   );
   logger.info(
     `[Integration] Home Assistant calendars: ${calendars} available; local Abbai Flow calendar is always available.`,

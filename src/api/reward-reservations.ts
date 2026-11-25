@@ -1,22 +1,22 @@
 /**
  * Points a child has set aside for a reward.
  *
- * ChoreOps only takes points off the balance when a parent approves the claim.
+ * ChoresMan only takes points off the balance when a parent approves the claim.
  * A family wants the opposite order: picking a reward is the moment the points
  * leave the child's spendable balance, so they can see what is left and change
  * their mind before anyone confirms anything in real life.
  *
- * Abbai Flow therefore keeps a small local reservation per (ChoreOps user, reward).
+ * Abbai Flow therefore keeps a small local reservation per (ChoresMan user, reward).
  * It never invents points: the reserved amount is only subtracted from the
- * balance ChoreOps publishes, and it is dropped again as soon as the child
- * undoes the choice or a parent confirms the reward (ChoreOps then deducts the
+ * balance ChoresMan publishes, and it is dropped again as soon as the child
+ * undoes the choice or a parent confirms the reward (ChoresMan then deducts the
  * same amount for real, so the visible balance does not move at that point).
  */
 
 export interface RewardReservation {
-  /** ChoreOps user name, normalised. */
+  /** ChoresMan user name, normalised. */
   user: string;
-  /** Reward name, normalised. Reward names are unique per user in ChoreOps. */
+  /** Reward name, normalised. Reward names are unique per user in ChoresMan. */
   reward: string;
   /** Points held for this reward. */
   points: number;
@@ -25,7 +25,7 @@ export interface RewardReservation {
 }
 
 /**
- * The slice of a ChoreOps reward this module needs. Kept structural so the
+ * The slice of a ChoresMan reward this module needs. Kept structural so the
  * pure helpers stay free of the full entity type.
  */
 export interface RewardCommitment {
@@ -111,7 +111,7 @@ export function releasePoints(
   return reservations.filter((item) => !(item.user === userKey && item.reward === rewardKey));
 }
 
-/** How many points this user has set aside, ignoring ChoreOps' own claims. */
+/** How many points this user has set aside, ignoring ChoresMan's own claims. */
 export function reservedPoints(
   reservations: RewardReservation[],
   user: string | null | undefined,

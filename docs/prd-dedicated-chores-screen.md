@@ -1,5 +1,8 @@
 # PRD: Abbai Flow Chores and Rewards (ChoreOps-backed)
 
+> Historical requirements: the Home Assistant ChoreOps backend has been removed. The current app
+> uses the local ChoresMan store; integration-specific requirements below are retained for history.
+
 ## Purpose
 
 Define the current product requirements for Abbai Flow's family chores experience. The immediate focus is a clear, touch-friendly chore board for children and parents, backed by Home Assistant ChoreOps. Calendar integrations, notes, shopping lists, recipes, and meal planning are intentionally deferred.

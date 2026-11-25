@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo, useRef, CSSProperties } from 'react';
 import { format } from 'date-fns';
 import { useFamily } from '../../hooks/useFamily';
-import { useChoreOps } from '../../hooks/useChoreOps';
-import { findUserForMember } from '../../api/choreops';
+import { useChoresMan } from '../../hooks/useChoresMan';
+import { findUserForMember } from '../../api/chore-model';
+import { choreIconForDisplay } from '../../api/chore-planner-view';
 import { MemberAvatar } from '../MemberAvatar';
 import { useRoutines } from '../../hooks/useRoutines';
 import { AbbaiSettings } from '../../hooks/useSettings';
@@ -30,7 +31,7 @@ const GREETINGS = {
 export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   const { members } = useFamily();
   const routinesApi = useRoutines(memberId);
-  const choreOps = useChoreOps(settings.choresProvider, settings.choresProvider === 'choresman' ? members : []);
+  const choresMan = useChoresMan(members);
   const { t } = useTranslation();
   const [routineEditorRequest, setRoutineEditorRequest] = useState<RoutineEditorRequest | null>(
     null,
@@ -46,7 +47,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
 
   // Periodic data refresh so a wall display picks up edits made elsewhere
   const { refresh: refreshRoutines } = routinesApi;
-  const { refresh: refreshChores } = choreOps;
+  const { refresh: refreshChores } = choresMan;
   useEffect(() => {
     const t = setInterval(
       () => {
@@ -82,26 +83,18 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
     }
   };
 
-  // ChoreOps owns chore data: resolve this member's ChoreOps user, then take
-  // the chores ChoreOps assigns to them.
-  const choreOpsUser = useMemo(
-    () => {
-      if (!member) return null;
-      if (settings.choresProvider === 'choresman') {
-        const localMember = { ...member };
-        delete localMember.choreops_user;
-        return findUserForMember(localMember, choreOps.data?.users ?? []);
-      }
-      return findUserForMember(member, choreOps.data?.users ?? []);
-    },
-    [member, choreOps.data, settings.choresProvider],
+  // ChoresMan owns chore data: resolve this member's record, then take
+  // the chores ChoresMan assigns to them.
+  const choresManUser = useMemo(
+    () => member ? findUserForMember(member, choresMan.data?.users ?? []) : null,
+    [member, choresMan.data],
   );
 
   const memberChores = useMemo(() => {
-    const assignee = choreOpsUser?.name.trim().toLowerCase();
+    const assignee = choresManUser?.name.trim().toLowerCase();
     if (!assignee) return [];
 
-    return (choreOps.data?.chores ?? [])
+    return (choresMan.data?.chores ?? [])
       .filter((chore) => chore.assignee?.trim().toLowerCase() === assignee)
       .map((chore) => ({
         id: chore.id,
@@ -109,17 +102,17 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
         assigned_to: [memberId],
         frequency: 'once' as const,
         value_cents: 0,
-        icon: chore.icon ?? undefined,
+        icon: choreIconForDisplay(chore.icon) ?? undefined,
       }));
-  }, [choreOps.data, choreOpsUser, memberId]);
+  }, [choresMan.data, choresManUser, memberId]);
 
   const completedChoreIds = useMemo(() => {
     const ids = new Set<string>();
-    for (const chore of choreOps.data?.chores ?? []) {
+    for (const chore of choresMan.data?.chores ?? []) {
       if (/^(approved|completed|done)/i.test(chore.status)) ids.add(chore.id);
     }
     return ids;
-  }, [choreOps.data]);
+  }, [choresMan.data]);
 
   const picks = pickRoutines(routinesApi.routines, now);
 
@@ -142,7 +135,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   /** The chore waiting for confirmation, plus whether it is a sign-off. */
   const confirmChore = memberChores.find((chore) => chore.id === confirmChoreId) ?? null;
   const confirmIsDone = /(claim|review|progress|submit)/i.test(
-    choreOps.data?.chores.find((chore) => chore.id === confirmChoreId)?.status ?? '',
+    choresMan.data?.chores.find((chore) => chore.id === confirmChoreId)?.status ?? '',
   );
 
   return (
@@ -172,7 +165,7 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
       </header>
 
       <main className="focus-body">
-        {choreOps.loading && !choreOps.data ? (
+        {choresMan.loading && !choresMan.data ? (
           <LoadingPlaceholder
             label={t('planner.loading')}
             lines={5}
@@ -267,16 +260,16 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
                 disabled={pendingChoreId === confirmChore.id}
                 aria-busy={pendingChoreId === confirmChore.id}
                 onClick={() => {
-                  const chore = choreOps.data?.chores.find((c) => c.id === confirmChore.id);
-                  // ChoreOps has no un-complete action: ticking claims or approves.
-                  const buttonEid = chore?.actions.claim ?? chore?.actions.approve;
-                  if (!buttonEid) {
+                  const chore = choresMan.data?.chores.find((c) => c.id === confirmChore.id);
+                  // ChoresMan has no un-complete action: ticking claims or approves.
+                  const actionId = chore?.actions.claim ?? chore?.actions.approve;
+                  if (!actionId) {
                     setConfirmChoreId(null);
                     return;
                   }
                   setPendingChoreId(confirmChore.id);
-                  void choreOps
-                    .pressButton(buttonEid)
+                  void choresMan
+                    .runActionId(actionId)
                     .then(() => {
                       if (confirmIsDone) setCelebration(true);
                       setConfirmChoreId(null);

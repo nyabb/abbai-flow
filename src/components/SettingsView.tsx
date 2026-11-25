@@ -224,8 +224,7 @@ export function SettingsView({
     />
   );
   // ==== CHORES ====
-  // Chore data lives in the ChoreOps integration: Abbai Flow has no local chore
-  // store, so streaks, values and payouts are configured in Home Assistant.
+  // Chores and rewards are stored in the local ChoresMan service.
   const renderChores = () => (
     <ChoresSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />
   );

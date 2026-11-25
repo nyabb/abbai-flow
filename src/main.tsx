@@ -15,7 +15,6 @@ import './styles/omni-add.css';
 import './styles/settings.css';
 import './styles/weather.css';
 import './styles/focus.css';
-import './styles/choreops.css';
 import './styles/chore-planner.css';
 import './styles/timer.css';
 import './styles/debug-console.css';

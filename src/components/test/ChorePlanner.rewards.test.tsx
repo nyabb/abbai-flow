@@ -3,7 +3,7 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
-import type { ChoreOpsState } from '../../types/choreops';
+import type { ChoresManState } from '../../types/choresman';
 
 const mocks = vi.hoisted(() => ({
   approveReward: vi.fn(async () => {}),
@@ -22,17 +22,17 @@ const mocks = vi.hoisted(() => ({
         referenceId: string | null;
       }>,
   ),
-  state: { current: null as ChoreOpsState | null },
+  state: { current: null as ChoresManState | null },
 }));
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: mocks.state.current,
     loading: false,
     error: null,
     available: true,
     refresh: () => {},
-    pressButton: async () => {},
+    runActionId: async () => {},
     claimChore: async () => {},
     createChore: async () => {},
     updateChore: async () => {},
@@ -44,8 +44,9 @@ vi.mock('../../hooks/useChoreOps', () => ({
   }),
 }));
 
-vi.mock('../../api/choreops-ledger', () => ({
-  fetchChoreOpsRewardHistory: mocks.fetchRewardHistory,
+vi.mock('../../api/choresman-history', () => ({
+  fetchChoresManChoreHistory: async () => [],
+  fetchChoresManRewardHistory: mocks.fetchRewardHistory,
 }));
 
 function member(overrides: Partial<FamilyMember>): FamilyMember {
@@ -60,9 +61,9 @@ function member(overrides: Partial<FamilyMember>): FamilyMember {
 }
 
 const PARENT = member({ id: 'p1', name: 'Papa', role: 'parent', pin: '0123' });
-const ZARA = member({ id: 'c1', name: 'Zara', choreops_user: 'Zara' });
+const ZARA = member({ id: 'c1', name: 'Zara'});
 
-function state(): ChoreOpsState {
+function state(): ChoresManState {
   return {
     users: [
       {
@@ -78,7 +79,7 @@ function state(): ChoreOpsState {
     chores: [
       {
         id: 'status:zara::afwassen',
-        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+        plannerRowId: 'choresman-row:afwassen:zara',
         name: 'Afwassen',
         icon: null,
         status: 'pending',
@@ -89,18 +90,18 @@ function state(): ChoreOpsState {
         dueDate: null,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
+        actions: { claim: 'choresman-action:claim-afwassen' },
       },
     ],
     rewards: [
       {
-        id: 'sensor.zara_choreops_reward_status_schermtijd',
+        id: 'choresman:reward-schermtijd:zara',
         name: 'Schermtijd',
         status: 'available',
         cost: 20,
         pendingClaims: 0,
         assignee: 'Zara',
-        actions: { claim: 'button.zara_redeem_schermtijd' },
+        actions: { claim: 'choresman-action:redeem-schermtijd' },
       },
     ],
     people: [],
@@ -211,15 +212,14 @@ describe('reward lifecycle', () => {
     fireEvent.click(within(assignees).getByRole('button', { name: 'Zara' }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'New goal' } });
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    expect(container.querySelector('.planner-pin-input')).toBeNull();
 
     await waitFor(() => expect(mocks.createReward).toHaveBeenCalledOnce());
     expect(mocks.createReward).toHaveBeenCalledWith({
       name: 'New goal',
       cost: 10,
       assignedUserNames: ['Zara'],
+      approvalRequired: true,
     });
   });
 
@@ -261,7 +261,7 @@ describe('reward lifecycle', () => {
     expect(screen.getByRole('button', { name: 'Opslaan' })).toBeDisabled();
   });
 
-  it('shows ChoreOps reward transactions in the reward history', async () => {
+  it('shows ChoresMan reward transactions in the reward history', async () => {
     mocks.fetchRewardHistory.mockResolvedValue([
       {
         id: 'ledger-1',
@@ -333,7 +333,7 @@ describe('reward lifecycle', () => {
     await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(container.textContent).toContain('20 / 20');
-    // Nothing has been handed over, so ChoreOps was not touched.
+    // Nothing has been handed over, so ChoresMan was not touched.
     expect(mocks.approveReward).not.toHaveBeenCalled();
 
     // 2. Paying out is the parent's approval, and it asks for the PIN.
@@ -360,13 +360,13 @@ describe('reward lifecycle', () => {
       rewards: [
         ...state().rewards,
         {
-          id: 'sensor.zara_choreops_reward_status_snack',
+          id: 'choresman:reward-snack:zara',
           name: 'Snack',
           status: 'available',
           cost: 10,
           pendingClaims: 0,
           assignee: 'Zara',
-          actions: { claim: 'button.zara_redeem_snack' },
+          actions: { claim: 'choresman-action:redeem-snack' },
         },
       ],
     };

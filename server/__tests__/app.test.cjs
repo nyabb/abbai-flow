@@ -807,7 +807,7 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
   assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
 });
 
-test('Choresman serves and persists local chores without a Home Assistant token', async (t) => {
+test('ChoresMan serves and persists local chores without a Home Assistant token', async (t) => {
   const app = await startBeacon({ haToken: '' });
   t.after(() => app.close());
 

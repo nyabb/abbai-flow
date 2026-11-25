@@ -3,10 +3,9 @@ import { defineConfig } from '@playwright/test';
 /**
  * Browser E2E suite.
  *
- * These tests boot the real backend (`server/app.cjs`) against a fake Home
- * Assistant, so they exercise the SPA, the `/beacon-data` store, the planner
- * mutation endpoint and the ChoreOps service bridge together — not a mocked
- * React tree.
+ * These tests boot the real backend (`server/app.cjs`) and local ChoresMan store
+ * alongside a small Home Assistant stub for unrelated integration probes. They
+ * exercise the SPA, persistence, planner mutation endpoint, and chore actions.
  *
  * Run with `npm run test:e2e`. `globalSetup` builds the SPA and the CommonJS
  * planner rules first; set `E2E_SKIP_BUILD=1` to reuse an existing `dist/`.

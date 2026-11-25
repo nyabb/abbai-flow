@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ChoreOpsState } from '../../types/choreops';
+import type { ChoresManState } from '../../types/choresman';
 import type { FamilyMember, Routine } from '../../types/family';
 import type { AbbaiSettings } from '../../hooks/useSettings';
 import { FocusView } from '../focus/FocusView';
@@ -8,13 +8,13 @@ import { FocusView } from '../focus/FocusView';
 const mocks = vi.hoisted(() => ({
   members: [] as FamilyMember[],
   routines: [] as Routine[],
-  chores: [] as ChoreOpsState['chores'],
+  chores: [] as ChoresManState['chores'],
   completedTaskIds: new Set<string>(),
   toggleTask: vi.fn(async () => true),
   removeRoutine: vi.fn(async () => true),
   refreshRoutines: vi.fn(async () => {}),
   refreshChores: vi.fn(async () => {}),
-  pressButton: vi.fn(async () => {}),
+  runActionId: vi.fn(async () => {}),
 }));
 
 vi.mock('../../hooks/useFamily', () => ({
@@ -32,8 +32,8 @@ vi.mock('../../hooks/useRoutines', () => ({
   }),
 }));
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: {
       users: [
         {
@@ -53,11 +53,11 @@ vi.mock('../../hooks/useChoreOps', () => ({
       pendingApprovals: { chores: 0, rewards: 0 },
       entryId: 'entry-1',
       available: true,
-    } satisfies ChoreOpsState,
+    } satisfies ChoresManState,
     loading: false,
     error: null,
     refresh: mocks.refreshChores,
-    pressButton: mocks.pressButton,
+    runActionId: mocks.runActionId,
   }),
 }));
 
@@ -72,7 +72,7 @@ const child: FamilyMember = {
   avatar: '🧒',
   color: '#cf6d55',
   role: 'child',
-  choreops_user: 'Zara',
+
 };
 
 const routine = (id: string, name: string): Routine => ({
@@ -105,7 +105,7 @@ describe('FocusView routines', () => {
     mocks.completedTaskIds = new Set();
     mocks.toggleTask.mockClear();
     mocks.removeRoutine.mockClear();
-    mocks.pressButton.mockClear();
+    mocks.runActionId.mockClear();
   });
 
   afterEach(() => {
@@ -178,7 +178,7 @@ describe('FocusView routines', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
-  it('asks for confirmation before claiming a ChoreOps chore', async () => {
+  it('asks for confirmation before claiming a ChoresMan chore', async () => {
     mocks.chores = [
       {
         id: 'chore-1',
@@ -189,7 +189,7 @@ describe('FocusView routines', () => {
         points: 1,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.claim' },
+        actions: { claim: 'choresman-action:claim' },
       },
     ];
     render(<FocusView memberId={child.id} settings={settings} onExit={vi.fn()} />);
@@ -198,11 +198,11 @@ describe('FocusView routines', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
-    await waitFor(() => expect(mocks.pressButton).toHaveBeenCalledWith('button.claim'));
+    await waitFor(() => expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:claim'));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('celebrates after a parent approves a claimed ChoreOps chore', async () => {
+  it('celebrates after a parent approves a claimed ChoresMan chore', async () => {
     mocks.chores = [
       {
         id: 'chore-1',
@@ -213,7 +213,7 @@ describe('FocusView routines', () => {
         points: 1,
         canClaim: false,
         canApprove: true,
-        actions: { approve: 'button.approve' },
+        actions: { approve: 'choresman-action:approve' },
       },
     ];
     render(<FocusView memberId={child.id} settings={settings} onExit={vi.fn()} />);
@@ -223,7 +223,7 @@ describe('FocusView routines', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await waitFor(() => {
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.approve');
+      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:approve');
       expect(document.querySelectorAll('.planner-confetti--chore i')).toHaveLength(36);
     });
   });

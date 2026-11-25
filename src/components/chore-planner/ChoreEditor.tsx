@@ -7,8 +7,8 @@
  * renders it and asks for changes.
  */
 import type { Dispatch, SetStateAction } from 'react';
-import { CHOREOPS_FREQUENCIES, CHOREOPS_INTERVAL_UNITS } from '../../api/choreops';
-import type { ChoreOpsFrequency, ChoreOpsIntervalUnit } from '../../api/choreops';
+import { CHORESMAN_FREQUENCIES, CHORESMAN_INTERVAL_UNITS } from '../../api/chore-model';
+import type { ChoresManFrequency, ChoresManIntervalUnit } from '../../api/chore-model';
 import type { PlannerMember } from '../../api/chore-planner-model';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
@@ -40,7 +40,7 @@ export function ChoreEditor({
   onCancel,
   onSave,
 }: ChoreEditorProps) {
-  // Existing ChoreOps recurrence can still be edited, but routines are managed
+  // Existing ChoresMan recurrence can still be edited, but routines are managed
   // exclusively in Family Settings.
   const showSchedule = Boolean(editingId);
 
@@ -155,11 +155,11 @@ export function ChoreEditor({
             onChange={(event) =>
               setForm((value) => ({
                 ...value,
-                liveFrequency: event.target.value as ChoreOpsFrequency,
+                liveFrequency: event.target.value as ChoresManFrequency,
               }))
             }
           >
-            {CHOREOPS_FREQUENCIES.map((frequency) => (
+            {CHORESMAN_FREQUENCIES.map((frequency) => (
               <option key={frequency} value={frequency}>
                 {t(FREQUENCY_KEY[frequency])}
               </option>
@@ -211,11 +211,11 @@ export function ChoreEditor({
                 onChange={(event) =>
                   setForm((value) => ({
                     ...value,
-                    liveIntervalUnit: event.target.value as ChoreOpsIntervalUnit,
+                    liveIntervalUnit: event.target.value as ChoresManIntervalUnit,
                   }))
                 }
               >
-                {CHOREOPS_INTERVAL_UNITS.map((unit) => (
+                {CHORESMAN_INTERVAL_UNITS.map((unit) => (
                   <option key={unit} value={unit}>
                     {t(UNIT_KEY[unit])}
                   </option>

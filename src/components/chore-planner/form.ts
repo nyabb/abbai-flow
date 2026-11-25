@@ -1,26 +1,26 @@
 /**
- * Planner form state, formatting helpers and the ChoreOps option tables.
+ * Planner form state, formatting helpers and the ChoresMan option tables.
  *
  * Everything here is pure: it converts a planner task into the editable form
  * value, converts a form value back through the payload builders, and formats
  * times with the app's locale. Keeping it out of the component means the
  * conversions can be reasoned about (and later tested) without a render.
  */
-import { formatChoreOpsOffset } from '../../api/choreops';
-import type { ChoreOpsFrequency, ChoreOpsIntervalUnit } from '../../api/choreops';
+import { formatChoresManOffset } from '../../api/chore-model';
+import type { ChoresManFrequency, ChoresManIntervalUnit } from '../../api/chore-model';
 import type { PlannerTask } from '../../api/chore-planner-model';
-import type { ChoreOpsChore } from '../../types/choreops';
+import type { ChoresManChore } from '../../types/choresman';
 import { type TranslationKey } from '../../i18n';
 import type { PlannerCopy } from './copy';
 
 /** Parent PINs must be at least this long to unlock approvals. */
 export const MIN_PIN_LENGTH = 4;
 
-/** Planner weekday indexes (Monday first) → ChoreOps day keys. */
+/** Planner weekday indexes (Monday first) → ChoresMan day keys. */
 export const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
-/** ChoreOps repeat options → dictionary keys, so the picker follows the app language. */
-export const FREQUENCY_KEY: Record<ChoreOpsFrequency, TranslationKey> = {
+/** ChoresMan repeat options → dictionary keys, so the picker follows the app language. */
+export const FREQUENCY_KEY: Record<ChoresManFrequency, TranslationKey> = {
   none: 'planner.freq.none',
   daily: 'planner.freq.daily',
   daily_multi: 'planner.freq.daily_multi',
@@ -39,7 +39,7 @@ export const FREQUENCY_KEY: Record<ChoreOpsFrequency, TranslationKey> = {
 };
 
 /** Interval unit labels for `custom` repeats. */
-export const UNIT_KEY: Record<ChoreOpsIntervalUnit, TranslationKey> = {
+export const UNIT_KEY: Record<ChoresManIntervalUnit, TranslationKey> = {
   hours: 'planner.unit.hours',
   days: 'planner.unit.days',
   weeks: 'planner.unit.weeks',
@@ -70,10 +70,10 @@ export type FormValue = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'interval';
   interval: number;
   weekdays: number[];
-  /** ChoreOps schedule — only read and written in live mode. */
-  liveFrequency: ChoreOpsFrequency;
+  /** ChoresMan schedule — only read and written in live mode. */
+  liveFrequency: ChoresManFrequency;
   liveInterval: number;
-  liveIntervalUnit: ChoreOpsIntervalUnit;
+  liveIntervalUnit: ChoresManIntervalUnit;
   liveWeekdays: number[];
   /** Due window offset, e.g. `1h`; empty means "no window". */
   liveWindow: string;
@@ -81,7 +81,7 @@ export type FormValue = {
   liveReminder: string;
   liveAutoApprove: boolean;
   liveDescription: string;
-  /** Comma-separated ordinary ChoreOps labels; these never define routines. */
+  /** Comma-separated ordinary ChoresMan labels; these never define routines. */
   liveLabels: string;
 };
 
@@ -140,26 +140,26 @@ export function formFromTask(task: PlannerTask): FormValue {
   };
 }
 
-/** Prefill the edit form from the chore ChoreOps publishes. */
-export function formFromLiveTask(task: PlannerTask, chore: ChoreOpsChore | null): FormValue {
+/** Prefill the edit form from the chore ChoresMan publishes. */
+export function formFromLiveTask(task: PlannerTask, chore: ChoresManChore | null): FormValue {
   const base = formFromTask(task);
   const days = chore?.applicableDays ?? [];
   return {
     ...base,
     points: chore?.points ?? base.points,
-    liveFrequency: (chore?.frequency as ChoreOpsFrequency | null) ?? 'none',
+    liveFrequency: (chore?.frequency as ChoresManFrequency | null) ?? 'none',
     liveInterval: chore?.customInterval ?? 1,
-    liveIntervalUnit: (chore?.customIntervalUnit as ChoreOpsIntervalUnit | null) ?? 'days',
+    liveIntervalUnit: (chore?.customIntervalUnit as ChoresManIntervalUnit | null) ?? 'days',
     liveWeekdays: days
       .map((day) => DAY_KEYS.indexOf(day as (typeof DAY_KEYS)[number]))
       .filter((index) => index >= 0),
-    liveWindow: formatChoreOpsOffset(chore?.windowOffset),
+    liveWindow: formatChoresManOffset(chore?.windowOffset),
     liveAutoApprove: chore?.autoApprove ?? false,
     liveDescription: chore?.description ?? '',
     liveLabels: (chore?.labels ?? []).join(', '),
-    // A live ChoreOps chore without a due date must stay date-less in the
+    // A live ChoresMan chore without a due date must stay date-less in the
     // editor. `base.deadlineAt` is a planner fallback and must not be sent back
-    // to ChoreOps as though the user had set a due date.
+    // to ChoresMan as though the user had set a due date.
     deadlineAt: chore?.dueDate ? localDateTime(new Date(chore.dueDate)) : '',
   };
 }
