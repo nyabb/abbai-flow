@@ -101,6 +101,11 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
   const mobileNav = MOBILE_NAV_IDS.map(itemFor);
   const navExtra = NAV_EXTRA_IDS.map(itemFor);
   const quickAddLabel = t('omniAdd.quickAdd');
+  const selectedMobileIndex = MOBILE_NAV_IDS.indexOf(activeView);
+  const selectedMobileCenter =
+    selectedMobileIndex >= 0 ? ((selectedMobileIndex + 0.5) / MOBILE_NAV_IDS.length) * 100 : 50;
+  const selectedMobileEdgeSpan =
+    selectedMobileIndex >= 0 ? Math.min(selectedMobileCenter, 100 - selectedMobileCenter) * 2 : 0;
 
   return (
     <>
@@ -184,25 +189,35 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
       </nav>
 
       {/* Mobile bottom tab bar (hidden on desktop via CSS) */}
-      <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
+      <nav
+        className="mobile-tab-bar"
+        aria-label={t('nav.mainNavigation')}
+        style={{
+          '--mobile-active-center': `${selectedMobileCenter}%`,
+          '--mobile-bump-width':
+            selectedMobileIndex >= 0
+              ? `min(240px, max(56px, ${selectedMobileEdgeSpan}%))`
+              : '0px',
+        } as React.CSSProperties}
+      >
         <svg
           className="mobile-tab-bar-wave"
-          viewBox="0 0 1000 100"
+          viewBox="0 0 240 100"
           preserveAspectRatio="none"
           aria-hidden="true"
           focusable="false"
         >
-          <path d="M0 24 H385 C440 24 440 0 500 0 C560 0 560 24 615 24 H1000 V100 H0 Z" />
+          <path d="M0 32 C52 32 60 0 120 0 C180 0 188 32 240 32 V100 H0 Z" />
           <path
             className="mobile-tab-bar-wave-border"
-            d="M0 24 H385 C440 24 440 0 500 0 C560 0 560 24 615 24 H1000"
+            d="M0 32 C52 32 60 0 120 0 C180 0 188 32 240 32"
           />
         </svg>
         {mobileNav.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`mobile-tab ${item.id === 'chores' ? 'mobile-tab--featured' : ''} ${activeView === item.id ? 'mobile-tab--active' : ''}`}
+            className={`mobile-tab ${activeView === item.id ? 'mobile-tab--active' : ''}`}
             onClick={() => onChangeView(item.id)}
             aria-label={t(item.labelKey)}
             aria-current={activeView === item.id ? 'page' : undefined}
