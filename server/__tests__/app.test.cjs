@@ -31,6 +31,7 @@ const {
   transportFor,
   writeDataFile,
 } = require('../app.cjs');
+const { ICloudRemindersWorker } = require('../icloud-reminders-worker.cjs');
 
 const CERT = fs.readFileSync(path.join(__dirname, 'fixtures', 'test-cert.pem'));
 const KEY = fs.readFileSync(path.join(__dirname, 'fixtures', 'test-key.pem'));
@@ -79,6 +80,7 @@ async function startBeacon(overrides = {}) {
     allowedOrigins: overrides.allowedOrigins,
     ca: overrides.ca,
     spotifyPlaylists: overrides.spotifyPlaylists,
+    icloudReminders: overrides.icloudReminders,
     bluetooth: overrides.bluetooth,
     bluetoothDbusAddress: overrides.bluetoothDbusAddress,
   });
@@ -540,6 +542,82 @@ test('integration settings test connection checks submitted Home Assistant crede
   assert.equal(unchanged.json.haUrl, 'http://127.0.0.1:1');
 });
 
+test('integration settings report the current iCloud authentication state', async (t) => {
+  const state = {
+    state: 'disconnected',
+    devices: [],
+    securityKeyNames: [],
+  };
+  const icloudReminders = {
+    status: () => ({ ...state }),
+    authenticate: async () => {
+      state.state = 'authenticated';
+      return { ok: true, state: state.state };
+    },
+    stop() {},
+  };
+  const app = await startBeacon({ icloudReminders });
+  t.after(() => app.close());
+
+  const initial = await request(app.port, { path: '/abbai-flow/settings/integrations' });
+  assert.equal(initial.json.icloudAuthState, 'disconnected');
+  assert.deepEqual(initial.json.icloudDevices, []);
+  assert.deepEqual(initial.json.icloudSecurityKeyNames, []);
+
+  const authenticated = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/icloud-reminders/authenticate',
+    body: {},
+  });
+  assert.equal(authenticated.status, 200);
+
+  const afterAuthentication = await request(app.port, {
+    path: '/abbai-flow/settings/integrations',
+  });
+  assert.equal(afterAuthentication.json.icloudAuthState, 'authenticated');
+});
+
+test('iCloud worker retains safe authentication status between requests', () => {
+  const worker = new ICloudRemindersWorker({ dataDir: tmpDir('icloud-status') });
+  assert.deepEqual(worker.status(), {
+    state: 'disconnected',
+    devices: [],
+    securityKeyNames: [],
+  });
+
+  const sendResponse = (response) => {
+    const timeout = setTimeout(() => {}, 10000);
+    worker.pending.set(response.requestId, {
+      resolve() {},
+      reject() {},
+      timeout,
+    });
+    worker.onLine(JSON.stringify(response));
+  };
+
+  sendResponse({
+    requestId: 'challenge',
+    ok: true,
+    state: 'device_selection_required',
+    devices: [{ index: 0, name: 'Trusted phone' }],
+  });
+  assert.deepEqual(worker.status(), {
+    state: 'device_selection_required',
+    devices: [{ index: 0, name: 'Trusted phone' }],
+    securityKeyNames: [],
+  });
+
+  sendResponse({ requestId: 'verified', ok: true, state: 'authenticated' });
+  assert.deepEqual(worker.status(), {
+    state: 'authenticated',
+    devices: [],
+    securityKeyNames: [],
+  });
+
+  sendResponse({ requestId: 'reset', ok: true, state: 'disconnected' });
+  assert.equal(worker.status().state, 'disconnected');
+});
+
 test('service bridge validates input and forwards to Home Assistant', async (t) => {
   const ha = await startFakeHa();
   t.after(() => ha.close());
@@ -821,7 +899,9 @@ test('ChoresMan serves and persists local chores without a Home Assistant token'
     body: {
       action: 'family.sync_members',
       data: {
-        members: [{ id: 'local-member-1', name: 'Maya', role: 'child', avatar: '👧', color: '#22c55e' }],
+        members: [
+          { id: 'local-member-1', name: 'Maya', role: 'child', avatar: '👧', color: '#22c55e' },
+        ],
       },
     },
   });

@@ -201,7 +201,20 @@ export function IntegrationsSection({
         setMealSourceUrl(status.mealSourceUrl);
         setMealDataMapping({ ...EMPTY_MEAL_DATA_MAPPING, ...status.mealDataMapping });
         setIcloudAppleId(status.icloudAppleId);
+        setIcloudAuthState(status.icloudAuthState);
+        setIcloudDevices(status.icloudDevices);
+        setIcloudDeviceIndex(status.icloudDevices[0]?.index ?? 0);
+        setIcloudSecurityKeys(status.icloudSecurityKeyNames);
         setCalendarSources(status.calendarSources);
+        if (['authenticated', 'verified_untrusted', 'fetched'].includes(status.icloudAuthState)) {
+          setIntegrationNotice(t('settings.integrations.icloudAuthenticated'));
+        } else if (status.icloudAuthState === 'verification_required') {
+          setIntegrationNotice(t('settings.integrations.icloudVerificationSent'));
+        } else if (status.icloudAuthState === 'security_key_required') {
+          setIntegrationNotice(t('settings.integrations.icloudSecurityKeyRequired'));
+        } else if (status.icloudAuthState === 'device_selection_required') {
+          setIntegrationNotice(t('settings.integrations.icloudChooseDevice'));
+        }
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -263,13 +276,15 @@ export function IntegrationsSection({
       });
       setIntegrationStatus(status);
       setCalendarSources(status.calendarSources);
+      setIcloudAuthState(status.icloudAuthState);
+      setIcloudDevices(status.icloudDevices);
+      setIcloudSecurityKeys(status.icloudSecurityKeyNames);
       setHaToken('');
       setEncoreToken('');
       setSpotifyClientSecret('');
       setMealSourceToken('');
       setIcloudPassword('');
       if (resetIcloudSession) {
-        setIcloudAuthState('');
         setIcloudCode('');
         setIcloudPreview('');
       }
