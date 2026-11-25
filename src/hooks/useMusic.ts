@@ -14,6 +14,7 @@ import {
 interface UseMusicReturn {
   players: MediaPlayer[];
   activePlayer: MediaPlayer | null;
+  loading: boolean;
   play: (entityId?: string) => Promise<void>;
   pause: (entityId?: string) => Promise<void>;
   next: (entityId?: string) => Promise<void>;
@@ -28,6 +29,7 @@ export function useMusic(
   connected: boolean,
 ): UseMusicReturn {
   const [players, setPlayers] = useState<MediaPlayer[]>([]);
+  const [loading, setLoading] = useState(connected);
   const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
   const subscriptionRef = useRef<number | null>(null);
 
@@ -38,15 +40,21 @@ export function useMusic(
 
   // Fetch players and subscribe to state changes (or poll in REST mode)
   useEffect(() => {
-    if (!connected) return;
+    if (!connected) {
+      setLoading(false);
+      return;
+    }
     const client = getClient();
     let cancelled = false;
+    setLoading(true);
 
     async function init() {
-      // Initial fetch — works via WS or REST
-      const initialPlayers = await getMediaPlayers(client);
-      if (!cancelled) {
-        setPlayers(initialPlayers);
+      try {
+        // Initial fetch — works via WS or REST
+        const initialPlayers = await getMediaPlayers(client);
+        if (!cancelled) setPlayers(initialPlayers);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
 
       // If we have a WS client, subscribe to live state changes
@@ -168,6 +176,7 @@ export function useMusic(
   return {
     players,
     activePlayer,
+    loading,
     play,
     pause,
     next,

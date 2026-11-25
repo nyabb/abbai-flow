@@ -192,12 +192,6 @@ a:focus:not(:focus-visible) {
   display: flex;
 }
 
-/* Kiosk Mode (Settings > Display): no Sidebar is rendered at all, so no
-   column needs to be reserved for it — single full-width column. */
-.abbai-flow--kiosk {
-  grid-template-columns: 1fr;
-}
-
 .abbai-flow-main {
   display: flex;
   flex-direction: column;
@@ -209,6 +203,7 @@ a:focus:not(:focus-visible) {
   background: var(--bg-primary);
   /* Prevent iOS WebView from showing content behind this container */
   isolation: isolate;
+  view-transition-name: abbai-page;
 }
 
 /* The calendar body fills the remaining space */
@@ -220,19 +215,76 @@ a:focus:not(:focus-visible) {
 /* Ensure views take full height even on mobile */
 .abbai-flow-main > .settings-view,
 .abbai-flow-main > .grocery-view,
-.abbai-flow-main > .music-view,
-.abbai-flow-main > .photo-frame {
+.abbai-flow-main > .music-view {
   flex: 1;
   min-height: 0;
 }
 
-/* Smooth view transitions.
-   Fade only, no transform: while a view carries a `transform` (even
-   `translateY(0)`) it becomes the containing block for `position: fixed`, so
-   dialogs inside it were anchored to the view instead of the viewport —
-   off-centre, and half below the screen on phones. */
+/* The View Transitions API animates page snapshots, keeping transforms off the
+   live page so fixed dialogs remain anchored to the viewport. Older browsers
+   keep the fade fallback below. */
 .abbai-flow-main > * {
   animation: view-enter 250ms ease;
+}
+
+.abbai-flow--view-transition-supported .abbai-flow-main > * {
+  animation: none;
+}
+
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(abbai-page) {
+  animation-duration: 360ms;
+}
+
+::view-transition-image-pair(abbai-page) {
+  isolation: isolate;
+}
+
+::view-transition-old(abbai-page),
+::view-transition-new(abbai-page) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+:root[data-page-transition-direction='forward']::view-transition-old(abbai-page) {
+  animation-name: page-slide-out-forward;
+}
+
+:root[data-page-transition-direction='forward']::view-transition-new(abbai-page) {
+  animation-name: page-slide-in-forward;
+}
+
+:root[data-page-transition-direction='backward']::view-transition-old(abbai-page) {
+  animation-name: page-slide-out-backward;
+}
+
+:root[data-page-transition-direction='backward']::view-transition-new(abbai-page) {
+  animation-name: page-slide-in-backward;
+}
+
+@keyframes page-slide-in-forward {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes page-slide-out-forward {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(-18%); opacity: 0.72; }
+}
+
+@keyframes page-slide-in-backward {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes page-slide-out-backward {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(18%); opacity: 0.72; }
 }
 
 @keyframes view-enter {
@@ -961,11 +1013,27 @@ a:focus:not(:focus-visible) {
 
 /* Time Grid */
 .week-grid-scroll {
+  position: relative;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+
+.week-calendar-loading {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 64px 24px;
+  background: color-mix(in srgb, var(--bg-surface) 84%, transparent);
+}
+
+.week-calendar-loading .loading-placeholder {
+  width: min(28rem, 72vw);
 }
 
 .week-grid-scroll::-webkit-scrollbar {
@@ -1375,8 +1443,7 @@ a:focus:not(:focus-visible) {
  *
  * The tab bar is shown by `.abbai-flow--compact` (see the `.abbai-flow--compact
  * .mobile-tab-bar { display: flex }` rule), not by the sidebar position, so
- * matching on `abbai-flow--sidebar-bottom` alone never applied. Both are covered:
- * kiosk mode drops the sidebar class entirely.
+ * matching on `abbai-flow--sidebar-bottom` alone never applied. Both are covered.
  */
 .abbai-flow--compact .modal-overlay,
 .abbai-flow--sidebar-bottom .modal-overlay {
@@ -1768,6 +1835,17 @@ a:focus:not(:focus-visible) {
   inset: 0;
   background: rgba(0, 0, 0, 0.25);
   z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 200ms ease, visibility 0s linear 200ms;
+}
+
+.mobile-more-backdrop.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 200ms ease, visibility 0s;
 }
 
 .mobile-more-menu {
@@ -1781,7 +1859,25 @@ a:focus:not(:focus-visible) {
   z-index: 100;
   padding: 8px 0 16px;
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  animation: slide-up 200ms ease;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(24px);
+  pointer-events: none;
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 180ms ease,
+    visibility 0s linear 240ms;
+}
+
+.mobile-more-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition:
+    transform 240ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 180ms ease,
+    visibility 0s;
 }
 
 .mobile-more-header {
@@ -2251,5 +2347,11 @@ a:focus:not(:focus-visible) {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(abbai-page),
+  ::view-transition-old(abbai-page),
+  ::view-transition-new(abbai-page) {
+    animation-duration: 0.01ms !important;
   }
 }

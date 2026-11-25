@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { GroceryList } from '../types/grocery';
-import { AnyListClient } from '../api/anylist';
+import { HomeAssistantTodoClient } from '../api/home-assistant-todo';
 import { callHaService, hasToken } from '../api/ha-rest';
 import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
+import { CollapsibleRegion } from './CollapsibleRegion';
 import { HeaderDate, PageHeaderActions } from './PageHeader';
 import { ActivitySpinner, LoadingPlaceholder } from './LoadingPlaceholder';
 
@@ -70,7 +71,7 @@ export function GroceryView({
   /** One page, two tabs: the shopping list on top, the adult to-do list below. */
   const [tab, setTab] = useState<'grocery' | 'tasks'>('grocery');
   const inputRef = useRef<HTMLInputElement>(null);
-  const anylistRef = useRef(new AnyListClient());
+  const homeAssistantTodoRef = useRef(new HomeAssistantTodoClient());
 
   const localTasks = useLocalTasks();
 
@@ -145,7 +146,7 @@ export function GroceryView({
 
       setLoading(true);
       try {
-        const foundLists = await anylistRef.current.getLists();
+        const foundLists = await homeAssistantTodoRef.current.getLists();
         if (cancelled) return;
         setHaLists(foundLists);
       } catch (err) {
@@ -239,7 +240,7 @@ export function GroceryView({
         if (isLocal) {
           localTasks.addTask(selectedListId, trimmed);
         } else {
-          await anylistRef.current.addItem(selectedListId, trimmed);
+          await homeAssistantTodoRef.current.addItem(selectedListId, trimmed);
           setHaItems((prev) => [
             ...prev,
             { uid: `temp-${Date.now()}`, summary: trimmed, status: 'needs_action' },
@@ -270,9 +271,9 @@ export function GroceryView({
 
       try {
         if (newStatus === 'completed') {
-          await anylistRef.current.checkItem(selectedListId, item.summary);
+          await homeAssistantTodoRef.current.checkItem(selectedListId, item.summary);
         } else {
-          await anylistRef.current.uncheckItem(selectedListId, item.summary);
+          await homeAssistantTodoRef.current.uncheckItem(selectedListId, item.summary);
         }
         setTimeout(() => loadHaItems(selectedListId), 500);
       } catch (err) {
@@ -355,7 +356,7 @@ export function GroceryView({
         />
         <button
           type="submit"
-          className="grocery-view-add-btn"
+          className={`grocery-view-add-btn${submitting ? ' grocery-view-add-btn--loading' : ''}`}
           disabled={!inputValue.trim() || submitting}
           aria-label={t('grocery.addItem')}
           aria-busy={submitting}
@@ -455,8 +456,11 @@ export function GroceryView({
                   {completedCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   {t('grocery.completed', { count: checkedItems.length })}
                 </button>
-                {!completedCollapsed &&
-                  checkedItems.map((item) => (
+                <CollapsibleRegion
+                  open={!completedCollapsed}
+                  className="grocery-view-completed-items"
+                >
+                  {checkedItems.map((item) => (
                     <div key={item.uid} className="grocery-view-item-row">
                       <button
                         type="button"
@@ -488,6 +492,7 @@ export function GroceryView({
                       )}
                     </div>
                   ))}
+                </CollapsibleRegion>
               </div>
             )}
           </>

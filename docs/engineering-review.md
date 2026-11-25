@@ -236,7 +236,7 @@ export/import:
 settings/sections/GeneralSection.tsx       170
 settings/sections/AppearanceSection.tsx    155   theme grid, font scale, sidebar, advanced toggles
 settings/sections/CalendarSection.tsx      197   visibility + colour overrides, defaults
-settings/sections/IntegrationsSection.tsx  297   HA status, Grocy, AnyList, lists, photos
+settings/sections/IntegrationsSection.tsx  297   HA status, Grocy, iCloud Reminders, lists, photos
 settings/sections/DisplaySection.tsx       192   screen saver, kiosk, kid display
 settings/sections/ChoresSection.tsx         25
 settings/sections/AboutSection.tsx          91   export/import/reset

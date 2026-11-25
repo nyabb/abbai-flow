@@ -9,7 +9,6 @@ import './styles/family.css';
 import './styles/grocery.css';
 import './styles/music.css';
 import './styles/meals.css';
-import './styles/photos.css';
 import './styles/screensaver.css';
 import './styles/widgets.css';
 import './styles/omni-add.css';
@@ -18,7 +17,6 @@ import './styles/weather.css';
 import './styles/focus.css';
 import './styles/choreops.css';
 import './styles/chore-planner.css';
-import './styles/display.css';
 import './styles/timer.css';
 import './styles/debug-console.css';
 // Screen design layer last: it refines the per-view stylesheets app-wide.

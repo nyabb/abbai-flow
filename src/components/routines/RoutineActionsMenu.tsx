@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from '../../i18n';
+import { CollapsibleRegion } from '../CollapsibleRegion';
 
 interface RoutineActionsMenuProps {
   routineName: string;
@@ -11,6 +12,7 @@ interface RoutineActionsMenuProps {
 /** Shared edit/delete dropdown for every place a family routine is displayed. */
 export function RoutineActionsMenu({ routineName, onEdit, onDelete }: RoutineActionsMenuProps) {
   const { t } = useTranslation();
+  const menuId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -56,11 +58,16 @@ export function RoutineActionsMenu({ routineName, onEdit, onDelete }: RoutineAct
         aria-label={`${t('planner.action')}: ${routineName}`}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={menuId}
         onClick={() => setOpen((value) => !value)}
       >
         <MoreVertical size={18} aria-hidden="true" />
       </button>
-      {open && (
+      <CollapsibleRegion
+        open={open}
+        className="routine-actions-menu-region"
+        id={menuId}
+      >
         <div className="routine-actions-menu" role="menu" aria-label={routineName}>
           <button
             type="button"
@@ -92,7 +99,7 @@ export function RoutineActionsMenu({ routineName, onEdit, onDelete }: RoutineAct
             {confirmingDelete ? t('planner.sure') : t('planner.remove')}
           </button>
         </div>
-      )}
+      </CollapsibleRegion>
     </div>
   );
 }

@@ -20,6 +20,7 @@ export function useTaskLists(
   const localTasks = useLocalTasks();
   const { users, listByUser, completions } = useTaskmate(connected);
   const [haItems, setHaItems] = useState<Omit<TaskTodoItem, 'userId'>[]>([]);
+  const [loading, setLoading] = useState(false);
 
   /*
    * Array *identity*, not contents, is what a dependency array compares. Callers
@@ -33,7 +34,12 @@ export function useTaskLists(
 
   // Fetch HA todo items for task-type lists
   useEffect(() => {
-    if (!connected && !hasToken()) return;
+    if (!connected && !hasToken()) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    let hasLoaded = false;
 
     // Rebuilt from the keys above so the effect body never closes over an array
     // whose identity changes every render.
@@ -41,6 +47,7 @@ export function useTaskLists(
     const taskIds = taskKey ? taskKey.split('|') : [];
 
     async function fetchTasks() {
+      if (!hasLoaded) setLoading(true);
       try {
         // Get the non-grocery HA todo entities
         const states = (await haFetch('/api/states')) as Array<{
@@ -101,9 +108,12 @@ export function useTaskLists(
             /* skip failed lists */
           }
         }
-        setHaItems(items);
+        if (!cancelled) setHaItems(items);
       } catch (err) {
         console.warn('Failed to fetch task lists:', err);
+      } finally {
+        hasLoaded = true;
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -120,6 +130,7 @@ export function useTaskLists(
     document.addEventListener('visibilitychange', onVisible);
 
     return () => {
+      cancelled = true;
       clearInterval(interval);
       document.removeEventListener('visibilitychange', onVisible);
     };
@@ -197,7 +208,7 @@ export function useTaskLists(
     [localTasks, haItems],
   );
 
-  return { items, toggleItem, users };
+  return { items, toggleItem, users, loading };
 }
 
 const GROCERY_KEYWORDS = [

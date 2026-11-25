@@ -8,10 +8,8 @@ const navigationOrder: SidebarView[] = [
   'chores',
   'grocery',
   'music',
-  'photos',
   'timer',
   'weather',
-  'display',
   'settings',
 ];
 

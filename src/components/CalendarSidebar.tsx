@@ -5,6 +5,7 @@ import { Chore, FamilyMember } from '../types/family';
 import { TaskChecklist } from './TaskChecklist';
 import type { TaskTodoItem } from '../hooks/useTaskLists';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface CalendarSidebarProps {
   events: CalendarEvent[];
@@ -12,6 +13,8 @@ interface CalendarSidebarProps {
   completedChoreIds: Set<string>;
   onToggleChore: (choreId: string) => void;
   todoItems: TaskTodoItem[];
+  eventsLoading?: boolean;
+  tasksLoading?: boolean;
   onToggleTodo?: (uid: string, currentStatus: string, listId?: string) => void;
   members?: FamilyMember[];
 }
@@ -22,6 +25,8 @@ export function CalendarSidebar({
   completedChoreIds,
   onToggleChore,
   todoItems,
+  eventsLoading = false,
+  tasksLoading = false,
   onToggleTodo,
   members = [],
 }: CalendarSidebarProps) {
@@ -42,7 +47,15 @@ export function CalendarSidebar({
       <section className="cal-sidebar-section">
         <h3 className="cal-sidebar-heading">{t('calendarSidebar.today')}</h3>
         {todayEvents.length === 0 ? (
-          <p className="cal-sidebar-empty">{t('calendarSidebar.nothingScheduled')}</p>
+          eventsLoading ? (
+            <LoadingPlaceholder
+              label={t('app.connecting')}
+              lines={2}
+              className="loading-placeholder--compact"
+            />
+          ) : (
+            <p className="cal-sidebar-empty">{t('calendarSidebar.nothingScheduled')}</p>
+          )
         ) : (
           <ul className="cal-sidebar-events">
             {todayEvents.map((event) => (
@@ -84,6 +97,12 @@ export function CalendarSidebar({
               </li>
             ))}
           </ul>
+        ) : tasksLoading ? (
+          <LoadingPlaceholder
+            label={t('app.connecting')}
+            lines={3}
+            className="loading-placeholder--compact"
+          />
         ) : (
           <p className="cal-sidebar-empty">{t('calendarSidebar.allClear')}</p>
         )}

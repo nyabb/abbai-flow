@@ -1,7 +1,7 @@
 /**
  * Why the app cannot reach what it needs — four states, not one boolean.
  *
- * On a wall display the difference matters to whoever walks past:
+ * The difference matters when the app is used during a network interruption:
  *
  *   offline      the device itself has no network (router, wifi, DNS)
  *   app-down     the device has network but Abbai Flow's own server does not answer
@@ -77,9 +77,8 @@ export function useConnectionStatus({
     };
   }, [recheck]);
 
-  // Probe the app's own origin: on demand, when the tab becomes visible again
-  // (a sleeping kiosk tab may have been offline for hours), and on an interval
-  // while degraded.
+  // Probe the app's own origin: on demand, when the tab becomes visible again,
+  // and on an interval while degraded.
   useEffect(() => {
     if (offline) return;
     let cancelled = false;

@@ -71,6 +71,7 @@ export function ChoreTaskCard({
           type="button"
           className="choreops-action"
           disabled={blocked || pending}
+          aria-busy={pending}
           onClick={() => onAction(`${chore.id}:claim`, primary.entityId, 'claim')}
         >
           <span className="choreops-action-main">{pending ? '\u2026' : t('chores.claim')}</span>
@@ -90,6 +91,7 @@ export function ChoreTaskCard({
             type="button"
             className="choreops-action"
             disabled={approveLocked}
+            aria-busy={pending}
             onClick={() => onAction(`${chore.id}:approve`, primary.entityId, 'approve')}
           >
             <span className="choreops-action-main">{pending ? '\u2026' : t('chores.approve')}</span>
@@ -102,6 +104,7 @@ export function ChoreTaskCard({
               type="button"
               className="choreops-secondary"
               disabled={approveLocked}
+              aria-busy={pending}
               onClick={() => onAction(`${chore.id}:decline`, declineEid, 'disapprove')}
             >
               {t('chores.decline')}
@@ -126,6 +129,7 @@ export function ChoreTaskCard({
           type="button"
           className="choreops-action"
           disabled={blocked || pending}
+          aria-busy={pending}
           onClick={() => onClaimUnassigned(chore)}
         >
           <span className="choreops-action-main">{pending ? '\u2026' : t('chores.claim')}</span>
@@ -212,6 +216,7 @@ export function RewardGoalCard({
               type="button"
               className="choreops-action"
               disabled={blocked || pending}
+              aria-busy={pending}
               onClick={() => onAction(`${reward.id}:claim`, claimEid, 'claim')}
             >
               <span className="choreops-action-main">{t('chores.claim')}</span>
@@ -225,6 +230,7 @@ export function RewardGoalCard({
               type="button"
               className="choreops-action"
               disabled={!approvalAllowed || blocked || pending}
+              aria-busy={pending}
               onClick={() => onAction(`${reward.id}:approve`, approveEid, 'approve')}
             >
               <span className="choreops-action-main">{t('chores.approve')}</span>
@@ -238,6 +244,7 @@ export function RewardGoalCard({
               type="button"
               className="choreops-secondary"
               disabled={!approvalAllowed || blocked || pending}
+              aria-busy={pending}
               onClick={() => onAction(`${reward.id}:decline`, declineEid, 'disapprove')}
             >
               {t('chores.decline')}

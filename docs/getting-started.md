@@ -68,14 +68,14 @@ On desktop the chores planner takes over the full content column, with the app s
 
 ## Lists (Grocery / Shopping)
 
-The lists view manages shopping and inventory lists from multiple providers.
+The lists view manages grocery and task lists from Home Assistant to-do entities, including Apple Reminders lists connected through Home Assistant's Apple iCloud integration.
 
 **Key features:**
 
-- **List selector dropdown** -- switch between lists: local Shopping List, Home Assistant shopping lists, store-specific lists (Costco, Walmart, Target), and inventory lists (Pantry, Freezer, Fridge).
+- **List selector dropdown** -- switch between selected grocery lists and task lists.
 - **Quick add** -- type an item name and tap Add to append it to the active list.
 - **Check off items** -- tap items to mark them as purchased/completed.
-- **Multiple providers** -- supports AnyList, HA Shopping List, and built-in local lists.
+- **iCloud Reminders** -- connect Apple iCloud in Home Assistant; its reminder lists appear as Home Assistant to-do lists.
 
 ### Desktop
 
@@ -175,7 +175,7 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 - **Theme** -- choose from 8+ themes (Light, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
 - **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
-- **List Providers** -- configure AnyList, HA Shopping List, or local list storage.
+- **List Providers** -- select Home Assistant to-do lists for Grocery and Tasks. Apple Reminders lists are available through Home Assistant's Apple iCloud integration.
 - **Weather Entity** -- set which `weather.*` entity powers the Weather view.
 - **Display** -- screen saver timeout, photo slideshow interval, auto-refresh settings.
 

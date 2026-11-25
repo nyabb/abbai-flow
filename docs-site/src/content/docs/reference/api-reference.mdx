@@ -312,34 +312,34 @@ Reads `sensor.grocy_meal_plan` state and filters to the date range.
 
 ---
 
-## Grocery API (AnyList)
+## Home Assistant To-do API
 
-**File**: `src/api/anylist.ts`
+**File**: `src/api/home-assistant-todo.ts`
 
-The `AnyListClient` class communicates with AnyList through Home Assistant's todo entities.
+The `HomeAssistantTodoClient` class discovers and operates Home Assistant `todo.*` entities. This includes lists provided by Home Assistant's Apple iCloud integration.
 
 ### Discover lists
 
 ```typescript
-const lists: GroceryList[] = await anylistClient.getLists();
+const lists: GroceryList[] = await todoClient.getLists();
 ```
 
-Auto-discovers `todo.anylist_*` entities by fetching all states.
+Discovers available `todo.*` entities by fetching all states.
 
 ### Get items
 
 ```typescript
-const items: GroceryItem[] = await anylistClient.getItems(listId: string);
+const items: GroceryItem[] = await todoClient.getItems(listId: string);
 ```
 
-Calls `todo.get_items` service or falls back to reading the entity state directly.
+Calls Home Assistant's `todo.get_items` service.
 
 ### Add / check / uncheck items
 
 ```typescript
-await anylistClient.addItem(listId, name);
-await anylistClient.checkItem(listId, itemId);
-await anylistClient.uncheckItem(listId, itemId);
+await todoClient.addItem(listId, name);
+await todoClient.checkItem(listId, itemName);
+await todoClient.uncheckItem(listId, itemName);
 ```
 
 Uses `todo.add_item` and `todo.update_item` services.

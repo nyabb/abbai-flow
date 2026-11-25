@@ -52,7 +52,7 @@ chromium-browser \
   --no-first-run \
   --start-fullscreen \
   --disable-pinch \
-  'http://abbai-flow.local:3000/display'
+  'http://abbai-flow.local:3000'
 EOF
 chmod +x ~/abbai-flow-kiosk.sh
 

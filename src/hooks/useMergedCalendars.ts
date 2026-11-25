@@ -36,6 +36,7 @@ export interface UseMergedCalendarsResult {
   calendars: CalendarInfo[];
   /** Local events + HA events, sorted by start. */
   events: CalendarEvent[];
+  loading: boolean;
   fetchCalendars: CalendarApi['fetchCalendars'];
   fetchEvents: CalendarApi['fetchEvents'];
   createEvent: (calendarId: string, event: CalendarEventInput) => Promise<void>;
@@ -120,6 +121,7 @@ export function useMergedCalendars({
   return {
     calendars,
     events,
+    loading: ha.loading,
     fetchCalendars: ha.fetchCalendars,
     fetchEvents: ha.fetchEvents,
     createEvent,

@@ -18,6 +18,7 @@ import type { EncorePlayback, EncoreRepeat, EncoreSnapshot } from '../api/encore
 import type { BluetoothControl, BluetoothSnapshot } from '../api/bluetooth-types';
 import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 import { SpotifyPlaylistLibrary } from './SpotifyPlaylistLibrary';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 import { BluetoothDevicesPanel } from './BluetoothDevicesPanel';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
@@ -254,7 +255,7 @@ export function SpotifyMusicPanel({
             placeholder={t('music.spotifySearchPlaceholder')}
             onChange={(event) => setSearchQuery(event.target.value)}
           />
-          <button type="submit" disabled={!searchQuery.trim() || searching}>
+          <button type="submit" disabled={!searchQuery.trim() || searching} aria-busy={searching}>
             {searching ? t('music.spotifySearching') : t('music.spotifySearchSubmit')}
           </button>
         </form>
@@ -331,6 +332,7 @@ export function SpotifyMusicPanel({
                           type="button"
                           key={playlist.id}
                           disabled={library.working}
+                          aria-busy={library.working}
                           onClick={async () => {
                             const result = await library.addTrack(playlist.id, track.uri);
                             if (result.ok) setAddingTrackUri(null);
@@ -344,6 +346,7 @@ export function SpotifyMusicPanel({
                       <button
                         type="button"
                         disabled={library.working}
+                        aria-busy={library.working}
                         onClick={() => void library.fetchPlaylists()}
                       >
                         {t('music.spotifyLoadMore')}
@@ -363,6 +366,15 @@ export function SpotifyMusicPanel({
       />
 
       <div className="spotify-main-layout">
+        {loading && !playback.item && (
+          <div className="spotify-main-loading">
+            <LoadingPlaceholder
+              label={t('app.connecting')}
+              lines={5}
+              className="loading-placeholder--screen"
+            />
+          </div>
+        )}
         <div className="spotify-now-playing">
           <div className="spotify-art">
             {playback.item?.artworkUrl ? (

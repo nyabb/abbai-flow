@@ -55,8 +55,11 @@ describe('TimerDock', () => {
     // badge says how many timers the chip stands for.
     expect(within(toggle).getByText(/^\d:\d\d$/).textContent).toBe('1:00');
     expect(container.querySelector('.timer-dock-count')?.textContent).toBe('2');
-    // Collapsed: no list until it is opened.
-    expect(container.querySelector('.timer-dock-panel')).toBeNull();
+    // The panel stays mounted to animate its collapse, and is hidden and inert.
+    const panel = container.querySelector<HTMLElement>('.timer-dock-panel')!;
+    expect(panel).not.toHaveClass('is-open');
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    expect(panel).toHaveAttribute('inert');
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 
@@ -119,11 +122,16 @@ describe('TimerDock', () => {
     expect(container.querySelector('.timer-dock-panel')).not.toBeNull();
 
     fireEvent.keyDown(document, { key: 'Escape' });
-    expect(container.querySelector('.timer-dock-panel')).toBeNull();
+    const panel = container.querySelector<HTMLElement>('.timer-dock-panel')!;
+    expect(panel).not.toHaveClass('is-open');
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    expect(panel).toHaveAttribute('inert');
 
     fireEvent.click(container.querySelector<HTMLButtonElement>('.timer-dock-toggle')!);
     fireEvent.pointerDown(document.body);
-    expect(container.querySelector('.timer-dock-panel')).toBeNull();
+    expect(panel).not.toHaveClass('is-open');
+    expect(panel).toHaveAttribute('aria-hidden', 'true');
+    expect(panel).toHaveAttribute('inert');
 
     fireEvent.click(container.querySelector<HTMLButtonElement>('.timer-dock-toggle')!);
     fireEvent.click(screen.getByRole('button', { name: 'Timer' }));

@@ -329,13 +329,6 @@ body {
   padding: 24px;
 }
 
-/* PhotoFrame sets height:100%; inside the column it must flex instead. */
-.view-page > .photo-frame {
-  flex: 1;
-  min-height: 0;
-  height: auto;
-}
-
 /* ---------------------------------------------------------------------------
    Cards: lists, panels, sections
    --------------------------------------------------------------------------- */

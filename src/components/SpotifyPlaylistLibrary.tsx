@@ -2,7 +2,6 @@ import { useEffect, useState, type FormEvent } from 'react';
 import {
   ExternalLink,
   ListMusic,
-  LoaderCircle,
   Music2,
   Plus,
   Sparkles,
@@ -11,6 +10,7 @@ import {
 import type { SpotifyPlaylist, SpotifyPlaylistTrack } from '../api/spotify-playlists';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface SpotifyPlaylistLibraryProps {
   library: UseSpotifyPlaylistsResult;
@@ -167,10 +167,11 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
         </div>
 
         {library.loading ? (
-          <p className="spotify-library-placeholder">
-            <LoaderCircle size={17} />
-            {t('app.connecting')}
-          </p>
+          <LoadingPlaceholder
+            label={t('app.connecting')}
+            lines={4}
+            className="loading-placeholder--compact spotify-library-loading"
+          />
         ) : !library.status.configured ? (
           <div className="spotify-library-placeholder">
             <p>
@@ -182,7 +183,12 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
         ) : !library.status.authorized ? (
           <div className="spotify-library-connect">
             <p>{t('music.spotifyPlaylistConnectHelp')}</p>
-            <button type="button" disabled={connecting} onClick={() => void connect()}>
+            <button
+              type="button"
+              disabled={connecting}
+              aria-busy={connecting}
+              onClick={() => void connect()}
+            >
               {connecting ? t('music.spotifyConnecting') : t('music.spotifyConnectAccount')}
             </button>
           </div>
@@ -205,7 +211,11 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
                   <button type="button" onClick={() => setCreating(false)}>
                     {t('common.cancel')}
                   </button>
-                  <button type="submit" disabled={!playlistName.trim() || creatingPlaylist}>
+                  <button
+                    type="submit"
+                    disabled={!playlistName.trim() || creatingPlaylist}
+                    aria-busy={creatingPlaylist}
+                  >
                     {creatingPlaylist ? t('app.connecting') : t('common.create')}
                   </button>
                 </div>
@@ -289,6 +299,7 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
                 aria-label={t('music.spotifyRemovePlaylist')}
                 title={t('music.spotifyRemovePlaylist')}
                 disabled={library.working}
+                aria-busy={library.working}
                 onClick={() => void removeSelectedPlaylist()}
               >
                 <Trash2 size={18} />
@@ -304,7 +315,11 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
               <span />
             </div>
             {library.tracksLoading && library.tracks.length === 0 ? (
-              <p className="spotify-library-placeholder">{t('music.spotifyPlaylistLoading')}</p>
+              <LoadingPlaceholder
+                label={t('music.spotifyPlaylistLoading')}
+                lines={6}
+                className="loading-placeholder--compact spotify-library-track-loading"
+              />
             ) : library.tracks.length === 0 ? (
               <p className="spotify-library-placeholder">{t('music.spotifyPlaylistEmpty')}</p>
             ) : (
@@ -315,6 +330,7 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
                 className="spotify-library-load-more"
                 type="button"
                 disabled={library.tracksLoading}
+                aria-busy={library.tracksLoading}
                 onClick={library.loadMoreTracks}
               >
                 {library.tracksLoading

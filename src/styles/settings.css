@@ -447,19 +447,23 @@
   color: var(--text-primary);
 }
 
-.routine-actions-menu {
+.routine-actions-menu-region {
   position: absolute;
   z-index: 30;
   top: calc(100% + 4px);
   right: 0;
-  display: flex;
-  flex-direction: column;
   min-width: 160px;
-  padding: 5px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg-surface);
   box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.routine-actions-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 5px;
 }
 
 .routine-actions-menu button {
@@ -1180,31 +1184,6 @@
   .settings-slider {
     width: 120px;
   }
-}
-
-/* Display Mode panel switches: a small grid of checkboxes so four panels stay
-   readable next to a long label, and wrap on a narrow screen instead of
-   squeezing the text. */
-.settings-panel-checks {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 16px;
-}
-
-.settings-panel-check {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  cursor: pointer;
-  min-height: 44px;
-}
-
-.settings-panel-check input[type='checkbox'] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--accent);
 }
 
 @media (max-width: 480px) {

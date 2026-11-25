@@ -36,7 +36,6 @@ Make Abbai Flow the free, open-source family command center that anyone can set 
 
 - [ ] **Onboarding tutorial** — interactive walkthrough of features on first use
 - [ ] **Family invite links** — share a URL to add family members from their own device
-- [ ] **Kiosk mode** — auto-launch, prevent navigation away, wake on touch
 - [ ] **Touch gestures** — swipe between views, pull to refresh, long-press actions
 - [ ] **Notifications** — push notifications for calendar reminders, chore reminders
 - [ ] **Accessibility** — screen reader support, high contrast mode, font scaling

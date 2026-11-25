@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BellOff, ChevronUp, Clock3, Pause, Play, RotateCcw, Trash2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { useTimers } from '../hooks/useTimers';
+import { CollapsibleRegion } from './CollapsibleRegion';
 
 /** `m:ss` below an hour, `h:mm:ss` above it. */
 function formatClock(ms: number): string {
@@ -142,13 +143,13 @@ export function TimerDock({ onOpen }: TimerDockProps) {
         <ChevronUp size={14} className="timer-dock-chevron" aria-hidden="true" />
       </button>
 
-      {open && (
-        <div
-          className="timer-dock-panel"
-          id="timer-dock-panel"
-          role="region"
-          aria-label={t('timer.modeTimers')}
-        >
+      <CollapsibleRegion
+        open={open}
+        className="timer-dock-panel"
+        id="timer-dock-panel"
+        role="region"
+        ariaLabel={t('timer.modeTimers')}
+      >
           <ul className="timer-dock-list">
             {countdowns.map((timer) => (
               <li
@@ -253,8 +254,7 @@ export function TimerDock({ onOpen }: TimerDockProps) {
           <button type="button" className="timer-dock-open" onClick={onOpen}>
             {t('nav.timer')}
           </button>
-        </div>
-      )}
+      </CollapsibleRegion>
     </div>
   );
 }

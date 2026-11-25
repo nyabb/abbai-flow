@@ -1063,6 +1063,7 @@ export function ChorePlanner({
           /* The visible label alone repeats across cards ("Completed" x3), so
              the accessible name carries the chore too. */
           aria-label={`${pillLabel(task, status)}: ${task.name}`}
+          aria-busy={pendingTaskId === task.id}
           onClick={() => void completeTask(task)}
         >
           {/* Pill action with the points in its own coloured segment — the

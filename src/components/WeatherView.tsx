@@ -5,6 +5,7 @@ import { weatherIcon, conditionLabel } from '../types/weather-icons';
 import { haFetch, callHaService, hasToken } from '../api/ha-rest';
 import { getConfig } from '../config';
 import { useTranslation } from '../i18n';
+import { CollapsibleRegion } from './CollapsibleRegion';
 import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface ForecastItem {
@@ -44,6 +45,7 @@ export function WeatherView() {
   const [forecast, setForecast] = useState<ForecastItem[]>([]);
   const [hourly, setHourly] = useState<HourlyItem[]>([]);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [displayedDay, setDisplayedDay] = useState<string | null>(null);
   const [hourlyLoading, setHourlyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,11 +167,16 @@ export function WeatherView() {
   }, [fetchData]);
 
   const handleDayClick = (datetime: string) => {
-    setSelectedDay((prev) => (prev === datetime ? null : datetime));
+    if (selectedDay === datetime) {
+      setSelectedDay(null);
+      return;
+    }
+    setDisplayedDay(datetime);
+    setSelectedDay(datetime);
   };
 
-  const hoursForSelectedDay = selectedDay
-    ? hourly.filter((h) => isSameDay(parseISO(h.datetime), parseISO(selectedDay)))
+  const hoursForDisplayedDay = displayedDay
+    ? hourly.filter((h) => isSameDay(parseISO(h.datetime), parseISO(displayedDay)))
     : [];
 
   if (loading && !current) {
@@ -250,6 +257,8 @@ export function WeatherView() {
           type="button"
           className="weather-refresh-btn"
           onClick={fetchData}
+          disabled={loading}
+          aria-busy={loading}
           title={t('weatherView.refreshWeather')}
           aria-label={t('weatherView.refreshWeather')}
         >
@@ -274,6 +283,7 @@ export function WeatherView() {
                   className={`weather-forecast-card${isSelected ? ' weather-forecast-card--selected' : ''}`}
                   onClick={() => handleDayClick(day.datetime)}
                   aria-expanded={isSelected}
+                  aria-controls="weather-hourly-panel"
                 >
                   <span className="weather-forecast-day">{dayName}</span>
                   <span className="weather-forecast-date">{dateLabel}</span>
@@ -296,60 +306,68 @@ export function WeatherView() {
             })}
           </div>
 
-          {/* Hourly detail for selected day */}
-          {selectedDay && (
-            <div className="weather-hourly">
-              <div className="weather-hourly-header">
-                <h3 className="weather-hourly-title">
-                  {t('weatherView.hourlyForDay', {
-                    day: format(parseISO(selectedDay), 'EEEE, MMM d'),
-                  })}
-                </h3>
-                <button
-                  type="button"
-                  className="weather-hourly-close"
-                  onClick={() => setSelectedDay(null)}
-                  aria-label={t('weatherView.closeHourlyForecastAria')}
-                >
-                  {t('weatherView.collapse')}
-                </button>
+          {/* Keep the last selection mounted until its collapse animation ends. */}
+          <CollapsibleRegion
+            open={selectedDay !== null}
+            className="weather-hourly-region"
+            id="weather-hourly-panel"
+          >
+            {displayedDay && (
+              <div className="weather-hourly">
+                <div className="weather-hourly-header">
+                  <h3 className="weather-hourly-title">
+                    {t('weatherView.hourlyForDay', {
+                      day: format(parseISO(displayedDay), 'EEEE, MMM d'),
+                    })}
+                  </h3>
+                  <button
+                    type="button"
+                    className="weather-hourly-close"
+                    onClick={() => setSelectedDay(null)}
+                    aria-label={t('weatherView.closeHourlyForecastAria')}
+                  >
+                    {t('weatherView.collapse')}
+                  </button>
+                </div>
+                {hourlyLoading ? (
+                  <div className="weather-hourly-loading">
+                    <LoadingPlaceholder
+                      label={t('weatherView.loadingHourly')}
+                      lines={4}
+                      className="loading-placeholder--compact"
+                    />
+                  </div>
+                ) : hoursForDisplayedDay.length === 0 ? (
+                  <div className="weather-hourly-empty">{t('weatherView.noHourlyData')}</div>
+                ) : (
+                  <div className="weather-hourly-scroll">
+                    {hoursForDisplayedDay.map((hour) => {
+                      const time = parseISO(hour.datetime);
+                      return (
+                        <div key={hour.datetime} className="weather-hourly-card">
+                          <span className="weather-hourly-time">{format(time, 'h a')}</span>
+                          <span className="weather-hourly-icon">{weatherIcon(hour.condition)}</span>
+                          <span className="weather-hourly-temp">
+                            {Math.round(hour.temperature)}°
+                          </span>
+                          {hour.precipitation_probability != null && (
+                            <span className="weather-hourly-precip">
+                              <Droplets size={12} /> {hour.precipitation_probability}%
+                            </span>
+                          )}
+                          {hour.wind_speed != null && (
+                            <span className="weather-hourly-wind">
+                              <Wind size={12} /> {Math.round(hour.wind_speed)}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              {hourlyLoading ? (
-                <div className="weather-hourly-loading">
-                  <LoadingPlaceholder
-                    label={t('weatherView.loadingHourly')}
-                    lines={4}
-                    className="loading-placeholder--compact"
-                  />
-                </div>
-              ) : hoursForSelectedDay.length === 0 ? (
-                <div className="weather-hourly-empty">{t('weatherView.noHourlyData')}</div>
-              ) : (
-                <div className="weather-hourly-scroll">
-                  {hoursForSelectedDay.map((hour) => {
-                    const time = parseISO(hour.datetime);
-                    return (
-                      <div key={hour.datetime} className="weather-hourly-card">
-                        <span className="weather-hourly-time">{format(time, 'h a')}</span>
-                        <span className="weather-hourly-icon">{weatherIcon(hour.condition)}</span>
-                        <span className="weather-hourly-temp">{Math.round(hour.temperature)}°</span>
-                        {hour.precipitation_probability != null && (
-                          <span className="weather-hourly-precip">
-                            <Droplets size={12} /> {hour.precipitation_probability}%
-                          </span>
-                        )}
-                        {hour.wind_speed != null && (
-                          <span className="weather-hourly-wind">
-                            <Wind size={12} /> {Math.round(hour.wind_speed)}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </CollapsibleRegion>
         </section>
       )}
     </div>

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { BluetoothControl, BluetoothSnapshot } from '../api/bluetooth-types';
 import { useTranslation } from '../i18n';
+import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface BluetoothDevicesPanelProps {
   snapshot: BluetoothSnapshot;
@@ -102,6 +103,14 @@ export function BluetoothDevicesPanel({
         </div>
       </header>
 
+      {loading && (
+        <LoadingPlaceholder
+          label={t('app.connecting')}
+          lines={3}
+          className="loading-placeholder--compact"
+        />
+      )}
+
       {!snapshot.configured && !loading && (
         <div className="bluetooth-setup-help">
           <p>{t('music.bluetoothSetupRequired')}</p>
@@ -129,6 +138,7 @@ export function BluetoothDevicesPanel({
             className="bluetooth-action-button bluetooth-scan-button"
             onClick={scan}
             disabled={!snapshot.adapter?.powered || busyKey === 'scan'}
+            aria-busy={busyKey === 'scan'}
           >
             {busyKey === 'scan' ? (
               <LoaderCircle size={17} className="bluetooth-spinner" />
@@ -145,6 +155,7 @@ export function BluetoothDevicesPanel({
               void run('power', { action: 'power', enabled: !snapshot.adapter?.powered })
             }
             disabled={busyKey === 'power'}
+            aria-busy={busyKey === 'power'}
           >
             <Power size={17} />
             {snapshot.adapter?.powered ? t('music.bluetoothTurnOff') : t('music.bluetoothTurnOn')}
@@ -254,6 +265,7 @@ export function BluetoothDevicesPanel({
                         className="bluetooth-action-button is-secondary"
                         aria-label={t('music.bluetoothDisconnectDevice', { device: device.name })}
                         disabled={busyKey === device.address}
+                        aria-busy={busyKey === device.address}
                         onClick={() =>
                           void run(device.address, {
                             action: 'disconnect',
@@ -273,6 +285,7 @@ export function BluetoothDevicesPanel({
                         type="button"
                         className="bluetooth-action-button"
                         disabled={busyKey === device.address || !snapshot.adapter?.powered}
+                        aria-busy={busyKey === device.address}
                         onClick={() =>
                           void run(device.address, { action: 'connect', address: device.address })
                         }
@@ -289,6 +302,7 @@ export function BluetoothDevicesPanel({
                         type="button"
                         className="bluetooth-action-button"
                         disabled={busyKey === device.address || !snapshot.adapter?.powered}
+                        aria-busy={busyKey === device.address}
                         onClick={() =>
                           void run(device.address, { action: 'pair', address: device.address })
                         }
@@ -307,6 +321,7 @@ export function BluetoothDevicesPanel({
                         className="bluetooth-forget-button"
                         aria-label={t('music.bluetoothForgetDevice', { device: device.name })}
                         disabled={busyKey === device.address}
+                        aria-busy={busyKey === device.address}
                         onClick={() =>
                           void run(device.address, { action: 'forget', address: device.address })
                         }
