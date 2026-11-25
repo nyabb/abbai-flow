@@ -165,6 +165,28 @@ body {
   color: inherit;
 }
 
+.page-header-sound-toggle {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--skin-pill, 999px);
+  color: inherit;
+  background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
+  cursor: pointer;
+}
+
+.page-header-sound-toggle:hover {
+  background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
+}
+
+.page-header-sound-toggle svg {
+  width: 19px;
+  height: 19px;
+}
+
 .language-switcher {
   position: relative;
   display: inline-flex;
@@ -285,6 +307,12 @@ body {
    button, no date block, because a phone is held rather than glanced at from
    across a room. The day numeral is the first thing to go. */
 @media (max-width: 600px) {
+  .page-header-sound-toggle {
+    flex-basis: 42px;
+    width: 42px;
+    height: 42px;
+  }
+
   .language-switcher-select {
     max-width: 132px;
     min-height: 42px;

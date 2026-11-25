@@ -11,13 +11,14 @@
  */
 import type { ReactNode } from 'react';
 import { format } from 'date-fns';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { Clock } from './Clock';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { useSoundPreference } from '../hooks/useSoundPreference';
 
 export interface PageHeaderProps {
-  title: string;
+  title: ReactNode;
   /** Secondary text under the title, e.g. a count or a hint. */
   subtitle?: string;
   /** Right-hand slot for a view's own controls, before the clock. */
@@ -28,11 +29,17 @@ export interface PageHeaderProps {
   date?: Date;
   /** Hide the live clock where the view supplies its own time display. */
   hideClock?: boolean;
+  /** Optional hook for a page that keeps a legacy selector on the shared header. */
+  className?: string;
+  actionsClassName?: string;
+  backClassName?: string;
+  clockClassName?: string;
 }
 
 interface PageHeaderActionsProps {
   children?: ReactNode;
   className?: string;
+  clockClassName?: string;
   /** Use a page-specific clock, or pass null to omit the clock. */
   clock?: ReactNode;
 }
@@ -41,12 +48,34 @@ interface PageHeaderActionsProps {
 export function PageHeaderActions({
   children,
   className = 'page-header-actions',
+  clockClassName,
   clock,
 }: PageHeaderActionsProps) {
+  const { t } = useTranslation();
+  const [soundEnabled, setSoundEnabled] = useSoundPreference();
+
   return (
     <div className={className}>
       {children}
-      {clock === undefined ? <Clock /> : clock}
+      {clock === undefined ? (
+        clockClassName ? (
+          <span className={clockClassName}>
+            <Clock />
+          </span>
+        ) : (
+          <Clock />
+        )
+      ) : clock}
+      <button
+        type="button"
+        className="page-header-sound-toggle"
+        aria-label={t('planner.sound')}
+        aria-pressed={soundEnabled}
+        title={t('planner.sound')}
+        onClick={() => setSoundEnabled(!soundEnabled)}
+      >
+        {soundEnabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
+      </button>
       <LanguageSwitcher />
     </div>
   );
@@ -55,10 +84,9 @@ export function PageHeaderActions({
 /**
  * The stacked weekday / day numeral / month block.
  *
- * Exported on its own so a band that cannot be a `PageHeader` -- the chore
- * planner keeps its own sand palette, Lists keeps its tab row -- can still carry
- * the same date treatment. Colours are inherited rather than fixed to the skin
- * band ink, so it reads correctly on any band.
+ * Exported on its own for layouts that share the date treatment but keep their
+ * own header structure, such as Lists with its tab row. Colours are inherited
+ * rather than fixed to the skin band ink, so it reads correctly on any band.
  */
 export function HeaderDate({ date }: { date?: Date }) {
   const { dateLocale } = useTranslation();
@@ -73,18 +101,31 @@ export function HeaderDate({ date }: { date?: Date }) {
   );
 }
 
-export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  subtitle,
+  actions,
+  onBack,
+  date,
+  hideClock,
+  className,
+  actionsClassName,
+  backClassName,
+  clockClassName,
+}: PageHeaderProps) {
   const { t } = useTranslation();
 
   return (
-    <header className="abbai-flow-header page-header page-header--hero">
+    <header
+      className={`abbai-flow-header page-header page-header--hero${className ? ` ${className}` : ''}`}
+    >
       <HeaderDate date={date} />
 
       <div className="page-header-main">
         {onBack && (
           <button
             type="button"
-            className="icon-btn page-header-back"
+            className={`icon-btn page-header-back${backClassName ? ` ${backClassName}` : ''}`}
             onClick={onBack}
             aria-label={t('common.back')}
           >
@@ -97,7 +138,13 @@ export function PageHeader({ title, subtitle, actions, onBack, date, hideClock }
         </div>
       </div>
 
-      <PageHeaderActions clock={hideClock ? null : undefined}>{actions}</PageHeaderActions>
+      <PageHeaderActions
+        className={actionsClassName}
+        clockClassName={clockClassName}
+        clock={hideClock ? null : undefined}
+      >
+        {actions}
+      </PageHeaderActions>
     </header>
   );
 }

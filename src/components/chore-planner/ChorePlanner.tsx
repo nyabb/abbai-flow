@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
-  ArrowLeft,
   Check,
   Clock3,
-  Eye,
-  EyeOff,
   ListPlus,
   RotateCcw,
   SlidersHorizontal,
-  Volume2,
-  VolumeX,
   X,
 } from 'lucide-react';
 import {
@@ -45,7 +40,7 @@ import { MemberAvatar } from '../MemberAvatar';
 import { ActivitySpinner, LoadingPlaceholder } from '../LoadingPlaceholder';
 import { usePlannerCopy } from './copy';
 import { FamilyRoutineRow, RewardRow, TaskRow, type RoutineStep } from './rows';
-import { HeaderDate, PageHeaderActions } from '../PageHeader';
+import { PageHeader } from '../PageHeader';
 import { ChoreBoard } from './ChoreBoard';
 import { ChoreEditor } from './ChoreEditor';
 import { ConfirmSheet, PinSheet } from './ApprovalDialog';
@@ -71,6 +66,8 @@ import { MIN_PIN_LENGTH, clockTime, countdown, emptyForm, toastWith, type FormVa
 import { initialPlannerOverlay, plannerOverlayReducer } from './overlay-state';
 import { RoutineEditorDialog } from '../routines/RoutineEditorDialog';
 import type { RoutineEditorRequest } from '../routines/RoutineEditorDialog';
+import { isStringArray, usePersistentState } from '../../hooks/usePersistentState';
+import { useSoundPreference } from '../../hooks/useSoundPreference';
 
 /**
  * The planner is one board: routines for every family member and chore lists
@@ -127,6 +124,7 @@ export function ChorePlanner({
     [choreOps.data, choreFamily, now],
   );
   const plannerMembers = [...view.members];
+  const [soundEnabled] = useSoundPreference();
   for (const familyMember of members) {
     if (
       (familyMember.role === 'parent' ||
@@ -150,7 +148,7 @@ export function ChorePlanner({
     goals: view.goals,
     routines: [],
     routinesPaused: false,
-    soundEnabled: true,
+    soundEnabled,
   };
   const { lang, dateLocale, t } = useTranslation();
   /** Tag for `toLocaleTimeString`/`toLocaleDateString` — follows the app locale. */
@@ -183,13 +181,16 @@ export function ChorePlanner({
   /** Bottom-right notification: green for "done", red for "that failed". */
   const [toast, setToast] = useState<{ message: string; kind: ToastKind } | null>(null);
   const [celebration, setCelebration] = useState<'chore' | 'goal' | null>(null);
-  const [privacy, setPrivacy] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [todayMemberId, setTodayMemberId] = useState<string | null>(null);
   /** Child whose detail page is open (the board is the overview). */
   const [childMemberId, setChildMemberId] = useState<string | null>(null);
   /** Members hidden from the board, and the child whose mission run is open. */
-  const [hiddenMemberIds, setHiddenMemberIds] = useState<string[]>([]);
+  const [hiddenMemberIds, setHiddenMemberIds] = usePersistentState(
+    'abbai-flow-filter-chores-hidden-members',
+    [],
+    isStringArray,
+  );
   const [missionIds, setMissionIds] = useState<string[]>([]);
   const [missionIndex, setMissionIndex] = useState(0);
   const [missionBonusPoints, setMissionBonusPoints] = useState(0);
@@ -203,7 +204,6 @@ export function ChorePlanner({
   } | null>(null);
   const [livePin, setLivePin] = useState('');
   const [livePinError, setLivePinError] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   /**
    * Reward progress (saving → achieved → given). Shared through abbai-flow-store:
    * ChoreOps owns the definition and the deduction, not the pursuit.
@@ -841,6 +841,8 @@ export function ChorePlanner({
     if (pendingTaskId) return;
     setPendingTaskId(taskId);
     try {
+      // The provider decodes its own action; Choresman keeps the exact chore
+      // and member IDs in the action payload for shared/free chores.
       await choreOps.pressButton(entityId);
       if (celebrate) setCelebration(celebrate);
       playCompletionSound();
@@ -1182,79 +1184,49 @@ export function ChorePlanner({
           : c.title;
 
   return (
-    <div className={`chore-planner ${privacy ? 'chore-planner--private' : ''}`}>
-      <header className="planner-header">
-        {(screen === 'missions' || screen === 'child') && (
-          <button
-            className="planner-icon-button"
-            onClick={() => setScreen('board')}
-            aria-label={c.back}
-          >
-            <ArrowLeft />
-          </button>
-        )}
-        {screen === 'mission' && (
-          <button
-            className="planner-icon-button"
-            onClick={() => setScreen('missions')}
-            aria-label={c.back}
-          >
-            <ArrowLeft />
-          </button>
-        )}
-        {screen === 'closing' && <div className="planner-clock">{clockTime(now, timeLocale)}</div>}
-        <div className="planner-header-copy">
-          {/* Same date treatment as every other page band. */}
-          <HeaderDate date={now} />
-          <h1>
-            {/* Phones get the short name so the header can stay on one row. */}
-            <span className="planner-title-full">{heading}</span>
-            <span className="planner-title-short">{heading}</span>
-          </h1>
-        </div>
-        <PageHeaderActions
-          className="page-header-actions planner-header-actions"
-          clock={
-            screen === 'board' ? (
-              <span className="planner-header-clock">{clockTime(now, timeLocale)}</span>
-            ) : null
-          }
-        >
-          {screen === 'board' && (
-            <button
-              className="planner-icon-button"
-              onClick={() => dispatchOverlay({ type: 'open-filter' })}
-              aria-label={c.filter}
-              aria-expanded={filterOpen}
-            >
-              <SlidersHorizontal />
-            </button>
-          )}
-          {(screen === 'board' || (screen === 'child' && childMember?.role !== 'parent')) && (
-            <button
-              className="planner-add"
-              onClick={() => dispatchOverlay({ type: 'open-create' })}
-              aria-label={c.chooseWhat}
-            >
-              <ListPlus />
-            </button>
-          )}
-          <button
-            className="planner-icon-button"
-            onClick={() => setPrivacy((value) => !value)}
-            aria-label={c.privacy}
-          >
-            {privacy ? <Eye /> : <EyeOff />}
-          </button>
-          <button
-            className="planner-icon-button"
-            onClick={() => setSoundEnabled((value) => !value)}
-            aria-label={c.sound}
-          >
-            {soundEnabled ? <Volume2 /> : <VolumeX />}
-          </button>
-        </PageHeaderActions>
-      </header>
+    <div className="chore-planner">
+      <PageHeader
+        className="planner-header"
+        actionsClassName="page-header-actions planner-header-actions"
+        backClassName="planner-icon-button"
+        clockClassName="planner-header-clock"
+        title={<span className="planner-title-full">{heading}</span>}
+        date={now}
+        onBack={
+          screen === 'missions' || screen === 'child'
+            ? () => setScreen('board')
+            : screen === 'mission'
+              ? () => setScreen('missions')
+              : undefined
+        }
+        actions={
+          <>
+            {screen === 'board' && (
+              <button
+                type="button"
+                className="icon-btn planner-icon-button"
+                onClick={() => dispatchOverlay({ type: 'open-filter' })}
+                aria-label={c.filter}
+                title={c.filter}
+                aria-expanded={filterOpen}
+              >
+                <SlidersHorizontal />
+              </button>
+            )}
+            {(screen === 'board' || (screen === 'child' && childMember?.role !== 'parent')) && (
+              <button
+                type="button"
+                className="icon-btn planner-icon-button planner-add"
+                onClick={() => dispatchOverlay({ type: 'open-create' })}
+                aria-label={c.chooseWhat}
+                title={c.chooseWhat}
+              >
+                <ListPlus />
+              </button>
+            )}
+          </>
+        }
+      />
       {!online && (
         <div className="planner-offline-banner" role="alert">
           {c.offline}

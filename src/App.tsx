@@ -36,6 +36,7 @@ import { useIngressDetect } from './hooks/useIngressDetect';
 import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
 import { useTouchPageSwipe } from './hooks/useTouchPageSwipe';
+import { isStringArray, usePersistentState } from './hooks/usePersistentState';
 import { TOUCH_NAV_ORDER } from './utils/touch-navigation';
 import { useTaskLists } from './hooks/useTaskLists';
 import OnboardingView from './components/OnboardingView';
@@ -122,10 +123,16 @@ export function App() {
     setTheme(settings.themeId);
   }, [settings.themeId, setTheme]);
 
-  // Top-of-calendar filters are temporary. Settings visibility remains the
-  // separate, persistent way to remove a calendar from the view entirely.
-  const [temporarilyHiddenCalendars, setTemporarilyHiddenCalendars] = useState<Set<string>>(
-    () => new Set(),
+  // Calendar pills are a view filter; settings visibility remains the separate
+  // way to remove a calendar from the view entirely.
+  const [temporarilyHiddenCalendarIds, setTemporarilyHiddenCalendarIds] = usePersistentState(
+    'abbai-flow-filter-calendar-hidden',
+    [],
+    isStringArray,
+  );
+  const temporarilyHiddenCalendars = useMemo(
+    () => new Set(temporarilyHiddenCalendarIds),
+    [temporarilyHiddenCalendarIds],
   );
   const permanentlyHiddenCalendars = useMemo(
     () => new Set(settings.permanentlyHiddenCalendars),
@@ -141,11 +148,11 @@ export function App() {
   );
 
   useEffect(() => {
-    setTemporarilyHiddenCalendars((previous) => {
-      const next = new Set([...previous].filter((id) => !permanentlyHiddenCalendars.has(id)));
-      return next.size === previous.size ? previous : next;
+    setTemporarilyHiddenCalendarIds((previous) => {
+      const next = previous.filter((id) => !permanentlyHiddenCalendars.has(id));
+      return next.length === previous.length ? previous : next;
     });
-  }, [permanentlyHiddenCalendars]);
+  }, [permanentlyHiddenCalendars, setTemporarilyHiddenCalendarIds]);
 
   const visibleEvents = useMemo(
     () => events.filter((event) => !hiddenCalendars.has(event.calendarId)),
@@ -262,17 +269,13 @@ export function App() {
 
   const handleToggleCalendar = useCallback(
     (calendarId: string) => {
-      setTemporarilyHiddenCalendars((prev) => {
-        const next = new Set(prev);
-        if (next.has(calendarId)) {
-          next.delete(calendarId);
-        } else {
-          next.add(calendarId);
-        }
-        return next;
+      setTemporarilyHiddenCalendarIds((prev) => {
+        return prev.includes(calendarId)
+          ? prev.filter((id) => id !== calendarId)
+          : [...prev, calendarId];
       });
     },
-    [],
+    [setTemporarilyHiddenCalendarIds],
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {

@@ -6,8 +6,13 @@ import { useMealPlans } from '../hooks/useMealPlans';
 import type { MealPlanEntry } from '../types/meals';
 import { useTranslation } from '../i18n';
 import { LoadingPlaceholder } from './LoadingPlaceholder';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 type MealTab = 'today' | 'week' | 'recipes' | 'manage';
+
+function isMealTab(value: unknown): value is MealTab {
+  return value === 'today' || value === 'week' || value === 'recipes' || value === 'manage';
+}
 
 interface MealsViewProps {
   weekStartsOn: 0 | 1;
@@ -79,8 +84,16 @@ function RecipeDetails({ meal }: { meal: MealPlanEntry }) {
 export function MealsView({ weekStartsOn, onOpenSettings }: MealsViewProps) {
   const { t, dateLocale } = useTranslation();
   const { entries, loading } = useMealPlans();
-  const [tab, setTab] = useState<MealTab>('today');
-  const [search, setSearch] = useState('');
+  const [tab, setTab] = usePersistentState<MealTab>(
+    'abbai-flow-filter-meals-tab',
+    'today',
+    isMealTab,
+  );
+  const [search, setSearch] = usePersistentState(
+    'abbai-flow-filter-meals-recipes',
+    '',
+    (value): value is string => typeof value === 'string',
+  );
   const [sourceStatus, setSourceStatus] = useState<IntegrationSettingsStatus | null>(null);
   const serverBacked = Boolean(getRuntimeConfig());
 
