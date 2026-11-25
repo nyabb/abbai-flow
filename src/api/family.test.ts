@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { FamilyStore } from './family';
-import type { FamilyMember } from '../types/family';
 import { localDayKey } from './date-keys';
 
 describe('FamilyStore legacy profile cleanup', () => {
