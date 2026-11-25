@@ -1,3 +1,10 @@
+## [2.23.1](https://github.com/nyabb/abbai-flow/compare/v2.23.0...v2.23.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* refine chore tab bump and Omni Add motion ([065b420](https://github.com/nyabb/abbai-flow/commit/065b4202a84dc0dec4864917551fe3873c4f62a6))
+
 # [2.23.0](https://github.com/nyabb/abbai-flow/compare/v2.22.0...v2.23.0) (2026-11-25)
 
 
