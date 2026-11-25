@@ -11,9 +11,14 @@ import {
   loadIntegrationSettings,
   saveIntegrationSettings,
   testHomeAssistantConnection,
+  authenticateICloudReminders,
+  requestICloudRemindersVerificationCode,
+  verifyICloudRemindersCode,
+  fetchICloudRemindersPreview,
   type IntegrationSettingsPatch,
   type MealDataMapping,
   type IntegrationSettingsStatus,
+  type CalendarSourceSetting,
 } from '../../../api/integration-settings';
 import { hasToken } from '../../../api/ha-rest';
 import { getRuntimeConfig } from '../../../config';
@@ -126,7 +131,8 @@ type ClearSecretField =
   | 'clearHaToken'
   | 'clearEncoreToken'
   | 'clearSpotifyClientSecret'
-  | 'clearMealSourceToken';
+  | 'clearMealSourceToken'
+  | 'clearIcloudPassword';
 
 export interface IntegrationsSectionProps extends SettingsSectionContext {
   connected: boolean;
@@ -165,6 +171,15 @@ export function IntegrationsSection({
   const [mealSourceUrl, setMealSourceUrl] = useState('');
   const [mealSourceToken, setMealSourceToken] = useState('');
   const [mealDataMapping, setMealDataMapping] = useState<MealDataMapping>(EMPTY_MEAL_DATA_MAPPING);
+  const [icloudAppleId, setIcloudAppleId] = useState('');
+  const [icloudPassword, setIcloudPassword] = useState('');
+  const [icloudCode, setIcloudCode] = useState('');
+  const [icloudAuthState, setIcloudAuthState] = useState('');
+  const [icloudSecurityKeys, setIcloudSecurityKeys] = useState<string[]>([]);
+  const [icloudDevices, setIcloudDevices] = useState<Array<{ index: number; name: string }>>([]);
+  const [icloudDeviceIndex, setIcloudDeviceIndex] = useState(0);
+  const [icloudPreview, setIcloudPreview] = useState('');
+  const [calendarSources, setCalendarSources] = useState<CalendarSourceSetting[]>([]);
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
@@ -185,6 +200,8 @@ export function IntegrationsSection({
         setSpotifyRedirectUri(status.spotifyRedirectUri);
         setMealSourceUrl(status.mealSourceUrl);
         setMealDataMapping({ ...EMPTY_MEAL_DATA_MAPPING, ...status.mealDataMapping });
+        setIcloudAppleId(status.icloudAppleId);
+        setCalendarSources(status.calendarSources);
       })
       .catch((error: unknown) => {
         if (!cancelled) {
@@ -220,7 +237,10 @@ export function IntegrationsSection({
     }
   };
 
-  const saveServerIntegrations = async () => {
+  const saveServerIntegrations = async (): Promise<boolean> => {
+    const resetIcloudSession =
+      Boolean(icloudPassword) ||
+      (integrationStatus && integrationStatus.icloudAppleId !== icloudAppleId.trim());
     setIntegrationBusy(true);
     setIntegrationError('');
     setIntegrationNotice('');
@@ -237,14 +257,76 @@ export function IntegrationsSection({
         mealSourceUrl,
         ...(mealSourceToken.trim() ? { mealSourceToken: mealSourceToken.trim() } : {}),
         mealDataMapping,
+        icloudAppleId: icloudAppleId.trim(),
+        ...(icloudPassword ? { icloudPassword } : {}),
+        calendarSources,
       });
       setIntegrationStatus(status);
+      setCalendarSources(status.calendarSources);
       setHaToken('');
       setEncoreToken('');
       setSpotifyClientSecret('');
       setMealSourceToken('');
+      setIcloudPassword('');
+      if (resetIcloudSession) {
+        setIcloudAuthState('');
+        setIcloudCode('');
+        setIcloudPreview('');
+      }
       setIntegrationNotice(t('settings.integrations.saved'));
       onIntegrationSettingsSaved?.();
+      return true;
+    } catch (error) {
+      setIntegrationError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
+      return false;
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
+
+  const applyIcloudAction = (result: {
+    state: string;
+    devices?: Array<{ index: number; name: string }>;
+    securityKeyNames?: string[];
+    decodedAppleSample?: unknown;
+  }) => {
+    setIcloudAuthState(result.state);
+    setIcloudSecurityKeys(result.securityKeyNames || []);
+    if (result.devices) {
+      setIcloudDevices(result.devices);
+      setIcloudDeviceIndex(result.devices[0]?.index ?? 0);
+    }
+    if (result.state === 'fetched') {
+      setIcloudPreview(JSON.stringify(result, null, 2));
+      setIntegrationNotice(t('settings.integrations.icloudDataRetrieved'));
+    } else if (result.state === 'verification_required') {
+      setIntegrationNotice(t('settings.integrations.icloudVerificationSent'));
+    } else if (result.state === 'authenticated') {
+      setIntegrationNotice(t('settings.integrations.icloudAuthenticated'));
+    } else if (result.state === 'verified_untrusted') {
+      setIntegrationNotice(t('settings.integrations.icloudVerifiedUntrusted'));
+    } else if (result.state === 'security_key_required') {
+      setIntegrationNotice(t('settings.integrations.icloudSecurityKeyRequired'));
+    } else if (result.state === 'device_selection_required') {
+      setIntegrationNotice(t('settings.integrations.icloudChooseDevice'));
+    }
+  };
+
+  const runIcloudAction = async (
+    action: () => Promise<{
+      state: string;
+      devices?: Array<{ index: number; name: string }>;
+      securityKeyNames?: string[];
+      decodedAppleSample?: unknown;
+    }>,
+  ) => {
+    setIntegrationBusy(true);
+    setIntegrationError('');
+    setIntegrationNotice('');
+    try {
+      applyIcloudAction(await action());
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
@@ -252,6 +334,33 @@ export function IntegrationsSection({
     } finally {
       setIntegrationBusy(false);
     }
+  };
+
+  const authenticateIcloud = async () => {
+    if (!(await saveServerIntegrations())) return;
+    setIcloudPreview('');
+    setIcloudCode('');
+    await runIcloudAction(authenticateICloudReminders);
+  };
+
+  const addCalendarSource = () => {
+    setCalendarSources((sources) => [
+      ...sources,
+      {
+        id: `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: '',
+        provider: 'caldav',
+        url: '',
+        username: '',
+        clientId: '',
+      },
+    ]);
+  };
+
+  const updateCalendarSource = (id: string, patch: Partial<CalendarSourceSetting>) => {
+    setCalendarSources((sources) =>
+      sources.map((source) => (source.id === id ? { ...source, ...patch } : source)),
+    );
   };
 
   const saveBrowserHomeAssistant = async () => {
@@ -280,6 +389,11 @@ export function IntegrationsSection({
       const patch = { [clearField]: true } as IntegrationSettingsPatch;
       const status = await saveIntegrationSettings(patch);
       setIntegrationStatus(status);
+      if (clearField === 'clearIcloudPassword') {
+        setIcloudPassword('');
+        setIcloudAuthState('');
+        setIcloudPreview('');
+      }
       setIntegrationNotice(t('settings.integrations.secretRemoved'));
       if (clearField === 'clearHaToken') onIntegrationSettingsSaved?.();
     } catch (error) {
@@ -699,6 +813,374 @@ export function IntegrationsSection({
         <p className="settings-row-sublabel settings-integration-help">
           {t('settings.integrations.icloudRemindersSublabel')}
         </p>
+        {serverBacked ? (
+          <>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.icloudAppleIdLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {t('settings.integrations.icloudAppleIdHelp')}
+                </div>
+              </div>
+              <input
+                type="email"
+                className="settings-input settings-input--wide"
+                value={icloudAppleId}
+                onChange={(event) => setIcloudAppleId(event.target.value)}
+                autoComplete="username"
+              />
+            </div>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.icloudPasswordLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {integrationStatus?.icloudPasswordConfigured
+                    ? t('settings.integrations.secretSaved')
+                    : t('settings.integrations.icloudPasswordHelp')}
+                </div>
+              </div>
+              <SavedSecretControl
+                label={t('settings.integrations.icloudPasswordLabel')}
+                value={icloudPassword}
+                onChange={setIcloudPassword}
+                configured={Boolean(integrationStatus?.icloudPasswordConfigured)}
+                disabled={integrationStatusLoading}
+                busy={integrationBusy}
+                removeLabel={t('settings.integrations.clearSecret')}
+                onRemove={() => void removeSavedSecret('clearIcloudPassword')}
+              />
+            </div>
+            <div className="settings-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => void saveServerIntegrations()}
+                disabled={integrationBusy || integrationStatusLoading}
+              >
+                {t('settings.integrations.save')}
+              </button>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => void authenticateIcloud()}
+                disabled={
+                  integrationBusy ||
+                  integrationStatusLoading ||
+                  !icloudAppleId.trim() ||
+                  (!icloudPassword && !integrationStatus?.icloudPasswordConfigured)
+                }
+              >
+                {integrationBusy
+                  ? t('settings.integrations.saving')
+                  : t('settings.integrations.icloudAuthenticate')}
+              </button>
+            </div>
+            {icloudAuthState === 'device_selection_required' && (
+              <div className="settings-row settings-integration-field">
+                <div className="settings-row-label">
+                  {t('settings.integrations.icloudChooseDevice')}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <select
+                    className="settings-input"
+                    value={icloudDeviceIndex}
+                    onChange={(event) => setIcloudDeviceIndex(Number(event.target.value))}
+                  >
+                    {icloudDevices.map((device) => (
+                      <option key={device.index} value={device.index}>
+                        {device.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() =>
+                      void runIcloudAction(() =>
+                        requestICloudRemindersVerificationCode(icloudDeviceIndex),
+                      )
+                    }
+                    disabled={integrationBusy || icloudDevices.length === 0}
+                  >
+                    {t('settings.integrations.icloudSendCode')}
+                  </button>
+                </div>
+              </div>
+            )}
+            {icloudAuthState === 'verification_required' && (
+              <div className="settings-row settings-integration-field">
+                <div>
+                  <div className="settings-row-label">
+                    {t('settings.integrations.icloudCodeLabel')}
+                  </div>
+                  <div className="settings-row-sublabel">
+                    {t('settings.integrations.icloudVerificationSent')}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    className="settings-input"
+                    value={icloudCode}
+                    onChange={(event) => setIcloudCode(event.target.value)}
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                  />
+                  <button
+                    type="button"
+                    className="settings-btn settings-btn--primary"
+                    onClick={() =>
+                      void runIcloudAction(() => verifyICloudRemindersCode(icloudCode))
+                    }
+                    disabled={integrationBusy || !icloudCode.trim()}
+                  >
+                    {t('settings.integrations.icloudVerifyCode')}
+                  </button>
+                </div>
+              </div>
+            )}
+            {icloudAuthState === 'security_key_required' && (
+              <div className="settings-row-sublabel" role="status">
+                {t('settings.integrations.icloudSecurityKeyRequired')}
+                {icloudSecurityKeys.length ? ` ${icloudSecurityKeys.join(', ')}` : ''}
+              </div>
+            )}
+            {['authenticated', 'verified_untrusted', 'fetched'].includes(icloudAuthState) && (
+              <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="settings-btn"
+                  onClick={() => void runIcloudAction(fetchICloudRemindersPreview)}
+                  disabled={integrationBusy}
+                >
+                  {integrationBusy
+                    ? t('settings.integrations.saving')
+                    : t('settings.integrations.icloudFetchPreview')}
+                </button>
+              </div>
+            )}
+            {icloudPreview && (
+              <pre
+                aria-label={t('settings.integrations.icloudPreviewLabel')}
+                style={{
+                  maxHeight: 360,
+                  overflow: 'auto',
+                  padding: 12,
+                  borderRadius: 8,
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  whiteSpace: 'pre-wrap',
+                  overflowWrap: 'anywhere',
+                  fontSize: '0.78rem',
+                }}
+              >
+                {icloudPreview}
+              </pre>
+            )}
+          </>
+        ) : (
+          <p className="settings-row-sublabel settings-integration-help">
+            {t('settings.integrations.icloudBackendRequired')}
+          </p>
+        )}
+      </div>
+
+      <div className="settings-group">
+        <div className="settings-group-title">
+          {t('settings.integrations.calendarSourcesTitle')}
+        </div>
+        <p className="settings-row-sublabel settings-integration-help">
+          {t('settings.integrations.calendarSourcesHelp')}
+        </p>
+        {serverBacked &&
+          calendarSources.map((source) => (
+            <div
+              key={source.id}
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            >
+              <div className="settings-row settings-integration-field">
+                <div className="settings-row-label">
+                  {t('settings.integrations.calendarNameLabel')}
+                </div>
+                <input
+                  className="settings-input settings-input--wide"
+                  value={source.name}
+                  onChange={(event) =>
+                    updateCalendarSource(source.id, { name: event.target.value })
+                  }
+                />
+              </div>
+              <div className="settings-row settings-integration-field">
+                <div className="settings-row-label">
+                  {t('settings.integrations.calendarProviderLabel')}
+                </div>
+                <select
+                  className="settings-input"
+                  value={source.provider}
+                  onChange={(event) =>
+                    updateCalendarSource(source.id, {
+                      provider: event.target.value as CalendarSourceSetting['provider'],
+                    })
+                  }
+                >
+                  <option value="caldav">
+                    {t('settings.integrations.calendarProviderCaldav')}
+                  </option>
+                  <option value="ics">{t('settings.integrations.calendarProviderIcs')}</option>
+                  <option value="google">
+                    {t('settings.integrations.calendarProviderGoogle')}
+                  </option>
+                </select>
+              </div>
+              <div className="settings-row settings-integration-field">
+                <div className="settings-row-label">
+                  {source.provider === 'ics'
+                    ? t('settings.integrations.calendarFeedUrlLabel')
+                    : t('settings.integrations.calendarServerUrlLabel')}
+                </div>
+                <input
+                  type="url"
+                  className="settings-input settings-input--wide"
+                  value={source.url}
+                  onChange={(event) => updateCalendarSource(source.id, { url: event.target.value })}
+                  placeholder={
+                    source.provider === 'ics'
+                      ? 'https://school.example/calendar.ics'
+                      : 'https://caldav.example.com/'
+                  }
+                />
+              </div>
+              {source.provider === 'caldav' && (
+                <>
+                  <div className="settings-row settings-integration-field">
+                    <div className="settings-row-label">
+                      {t('settings.integrations.calendarUsernameLabel')}
+                    </div>
+                    <input
+                      className="settings-input settings-input--wide"
+                      value={source.username}
+                      onChange={(event) =>
+                        updateCalendarSource(source.id, { username: event.target.value })
+                      }
+                      autoComplete="username"
+                    />
+                  </div>
+                  <div className="settings-row settings-integration-field">
+                    <div className="settings-row-label">
+                      {t('settings.integrations.calendarPasswordLabel')}
+                    </div>
+                    <SavedSecretControl
+                      label={t('settings.integrations.calendarPasswordLabel')}
+                      value={source.password || ''}
+                      onChange={(password) =>
+                        updateCalendarSource(source.id, { password, clearPassword: false })
+                      }
+                      configured={Boolean(source.passwordConfigured)}
+                      disabled={integrationStatusLoading}
+                      busy={integrationBusy}
+                      removeLabel={t('settings.integrations.clearSecret')}
+                      onRemove={() =>
+                        updateCalendarSource(source.id, {
+                          password: '',
+                          passwordConfigured: false,
+                          clearPassword: true,
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              {source.provider === 'google' && (
+                <>
+                  <div className="settings-row settings-integration-field">
+                    <div className="settings-row-label">
+                      {t('settings.integrations.calendarClientIdLabel')}
+                    </div>
+                    <input
+                      className="settings-input settings-input--wide"
+                      value={source.clientId}
+                      onChange={(event) =>
+                        updateCalendarSource(source.id, { clientId: event.target.value })
+                      }
+                      autoComplete="off"
+                    />
+                  </div>
+                  <div className="settings-row settings-integration-field">
+                    <div className="settings-row-label">
+                      {t('settings.integrations.calendarClientSecretLabel')}
+                    </div>
+                    <SavedSecretControl
+                      label={t('settings.integrations.calendarClientSecretLabel')}
+                      value={source.clientSecret || ''}
+                      onChange={(clientSecret) =>
+                        updateCalendarSource(source.id, { clientSecret, clearClientSecret: false })
+                      }
+                      configured={Boolean(source.clientSecretConfigured)}
+                      disabled={integrationStatusLoading}
+                      busy={integrationBusy}
+                      removeLabel={t('settings.integrations.clearSecret')}
+                      onRemove={() =>
+                        updateCalendarSource(source.id, {
+                          clientSecret: '',
+                          clientSecretConfigured: false,
+                          clearClientSecret: true,
+                        })
+                      }
+                    />
+                  </div>
+                </>
+              )}
+              <div className="settings-row-sublabel">
+                {t('settings.integrations.calendarCredentialsOnly')}
+              </div>
+              <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="settings-btn settings-btn--danger"
+                  onClick={() =>
+                    setCalendarSources((sources) => sources.filter((item) => item.id !== source.id))
+                  }
+                >
+                  {t('settings.integrations.calendarRemoveSource')}
+                </button>
+              </div>
+            </div>
+          ))}
+        {serverBacked && (
+          <div className="settings-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+            <button
+              type="button"
+              className="settings-btn"
+              onClick={addCalendarSource}
+              disabled={calendarSources.length >= 12}
+            >
+              {t('settings.integrations.calendarAddSource')}
+            </button>
+            <button
+              type="button"
+              className="settings-btn settings-btn--primary"
+              onClick={() => void saveServerIntegrations()}
+              disabled={integrationBusy || integrationStatusLoading}
+            >
+              {integrationBusy
+                ? t('settings.integrations.saving')
+                : t('settings.integrations.save')}
+            </button>
+          </div>
+        )}
+        {!serverBacked && (
+          <p className="settings-row-sublabel settings-integration-help">
+            {t('settings.integrations.calendarBackendRequired')}
+          </p>
+        )}
       </div>
 
       <div className="settings-group">

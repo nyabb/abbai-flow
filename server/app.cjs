@@ -29,6 +29,7 @@ const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
 const { ChoresManStore, ChoresManStoreError } = require('./choresman-store.cjs');
+const { ICloudRemindersWorker } = require('./icloud-reminders-worker.cjs');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1331,7 +1332,11 @@ const INTEGRATION_SETTING_KEYS = [
   'mealSourceUrl',
   'mealSourceToken',
   'mealDataMapping',
+  'icloudAppleId',
+  'icloudPassword',
+  'calendarSources',
 ];
+const CALENDAR_PROVIDERS = new Set(['caldav', 'ics', 'google']);
 
 function integrationSettingsPath(dataDir) {
   return path.join(dataDir, INTEGRATION_SETTINGS_FILE);
@@ -1363,10 +1368,16 @@ function readIntegrationSettings(dataDir, fallback) {
             )
           : {}),
       },
+      calendarSources: normalizeCalendarSources(
+        stored.calendarSources,
+        fallback.calendarSources || [],
+      ),
     };
   } catch (error) {
     if (error && error.code !== 'ENOENT') {
-      console.warn('Could not read saved integration settings; using default integration settings.');
+      console.warn(
+        'Could not read saved integration settings; using default integration settings.',
+      );
     }
     return fallback;
   }
@@ -1401,11 +1412,17 @@ function mergeIntegrationSettings(current, patch) {
     spotifyRedirectUri: 'spotifyRedirectUri',
     mealSourceUrl: 'mealSourceUrl',
     mealSourceToken: 'mealSourceToken',
+    icloudAppleId: 'icloudAppleId',
+    icloudPassword: 'icloudPassword',
   };
   for (const [input, key] of Object.entries(fields)) {
     if (typeof patch[input] === 'string') {
       next[key] =
-        input === 'spotifyMarket' ? patch[input].trim().toUpperCase() : patch[input].trim();
+        input === 'icloudPassword'
+          ? patch[input]
+          : input === 'spotifyMarket'
+            ? patch[input].trim().toUpperCase()
+            : patch[input].trim();
     }
   }
   if (typeof patch.haUrl === 'string') next.haBaseUrl = normaliseHaBaseUrl(patch.haUrl);
@@ -1413,6 +1430,7 @@ function mergeIntegrationSettings(current, patch) {
   if (patch.clearEncoreToken === true) next.encoreToken = '';
   if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
   if (patch.clearMealSourceToken === true) next.mealSourceToken = '';
+  if (patch.clearIcloudPassword === true) next.icloudPassword = '';
   if (patch.mealDataMapping && typeof patch.mealDataMapping === 'object') {
     next.mealDataMapping = { ...current.mealDataMapping };
     for (const key of MEAL_DATA_MAPPING_KEYS) {
@@ -1421,7 +1439,46 @@ function mergeIntegrationSettings(current, patch) {
       }
     }
   }
+  if (Array.isArray(patch.calendarSources)) {
+    next.calendarSources = mergeCalendarSources(
+      current.calendarSources || [],
+      patch.calendarSources,
+    );
+  }
   return next;
+}
+
+function normalizeCalendarSources(sources, fallback = []) {
+  if (!Array.isArray(sources)) return fallback;
+  return sources
+    .slice(0, 12)
+    .filter((source) => source && typeof source === 'object' && !Array.isArray(source))
+    .map((source, index) => ({
+      id: typeof source.id === 'string' ? source.id.slice(0, 80) : `calendar-${index + 1}`,
+      name: typeof source.name === 'string' ? source.name.slice(0, 120).trim() : '',
+      provider: CALENDAR_PROVIDERS.has(source.provider) ? source.provider : 'caldav',
+      url: typeof source.url === 'string' ? source.url.slice(0, 2000).trim() : '',
+      username: typeof source.username === 'string' ? source.username.slice(0, 320).trim() : '',
+      password: typeof source.password === 'string' ? source.password : '',
+      clientId: typeof source.clientId === 'string' ? source.clientId.slice(0, 500).trim() : '',
+      clientSecret: typeof source.clientSecret === 'string' ? source.clientSecret : '',
+    }));
+}
+
+function mergeCalendarSources(currentSources, incomingSources) {
+  const current = new Map(
+    normalizeCalendarSources(currentSources).map((source) => [source.id, source]),
+  );
+  return normalizeCalendarSources(incomingSources).map((source) => {
+    const saved = current.get(source.id);
+    const incoming = incomingSources.find((item) => item && item.id === source.id) || {};
+    return {
+      ...source,
+      password: incoming.clearPassword === true ? '' : source.password || saved?.password || '',
+      clientSecret:
+        incoming.clearClientSecret === true ? '' : source.clientSecret || saved?.clientSecret || '',
+    };
+  });
 }
 
 function isValidMealMappingPath(value) {
@@ -1507,6 +1564,32 @@ function validateIntegrationSettings(settings) {
       return `Meal source mapping has an invalid ${key} path.`;
     }
   }
+  if (!Array.isArray(settings.calendarSources) || settings.calendarSources.length > 12) {
+    return 'Calendar settings can contain up to 12 sources.';
+  }
+  for (const source of settings.calendarSources) {
+    if (!source || typeof source !== 'object' || !CALENDAR_PROVIDERS.has(source.provider)) {
+      return 'Choose a supported calendar source type.';
+    }
+    if (!source.name || source.name.length > 120) return 'Enter a name for every calendar source.';
+    if (source.url) {
+      try {
+        const calendarUrl = new URL(source.url);
+        if (
+          !['http:', 'https:'].includes(calendarUrl.protocol) ||
+          !calendarUrl.hostname ||
+          calendarUrl.username ||
+          calendarUrl.password
+        ) {
+          return `Enter a valid URL for calendar source “${source.name}”.`;
+        }
+      } catch {
+        return `Enter a valid URL for calendar source “${source.name}”.`;
+      }
+    }
+    if (source.provider === 'ics' && !source.url)
+      return `Enter a feed URL for calendar source “${source.name}”.`;
+  }
   return null;
 }
 
@@ -1526,6 +1609,18 @@ function publicIntegrationSettings(settings) {
     mealSourceUrl: settings.mealSourceUrl,
     mealSourceTokenConfigured: Boolean(settings.mealSourceToken),
     mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING, ...settings.mealDataMapping },
+    icloudAppleId: settings.icloudAppleId || '',
+    icloudPasswordConfigured: Boolean(settings.icloudPassword),
+    calendarSources: normalizeCalendarSources(settings.calendarSources).map((source) => ({
+      id: source.id,
+      name: source.name,
+      provider: source.provider,
+      url: source.url,
+      username: source.username,
+      passwordConfigured: Boolean(source.password),
+      clientId: source.clientId,
+      clientSecretConfigured: Boolean(source.clientSecret),
+    })),
   };
 }
 
@@ -1570,6 +1665,9 @@ function createApp(options) {
     mealSourceUrl: '',
     mealSourceToken: '',
     mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING },
+    icloudAppleId: '',
+    icloudPassword: '',
+    calendarSources: [],
   };
   const config = {
     distDir: options.distDir,
@@ -1636,6 +1734,13 @@ function createApp(options) {
     spotifyCatalog: options.spotifyCatalog || createSpotifyCatalog(),
     spotifyPlaylists: options.spotifyPlaylists || createSpotifyPlaylists(),
     choresman: options.choresman || new ChoresManStore({ dataDir: config.dataDir }),
+    icloudReminders:
+      options.icloudReminders ||
+      new ICloudRemindersWorker({
+        dataDir: config.dataDir,
+        python: options.icloudPython,
+        scriptPath: options.icloudWorkerPath,
+      }),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1643,11 +1748,12 @@ function createApp(options) {
   const server = http.createServer((req, res) => {
     void route(req, res, config, services, bluetooth);
   });
-  const choresmanMaintenanceTimer = typeof services.choresman.call === 'function'
-    ? setInterval(() => {
-        void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
-      }, 60_000)
-    : null;
+  const choresmanMaintenanceTimer =
+    typeof services.choresman.call === 'function'
+      ? setInterval(() => {
+          void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
+        }, 60_000)
+      : null;
   choresmanMaintenanceTimer?.unref?.();
   if (choresmanMaintenanceTimer) {
     void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
@@ -1660,6 +1766,7 @@ function createApp(options) {
     if (choresmanMaintenanceTimer) clearInterval(choresmanMaintenanceTimer);
     services.encore.stop();
     bluetooth.stop();
+    services.icloudReminders.stop?.();
   });
   services.encore.start();
   bluetooth.start();
@@ -1697,6 +1804,8 @@ function createApp(options) {
     const spotifyCredentialsChanged =
       next.spotifyClientId !== config.spotifyClientId ||
       next.spotifyClientSecret !== config.spotifyClientSecret;
+    const icloudCredentialsChanged =
+      next.icloudAppleId !== config.icloudAppleId || next.icloudPassword !== config.icloudPassword;
     if (spotifyCredentialsChanged) {
       try {
         await spotifyTokenStore.clear();
@@ -1715,6 +1824,14 @@ function createApp(options) {
     if (spotifySettingsChanged) {
       services.spotifyCatalog = createSpotifyCatalog();
       services.spotifyPlaylists = createSpotifyPlaylists();
+    }
+    if (icloudCredentialsChanged) {
+      await services.icloudReminders.reset?.().catch(() => undefined);
+      if (!next.icloudAppleId || !next.icloudPassword) {
+        await fsp
+          .rm(path.join(config.dataDir, 'icloud-reminders'), { recursive: true, force: true })
+          .catch(() => undefined);
+      }
     }
     return { settings: publicIntegrationSettings(config) };
   }
@@ -1758,6 +1875,7 @@ async function route(req, res, config, services, bluetooth) {
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname === '/abbai-flow/settings/integrations' ||
+    pathname.startsWith('/abbai-flow/settings/icloud-reminders') ||
     pathname.startsWith('/abbai-flow/music/control') ||
     pathname.startsWith('/abbai-flow/music/library/') ||
     pathname.startsWith('/abbai-flow/bluetooth/control') ||
@@ -1772,7 +1890,12 @@ async function route(req, res, config, services, bluetooth) {
   try {
     if (pathname === '/abbai-flow/choresman') {
       if (req.method === 'GET') {
-        sendJson(res, 200, { snapshot: await services.choresman.getSnapshot() }, { 'Cache-Control': 'no-store' });
+        sendJson(
+          res,
+          200,
+          { snapshot: await services.choresman.getSnapshot() },
+          { 'Cache-Control': 'no-store' },
+        );
         return;
       }
       if (req.method !== 'POST') {
@@ -1790,13 +1913,22 @@ async function route(req, res, config, services, bluetooth) {
       }
       try {
         const result = await services.choresman.call(value.action, value.data || {});
-        sendJson(res, 200, {
-          result,
-          snapshot: await services.choresman.getSnapshot(),
-        }, { 'Cache-Control': 'no-store' });
+        sendJson(
+          res,
+          200,
+          {
+            result,
+            snapshot: await services.choresman.getSnapshot(),
+          },
+          { 'Cache-Control': 'no-store' },
+        );
       } catch (err) {
-        const status = err instanceof ChoresManStoreError && err.code === 'service_not_found' ? 404 :
-          err instanceof ChoresManStoreError ? 400 : 500;
+        const status =
+          err instanceof ChoresManStoreError && err.code === 'service_not_found'
+            ? 404
+            : err instanceof ChoresManStoreError
+              ? 400
+              : 500;
         sendJson(res, status, {
           error: err instanceof ChoresManStoreError ? err.message : 'ChoresMan action failed',
           ...(err instanceof ChoresManStoreError ? { code: err.code } : {}),
@@ -1845,6 +1977,55 @@ async function route(req, res, config, services, bluetooth) {
         return;
       }
       sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST, PUT' });
+      return;
+    }
+    if (pathname.startsWith('/abbai-flow/settings/icloud-reminders/')) {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      let result;
+      if (pathname === '/abbai-flow/settings/icloud-reminders/authenticate') {
+        result = await services.icloudReminders.authenticate(
+          config.icloudAppleId,
+          config.icloudPassword,
+        );
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/request-code') {
+        result = await services.icloudReminders.requestTwoStepCode(Number(value.deviceIndex));
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/verify-code') {
+        result = await services.icloudReminders.verifyCode(String(value.code || ''));
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-preview') {
+        result = await services.icloudReminders.fetchPreview();
+      } else {
+        sendJson(res, 404, { error: 'iCloud Reminders route not found' });
+        return;
+      }
+      if (!result?.ok) {
+        const status =
+          result?.errorCode === 'apple_unreachable'
+            ? 502
+            : result?.errorCode === 'pyicloud_unavailable'
+              ? 503
+              : 400;
+        sendJson(
+          res,
+          status,
+          {
+            error: result?.error || 'PyICloud request failed.',
+            ...(result?.errorCode ? { code: result.errorCode } : {}),
+          },
+          { 'Cache-Control': 'no-store' },
+        );
+        return;
+      }
+      const response = { ...result };
+      delete response.requestId;
+      sendJson(res, 200, response, { 'Cache-Control': 'no-store' });
       return;
     }
     if (pathname.startsWith('/abbai-flow/bluetooth/')) {

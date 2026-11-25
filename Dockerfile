@@ -18,9 +18,15 @@ RUN npm run build
 # ---------- Runtime stage ----------
 FROM ${BUILD_FROM}
 
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini python3 py3-pip
 WORKDIR /app
 ENV NODE_ENV=production PORT=3000
+
+COPY server/requirements-icloud.txt /tmp/requirements-icloud.txt
+RUN python3 -m venv /opt/pyicloud-venv \
+  && /opt/pyicloud-venv/bin/pip install --no-cache-dir -r /tmp/requirements-icloud.txt \
+  && rm /tmp/requirements-icloud.txt
+ENV ABBAI_FLOW_PYTHON=/opt/pyicloud-venv/bin/python
 
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/node_modules/ws /app/node_modules/ws
