@@ -445,6 +445,7 @@ test('integration settings redact secrets and persist saved values across restar
       spotifyClientSecret: 'new-client-secret',
       spotifyMarket: 'us',
       spotifyRedirectUri: 'https://abbai.example/abbai-flow/music/oauth/callback',
+      icloudRemindersListKey: 'b'.repeat(64),
       mealSourceUrl: 'https://food.example/api/recipes',
       mealSourceToken: 'meal-source-secret',
       mealDataMapping: {
@@ -464,6 +465,7 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(saved.json.spotifyClientId, 'new-client-id');
   assert.equal(saved.json.spotifyMarket, 'US');
   assert.equal(saved.json.spotifyClientSecretConfigured, true);
+  assert.equal(saved.json.icloudRemindersListKey, 'b'.repeat(64));
   assert.equal(saved.json.mealSourceUrl, 'https://food.example/api/recipes');
   assert.equal(saved.json.mealSourceTokenConfigured, true);
   assert.equal(saved.json.mealDataMapping.stepsPath, '$.instructions[].text');
@@ -492,6 +494,7 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(persisted.spotifyClientSecret, 'new-client-secret');
   assert.equal(persisted.mealSourceToken, 'meal-source-secret');
   assert.equal(persisted.mealDataMapping.itemsPath, '$.data.recipes');
+  assert.equal(persisted.icloudRemindersListKey, 'b'.repeat(64));
   assert.equal(fs.statSync(settingsPath).mode & 0o777, 0o600);
 
   const restarted = await startBeacon(legacy);
@@ -501,6 +504,7 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(afterRestart.json.spotifyClientId, 'new-client-id');
   assert.equal(afterRestart.json.spotifyMarket, 'US');
   assert.equal(afterRestart.json.spotifyClientSecretConfigured, true);
+  assert.equal(afterRestart.json.icloudRemindersListKey, 'b'.repeat(64));
   assert.equal(afterRestart.json.mealSourceUrl, 'https://food.example/api/recipes');
   assert.equal(afterRestart.json.mealSourceTokenConfigured, true);
   assert.equal(afterRestart.json.mealDataMapping.titlePath, '$.name');
@@ -548,11 +552,31 @@ test('integration settings report the current iCloud authentication state', asyn
     devices: [],
     securityKeyNames: [],
   };
+  let requestedListKey = '';
   const icloudReminders = {
     status: () => ({ ...state }),
     authenticate: async () => {
       state.state = 'authenticated';
       return { ok: true, state: state.state };
+    },
+    listLists: async () => ({
+      ok: true,
+      state: 'authenticated',
+      listCount: 1,
+      lists: [
+        {
+          key: 'a'.repeat(64),
+          title: 'Shopping',
+          scope: 'private',
+          deleted: false,
+          isGroup: false,
+          count: 3,
+        },
+      ],
+    }),
+    fetchPreview: async (listKey) => {
+      requestedListKey = listKey;
+      return { ok: true, state: 'fetched', lists: [] };
     },
     stop() {},
   };
@@ -575,6 +599,44 @@ test('integration settings report the current iCloud authentication state', asyn
     path: '/abbai-flow/settings/integrations',
   });
   assert.equal(afterAuthentication.json.icloudAuthState, 'authenticated');
+
+  const lists = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/icloud-reminders/lists',
+    body: {},
+  });
+  assert.equal(lists.status, 200);
+  assert.equal(lists.json.lists[0].title, 'Shopping');
+
+  const preview = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/icloud-reminders/fetch-preview',
+    body: { listKey: 'a'.repeat(64) },
+  });
+  assert.equal(preview.status, 200);
+  assert.equal(requestedListKey, 'a'.repeat(64));
+});
+
+test('saved iCloud credentials are authenticated at server startup', async (t) => {
+  const dataDir = tmpDir('icloud-startup-auth');
+  fs.writeFileSync(
+    path.join(dataDir, 'integration-settings.json'),
+    JSON.stringify({ icloudAppleId: 'example@icloud.com', icloudPassword: 'stored-test-password' }),
+  );
+  let credentials;
+  const icloudReminders = {
+    authenticate: async (appleId, password) => {
+      credentials = [appleId, password];
+      return { ok: true, state: 'authenticated' };
+    },
+    status: () => ({ state: 'disconnected', devices: [], securityKeyNames: [] }),
+    stop() {},
+  };
+  const app = await startBeacon({ dataDir, icloudReminders });
+  t.after(() => app.close());
+
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(credentials, ['example@icloud.com', 'stored-test-password']);
 });
 
 test('iCloud worker retains safe authentication status between requests', () => {

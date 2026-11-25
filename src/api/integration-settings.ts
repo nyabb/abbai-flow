@@ -43,6 +43,7 @@ export interface IntegrationSettingsStatus {
   mealDataMapping: MealDataMapping;
   icloudAppleId: string;
   icloudPasswordConfigured: boolean;
+  icloudRemindersListKey: string;
   icloudAuthState: string;
   icloudDevices: Array<{ index: number; name: string }>;
   icloudSecurityKeyNames: string[];
@@ -68,6 +69,7 @@ export interface IntegrationSettingsPatch {
   icloudAppleId?: string;
   icloudPassword?: string;
   clearIcloudPassword?: boolean;
+  icloudRemindersListKey?: string;
   calendarSources?: CalendarSourceSetting[];
 }
 
@@ -120,7 +122,16 @@ export interface ICloudRemindersActionResult {
   devices?: Array<{ index: number; name: string }>;
   securityKeyNames?: string[];
   listCount?: number;
-  lists?: Array<{ title: string; reminderCountReturned: number }>;
+  lists?: Array<{
+    key: string;
+    title: string;
+    scope: string;
+    deleted: boolean;
+    isGroup: boolean;
+    count: number | null;
+    reminderCountReturned?: number;
+    reminders?: unknown[];
+  }>;
   decodedAppleSample?: unknown;
 }
 
@@ -142,6 +153,10 @@ export function verifyICloudRemindersCode(code: string): Promise<ICloudReminders
   return iCloudAction<ICloudRemindersActionResult>('verify-code', { code });
 }
 
-export function fetchICloudRemindersPreview(): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('fetch-preview');
+export function loadICloudRemindersLists(): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('lists');
+}
+
+export function fetchICloudRemindersPreview(listKey: string): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('fetch-preview', { listKey });
 }

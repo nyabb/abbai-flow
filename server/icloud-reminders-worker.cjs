@@ -11,6 +11,7 @@ class ICloudRemindersWorker {
     this.nextRequestId = 0;
     this.pending = new Map();
     this.stdoutBuffer = '';
+    this.stderrBuffer = '';
     this.authState = 'disconnected';
     this.devices = [];
     this.securityKeyNames = [];
@@ -19,10 +20,11 @@ class ICloudRemindersWorker {
   start() {
     if (this.child && this.child.exitCode === null) return;
     this.child = spawn(this.python, [this.scriptPath], {
-      stdio: ['pipe', 'pipe', 'ignore'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env, PYTHONUNBUFFERED: '1', PYTHONDONTWRITEBYTECODE: '1' },
     });
     this.stdoutBuffer = '';
+    this.stderrBuffer = '';
     this.child.stdout.setEncoding('utf8');
     this.child.stdout.on('data', (chunk) => {
       this.stdoutBuffer += chunk;
@@ -33,11 +35,25 @@ class ICloudRemindersWorker {
         this.onLine(line);
       }
     });
+    this.child.stderr.setEncoding('utf8');
+    this.child.stderr.on('data', (chunk) => {
+      this.stderrBuffer += chunk;
+      let newline;
+      while ((newline = this.stderrBuffer.indexOf('\n')) >= 0) {
+        const line = this.stderrBuffer.slice(0, newline);
+        this.stderrBuffer = this.stderrBuffer.slice(newline + 1);
+        this.onWorkerLog(line);
+      }
+    });
     this.child.on('error', () => {
+      console.error('[iCloud Reminders] Could not start the Python worker.');
       this.setAuthState('disconnected');
       this.failPending('Could not start the PyICloud Python worker.');
     });
-    this.child.on('exit', () => {
+    this.child.on('exit', (code, signal) => {
+      console.info(
+        `[iCloud Reminders] Python worker exited: code=${code ?? 'unknown'}, signal=${signal || 'none'}.`,
+      );
       this.child = null;
       this.setAuthState('disconnected');
       this.failPending('The PyICloud Python worker stopped.');
@@ -57,10 +73,55 @@ class ICloudRemindersWorker {
     clearTimeout(pending.timeout);
     if (response.ok && typeof response.state === 'string') {
       this.setAuthState(response.state, response);
-    } else if (response.errorCode === 'authentication_required') {
+    } else if (
+      response.errorCode === 'authentication_required' ||
+      pending.action === 'authenticate'
+    ) {
       this.setAuthState('disconnected');
     }
     pending.resolve(response);
+  }
+
+  onWorkerLog(line) {
+    let entry;
+    try {
+      entry = JSON.parse(line);
+    } catch {
+      return;
+    }
+    if (
+      !entry ||
+      entry.service !== 'pyicloud-reminders' ||
+      !['worker_started', 'request_started', 'request_finished', 'request_failed'].includes(
+        entry.event,
+      )
+    ) {
+      return;
+    }
+    const safeEntry = { service: entry.service, event: entry.event };
+    for (const key of [
+      'pyicloud_available',
+      'pyicloud_version',
+      'request_id',
+      'action',
+      'ok',
+      'state',
+      'error_code',
+      'duration_ms',
+      'list_count',
+    ]) {
+      const value = entry[key];
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        safeEntry[key] = value;
+      }
+    }
+    if (
+      Array.isArray(entry.reminder_counts) &&
+      entry.reminder_counts.every((value) => Number.isInteger(value))
+    ) {
+      safeEntry.reminder_counts = entry.reminder_counts;
+    }
+    console.info(`[iCloud Reminders] ${JSON.stringify(safeEntry)}`);
   }
 
   setAuthState(state, response = {}) {
@@ -99,14 +160,18 @@ class ICloudRemindersWorker {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pending.delete(requestId);
+        console.warn(`[iCloud Reminders] Request timed out: action=${action}, durationMs=120000.`);
         reject(new Error('Apple iCloud request timed out.'));
       }, 120_000);
-      this.pending.set(requestId, { resolve, reject, timeout });
+      this.pending.set(requestId, { resolve, reject, timeout, action });
       const body = JSON.stringify({ requestId, action, ...payload });
       this.child.stdin.write(`${body}\n`, (error) => {
         if (!error) return;
         this.pending.delete(requestId);
         clearTimeout(timeout);
+        console.warn(
+          `[iCloud Reminders] Could not send request to Python worker: action=${action}.`,
+        );
         reject(new Error('Could not send a request to the PyICloud worker.'));
       });
     });
@@ -121,11 +186,19 @@ class ICloudRemindersWorker {
   }
 
   authenticate(appleId, password) {
+    this.setAuthState('authenticating');
     return this.request('authenticate', {
       appleId,
       password,
       cookieDirectory: path.join(this.dataDir, 'icloud-reminders'),
+    }).catch((error) => {
+      this.setAuthState('disconnected');
+      throw error;
     });
+  }
+
+  listLists() {
+    return this.request('list_lists');
   }
 
   requestTwoStepCode(deviceIndex) {
@@ -136,8 +209,8 @@ class ICloudRemindersWorker {
     return this.request('verify_code', { code });
   }
 
-  fetchPreview() {
-    return this.request('fetch_preview');
+  fetchPreview(listKey) {
+    return this.request('fetch_preview', { listKey });
   }
 
   stop() {

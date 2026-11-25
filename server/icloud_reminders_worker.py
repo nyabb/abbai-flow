@@ -12,11 +12,14 @@ import dataclasses
 from contextlib import redirect_stdout
 import datetime as dt
 import enum
+import hashlib
 import importlib.metadata
+import io
 import json
 import logging
 import os
 import sys
+import time
 from typing import Any
 
 os.umask(0o077)
@@ -41,6 +44,12 @@ auth_mode: str | None = None
 def respond(value: dict[str, Any]) -> None:
     protocol_output.write(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n")
     protocol_output.flush()
+
+
+def log_event(event: str, **fields: Any) -> None:
+    entry = {"service": "pyicloud-reminders", "event": event, **fields}
+    sys.stderr.write(json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n")
+    sys.stderr.flush()
 
 
 def safe_error(exc: Exception) -> dict[str, str]:
@@ -191,40 +200,93 @@ def verify_code(request: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, **safe_error(exc)}
 
 
-def fetch_preview() -> dict[str, Any]:
+def reminders_list_key(reminder_list: Any) -> str:
+    identity = [
+        getattr(reminder_list, "scope", "private"),
+        getattr(reminder_list, "zone_name", "Reminders"),
+        getattr(reminder_list, "zone_owner", None),
+        getattr(reminder_list, "id", ""),
+    ]
+    encoded = json.dumps(identity, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def reminders_list_summary(reminder_list: Any) -> dict[str, Any]:
+    count = getattr(reminder_list, "count", None)
+    return {
+        "key": reminders_list_key(reminder_list),
+        "title": str(getattr(reminder_list, "title", "")),
+        "scope": str(getattr(reminder_list, "scope", "private")),
+        "deleted": bool(getattr(reminder_list, "deleted", False)),
+        "isGroup": bool(getattr(reminder_list, "is_group", False)),
+        "count": count if isinstance(count, int) else None,
+    }
+
+
+def fetch_lists() -> dict[str, Any]:
     if api is None:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
     try:
         reminders_service = api.reminders
         lists = list(reminders_service.lists())
-        previews = [
-            {"title": str(getattr(reminder_list, "title", ""))}
-            for reminder_list in lists[:30]
-        ]
-        first_sample = None
-        if lists:
-            reminder_list = lists[0]
-            batch = reminders_service.list_reminders(
-                reminder_list,
-                include_completed=True,
-                results_limit=5,
-            )
-            reminders = list(getattr(batch, "reminders", []) or [])
-            previews[0]["reminderCountReturned"] = len(reminders)
-            first_sample = {
-                "listFields": object_fields(reminder_list),
-                "list": json_value(reminder_list),
-                "snapshotFields": object_fields(batch),
-                "reminderFields": object_fields(reminders[0]) if reminders else [],
-                "reminders": [json_value(reminder) for reminder in reminders[:5]],
+        return {
+            "ok": True,
+            "state": "authenticated",
+            "pyicloudVersion": importlib.metadata.version("pyicloud"),
+            "listCount": len(lists),
+            "lists": [reminders_list_summary(reminder_list) for reminder_list in lists[:50]],
+        }
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
+
+
+def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        reminders_service = api.reminders
+        lists = list(reminders_service.lists())
+        selected_key = str(request.get("listKey") or "")
+        reminder_list = next(
+            (
+                item
+                for item in lists
+                if not getattr(item, "deleted", False)
+                and reminders_list_key(item) == selected_key
+            ),
+            None,
+        )
+        if reminder_list is None:
+            return {
+                "ok": False,
+                "errorCode": "selected_list_not_found",
+                "error": "Choose an active iCloud Reminders list, then load its preview again.",
             }
+        batch = reminders_service.list_reminders(
+            reminder_list,
+            include_completed=True,
+            results_limit=10,
+        )
+        reminders = list(getattr(batch, "reminders", []) or [])
+        summary = reminders_list_summary(reminder_list)
+        summary["reminderCountReturned"] = len(reminders)
+        summary["reminders"] = [json_value(reminder) for reminder in reminders[:10]]
         return {
             "ok": True,
             "state": "fetched",
             "pyicloudVersion": importlib.metadata.version("pyicloud"),
             "listCount": len(lists),
-            "lists": previews,
-            "decodedAppleSample": first_sample,
+            "lists": [summary],
+            "decodedAppleSample": {
+                "listFields": object_fields(reminder_list),
+                "list": json_value(reminder_list),
+                "snapshotFields": object_fields(batch),
+                "snapshot": json_value(batch),
+                "reminderFields": sorted(
+                    {field for reminder in reminders for field in object_fields(reminder)}
+                ),
+                "reminders": [json_value(reminder) for reminder in reminders[:10]],
+            },
         }
     except Exception as exc:
         return {"ok": False, **safe_error(exc)}
@@ -247,22 +309,48 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
         return {"ok": True, "state": "disconnected"}
     if action == "authenticate":
         return authenticate(request)
+    if action == "list_lists":
+        return fetch_lists()
     if action == "request_2sa_code":
         return request_2sa_code(request)
     if action == "verify_code":
         return verify_code(request)
     if action == "fetch_preview":
-        return fetch_preview()
+        return fetch_preview(request)
     return {"ok": False, "errorCode": "unknown_action", "error": "Unknown PyICloud action."}
 
 
 protocol_output = sys.stdout
+log_event(
+    "worker_started",
+    pyicloud_available=PYICLOUD_AVAILABLE,
+    pyicloud_version=importlib.metadata.version("pyicloud") if PYICLOUD_AVAILABLE else None,
+)
 for line in sys.stdin:
     try:
         request = json.loads(line)
         request_id = request.get("requestId")
-        with redirect_stdout(sys.stderr):
+        action = str(request.get("action") or "unknown")
+        started_at = time.monotonic()
+        log_event("request_started", request_id=request_id, action=action)
+        with redirect_stdout(io.StringIO()):
             result = handle(request if isinstance(request, dict) else {})
+        log_event(
+            "request_finished",
+            request_id=request_id,
+            action=action,
+            ok=bool(result.get("ok")),
+            state=result.get("state"),
+            error_code=result.get("errorCode"),
+            duration_ms=round((time.monotonic() - started_at) * 1000),
+            list_count=result.get("listCount"),
+            reminder_counts=[
+                item.get("reminderCountReturned")
+                for item in result.get("lists", [])
+                if isinstance(item, dict) and "reminderCountReturned" in item
+            ],
+        )
         respond({"requestId": request_id, **result})
     except Exception:
+        log_event("request_failed", error_code="worker_error")
         respond({"requestId": None, "ok": False, "errorCode": "worker_error", "error": "PyICloud worker could not complete the request."})
