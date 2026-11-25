@@ -1,3 +1,10 @@
+## [2.31.3](https://github.com/nyabb/abbai-flow/compare/v2.31.2...v2.31.3) (2026-11-25)
+
+
+### Bug Fixes
+
+* use PyICloud asset download client ([29d0efb](https://github.com/nyabb/abbai-flow/commit/29d0efb9d4755941c790dd4d822da942d43b20b8))
+
 ## [2.31.2](https://github.com/nyabb/abbai-flow/compare/v2.31.1...v2.31.2) (2026-11-25)
 
 
