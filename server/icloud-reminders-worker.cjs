@@ -11,6 +11,9 @@ class ICloudRemindersWorker {
     this.nextRequestId = 0;
     this.pending = new Map();
     this.stdoutBuffer = '';
+    this.authState = 'disconnected';
+    this.devices = [];
+    this.securityKeyNames = [];
   }
 
   start() {
@@ -30,9 +33,13 @@ class ICloudRemindersWorker {
         this.onLine(line);
       }
     });
-    this.child.on('error', () => this.failPending('Could not start the PyICloud Python worker.'));
+    this.child.on('error', () => {
+      this.setAuthState('disconnected');
+      this.failPending('Could not start the PyICloud Python worker.');
+    });
     this.child.on('exit', () => {
       this.child = null;
+      this.setAuthState('disconnected');
       this.failPending('The PyICloud Python worker stopped.');
     });
   }
@@ -48,7 +55,34 @@ class ICloudRemindersWorker {
     if (!pending) return;
     this.pending.delete(response.requestId);
     clearTimeout(pending.timeout);
+    if (response.ok && typeof response.state === 'string') {
+      this.setAuthState(response.state, response);
+    } else if (response.errorCode === 'authentication_required') {
+      this.setAuthState('disconnected');
+    }
     pending.resolve(response);
+  }
+
+  setAuthState(state, response = {}) {
+    this.authState = state;
+    this.devices = Array.isArray(response.devices)
+      ? response.devices.map((device) => ({ index: device.index, name: device.name }))
+      : state === 'device_selection_required'
+        ? this.devices
+        : [];
+    this.securityKeyNames = Array.isArray(response.securityKeyNames)
+      ? response.securityKeyNames.slice()
+      : state === 'security_key_required'
+        ? this.securityKeyNames
+        : [];
+  }
+
+  status() {
+    return {
+      state: this.authState,
+      devices: this.devices.map((device) => ({ ...device })),
+      securityKeyNames: this.securityKeyNames.slice(),
+    };
   }
 
   failPending(message) {
@@ -111,6 +145,7 @@ class ICloudRemindersWorker {
       this.child.kill('SIGTERM');
       this.child = null;
     }
+    this.setAuthState('disconnected');
     this.failPending('The PyICloud worker was stopped.');
   }
 }

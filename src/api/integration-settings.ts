@@ -43,6 +43,9 @@ export interface IntegrationSettingsStatus {
   mealDataMapping: MealDataMapping;
   icloudAppleId: string;
   icloudPasswordConfigured: boolean;
+  icloudAuthState: string;
+  icloudDevices: Array<{ index: number; name: string }>;
+  icloudSecurityKeyNames: string[];
   calendarSources: CalendarSourceSetting[];
 }
 

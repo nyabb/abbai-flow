@@ -1593,7 +1593,7 @@ function validateIntegrationSettings(settings) {
   return null;
 }
 
-function publicIntegrationSettings(settings) {
+function publicIntegrationSettings(settings, icloudStatus = {}) {
   return {
     haUrl:
       !settings.haToken && settings.haBaseUrl === 'http://supervisor/core'
@@ -1611,6 +1611,11 @@ function publicIntegrationSettings(settings) {
     mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING, ...settings.mealDataMapping },
     icloudAppleId: settings.icloudAppleId || '',
     icloudPasswordConfigured: Boolean(settings.icloudPassword),
+    icloudAuthState: typeof icloudStatus.state === 'string' ? icloudStatus.state : 'disconnected',
+    icloudDevices: Array.isArray(icloudStatus.devices) ? icloudStatus.devices : [],
+    icloudSecurityKeyNames: Array.isArray(icloudStatus.securityKeyNames)
+      ? icloudStatus.securityKeyNames
+      : [],
     calendarSources: normalizeCalendarSources(settings.calendarSources).map((source) => ({
       id: source.id,
       name: source.name,
@@ -1833,7 +1838,7 @@ function createApp(options) {
           .catch(() => undefined);
       }
     }
-    return { settings: publicIntegrationSettings(config) };
+    return { settings: publicIntegrationSettings(config, services.icloudReminders.status?.()) };
   }
   services.updateIntegrations = updateIntegrations;
 
@@ -1938,7 +1943,9 @@ async function route(req, res, config, services, bluetooth) {
     }
     if (pathname === '/abbai-flow/settings/integrations') {
       if (req.method === 'GET') {
-        sendJson(res, 200, publicIntegrationSettings(config), { 'Cache-Control': 'no-store' });
+        sendJson(res, 200, publicIntegrationSettings(config, services.icloudReminders.status?.()), {
+          'Cache-Control': 'no-store',
+        });
         return;
       }
       const { value, error } = await readJsonObject(req);
