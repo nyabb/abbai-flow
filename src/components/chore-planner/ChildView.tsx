@@ -3,13 +3,19 @@
  * finished today and their routines — the board's per-member drill-down.
  */
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { useState } from 'react';
 import type { ChoreOpsChoreHistoryEntry } from '../../api/choreops-chore-history';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoreOpsReward } from '../../types/choreops';
 import type { Routine } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
+import { usePersistentState } from '../../hooks/usePersistentState';
+
+type HistoryRange = 'twoDays' | 'week' | 'all';
+
+function isHistoryRange(value: unknown): value is HistoryRange {
+  return value === 'twoDays' || value === 'week' || value === 'all';
+}
 
 export interface ChildViewProps {
   childMember: PlannerMember;
@@ -60,7 +66,11 @@ export function ChildView({
   const completed = completedTasksFor(childMember.id);
   const routines = columnRoutines(childMember.id);
   const rewards = rewardsForMember(childMember.id);
-  const [historyRange, setHistoryRange] = useState<'twoDays' | 'week' | 'all'>('all');
+  const [historyRange, setHistoryRange] = usePersistentState(
+    'abbai-flow-filter-chore-history-range',
+    'all',
+    isHistoryRange,
+  );
   const currentCompletions = completed.flatMap((task) => {
     const completedAtMs = task.completedAt ? Date.parse(task.completedAt) : Number.NaN;
     if (!Number.isFinite(completedAtMs)) return [];
@@ -186,7 +196,7 @@ export function ChildView({
             <select
               value={historyRange}
               onChange={(event) =>
-                setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
+                setHistoryRange(event.currentTarget.value as HistoryRange)
               }
             >
               <option value="twoDays">{c.historyLastTwoDays}</option>

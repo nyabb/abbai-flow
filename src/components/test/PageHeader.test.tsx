@@ -34,8 +34,9 @@ describe('PageHeader', () => {
   });
 
   it('only offers a back button when a handler is passed', () => {
-    const { rerender } = renderHeader({ title: 'Timer' });
-    expect(screen.queryByRole('button')).toBeNull();
+    const { container, rerender } = renderHeader({ title: 'Timer' });
+    expect(container.querySelector('.page-header-back')).toBeNull();
+    expect(screen.getByRole('button', { name: NL.t('planner.sound') })).toBeInTheDocument();
 
     const onBack = vi.fn();
     rerender(

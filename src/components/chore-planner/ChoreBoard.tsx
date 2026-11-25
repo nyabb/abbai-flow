@@ -5,13 +5,14 @@
  * It renders only what the planner hands it (already filtered tasks, routines
  * and row renderers), so the board has no ChoreOps knowledge of its own.
  */
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
+import { usePersistentState } from '../../hooks/usePersistentState';
 
 export interface ChoreBoardProps {
   /** Members a parent has not filtered out. */
@@ -73,8 +74,22 @@ export function ChoreBoard({
   );
   const compactLandscape = !phoneWidth && shortLandscape;
   const compact = phoneWidth || compactLandscape;
-  const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'chores' | 'routines' | 'goals' | 'free'>('chores');
+  const [activeMemberId, setActiveMemberId] = usePersistentState<string | null>(
+    'abbai-flow-filter-chore-board-member',
+    null,
+    (value): value is string | null => value === null || typeof value === 'string',
+  );
+  const [tab, setTab] = usePersistentState<'chores' | 'routines' | 'goals' | 'free'>(
+    'abbai-flow-filter-chore-board-tab',
+    'chores',
+    (value): value is 'chores' | 'routines' | 'goals' | 'free' =>
+      value === 'chores' || value === 'routines' || value === 'goals' || value === 'free',
+  );
+
+  useEffect(() => {
+    if (activeMemberId && boardMembers.some((member) => member.id === activeMemberId)) return;
+    setActiveMemberId(boardMembers[0]?.id ?? null);
+  }, [activeMemberId, boardMembers, setActiveMemberId]);
 
   if (compact) {
     const member = boardMembers.find((item) => item.id === activeMemberId) ?? boardMembers[0];
@@ -161,7 +176,7 @@ export function ChoreBoard({
           {activeTab === 'routines' && (
             <>
               {member && (
-                <div className="planner-section-head">
+                <div className={`planner-section-head${parentMode ? ' planner-section-head--parent' : ''}`}>
                   <h2>
                     {c.routines}
                     <span>{routines.length}</span>
@@ -257,7 +272,7 @@ export function ChoreBoard({
             <div className="planner-col-body">
               {member.role === 'parent' ? (
                 <>
-                  <div className="planner-section-head">
+                  <div className="planner-section-head planner-section-head--parent">
                     <h2>
                       {c.routines}
                       <span>{routines.length}</span>

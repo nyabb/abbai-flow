@@ -76,24 +76,6 @@
   display: none;
 }
 
-.planner-header {
-  position: relative;
-  z-index: 3;
-  display: flex;
-  /* Must not shrink: it is a flex item in the planner's column layout. */
-  flex: 0 0 auto;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 80px;
-  padding: 10px clamp(18px, 3vw, 48px) 14px;
-  border-radius: 0 0 28px 28px;
-  color: var(--planner-band-ink);
-  background: linear-gradient(140deg, var(--planner-band-1), var(--planner-band-2));
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--planner-band-2) 28%, transparent);
-}
-
 .planner-loading-board {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -134,66 +116,6 @@
   }
 }
 
-/* Small line above the page title (today's date), like a hero. */
-.planner-header-copy {
-  display: grid;
-  flex: 1 1 0;
-  gap: 2px;
-  min-width: 0;
-}
-
-/* The shared date block sits above the planner title. It is deliberately smaller
-   here than on the other bands: the planner band is a compact toolbar (60px) and
-   a full-size numeral would double its height. */
-.planner-header .page-header-day {
-  font-size: clamp(1.5rem, 2.2vw, 2rem);
-}
-
-.planner-header .page-header-weekday,
-.planner-header .page-header-month {
-  font-size: 0.68rem;
-  text-transform: lowercase;
-}
-
-.planner-header-actions {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-inline-start: auto;
-  text-align: right;
-}
-
-.planner-header .planner-eyebrow {
-  overflow: hidden;
-  color: color-mix(in srgb, var(--planner-band-ink) 78%, transparent);
-  font-size: 0.625rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.planner-header h1 {
-  flex: 1;
-  min-width: 0;
-  margin: 0;
-  font-family: var(--font-display, 'Trebuchet MS', sans-serif);
-  font-size: clamp(21px, 1.8vw, 29px);
-  font-weight: 600;
-  line-height: 1.12;
-  color: inherit;
-}
-
-/* The header is a single row on every screen; long names truncate instead of
-   wrapping under the action buttons. */
-.planner-header h1 span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .planner-title-full {
   display: block;
 }
@@ -202,8 +124,6 @@
 }
 
 .planner-header-action,
-.planner-icon-button,
-.planner-add,
 .planner-primary,
 .planner-ghost,
 .planner-claim,
@@ -238,9 +158,7 @@
   font-size: 1.0625rem;
 }
 
-.planner-header-action svg,
-.planner-icon-button svg,
-.planner-add svg {
+.planner-header-action svg {
   width: 20px;
   height: 20px;
 }
@@ -250,45 +168,6 @@
   background: var(--planner-amber-soft);
 }
 
-.planner-add {
-  flex: 0 0 48px;
-  width: 48px;
-  height: 48px;
-  min-height: 48px;
-  border-radius: 50%;
-  color: var(--planner-on-accent);
-  background: var(--planner-accent);
-  box-shadow: 0 5px 13px rgba(151, 71, 54, 0.2);
-}
-
-.planner-icon-button {
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  min-height: 42px;
-  border-radius: 50%;
-  color: var(--planner-muted);
-  background: transparent;
-}
-
-/* Inside the hero band the controls go translucent white, like the circular
-   buttons on the screen headers. */
-.planner-header .planner-icon-button {
-  color: color-mix(in srgb, var(--planner-band-ink) 92%, transparent);
-  background: color-mix(in srgb, var(--planner-band-ink) 14%, transparent);
-}
-
-.planner-header .planner-icon-button:hover {
-  background: color-mix(in srgb, var(--planner-band-ink) 26%, transparent);
-}
-
-.planner-header .planner-add {
-  color: var(--planner-accent);
-  background: var(--planner-surface);
-  box-shadow: 0 6px 16px rgba(63, 58, 68, 0.14);
-}
-
-.planner-icon-button:hover,
 .planner-header-action:hover,
 .planner-filter-group button:hover,
 .planner-ghost:hover,
@@ -1962,30 +1841,6 @@
   margin-left: 9px;
   vertical-align: middle;
 }
-.planner-clock {
-  color: var(--planner-muted);
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.chore-planner--private .planner-content,
-.chore-planner--private .planner-today-lobby,
-.chore-planner--private .planner-today-step,
-.chore-planner--private .planner-missions {
-  filter: blur(18px);
-  pointer-events: none;
-}
-.planner-private-clock {
-  position: fixed;
-  z-index: 10;
-  inset: 45% 0 auto;
-  color: var(--planner-ink);
-  font-size: 4.375rem;
-  font-weight: 800;
-  text-align: center;
-  pointer-events: none;
-}
-
 /* Dark theme keeps the same geometry; only the palette changes. */
 .planner-toast {
   position: fixed;
@@ -2122,34 +1977,6 @@
 }
 
 @media (max-width: 640px) {
-  .planner-header {
-    min-height: 74px;
-    gap: 5px;
-    padding: 10px 12px 14px;
-    border-radius: 0 0 22px 22px;
-    /* Phones: title on the first row, controls on the second, so the hero
-       never squeezes the title down to nothing. */
-    flex-wrap: wrap;
-  }
-  .planner-header-actions {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 6px;
-  }
-  /* Phones: the band is too short for the date block, the title carries it. */
-  .planner-header .page-header-date {
-    display: none;
-  }
-  .planner-header h1 {
-    font-size: 1.1875rem;
-  }
-  .planner-title-full {
-    display: none;
-  }
-  .planner-title-short {
-    display: block;
-  }
   .planner-header-action {
     width: 43px;
     min-width: 43px;
@@ -2160,17 +1987,6 @@
   }
   .planner-header-action svg {
     flex: 0 0 22px;
-  }
-  .planner-add {
-    flex-basis: 48px;
-    width: 48px;
-    height: 48px;
-  }
-  .planner-icon-button {
-    flex-basis: 37px;
-    width: 37px;
-    height: 37px;
-    min-height: 37px;
   }
   .planner-filters {
     display: grid;
@@ -2588,19 +2404,6 @@
    back, but nothing needs to be poster-sized. These rules tighten the type
    and control sizes the per-screen styles set above. */
 
-.planner-header {
-  min-height: 60px;
-  padding: 6px clamp(14px, 2vw, 32px) 10px;
-}
-
-.planner-header h1 {
-  font-size: clamp(16px, 1.2vw, 20px);
-}
-
-.planner-header .planner-eyebrow {
-  font-size: 0.5625rem;
-}
-
 .planner-today-step h2 {
   font-size: clamp(20px, 2vw, 28px);
 }
@@ -2788,16 +2591,6 @@
   overflow-wrap: anywhere;
 }
 
-.planner-header-clock {
-  flex: 0 0 auto;
-  color: inherit;
-  font-size: 0.9375rem;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  opacity: 0.85;
-}
-
 /* ---------------------------------------------------------------------------
    The board: one column per family member plus the free-chore column
    --------------------------------------------------------------------------- */
@@ -2978,6 +2771,82 @@
   color: var(--planner-muted);
   background: var(--planner-soft);
   cursor: default;
+}
+
+/* The parent column can be narrower than the localized add-routine label.
+   Put the action beneath its heading and allow the label to wrap inside the
+   column instead of spilling into the next family member. */
+.planner-col .planner-section-head--parent {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.planner-col .planner-section-head--parent h2 {
+  flex: 1 1 100%;
+}
+
+.planner-col .planner-section-head--parent .planner-section-action {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  padding: 4px 8px;
+  line-height: 1.2;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+/* Goals are compact planner rows inside the family columns. Their full-size
+   layout remains available in the goal sheets. */
+.planner-col .planner-reward {
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 6px 8px;
+  padding: 7px 9px;
+  border-radius: 12px;
+}
+
+.planner-col .planner-reward > span {
+  font-size: 1.125rem;
+}
+
+.planner-col .planner-reward-copy {
+  gap: 2px;
+}
+
+.planner-col .planner-reward-copy strong {
+  overflow: hidden;
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-col .planner-reward-copy small {
+  overflow: hidden;
+  font-size: 0.6875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-col .planner-reward-copy i {
+  height: 4px;
+}
+
+.planner-col .planner-reward-actions {
+  grid-column: auto;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.planner-col .planner-reward-action {
+  min-height: 30px;
+  padding-inline: 8px;
+  font-size: 0.6875rem;
+}
+
+.planner-col .planner-reward-actions .planner-task-more {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
 }
 
 .planner-col-empty {

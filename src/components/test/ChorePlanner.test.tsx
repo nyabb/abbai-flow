@@ -689,15 +689,16 @@ describe('ChorePlanner board', () => {
     mocks.fetchChoreHistory.mockResolvedValue([]);
   });
 
-  it('keeps the language picker at the far right after the live clock', () => {
+  it('keeps sound and language controls at the far right after the live clock', () => {
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     const actions = container.querySelector('.planner-header-actions');
     const language = actions?.querySelector('.language-switcher');
+    const sound = actions?.querySelector('.page-header-sound-toggle');
 
     expect(language).not.toBeNull();
-    expect(language?.previousElementSibling).toHaveClass(
-      'planner-header-clock',
-    );
+    expect(sound).not.toBeNull();
+    expect(language?.previousElementSibling).toBe(sound);
+    expect(sound?.previousElementSibling).toHaveClass('planner-header-clock');
     expect(actions?.lastElementChild).toHaveClass('language-switcher');
   });
 

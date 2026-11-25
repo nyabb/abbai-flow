@@ -7,6 +7,13 @@ import type { ChoreOpsReward } from '../../../types/choreops';
 import { MemberAvatar } from '../../MemberAvatar';
 import { ActivitySpinner } from '../../LoadingPlaceholder';
 import type { PlannerCopy } from '../copy';
+import { usePersistentState } from '../../../hooks/usePersistentState';
+
+type HistoryRange = 'twoDays' | 'week' | 'all';
+
+function isHistoryRange(value: unknown): value is HistoryRange {
+  return value === 'twoDays' || value === 'week' || value === 'all';
+}
 
 export interface GoalsSheetProps {
   member: PlannerMember;
@@ -40,7 +47,11 @@ export function GoalsSheet({
   onGive,
   formatDate,
 }: GoalsSheetProps) {
-  const [historyRange, setHistoryRange] = useState<'twoDays' | 'week' | 'all'>('all');
+  const [historyRange, setHistoryRange] = usePersistentState(
+    'abbai-flow-filter-goal-history-range',
+    'all',
+    isHistoryRange,
+  );
   /*
    * A reward whose full cost is set aside is "on hold": the child is no longer
    * saving for it, so it belongs under Done the way a finished chore does. It
@@ -133,7 +144,7 @@ export function GoalsSheet({
             <select
               value={historyRange}
               onChange={(event) =>
-                setHistoryRange(event.currentTarget.value as 'twoDays' | 'week' | 'all')
+                setHistoryRange(event.currentTarget.value as HistoryRange)
               }
             >
               <option value="twoDays">{c.historyLastTwoDays}</option>

@@ -222,7 +222,19 @@ function mapChoresmanSnapshot(source: ChoresmanSnapshot): ChoreOpsState {
       const dueByMember = (chore.due_date_by_member_name || {}) as Record<string, string>;
       const statusInfo = statusByMember[name];
       const rawStatus = String(statusInfo?.status || 'pending');
-      const status = ['approved', 'claimed', 'due', 'overdue'].includes(rawStatus) ? rawStatus : 'pending';
+      const sharedFirstClaimant = String(chore.completion_criteria || '').trim().toLowerCase() === 'shared_first'
+        ? Object.entries(statusByMember).find(([, info]) =>
+            ['claimed', 'approved'].includes(String(info.status).toLowerCase()),
+          )?.[0]
+        : null;
+      // ChoreOps marks other assignees as completed_by_other once one child
+      // takes a shared-first chore. Choresman stores the same fact as a single
+      // claim, so mirror that state here and keep siblings from seeing it as
+      // free after another child has already claimed it.
+      const claimedByOther = sharedFirstClaimant && sharedFirstClaimant.toLowerCase() !== name.toLowerCase();
+      const status = claimedByOther
+        ? 'completed_by_other'
+        : ['approved', 'claimed', 'due', 'overdue'].includes(rawStatus) ? rawStatus : 'pending';
       const dueDate = dueByMember[name] || statusInfo?.due_date || chore.due_date || null;
       const parent = users.find((candidate) => source.members.find((member) => member.name === candidate.name)?.role === 'parent');
       const actionData = { chore_id: chore.id, user_name: name };
@@ -231,7 +243,7 @@ function mapChoresmanSnapshot(source: ChoresmanSnapshot): ChoreOpsState {
             approve: choresmanAction('approve_chore', { ...actionData, approver_name: parent?.name || 'Abbai Flow' }),
             disapprove: choresmanAction('disapprove_chore', { ...actionData, approver_name: parent?.name || 'Abbai Flow' }),
           }
-        : status === 'approved'
+        : status === 'approved' || status === 'completed_by_other'
           ? {}
           : { claim: choresmanAction('claim_chore', actionData) };
       return [{
@@ -275,14 +287,20 @@ function mapChoresmanSnapshot(source: ChoresmanSnapshot): ChoreOpsState {
       ? users.map((user) => user.name)
       : reward.assigned_user_names;
     return assignedNames.map((name) => {
+      const assignedUser = users.find(
+        (candidate) => candidate.name.trim().toLowerCase() === name.trim().toLowerCase(),
+      );
       const claim = [...source.reward_claims].reverse().find((candidate) =>
         candidate.reward_id === reward.id && candidate.user_name === name && candidate.status === 'pending');
       const data = { reward_id: reward.id, reward_name: reward.name, user_name: name };
+      const cost = Number(reward.cost) || 0;
       return {
         id: `choresman:${reward.id}:${name}`,
         name: reward.name,
-        status: claim ? 'claimed' : 'pending',
-        cost: Number(reward.cost) || 0,
+        // Abbai Flow allocations happen outside Choresman. Expose the same
+        // available/locked states as ChoreOps so children can fund goals.
+        status: claim ? 'claimed' : (assignedUser?.points ?? 0) >= cost ? 'available' : 'locked',
+        cost,
         pendingClaims: claim ? 1 : 0,
         assignee: name,
         actions: claim

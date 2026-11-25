@@ -8,6 +8,7 @@ import { useTranslation } from '../i18n';
 import { CollapsibleRegion } from './CollapsibleRegion';
 import { HeaderDate, PageHeaderActions } from './PageHeader';
 import { ActivitySpinner, LoadingPlaceholder } from './LoadingPlaceholder';
+import { usePersistentState } from '../hooks/usePersistentState';
 
 interface TodoItem {
   uid: string;
@@ -20,6 +21,19 @@ interface UnifiedList {
   id: string;
   name: string;
   source: 'ha' | 'local';
+}
+
+type GroceryTab = 'grocery' | 'tasks';
+type GroceryListSelections = Record<GroceryTab, string>;
+
+function isGroceryTab(value: unknown): value is GroceryTab {
+  return value === 'grocery' || value === 'tasks';
+}
+
+function isGroceryListSelections(value: unknown): value is GroceryListSelections {
+  if (!value || typeof value !== 'object') return false;
+  const selections = value as Partial<GroceryListSelections>;
+  return typeof selections.grocery === 'string' && typeof selections.tasks === 'string';
 }
 
 /** Keywords that identify a list as grocery/shopping (vs tasks) */
@@ -56,7 +70,21 @@ export function GroceryView({
 }: GroceryViewProps) {
   const { t } = useTranslation();
   const [haLists, setHaLists] = useState<GroceryList[]>([]);
-  const [selectedListId, setSelectedListId] = useState<string>(defaultListId || '');
+  const [tab, setTab] = usePersistentState<GroceryTab>(
+    'abbai-flow-filter-grocery-tab',
+    'grocery',
+    isGroceryTab,
+  );
+  const [selectedListIds, setSelectedListIds] = usePersistentState<GroceryListSelections>(
+    'abbai-flow-filter-grocery-lists',
+    { grocery: defaultListId || '', tasks: '' },
+    isGroceryListSelections,
+  );
+  const selectedListId = selectedListIds[tab];
+  const setSelectedListId = useCallback(
+    (listId: string) => setSelectedListIds((current) => ({ ...current, [tab]: listId })),
+    [setSelectedListIds, tab],
+  );
   const [haItems, setHaItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
   /**
@@ -67,9 +95,12 @@ export function GroceryView({
   const [loadError, setLoadError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [completedCollapsed, setCompletedCollapsed] = useState(false);
+  const [completedCollapsed, setCompletedCollapsed] = usePersistentState(
+    'abbai-flow-filter-grocery-completed-collapsed',
+    false,
+    (value): value is boolean => typeof value === 'boolean',
+  );
   /** One page, two tabs: the shopping list on top, the adult to-do list below. */
-  const [tab, setTab] = useState<'grocery' | 'tasks'>('grocery');
   const inputRef = useRef<HTMLInputElement>(null);
   const homeAssistantTodoRef = useRef(new HomeAssistantTodoClient());
 
@@ -173,7 +204,7 @@ export function GroceryView({
     } else {
       setSelectedListId('');
     }
-  }, [allLists, selectedListId, defaultListId]);
+  }, [allLists, selectedListId, defaultListId, setSelectedListId]);
 
   // Load HA items via todo.get_items
   const loadHaItems = useCallback(

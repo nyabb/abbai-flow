@@ -84,8 +84,6 @@ export function usePlannerCopy() {
       todayEarned: t('planner.todayEarned'),
       noMissions: t('planner.noMissions'),
       action: t('planner.action'),
-      privacy: t('planner.privacy'),
-      sound: t('planner.sound'),
       routines: t('planner.routines'),
       labels: t('planner.labels'),
       labelsPlaceholder: t('planner.labelsPlaceholder'),
