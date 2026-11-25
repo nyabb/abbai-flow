@@ -1,3 +1,10 @@
+# [2.23.0](https://github.com/nyabb/abbai-flow/compare/v2.22.0...v2.23.0) (2026-11-25)
+
+
+### Features
+
+* refine mobile navigation, avatars, and integrations ([6ae8b13](https://github.com/nyabb/abbai-flow/commit/6ae8b133bdbf4d54549a188c7c7f69157eee2ed7))
+
 # [2.22.0](https://github.com/nyabb/abbai-flow/compare/v2.21.3...v2.22.0) (2026-11-25)
 
 
