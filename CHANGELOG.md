@@ -1,3 +1,10 @@
+## [2.27.2](https://github.com/nyabb/abbai-flow/compare/v2.27.1...v2.27.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* retain iCloud auth state after reload ([d8e739e](https://github.com/nyabb/abbai-flow/commit/d8e739edb9fd395e8d48f97f11cd904d95860c4a))
+
 ## [2.27.1](https://github.com/nyabb/abbai-flow/compare/v2.27.0...v2.27.1) (2026-11-25)
 
 
