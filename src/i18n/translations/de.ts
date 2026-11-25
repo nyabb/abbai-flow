@@ -33,8 +33,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Verkürzt jede Animation und jeden Übergang.',
   'display.connection.appDown': 'Abbai Flow nicht erreichbar',
   'nav.settings': 'Einstellungen',
-  'nav.more': 'Mehr',
-  'nav.closeMenu': 'Menü schließen',
   'nav.mainNavigation': 'Hauptnavigation',
 
   // ---- app chrome ----
@@ -317,13 +315,10 @@ export const de: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': 'Getrennt',
   'settings.integrations.weatherEntityLabel': 'Wetter-Entität',
   'settings.integrations.weatherEntitySublabel': 'Für die Wetteranzeige verwendete Entität',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Grocy-Integration',
-  'settings.integrations.grocySublabel': 'Einkauf und Essensplanung',
   'settings.integrations.icloudRemindersTitle': 'iCloud-Erinnerungen',
   'settings.integrations.icloudRemindersSublabel':
     'Richte Apple iCloud in Home Assistant ein. Jede Erinnerungsliste erscheint unten als Home-Assistant-To-do-Liste.',
-  'settings.integrations.groceryTitle': 'Einkauf',
+  'settings.integrations.groceryTitle': 'Home-Assistant-Listen',
   'settings.integrations.defaultGroceryListLabel': 'Standard-Einkaufsliste',
   'settings.integrations.defaultGroceryListSublabel':
     'Beim Öffnen der Einkaufsansicht angezeigte Liste',

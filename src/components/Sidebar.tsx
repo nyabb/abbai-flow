@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import {
   Calendar,
   ListChecks,
@@ -8,9 +7,7 @@ import {
   Timer as TimerIcon,
   CloudSun,
   Utensils,
-  MoreHorizontal,
   Plus,
-  X,
 } from 'lucide-react';
 import abbaiIcon from '../assets/abbai-flow-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
@@ -29,7 +26,7 @@ interface SidebarProps {
   activeView: SidebarView;
   onChangeView: (view: SidebarView) => void;
   position?: 'left' | 'right' | 'bottom';
-  /** Opens quick-add (chore, routine, event, ...) from the middle of the tab bar. */
+  /** Opens quick-add from the desktop sidebar. Mobile uses the OmniAdd FAB. */
   onQuickAdd?: () => void;
 }
 
@@ -80,46 +77,30 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-/**
- * The phone bar keeps Calendar, Chores and Meals before quick add, with Grocery
- * and Music after it. Timer moves one tap away into the overflow menu.
- *
- * The overflow menu only ever holds views that are *not* on the phone bar, so
- * nothing appears twice: Timer and Weer (+ Instellingen).
- * Desktop keeps its existing Timer and Music slots.
- */
+/** Pages shown in order in the phone tab bar. Quick add is a separate FAB. */
 const NAV_LEFT_IDS: SidebarView[] = ['calendar', 'chores'];
 const NAV_RIGHT_IDS: SidebarView[] = ['grocery', 'timer', 'music'];
-/** Meals fills the open phone-tab slot immediately before quick add. */
-const MOBILE_LEFT_IDS: SidebarView[] = ['calendar', 'chores', 'meals'];
-/** The right side on phones: the last slot is the overflow menu. */
-const MOBILE_RIGHT_IDS: SidebarView[] = ['grocery', 'music'];
-/** Everything the phone bar already shows. */
-const BAR_IDS: SidebarView[] = [...MOBILE_LEFT_IDS, ...MOBILE_RIGHT_IDS];
+const MOBILE_NAV_IDS: SidebarView[] = [
+  'calendar',
+  'meals',
+  'grocery',
+  'chores',
+  'music',
+  'weather',
+  'timer',
+];
 /** Desktop keeps these below the divider, next to Settings. */
 const NAV_EXTRA_IDS: SidebarView[] = ['meals', 'weather'];
-const NAV_MORE_ITEMS = NAV_ITEMS.filter(
-  (item) => item.id !== 'settings' && !BAR_IDS.includes(item.id),
-);
 
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
 
   const itemFor = (id: SidebarView) => NAV_ITEMS.find((item) => item.id === id)!;
   const navLeft = NAV_LEFT_IDS.map(itemFor);
   const navRight = NAV_RIGHT_IDS.map(itemFor);
-  const mobileLeft = MOBILE_LEFT_IDS.map(itemFor);
-  const mobileRight = MOBILE_RIGHT_IDS.map(itemFor);
+  const mobileNav = MOBILE_NAV_IDS.map(itemFor);
   const navExtra = NAV_EXTRA_IDS.map(itemFor);
-  /** Overflow = every nav item the bar does not already show. */
-  const navMore = NAV_MORE_ITEMS;
   const quickAddLabel = t('omniAdd.quickAdd');
-
-  const handleMobileNav = (view: SidebarView) => {
-    onChangeView(view);
-    setMobileMoreOpen(false);
-  };
 
   return (
     <>
@@ -204,107 +185,32 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
 
       {/* Mobile bottom tab bar (hidden on desktop via CSS) */}
       <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
-        {/* Calendar, chores and meals, quick add, grocery and music, then More. */}
-        {mobileLeft.map((item) => (
+        <svg
+          className="mobile-tab-bar-wave"
+          viewBox="0 0 1000 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path d="M0 26 C190 26 300 26 370 26 C430 26 425 0 500 0 C650 0 760 30 1000 34 V100 H0 Z" />
+          <path
+            className="mobile-tab-bar-wave-border"
+            d="M0 26 C190 26 300 26 370 26 C430 26 425 0 500 0 C650 0 760 30 1000 34"
+          />
+        </svg>
+        {mobileNav.map((item) => (
           <button
             key={item.id}
             type="button"
-            className={`mobile-tab ${activeView === item.id ? 'mobile-tab--active' : ''}`}
-            onClick={() => handleMobileNav(item.id)}
+            className={`mobile-tab ${item.id === 'chores' ? 'mobile-tab--featured' : ''} ${activeView === item.id ? 'mobile-tab--active' : ''}`}
+            onClick={() => onChangeView(item.id)}
             aria-label={t(item.labelKey)}
+            aria-current={activeView === item.id ? 'page' : undefined}
           >
             {item.icon}
             <span className="mobile-tab-label">{t(item.labelKey)}</span>
           </button>
         ))}
-        {onQuickAdd && (
-          <button
-            type="button"
-            className="mobile-tab mobile-tab--add"
-            onClick={onQuickAdd}
-            aria-label={quickAddLabel}
-          >
-            <Plus size={ICON_SIZE + 6} strokeWidth={2} />
-          </button>
-        )}
-        {mobileRight.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`mobile-tab ${activeView === item.id ? 'mobile-tab--active' : ''}`}
-            onClick={() => handleMobileNav(item.id)}
-            aria-label={t(item.labelKey)}
-          >
-            {item.icon}
-            <span className="mobile-tab-label">{t(item.labelKey)}</span>
-          </button>
-        ))}
-        {/* More button */}
-        <button
-          type="button"
-          className={`mobile-tab ${mobileMoreOpen ? 'mobile-tab--active' : ''}`}
-          onClick={() => setMobileMoreOpen((prev) => !prev)}
-          aria-label={t('nav.more')}
-          aria-expanded={mobileMoreOpen}
-          aria-controls="mobile-more-menu"
-        >
-          <MoreHorizontal size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
-          <span className="mobile-tab-label">{t('nav.more')}</span>
-        </button>
-
-        {/* Overflow menu */}
-        <div
-          className={`mobile-more-backdrop${mobileMoreOpen ? ' is-open' : ''}`}
-          aria-hidden={!mobileMoreOpen}
-          inert={!mobileMoreOpen}
-          onClick={() => setMobileMoreOpen(false)}
-        />
-        <div
-          className={`mobile-more-menu${mobileMoreOpen ? ' is-open' : ''}`}
-          id="mobile-more-menu"
-          aria-hidden={!mobileMoreOpen}
-          inert={!mobileMoreOpen}
-        >
-          <div className="mobile-more-header">
-            <span className="mobile-more-title">{t('nav.more')}</span>
-            <button
-              type="button"
-              className="mobile-more-close"
-              onClick={(event) => {
-                // Keep the tap on the close button: the sheet underneath must
-                // never receive it as a menu-item click.
-                event.preventDefault();
-                event.stopPropagation();
-                setMobileMoreOpen(false);
-              }}
-              aria-label={t('nav.closeMenu')}
-            >
-              <X size={20} strokeWidth={2} />
-            </button>
-          </div>
-          {navMore.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`mobile-more-item ${activeView === item.id ? 'mobile-more-item--active' : ''}`}
-              onClick={(event) => {
-                event.stopPropagation();
-                handleMobileNav(item.id);
-              }}
-            >
-              {item.icon}
-              <span>{t(item.labelKey)}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            className={`mobile-more-item ${activeView === 'settings' ? 'mobile-more-item--active' : ''}`}
-            onClick={() => handleMobileNav('settings')}
-          >
-            <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
-            <span>{t('nav.settings')}</span>
-          </button>
-        </div>
       </nav>
     </>
   );

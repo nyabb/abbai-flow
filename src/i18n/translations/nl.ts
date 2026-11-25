@@ -34,8 +34,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Verkort elke animatie en overgang in de app.',
   'display.connection.appDown': 'Abbai Flow onbereikbaar',
   'nav.settings': 'Instellingen',
-  'nav.more': 'Meer',
-  'nav.closeMenu': 'Menu sluiten',
   'nav.mainNavigation': 'Hoofdnavigatie',
 
   // ---- app chrome ----
@@ -368,13 +366,10 @@ export const nl: Record<TranslationKey, string> = {
     'Voor veilige opslag van bearer-tokens is een serverinstallatie van Abbai Flow nodig.',
   'settings.integrations.weatherEntityLabel': 'Weerentiteit',
   'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Grocy-integratie',
-  'settings.integrations.grocySublabel': 'Boodschappen en maaltijdplanning',
   'settings.integrations.icloudRemindersTitle': 'iCloud-herinneringen',
   'settings.integrations.icloudRemindersSublabel':
     'Stel Apple iCloud in via Home Assistant. Elke Herinneringenlijst verschijnt hieronder als Home Assistant-takenlijst.',
-  'settings.integrations.groceryTitle': 'Boodschappen',
+  'settings.integrations.groceryTitle': 'Home Assistant-lijsten',
   'settings.integrations.defaultGroceryListLabel': 'Standaard boodschappenlijst',
   'settings.integrations.defaultGroceryListSublabel':
     'Lijst die wordt getoond bij het openen van de boodschappenweergave',

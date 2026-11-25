@@ -26,7 +26,7 @@ function AssigneeBadges({ chore, members }: { chore: Chore; members: FamilyMembe
           style={{ backgroundColor: m.color + '22', borderColor: m.color }}
         >
           <span className="task-checklist-avatar" aria-hidden="true">
-            <MemberAvatar member={m} />
+            <MemberAvatar member={m} size={24} />
           </span>
           <span className="task-checklist-assignee-name" style={{ color: m.color }}>
             {m.name}

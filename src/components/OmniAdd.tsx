@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { CalendarPlus, ShoppingCart, CheckSquare, Timer, Repeat } from 'lucide-react';
+import { CalendarPlus, ShoppingCart, CheckSquare, Timer, Repeat, Settings } from 'lucide-react';
 import { hapticTap } from '../hooks/useHaptics';
 import { useTranslation } from '../i18n';
 
@@ -10,6 +10,7 @@ interface OmniAddProps {
   /** Opens the shared Abbai Flow routine editor. */
   onAddRoutine?: () => void;
   onNavigateTimer: () => void;
+  onNavigateSettings: () => void;
   sidebarPosition?: 'left' | 'right' | 'bottom';
   /** Controlled mode: the trigger can live elsewhere (e.g. the bottom tab bar). */
   open?: boolean;
@@ -30,6 +31,7 @@ export function OmniAdd({
   onAddChore,
   onAddRoutine,
   onNavigateTimer,
+  onNavigateSettings,
   sidebarPosition = 'left',
   open,
   onOpenChange,
@@ -77,6 +79,12 @@ export function OmniAdd({
       label: t('omniAdd.event'),
       icon: <CalendarPlus size={22} />,
       handler: onAddEvent,
+    },
+    {
+      id: 'settings',
+      label: t('nav.settings'),
+      icon: <Settings size={22} />,
+      handler: onNavigateSettings,
     },
   ];
 
@@ -127,16 +135,12 @@ export function OmniAdd({
   return (
     <div
       ref={containerRef}
-      className={`omni-add omni-add--sidebar-${sidebarPosition} ${
-        expanded ? 'omni-add--expanded' : ''
-      } ${showTrigger ? '' : 'omni-add--sheet'}`}
+      className={`omni-add omni-add--sidebar-${sidebarPosition} ${expanded ? 'omni-add--expanded' : ''}`}
     >
       {/* Backdrop blur overlay */}
       {expanded && <div className="omni-add-backdrop" onClick={() => setExpanded(false)} />}
 
-      {/* Action buttons (fan upward). While collapsed they are invisible *and*
-          inert: a transparent button that still takes taps steals them from
-          whatever sits underneath (the More sheet's X, a form's Save button). */}
+      {/* Action buttons slide upward. While collapsed they stay invisible and inert. */}
       <div className="omni-add-actions" aria-hidden={!expanded} inert={!expanded}>
         {actions.map((action, i) => (
           <button

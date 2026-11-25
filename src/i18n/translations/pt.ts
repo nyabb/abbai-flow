@@ -33,8 +33,6 @@ export const pt: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Encurta cada animação e transição.',
   'display.connection.appDown': 'Abbai Flow inacessível',
   'nav.settings': 'Definições',
-  'nav.more': 'Mais',
-  'nav.closeMenu': 'Fechar menu',
   'nav.mainNavigation': 'Navegação principal',
 
   // ---- app chrome ----
@@ -316,13 +314,10 @@ export const pt: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': 'Desligado',
   'settings.integrations.weatherEntityLabel': 'Entidade meteorológica',
   'settings.integrations.weatherEntitySublabel': 'Entidade usada para mostrar o tempo',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Integração Grocy',
-  'settings.integrations.grocySublabel': 'Compras e planeamento de refeições',
   'settings.integrations.icloudRemindersTitle': 'Lembretes do iCloud',
   'settings.integrations.icloudRemindersSublabel':
     'Configure o Apple iCloud no Home Assistant. Cada lista de Lembretes aparece abaixo como uma lista de tarefas do Home Assistant.',
-  'settings.integrations.groceryTitle': 'Compras',
+  'settings.integrations.groceryTitle': 'Listas do Home Assistant',
   'settings.integrations.defaultGroceryListLabel': 'Lista de compras predefinida',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrada ao abrir a vista de compras',
   'settings.integrations.autoFirstAvailable': 'Automático (primeira disponível)',

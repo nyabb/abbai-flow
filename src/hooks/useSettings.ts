@@ -34,7 +34,6 @@ export interface AbbaiSettings {
 
   // Integrations
   weatherEntity: string;
-  grocyEnabled: boolean;
   defaultGroceryList: string;
   groceryListIds: string[];
   /**
@@ -100,7 +99,6 @@ function buildDefaults(): AbbaiSettings {
     notificationMinutes: 10,
 
     weatherEntity: config.weather_entity,
-    grocyEnabled: false,
     defaultGroceryList: '',
     groceryListIds: [],
     shoppingEntity: '',

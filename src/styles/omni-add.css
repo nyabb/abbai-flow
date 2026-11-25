@@ -22,6 +22,7 @@
   right: calc(var(--sidebar-width, 72px) + 24px);
 }
 .omni-add--sidebar-bottom {
+  bottom: calc(var(--mobile-tab-bar-height, 72px) + 16px);
   right: 24px;
 }
 
@@ -46,10 +47,7 @@
   }
 }
 
-/* ---- Action buttons container ----
-   Closed = invisible AND inert. It used to be only `opacity: 0`, so the
-   transparent buttons kept taking hits: the More sheet's close X opened the
-   Timer, and Save buttons in the bottom-right of sheets did nothing. */
+/* ---- Action buttons container ---- */
 .omni-add-actions {
   display: flex;
   flex-direction: column;
@@ -58,7 +56,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(20px);
+  transform: translateY(28px);
   transition:
     opacity 200ms ease,
     transform 200ms ease;
@@ -83,7 +81,7 @@
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   opacity: 0;
-  transform: translateY(16px) scale(0.8);
+  transform: translateY(24px) scale(0.82);
   transition:
     opacity 200ms ease,
     transform 200ms ease;
@@ -227,10 +225,10 @@
   }
 }
 
-/* On phones the tab bar owns quick add (its middle button), so the floating
-   button would only sit on top of it. The sheet opened from the bar stays. */
-@media (max-width: 768px) {
-  .omni-add:not(.omni-add--sheet) {
+/* Desktop keeps its sidebar quick-add trigger. The floating trigger is for
+   phone layouts, and for displays configured with a bottom sidebar. */
+@media (min-width: 769px) {
+  .omni-add:not(.omni-add--sidebar-bottom) .omni-add-fab {
     display: none;
   }
 }

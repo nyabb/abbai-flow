@@ -33,8 +33,6 @@ export const es: Record<TranslationKey, string> = {
   'settings.appearance.reducedMotionSublabel': 'Acorta cada animación y transición de la app.',
   'display.connection.appDown': 'Abbai Flow no disponible',
   'nav.settings': 'Ajustes',
-  'nav.more': 'Más',
-  'nav.closeMenu': 'Cerrar menú',
   'nav.mainNavigation': 'Navegación principal',
 
   // ---- app chrome ----
@@ -318,13 +316,10 @@ export const es: Record<TranslationKey, string> = {
   'settings.integrations.disconnected': 'Desconectado',
   'settings.integrations.weatherEntityLabel': 'Entidad de clima',
   'settings.integrations.weatherEntitySublabel': 'Entidad usada para mostrar el clima',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Integración con Grocy',
-  'settings.integrations.grocySublabel': 'Compras y planificación de comidas',
   'settings.integrations.icloudRemindersTitle': 'Recordatorios de iCloud',
   'settings.integrations.icloudRemindersSublabel':
     'Configura Apple iCloud en Home Assistant. Cada lista de Recordatorios aparecerá abajo como una lista de tareas de Home Assistant.',
-  'settings.integrations.groceryTitle': 'Compras',
+  'settings.integrations.groceryTitle': 'Listas de Home Assistant',
   'settings.integrations.defaultGroceryListLabel': 'Lista de compras predeterminada',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrada al abrir la vista de compras',
   'settings.integrations.autoFirstAvailable': 'Automático (primera disponible)',

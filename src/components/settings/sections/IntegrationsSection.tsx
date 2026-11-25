@@ -1,5 +1,5 @@
 /**
- * Integrations settings: Home Assistant connection status, Grocy, iCloud Reminders,
+ * Integrations settings: Home Assistant connection status, iCloud Reminders,
  * grocery lists, Music Assistant and the photo slideshow options.
  *
  * The todo-list lookup only feeds these controls, so the fetch lives here.
@@ -21,7 +21,7 @@ import type { TranslationKey } from '../../../i18n';
 import type { GroceryList } from '../../../types/grocery';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
 import { SecretInput } from '../SecretInput';
-import { Segment, Slider, Toggle } from '../controls';
+import { Segment, Slider } from '../controls';
 import type { SettingsSectionContext } from './context';
 
 const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
@@ -691,27 +691,6 @@ export function IntegrationsSection({
           </p>
         </div>
       )}
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.grocyTitle')}</div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${settings.grocyEnabled ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">{t('settings.integrations.grocyLabel')}</div>
-              <div className="settings-row-sublabel">
-                {t('settings.integrations.grocySublabel')}
-              </div>
-            </div>
-          </div>
-          <Toggle
-            checked={settings.grocyEnabled}
-            onChange={(v) => onUpdateSettings({ grocyEnabled: v })}
-          />
-        </div>
-      </div>
 
       <div className="settings-group">
         <div className="settings-group-title">

@@ -38,8 +38,6 @@ export const en = {
     'Shortens every animation and transition in the app.',
   'display.connection.appDown': 'Abbai Flow unreachable',
   'nav.settings': 'Settings',
-  'nav.more': 'More',
-  'nav.closeMenu': 'Close menu',
   'nav.mainNavigation': 'Main navigation',
 
   // ---- app chrome ----
@@ -366,21 +364,18 @@ export const en = {
     'A server-backed Abbai Flow deployment is required to store bearer tokens securely.',
   'settings.integrations.weatherEntityLabel': 'Weather Entity',
   'settings.integrations.weatherEntitySublabel': 'Entity used for weather display',
-  'settings.integrations.grocyTitle': 'Grocy',
-  'settings.integrations.grocyLabel': 'Grocy Integration',
-  'settings.integrations.grocySublabel': 'Grocery and meal planning',
   'settings.integrations.icloudRemindersTitle': 'iCloud Reminders',
   'settings.integrations.icloudRemindersSublabel':
     'Set up Apple iCloud in Home Assistant. Each Reminders list appears below as a Home Assistant to-do list.',
-  'settings.integrations.groceryTitle': 'Grocery',
+  'settings.integrations.groceryTitle': 'Home Assistant Lists',
   'settings.integrations.defaultGroceryListLabel': 'Default Grocery List',
   'settings.integrations.defaultGroceryListSublabel': 'List shown when opening grocery view',
   'settings.integrations.autoFirstAvailable': 'Auto (first available)',
   'settings.integrations.groceryListsLabel': 'Grocery Lists',
   'settings.integrations.groceryListsSublabel':
-    'Select which Home Assistant to-do lists should appear under Grocery',
+    'Choose which Home Assistant lists appear in the Grocery view',
   'settings.integrations.taskListsSublabel':
-    'Select which Home Assistant to-do lists should appear under Tasks',
+    'Choose which Home Assistant lists appear in the Tasks view',
   'settings.integrations.noTodoListsFound':
     'No Home Assistant to-do lists found. Set up iCloud Reminders in Home Assistant to sync your lists.',
   'settings.integrations.shoppingEntityLabel': 'Shopping Card Entity',

@@ -1,6 +1,6 @@
 ---
 title: 'Meal Plan Data'
-description: "Manage meal plan records through the AnyList sync script, Grocy, or Abbai Flow's MCP tools."
+description: "Manage meal plan records through a configured data source, sync scripts, or Abbai Flow's MCP tools."
 order: 6
 ---
 
@@ -21,10 +21,10 @@ Each meal is one row, sorted breakfast → lunch → dinner → snack:
 
 ## Where the data comes from
 
-Meal plans are written by a sync or MCP tool. AnyList output can be converted
-with `scripts/sync-meals.ts`; Grocy can provide data through
-`sensor.grocy_meal_plan`. The dashboard Menu card has been removed; the meal
-data and its integrations remain available.
+The Meals page reads meal plan records from Abbai Flow storage. Entries can be
+written by the configured meal data source, a sync script, or an MCP tool. The
+dashboard Menu card has been removed; the meal data and its integrations remain
+available.
 
 ### AnyList
 
@@ -38,11 +38,6 @@ node scripts/sync-meals.mjs meal-data.txt > meal-plans.json
 # limit the range
 node scripts/sync-meals.mjs meal-data.txt --from 2026-11-07 --to 2026-11-21 > meal-plans.json
 ```
-
-### Grocy
-
-If you run Grocy with a meal plan, today's meals can come from `sensor.grocy_meal_plan` —
-see [Grocery](/docs/features/grocery/) for the sensor setup.
 
 ---
 

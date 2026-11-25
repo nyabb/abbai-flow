@@ -1,13 +1,13 @@
 import type { SidebarView } from '../components/Sidebar';
 
-/** Mobile tab order followed by the pages listed in its More menu. */
+/** Mobile tab order followed by Settings, which is in the Omni Add menu. */
 export const TOUCH_NAV_ORDER: readonly SidebarView[] = [
   'calendar',
-  'chores',
   'meals',
   'grocery',
+  'chores',
   'music',
-  'timer',
   'weather',
+  'timer',
   'settings',
 ];

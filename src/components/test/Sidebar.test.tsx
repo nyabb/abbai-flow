@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent, screen, within } from '@testing-library/react';
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/react';
 import { Sidebar } from '../Sidebar';
 import { I18nContext, createI18n } from '../../i18n';
 import { TOUCH_NAV_ORDER } from '../../utils/touch-navigation';
@@ -14,107 +14,34 @@ function renderSidebar(onQuickAdd?: () => void) {
   );
 }
 
-/** The bottom bar keeps the main views, quick add and More reachable. */
+/** The bottom bar keeps all seven views directly reachable. */
 describe('Sidebar bottom bar', () => {
-  it('has seven elements with Meals before quick add', () => {
+  it('shows pages in the requested order and gives Chores the featured position', () => {
     const { container } = renderSidebar(() => {});
     const bar = container.querySelector('.mobile-tab-bar')!;
     const items = [...bar.querySelectorAll('.mobile-tab')];
 
     expect(items).toHaveLength(7);
-    expect(items[3].classList.contains('mobile-tab--add')).toBe(true);
     expect(items.map((item) => item.getAttribute('aria-label'))).toEqual([
       'Agenda',
-      'Klusjes',
       'Maaltijden',
-      'Snel toevoegen',
       'Lijsten',
+      'Klusjes',
       'Muziek',
-      'Meer',
+      'Weer',
+      'Timer',
     ]);
+    expect(items[3]).toHaveClass('mobile-tab--featured');
   });
 
-  it('offers music in the bar and moves the timer into More', () => {
+  it('does not put quick add or a More popup in the navigation bar', () => {
     const { container } = renderSidebar(() => {});
-    const labels = [...container.querySelectorAll('.mobile-tab')].map((item) =>
-      item.getAttribute('aria-label'),
-    );
-
-    expect(labels).toContain('Muziek');
-    expect(labels).not.toContain('Timer');
-    expect(labels).not.toContain("Foto's");
-  });
-
-  it('calls quick add from its centered button', () => {
-    const onQuickAdd = vi.fn();
-    const { container } = renderSidebar(onQuickAdd);
-
-    const quickAdd = container.querySelectorAll('.mobile-tab')[3];
-    expect(quickAdd.querySelector('svg')).toHaveClass('lucide-plus');
-    fireEvent.click(quickAdd);
-    expect(onQuickAdd).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.mobile-tab--add')).toBeNull();
+    expect(container.querySelector('.mobile-more-menu')).toBeNull();
   });
 });
 
-/**
- * The overflow menu used to swallow the close tap: the button sat under the
- * first item, so pressing the X opened that view instead of closing the sheet.
- */
-describe('Sidebar overflow menu', () => {
-  it('closes from its own close button', () => {
-    const onChangeView = vi.fn();
-    const { container } = render(
-      <I18nContext.Provider value={NL}>
-        <Sidebar activeView="calendar" onChangeView={onChangeView} onQuickAdd={() => {}} />
-      </I18nContext.Provider>,
-    );
-
-    fireEvent.click(container.querySelector('button[aria-label="Meer"]')!);
-    const menu = container.querySelector<HTMLElement>('.mobile-more-menu')!;
-    expect(menu).toHaveClass('is-open');
-
-    const close = screen.getByRole('button', { name: 'Menu sluiten' });
-    fireEvent.click(close);
-
-    expect(menu).not.toHaveClass('is-open');
-    expect(menu).toHaveAttribute('aria-hidden', 'true');
-    expect(menu).toHaveAttribute('inert');
-    // Closing must never navigate anywhere.
-    expect(onChangeView).not.toHaveBeenCalled();
-  });
-
-  it('lists only the views that are not on the bar, and closes after choosing one', () => {
-    const onChangeView = vi.fn();
-    const { container } = render(
-      <I18nContext.Provider value={NL}>
-        <Sidebar activeView="calendar" onChangeView={onChangeView} onQuickAdd={() => {}} />
-      </I18nContext.Provider>,
-    );
-
-    fireEvent.click(container.querySelector('button[aria-label="Meer"]')!);
-    const menu = container.querySelector<HTMLElement>('.mobile-more-menu')!;
-    const entries = [...menu.querySelectorAll('.mobile-more-item')].map((item) =>
-      item.textContent?.trim(),
-    );
-    expect(entries).toEqual(['Timer', 'Weer', 'Instellingen']);
-    // Nothing that already has a slot on the bar may be repeated in the menu.
-    expect(entries).not.toContain('Maaltijden');
-    expect(entries).not.toContain('Lijsten');
-    expect(entries).not.toContain('Muziek');
-    expect(entries).not.toContain('Taken');
-
-    fireEvent.click(within(menu).getByText('Timer'));
-    expect(onChangeView).toHaveBeenCalledWith('timer');
-    expect(menu).not.toHaveClass('is-open');
-    expect(menu).toHaveAttribute('aria-hidden', 'true');
-    expect(menu).toHaveAttribute('inert');
-  });
-});
-
-/**
- * Desktop has no overflow sheet, so a view that leaves the main group has to
- * appear somewhere else or it becomes unreachable.
- */
+/** Desktop keeps page links in the main group and its bottom utility group. */
 describe('Sidebar desktop', () => {
   it('keeps the timer in the main group and weather in the bottom group', () => {
     const { container } = renderSidebar(() => {});
@@ -134,15 +61,15 @@ describe('Sidebar desktop', () => {
 });
 
 describe('touch navigation order', () => {
-  it('follows the mobile bar and its More menu', () => {
+  it('follows the mobile bar and the Settings shortcut', () => {
     expect(TOUCH_NAV_ORDER).toEqual([
       'calendar',
-      'chores',
       'meals',
       'grocery',
+      'chores',
       'music',
-      'timer',
       'weather',
+      'timer',
       'settings',
     ]);
   });

@@ -125,8 +125,8 @@ sources, list providers — is configured through the Abbai Flow UI.
 ### Integration logs
 
 Use `docker logs abbai-flow` to see startup checks for Home Assistant
-authentication and discovered calendars, todo lists, ChoreOps entities, Grocy
-sensors, media players, weather, and media sources. Spotify logs report the
+authentication and discovered calendars, todo lists, ChoreOps entities, media
+players, weather, and media sources. Spotify logs report the
 Encore connection, Spotify login/device state, and catalog credential status.
 Bluetooth logs report whether host D-Bus access is configured, its connection
 and retry state, and whether a Bluetooth adapter is powered on. Logs do not
