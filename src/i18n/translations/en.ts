@@ -389,9 +389,19 @@ export const en = {
   'settings.integrations.icloudSecurityKeyRequired':
     'Apple requires a security key for this account. Security key verification is not available here yet.',
   'settings.integrations.icloudAuthenticated': 'Apple authentication succeeded.',
+  'settings.integrations.icloudAuthenticating': 'Authenticating with Apple iCloud…',
   'settings.integrations.icloudVerifiedUntrusted':
     'The code was accepted. Apple did not mark this session as trusted; try fetching the lists.',
   'settings.integrations.icloudFetchPreview': 'Fetch reminders preview',
+  'settings.integrations.icloudListLabel': 'iCloud Reminders list',
+  'settings.integrations.icloudListHelp':
+    'Choose a list to inspect. This selection is saved with the integration settings for reuse later.',
+  'settings.integrations.icloudSelectList': 'Select a list',
+  'settings.integrations.icloudSelectedListUnavailable': 'Previously selected list is unavailable',
+  'settings.integrations.icloudListsLoading': 'Loading lists…',
+  'settings.integrations.icloudReloadLists': 'Reload lists',
+  'settings.integrations.icloudNoLists': 'No active iCloud Reminders lists were found.',
+  'settings.integrations.icloudListSaved': 'The selected iCloud Reminders list was saved.',
   'settings.integrations.icloudDataRetrieved':
     'Reminders data was fetched. The preview includes reminder text; it is shown only here and is not logged.',
   'settings.integrations.icloudPreviewLabel': 'Decoded Apple Reminders response preview',

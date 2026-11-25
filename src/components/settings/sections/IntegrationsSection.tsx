@@ -4,7 +4,7 @@
  *
  * The todo-list lookup only feeds these controls, so the fetch lives here.
  */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, Trash2 } from 'lucide-react';
 import { HomeAssistantTodoClient } from '../../../api/home-assistant-todo';
 import {
@@ -12,10 +12,12 @@ import {
   saveIntegrationSettings,
   testHomeAssistantConnection,
   authenticateICloudReminders,
+  loadICloudRemindersLists,
   requestICloudRemindersVerificationCode,
   verifyICloudRemindersCode,
   fetchICloudRemindersPreview,
   type IntegrationSettingsPatch,
+  type ICloudRemindersActionResult,
   type MealDataMapping,
   type IntegrationSettingsStatus,
   type CalendarSourceSetting,
@@ -40,6 +42,8 @@ const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
   datePath: '',
   sourceUrlPath: '',
 };
+
+type ICloudRemindersListOption = NonNullable<ICloudRemindersActionResult['lists']>[number];
 
 async function copyText(value: string): Promise<boolean> {
   try {
@@ -198,6 +202,11 @@ export function IntegrationsSection({
   const [mealDataMapping, setMealDataMapping] = useState<MealDataMapping>(EMPTY_MEAL_DATA_MAPPING);
   const [icloudAppleId, setIcloudAppleId] = useState('');
   const [icloudPassword, setIcloudPassword] = useState('');
+  const [icloudRemindersListKey, setIcloudRemindersListKey] = useState('');
+  const [icloudLists, setIcloudLists] = useState<ICloudRemindersListOption[]>([]);
+  const [icloudListsLoaded, setIcloudListsLoaded] = useState(false);
+  const [icloudListsAttempted, setIcloudListsAttempted] = useState(false);
+  const [icloudListsLoading, setIcloudListsLoading] = useState(false);
   const [icloudCode, setIcloudCode] = useState('');
   const [icloudAuthState, setIcloudAuthState] = useState('');
   const [icloudSecurityKeys, setIcloudSecurityKeys] = useState<string[]>([]);
@@ -209,6 +218,24 @@ export function IntegrationsSection({
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
+
+  const loadIcloudLists = useCallback(async () => {
+    setIcloudListsAttempted(true);
+    setIcloudListsLoading(true);
+    setIntegrationError('');
+    try {
+      const result = await loadICloudRemindersLists();
+      setIcloudLists(result.lists || []);
+      setIcloudListsLoaded(true);
+    } catch (error) {
+      setIcloudListsLoaded(false);
+      setIntegrationError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
+    } finally {
+      setIcloudListsLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => setHaUrl(initialHaUrl), [initialHaUrl]);
 
@@ -227,6 +254,7 @@ export function IntegrationsSection({
         setMealSourceUrl(status.mealSourceUrl);
         setMealDataMapping({ ...EMPTY_MEAL_DATA_MAPPING, ...status.mealDataMapping });
         setIcloudAppleId(status.icloudAppleId);
+        setIcloudRemindersListKey(status.icloudRemindersListKey);
         setIcloudAuthState(status.icloudAuthState);
         setIcloudDevices(status.icloudDevices);
         setIcloudDeviceIndex(status.icloudDevices[0]?.index ?? 0);
@@ -240,6 +268,42 @@ export function IntegrationsSection({
           setIntegrationNotice(t('settings.integrations.icloudSecurityKeyRequired'));
         } else if (status.icloudAuthState === 'device_selection_required') {
           setIntegrationNotice(t('settings.integrations.icloudChooseDevice'));
+        } else if (status.icloudAuthState === 'authenticating') {
+          setIntegrationNotice(t('settings.integrations.icloudAuthenticating'));
+        }
+        if (
+          status.icloudAuthState === 'disconnected' &&
+          status.icloudPasswordConfigured &&
+          status.icloudAppleId
+        ) {
+          setIcloudAuthState('authenticating');
+          setIntegrationNotice(t('settings.integrations.icloudAuthenticating'));
+          void authenticateICloudReminders()
+            .then((result) => {
+              if (cancelled) return;
+              setIcloudAuthState(result.state);
+              setIcloudDevices(result.devices || []);
+              setIcloudDeviceIndex(result.devices?.[0]?.index ?? 0);
+              setIcloudSecurityKeys(result.securityKeyNames || []);
+              setIntegrationNotice(
+                result.state === 'verification_required'
+                  ? t('settings.integrations.icloudVerificationSent')
+                  : result.state === 'device_selection_required'
+                    ? t('settings.integrations.icloudChooseDevice')
+                    : result.state === 'security_key_required'
+                      ? t('settings.integrations.icloudSecurityKeyRequired')
+                      : result.state === 'authenticated' || result.state === 'verified_untrusted'
+                        ? t('settings.integrations.icloudAuthenticated')
+                        : '',
+              );
+            })
+            .catch((error: unknown) => {
+              if (cancelled) return;
+              setIcloudAuthState('disconnected');
+              setIntegrationError(
+                error instanceof Error ? error.message : t('settings.integrations.saveError'),
+              );
+            });
         }
       })
       .catch((error: unknown) => {
@@ -256,6 +320,66 @@ export function IntegrationsSection({
       cancelled = true;
     };
   }, [serverBacked, t]);
+
+  useEffect(() => {
+    if (!serverBacked || icloudAuthState !== 'authenticating') return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const refreshStatus = async () => {
+      try {
+        const status = await loadIntegrationSettings();
+        if (cancelled) return;
+        if (status.icloudAuthState !== 'authenticating') {
+          setIntegrationStatus(status);
+          setIcloudRemindersListKey(status.icloudRemindersListKey);
+          setIcloudAuthState(status.icloudAuthState);
+          setIcloudDevices(status.icloudDevices);
+          setIcloudDeviceIndex(status.icloudDevices[0]?.index ?? 0);
+          setIcloudSecurityKeys(status.icloudSecurityKeyNames);
+          if (['authenticated', 'verified_untrusted', 'fetched'].includes(status.icloudAuthState)) {
+            setIntegrationNotice(t('settings.integrations.icloudAuthenticated'));
+          } else if (status.icloudAuthState === 'verification_required') {
+            setIntegrationNotice(t('settings.integrations.icloudVerificationSent'));
+          } else if (status.icloudAuthState === 'security_key_required') {
+            setIntegrationNotice(t('settings.integrations.icloudSecurityKeyRequired'));
+          } else if (status.icloudAuthState === 'device_selection_required') {
+            setIntegrationNotice(t('settings.integrations.icloudChooseDevice'));
+          } else {
+            setIntegrationNotice('');
+          }
+          return;
+        }
+      } catch {
+        // Keep checking while the server completes its automatic login attempt.
+      }
+      if (!cancelled) timer = setTimeout(() => void refreshStatus(), 1500);
+    };
+    timer = setTimeout(() => void refreshStatus(), 1200);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [serverBacked, icloudAuthState, t]);
+
+  useEffect(() => {
+    if (
+      !serverBacked ||
+      icloudListsAttempted ||
+      icloudListsLoaded ||
+      icloudListsLoading ||
+      !['authenticated', 'verified_untrusted', 'fetched'].includes(icloudAuthState)
+    ) {
+      return;
+    }
+    void loadIcloudLists();
+  }, [
+    serverBacked,
+    icloudAuthState,
+    icloudListsAttempted,
+    icloudListsLoaded,
+    icloudListsLoading,
+    loadIcloudLists,
+  ]);
 
   const testHa = async () => {
     setIntegrationBusy(true);
@@ -298,10 +422,12 @@ export function IntegrationsSection({
         mealDataMapping,
         icloudAppleId: icloudAppleId.trim(),
         ...(icloudPassword ? { icloudPassword } : {}),
+        icloudRemindersListKey,
         calendarSources,
       });
       setIntegrationStatus(status);
       setCalendarSources(status.calendarSources);
+      setIcloudRemindersListKey(status.icloudRemindersListKey);
       setIcloudAuthState(status.icloudAuthState);
       setIcloudDevices(status.icloudDevices);
       setIcloudSecurityKeys(status.icloudSecurityKeyNames);
@@ -313,6 +439,9 @@ export function IntegrationsSection({
       if (resetIcloudSession) {
         setIcloudCode('');
         setIcloudPreview('');
+        setIcloudLists([]);
+        setIcloudListsLoaded(false);
+        setIcloudListsAttempted(false);
       }
       setIntegrationNotice(t('settings.integrations.saved'));
       onIntegrationSettingsSaved?.();
@@ -322,6 +451,28 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
       return false;
+    } finally {
+      setIntegrationBusy(false);
+    }
+  };
+
+  const selectIcloudRemindersList = async (listKey: string) => {
+    setIcloudRemindersListKey(listKey);
+    setIcloudPreview('');
+    setIcloudPreviewCopied(false);
+    setIntegrationBusy(true);
+    setIntegrationError('');
+    setIntegrationNotice('');
+    try {
+      const status = await saveIntegrationSettings({ icloudRemindersListKey: listKey });
+      setIntegrationStatus(status);
+      setIcloudRemindersListKey(status.icloudRemindersListKey);
+      setIntegrationNotice(t('settings.integrations.icloudListSaved'));
+    } catch (error) {
+      setIcloudRemindersListKey(integrationStatus?.icloudRemindersListKey || '');
+      setIntegrationError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
     } finally {
       setIntegrationBusy(false);
     }
@@ -446,8 +597,13 @@ export function IntegrationsSection({
       setIntegrationStatus(status);
       if (clearField === 'clearIcloudPassword') {
         setIcloudPassword('');
-        setIcloudAuthState('');
+        setIcloudAuthState(status.icloudAuthState);
+        setIcloudRemindersListKey(status.icloudRemindersListKey);
         setIcloudPreview('');
+        setIcloudPreviewCopied(false);
+        setIcloudLists([]);
+        setIcloudListsLoaded(false);
+        setIcloudListsAttempted(false);
       }
       setIntegrationNotice(t('settings.integrations.secretRemoved'));
       if (clearField === 'clearHaToken') onIntegrationSettingsSaved?.();
@@ -464,6 +620,10 @@ export function IntegrationsSection({
   const haSecretConfigured = serverBacked
     ? Boolean(integrationStatus?.haConfigured)
     : (haTokenConfigured ?? connected);
+  const activeIcloudLists = icloudLists.filter((list) => !list.deleted && !list.isGroup);
+  const selectedIcloudListAvailable = activeIcloudLists.some(
+    (list) => list.key === icloudRemindersListKey,
+  );
 
   useEffect(() => {
     if (!hasToken()) {
@@ -925,13 +1085,16 @@ export function IntegrationsSection({
                 disabled={
                   integrationBusy ||
                   integrationStatusLoading ||
+                  icloudAuthState === 'authenticating' ||
                   !icloudAppleId.trim() ||
                   (!icloudPassword && !integrationStatus?.icloudPasswordConfigured)
                 }
               >
                 {integrationBusy
                   ? t('settings.integrations.saving')
-                  : t('settings.integrations.icloudAuthenticate')}
+                  : icloudAuthState === 'authenticating'
+                    ? t('settings.integrations.icloudAuthenticating')
+                    : t('settings.integrations.icloudAuthenticate')}
               </button>
             </div>
             {icloudAuthState === 'device_selection_required' && (
@@ -1004,18 +1167,81 @@ export function IntegrationsSection({
               </div>
             )}
             {['authenticated', 'verified_untrusted', 'fetched'].includes(icloudAuthState) && (
-              <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="settings-btn"
-                  onClick={() => void runIcloudAction(fetchICloudRemindersPreview)}
-                  disabled={integrationBusy}
-                >
-                  {integrationBusy
-                    ? t('settings.integrations.saving')
-                    : t('settings.integrations.icloudFetchPreview')}
-                </button>
-              </div>
+              <>
+                <div className="settings-row settings-integration-field">
+                  <div>
+                    <div className="settings-row-label">
+                      {t('settings.integrations.icloudListLabel')}
+                    </div>
+                    <div className="settings-row-sublabel">
+                      {t('settings.integrations.icloudListHelp')}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, minWidth: 0 }}>
+                    <select
+                      className="settings-input settings-input--wide"
+                      style={{ flex: '1 1 220px', minWidth: 0, maxWidth: '100%' }}
+                      value={icloudRemindersListKey}
+                      onChange={(event) => void selectIcloudRemindersList(event.target.value)}
+                      disabled={integrationBusy || icloudListsLoading}
+                    >
+                      <option value="">
+                        {icloudListsLoading
+                          ? t('settings.integrations.icloudListsLoading')
+                          : t('settings.integrations.icloudSelectList')}
+                      </option>
+                      {icloudRemindersListKey && !selectedIcloudListAvailable && (
+                        <option value={icloudRemindersListKey} disabled>
+                          {t('settings.integrations.icloudSelectedListUnavailable')}
+                        </option>
+                      )}
+                      {activeIcloudLists.map((list) => (
+                        <option key={list.key} value={list.key}>
+                          {list.title}
+                          {list.scope !== 'private' ? ` · ${list.scope}` : ''}
+                          {list.count !== null ? ` (${list.count})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="settings-btn"
+                      onClick={() => void loadIcloudLists()}
+                      disabled={integrationBusy || icloudListsLoading}
+                    >
+                      {icloudListsLoading
+                        ? t('settings.integrations.icloudListsLoading')
+                        : t('settings.integrations.icloudReloadLists')}
+                    </button>
+                  </div>
+                </div>
+                {icloudListsLoaded && activeIcloudLists.length === 0 && (
+                  <div className="settings-row-sublabel" role="status">
+                    {t('settings.integrations.icloudNoLists')}
+                  </div>
+                )}
+                <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() =>
+                      void runIcloudAction(() =>
+                        fetchICloudRemindersPreview(icloudRemindersListKey),
+                      )
+                    }
+                    disabled={
+                      integrationBusy ||
+                      icloudListsLoading ||
+                      !icloudRemindersListKey ||
+                      !selectedIcloudListAvailable
+                    }
+                  >
+                    {integrationBusy
+                      ? t('settings.integrations.saving')
+                      : t('settings.integrations.icloudFetchPreview')}
+                  </button>
+                </div>
+              </>
             )}
             {icloudPreview && (
               <>

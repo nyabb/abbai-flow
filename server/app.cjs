@@ -1334,6 +1334,7 @@ const INTEGRATION_SETTING_KEYS = [
   'mealDataMapping',
   'icloudAppleId',
   'icloudPassword',
+  'icloudRemindersListKey',
   'calendarSources',
 ];
 const CALENDAR_PROVIDERS = new Set(['caldav', 'ics', 'google']);
@@ -1414,6 +1415,7 @@ function mergeIntegrationSettings(current, patch) {
     mealSourceToken: 'mealSourceToken',
     icloudAppleId: 'icloudAppleId',
     icloudPassword: 'icloudPassword',
+    icloudRemindersListKey: 'icloudRemindersListKey',
   };
   for (const [input, key] of Object.entries(fields)) {
     if (typeof patch[input] === 'string') {
@@ -1426,6 +1428,9 @@ function mergeIntegrationSettings(current, patch) {
     }
   }
   if (typeof patch.haUrl === 'string') next.haBaseUrl = normaliseHaBaseUrl(patch.haUrl);
+  if (typeof next.icloudRemindersListKey === 'string') {
+    next.icloudRemindersListKey = next.icloudRemindersListKey.trim();
+  }
   if (patch.clearHaToken === true) next.haToken = '';
   if (patch.clearEncoreToken === true) next.encoreToken = '';
   if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
@@ -1564,6 +1569,9 @@ function validateIntegrationSettings(settings) {
       return `Meal source mapping has an invalid ${key} path.`;
     }
   }
+  if (settings.icloudRemindersListKey && !/^[a-f0-9]{64}$/.test(settings.icloudRemindersListKey)) {
+    return 'Choose a valid iCloud Reminders list.';
+  }
   if (!Array.isArray(settings.calendarSources) || settings.calendarSources.length > 12) {
     return 'Calendar settings can contain up to 12 sources.';
   }
@@ -1611,6 +1619,7 @@ function publicIntegrationSettings(settings, icloudStatus = {}) {
     mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING, ...settings.mealDataMapping },
     icloudAppleId: settings.icloudAppleId || '',
     icloudPasswordConfigured: Boolean(settings.icloudPassword),
+    icloudRemindersListKey: settings.icloudRemindersListKey || '',
     icloudAuthState: typeof icloudStatus.state === 'string' ? icloudStatus.state : 'disconnected',
     icloudDevices: Array.isArray(icloudStatus.devices) ? icloudStatus.devices : [],
     icloudSecurityKeyNames: Array.isArray(icloudStatus.securityKeyNames)
@@ -1672,6 +1681,7 @@ function createApp(options) {
     mealDataMapping: { ...EMPTY_MEAL_DATA_MAPPING },
     icloudAppleId: '',
     icloudPassword: '',
+    icloudRemindersListKey: '',
     calendarSources: [],
   };
   const config = {
@@ -1753,6 +1763,32 @@ function createApp(options) {
   const server = http.createServer((req, res) => {
     void route(req, res, config, services, bluetooth);
   });
+  if (config.icloudAppleId && config.icloudPassword) {
+    const startedAt = Date.now();
+    console.info('[iCloud Reminders] Startup authentication started.');
+    void services.icloudReminders
+      .authenticate(config.icloudAppleId, config.icloudPassword)
+      .then((result) => {
+        if (result?.ok) {
+          console.info(
+            `[iCloud Reminders] Startup authentication completed: state=${result.state || 'unknown'}, durationMs=${Date.now() - startedAt}.`,
+          );
+        } else {
+          console.warn(
+            `[iCloud Reminders] Startup authentication failed: code=${result?.errorCode || 'unknown'}, durationMs=${Date.now() - startedAt}.`,
+          );
+        }
+      })
+      .catch(() => {
+        console.warn(
+          `[iCloud Reminders] Startup authentication could not complete, durationMs=${Date.now() - startedAt}.`,
+        );
+      });
+  } else {
+    console.info(
+      '[iCloud Reminders] Startup authentication skipped: saved credentials are missing.',
+    );
+  }
   const choresmanMaintenanceTimer =
     typeof services.choresman.call === 'function'
       ? setInterval(() => {
@@ -1780,6 +1816,10 @@ function createApp(options) {
     const next = mergeIntegrationSettings(config, patch);
     const validation = validateIntegrationSettings(next);
     if (validation) return { error: validation };
+
+    const icloudCredentialsChanged =
+      next.icloudAppleId !== config.icloudAppleId || next.icloudPassword !== config.icloudPassword;
+    if (icloudCredentialsChanged) next.icloudRemindersListKey = '';
 
     const haConnectionChanged =
       next.haBaseUrl !== config.haBaseUrl || next.haToken !== config.haToken;
@@ -1809,8 +1849,6 @@ function createApp(options) {
     const spotifyCredentialsChanged =
       next.spotifyClientId !== config.spotifyClientId ||
       next.spotifyClientSecret !== config.spotifyClientSecret;
-    const icloudCredentialsChanged =
-      next.icloudAppleId !== config.icloudAppleId || next.icloudPassword !== config.icloudPassword;
     if (spotifyCredentialsChanged) {
       try {
         await spotifyTokenStore.clear();
@@ -2006,8 +2044,10 @@ async function route(req, res, config, services, bluetooth) {
         result = await services.icloudReminders.requestTwoStepCode(Number(value.deviceIndex));
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/verify-code') {
         result = await services.icloudReminders.verifyCode(String(value.code || ''));
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/lists') {
+        result = await services.icloudReminders.listLists();
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-preview') {
-        result = await services.icloudReminders.fetchPreview();
+        result = await services.icloudReminders.fetchPreview(String(value.listKey || ''));
       } else {
         sendJson(res, 404, { error: 'iCloud Reminders route not found' });
         return;
