@@ -1,7 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { startStack, putData, type E2EStack } from './stack';
+import {
+  callChoresMan,
+  loadChoresMan,
+  startStack,
+  putData,
+  type E2EStack,
+} from './stack';
 
-const CHORE_ID = '01234567-89ab-cdef-0123-456789abcdef';
 const FAMILY = [
   {
     id: 'parent-1',
@@ -17,7 +22,6 @@ const FAMILY = [
     avatar: '\u{1F9D2}',
     color: '#cf6d55',
     role: 'child',
-    choreops_user: 'Zara',
   },
   {
     id: 'child-2',
@@ -25,7 +29,6 @@ const FAMILY = [
     avatar: '\u{1F467}',
     color: '#6688cc',
     role: 'child',
-    choreops_user: 'Maya',
   },
 ];
 
@@ -33,23 +36,14 @@ let stack: E2EStack;
 
 test.beforeAll(async () => {
   stack = await startStack();
-  stack.fakeHa.reset({
-    users: [
-      { name: 'Zara', points: 10 },
-      { name: 'Maya', points: 10 },
-    ],
-    chores: [
-      {
-        user: 'Zara',
-        assignedUsers: ['Zara', 'Maya'],
-        id: CHORE_ID,
-        completionCriteria: 'shared_first',
-        name: 'Sweep the kitchen',
-        points: 3,
-      },
-    ],
+  await callChoresMan(stack.appUrl, 'family.sync_members', { members: FAMILY });
+  await callChoresMan(stack.appUrl, 'create_chore', {
+    name: 'Sweep the kitchen',
+    assigned_user_names: ['Zara', 'Maya'],
+    completion_criteria: 'shared_first',
+    points: 3,
   });
-  await putData(stack.appUrl, 'beacon_family_members', FAMILY);
+  await putData(stack.appUrl, 'abbai_flow_family_members', FAMILY);
 });
 
 test.afterAll(async () => {
@@ -62,25 +56,10 @@ function childColumn(page: Page, name: string) {
     .filter({ has: page.locator('.planner-col-head strong', { hasText: name }) });
 }
 
-test('moves a free shared chore to both children through ChoreOps create', async ({ page }) => {
+test('moves a free shared chore to both children through ChoresMan create', async ({ page }) => {
   await page.addInitScript((members) => {
-    localStorage.setItem('beacon_family_members', JSON.stringify(members));
+    localStorage.setItem('abbai_flow_family_members', JSON.stringify(members));
   }, FAMILY);
-
-  await page.route('**/abbai-flow/action/entity-registry', async (route) => {
-    const { entity_id: entityId } = route.request().postDataJSON() as { entity_id: string };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        entry: {
-          entity_id: entityId,
-          platform: 'choreops',
-          unique_id: `entry-e2e_11111111-1111-1111-1111-111111111111_${CHORE_ID}_status`,
-        },
-      }),
-    });
-  });
 
   await page.goto(stack.appUrl);
   await page
@@ -102,24 +81,22 @@ test('moves a free shared chore to both children through ChoreOps create', async
   await form.getByRole('button', { name: 'Everyone', exact: true }).click();
   await form.getByRole('button', { name: 'Save', exact: true }).click();
 
-  await expect.poll(() => stack.fakeHa.serviceCalls('choreops.create_chore').length).toBe(1);
-  await expect.poll(() => stack.fakeHa.serviceCalls('choreops.delete_chore').length).toBe(1);
-  const renameCall = stack.fakeHa.serviceCalls('choreops.update_chore')[0];
-  const createCall = stack.fakeHa.serviceCalls('choreops.create_chore')[0];
-  const deleteCall = stack.fakeHa.serviceCalls('choreops.delete_chore')[0];
-
-  expect(renameCall.data).toMatchObject({
-    config_entry_id: 'entry-e2e',
-    id: CHORE_ID,
-  });
-  expect(renameCall.data.name).toMatch(/^__abbai_flow_recreate_/);
-  expect(createCall.data).toMatchObject({
-    config_entry_id: 'entry-e2e',
-    name: 'Sweep the kitchen',
-    assigned_user_names: ['Maya', 'Zara'],
-    completion_criteria: 'independent',
-  });
-  expect(deleteCall.data.name).toBe(renameCall.data.name);
+  await expect
+    .poll(async () => {
+      const snapshot = await loadChoresMan(stack.appUrl);
+      return snapshot.chores.map(({ name, assigned_user_names, completion_criteria }) => ({
+        name,
+        assigned_user_names: [...assigned_user_names].sort(),
+        completion_criteria,
+      }));
+    })
+    .toEqual([
+      {
+        name: 'Sweep the kitchen',
+        assigned_user_names: ['Maya', 'Zara'],
+        completion_criteria: 'independent',
+      },
+    ]);
 
   await expect(childColumn(page, 'Zara').locator('.planner-row').filter({ hasText: 'Sweep the kitchen' })).toBeVisible();
   await expect(childColumn(page, 'Maya').locator('.planner-row').filter({ hasText: 'Sweep the kitchen' })).toBeVisible();

@@ -1,17 +1,15 @@
 /**
- * ChoreOps service payloads: the schedules ChoreOps accepts, the create/update
+ * ChoresMan service payloads: the schedules ChoresMan accepts, the create/update
  * builders for chores and rewards, and the formatting helpers the UI uses.
  *
- * Everything here is pure — it maps UI intent onto the documented service
- * arguments and back. Keeping it out of the entity normaliser means the payload
- * shape can be unit tested without fabricating a full HA state snapshot.
+ * Everything here is pure — it maps UI intent onto ChoresMan store actions.
  */
-import type { ChoreOpsChore, ChoreOpsUser } from '../../types/choreops';
+import type { ChoresManChore, ChoresManUser } from '../../types/choresman';
 import type { FamilyMember } from '../../types/family';
 import { resolveMemberForUser } from './members';
 
-/** Repeat options ChoreOps accepts on `choreops.create_chore` / `update_chore`. */
-export const CHOREOPS_FREQUENCIES = [
+/** Repeat options ChoresMan accepts on `choresman.create_chore` / `update_chore`. */
+export const CHORESMAN_FREQUENCIES = [
   'none',
   'daily',
   'daily_multi',
@@ -29,38 +27,36 @@ export const CHOREOPS_FREQUENCIES = [
   'year_end',
 ] as const;
 
-export type ChoreOpsFrequency = (typeof CHOREOPS_FREQUENCIES)[number];
+export type ChoresManFrequency = (typeof CHORESMAN_FREQUENCIES)[number];
 
-/** Interval units ChoreOps accepts alongside `custom_interval`. */
-export const CHOREOPS_INTERVAL_UNITS = ['hours', 'days', 'weeks', 'months'] as const;
+/** Interval units ChoresMan accepts alongside `custom_interval`. */
+export const CHORESMAN_INTERVAL_UNITS = ['hours', 'days', 'weeks', 'months'] as const;
 
-export type ChoreOpsIntervalUnit = (typeof CHOREOPS_INTERVAL_UNITS)[number];
+export type ChoresManIntervalUnit = (typeof CHORESMAN_INTERVAL_UNITS)[number];
 
-/** Weekday keys ChoreOps accepts in `applicable_days`. */
-export const CHOREOPS_WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+/** Weekday keys ChoresMan accepts in `applicable_days`. */
+export const CHORESMAN_WEEKDAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
-export type ChoreOpsWeekday = (typeof CHOREOPS_WEEKDAYS)[number];
+export type ChoresManWeekday = (typeof CHORESMAN_WEEKDAYS)[number];
 
 /**
- * ChoreOps sentinel that resolves `assigned_user_names` to every assignable
+ * ChoresMan sentinel that resolves `assigned_user_names` to every assignable
  * user. This is how a chore becomes "free for anyone to claim": an empty
- * assignee list creates a *dormant* chore that publishes no entities at all,
- * so Abbai Flow would never see it.
+ * assignee list creates a *dormant* chore with no assigned member rows,
+ * so Abbai Flow would not show it on the family board.
  */
-export const CHOREOPS_ALL_USERS = '*';
+export const CHORESMAN_ALL_USERS = '*';
 
-/** Completion rules ChoreOps accepts when a chore is created. */
-export const CHOREOPS_COMPLETION_CRITERIA = ['independent', 'shared_first', 'shared_all'] as const;
+/** Completion rules ChoresMan accepts when a chore is created. */
+export const CHORESMAN_COMPLETION_CRITERIA = ['independent', 'shared_first', 'shared_all'] as const;
 
-export type ChoreOpsCompletionCriteria = (typeof CHOREOPS_COMPLETION_CRITERIA)[number];
+export type ChoresManCompletionCriteria = (typeof CHORESMAN_COMPLETION_CRITERIA)[number];
 
 export interface CreateChoreInput {
-  /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
-  entryId: string | null;
   name: string;
   /**
-   * ChoreOps user names, not Abbai Flow member names. At least one is required
-   * unless the caller passes the `CHOREOPS_ALL_USERS` sentinel.
+   * ChoresMan user names, not Abbai Flow member names. At least one is required
+   * unless the caller passes the `CHORESMAN_ALL_USERS` sentinel.
    */
   assignedUserNames: string[];
   /**
@@ -68,7 +64,7 @@ export interface CreateChoreInput {
    * the first person to complete it takes the points and the rest stop seeing
    * an open task.
    */
-  completionCriteria?: ChoreOpsCompletionCriteria | null;
+  completionCriteria?: ChoresManCompletionCriteria | null;
   /** Existing icon and workflow policy when recreating an edited chore. */
   icon?: string | null;
   approvalReset?: string | null;
@@ -84,13 +80,13 @@ export interface CreateChoreInput {
   description?: string | null;
   /** Ordinary chore labels. Abbai Flow routines are stored separately. */
   labels?: string[] | null;
-  frequency?: ChoreOpsFrequency | null;
+  frequency?: ChoresManFrequency | null;
   /** Only sent for `custom` frequency. */
   customInterval?: number | null;
-  customIntervalUnit?: ChoreOpsIntervalUnit | null;
+  customIntervalUnit?: ChoresManIntervalUnit | null;
   /** Only sent for `weekly` frequency. */
-  applicableDays?: ChoreOpsWeekday[];
-  /** ISO date/time string understood by Home Assistant. */
+  applicableDays?: ChoresManWeekday[];
+  /** ISO date/time string. */
   dueDate?: string | null;
   /** Due window offset, e.g. `1h`; `0` disables the window. */
   windowOffset?: string | null;
@@ -101,12 +97,11 @@ export interface CreateChoreInput {
 }
 
 /**
- * Build the `choreops.create_chore` service payload.
+ * Build the ChoresMan create chore payload.
  *
- * Only fields the user actually set are included, so ChoreOps keeps its own
+ * Only fields the user actually set are included, so ChoresMan keeps its own
  * defaults for everything else. Returns `null` when the input cannot produce a
- * valid chore (missing config entry, name, or assignees) — the service requires
- * `name` and `assigned_user_names`.
+ * valid chore (missing name or assignees).
  */
 export function buildCreateChorePayload(input: CreateChoreInput): Record<string, unknown> | null {
   const name = input.name.trim();
@@ -114,10 +109,9 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
     .map((userName) => userName.trim())
     .filter((userName) => userName.length > 0);
 
-  if (!input.entryId || !name || assignedUserNames.length === 0) return null;
+  if (!name || assignedUserNames.length === 0) return null;
 
   const payload: Record<string, unknown> = {
-    config_entry_id: input.entryId,
     name,
     assigned_user_names: Array.from(new Set(assignedUserNames)),
   };
@@ -159,7 +153,7 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
   }
   if (input.frequency === 'weekly' && input.applicableDays?.length) {
-    payload.applicable_days = input.applicableDays.filter((day) => CHOREOPS_WEEKDAYS.includes(day));
+    payload.applicable_days = input.applicableDays.filter((day) => CHORESMAN_WEEKDAYS.includes(day));
   }
   if (input.dueDate) payload.due_date = input.dueDate;
   if (input.windowOffset !== undefined) {
@@ -172,9 +166,7 @@ export function buildCreateChorePayload(input: CreateChoreInput): Record<string,
 }
 
 export interface UpdateChoreInput {
-  /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
-  entryId: string | null;
-  /** ChoreOps internal ID, when resolved from the Home Assistant entity registry. */
+  /** ChoresMan internal id. */
   choreId?: string;
   /** Current chore name used as the lookup key when no `choreId` is available. */
   targetName?: string;
@@ -188,9 +180,9 @@ export interface UpdateChoreInput {
   labels?: string[];
   frequency?: string;
   customInterval?: number;
-  customIntervalUnit?: ChoreOpsIntervalUnit;
+  customIntervalUnit?: ChoresManIntervalUnit;
   applicableDays?: string[];
-  /** ISO date/time understood by Home Assistant. */
+  /** ISO date/time. */
   dueDate?: string;
   /** Due window offset, e.g. `1h`, `1d 6h`, or `0` to disable. */
   windowOffset?: string;
@@ -205,28 +197,27 @@ export interface UpdateChoreInput {
 }
 
 /**
- * Build the `choreops.update_chore` service payload.
+ * Build the ChoresMan update chore payload.
  *
  * Only the fields the caller actually resolved are included, so editing one
- * property never resets the others. Returns `null` without a config entry or a
- * chore name, since ChoreOps needs one to find the chore.
+ * property never resets the others. Returns `null` when the chore name is
+ * missing.
  *
- * ChoreOps only accepts `completion_criteria` on creation, not updates.
+ * ChoresMan only accepts `completion_criteria` on creation, not updates.
  *
- * Note: ChoreOps rejects a schedule change with "The requested changes require
+ * Note: ChoresMan rejects a schedule change with "The requested changes require
  * a future due date", so callers must send `dueDate` alongside `frequency`.
  */
 export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string, unknown> | null {
   const name = input.name.trim();
   const targetName = (input.targetName ?? name).trim();
-  if (!input.entryId || !name || (!input.choreId && !targetName)) return null;
-  // Without an internal ID ChoreOps interprets `name` as the lookup key and
+  if (!name || (!input.choreId && !targetName)) return null;
+  // Without an internal ID ChoresMan interprets `name` as the lookup key and
   // ignores it as an update field. Never accidentally turn a rename into a
   // failed lookup against the new name.
   if (!input.choreId && targetName !== name) return null;
 
   const payload: Record<string, unknown> = {
-    config_entry_id: input.entryId,
     ...(input.choreId ? { id: input.choreId, name } : { name: targetName }),
   };
 
@@ -260,13 +251,13 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
     if (input.customIntervalUnit) payload.custom_interval_unit = input.customIntervalUnit;
   }
   if (input.applicableDays !== undefined) {
-    payload.applicable_days = input.applicableDays.filter((day): day is ChoreOpsWeekday =>
-      CHOREOPS_WEEKDAYS.includes(day as ChoreOpsWeekday),
+    payload.applicable_days = input.applicableDays.filter((day): day is ChoresManWeekday =>
+      CHORESMAN_WEEKDAYS.includes(day as ChoresManWeekday),
     );
   }
   if (input.dueDate) payload.due_date = input.dueDate;
   if (input.windowOffset !== undefined) {
-    // An empty field means "no window"; ChoreOps spells that as `0`.
+    // An empty field means "no window"; ChoresMan spells that as `0`.
     payload.due_window_offset = input.windowOffset.trim() || '0';
   }
   if (input.reminderOffset?.trim()) payload.due_reminder_offset = input.reminderOffset.trim();
@@ -283,46 +274,44 @@ export function buildUpdateChorePayload(input: UpdateChoreInput): Record<string,
 }
 
 export interface CreateRewardInput {
-  /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
-  entryId: string | null;
   name: string;
   /** Points needed to redeem it. */
   cost: number;
-  /** ChoreOps user names — rewards are per user, so this is who can see it. */
+  /** ChoresMan user names — rewards are per user, so this is who can see it. */
   assignedUserNames: string[];
   description?: string | null;
+  /** Require a parent to approve this definition before a child can use it. */
+  approvalRequired?: boolean;
 }
 
 /**
- * Build the `choreops.create_reward` payload.
+ * Build the ChoresMan create reward payload.
  *
- * ChoreOps publishes one reward entity per user, so `assigned_user_names` is
- * what makes a reward belong to a specific child.
+ * ChoresMan shows one reward row per assigned member, so `assigned_user_names`
+ * determines which family members can claim it.
  */
 export function buildCreateRewardPayload(input: CreateRewardInput): Record<string, unknown> | null {
   const name = input.name.trim();
   const users = Array.from(
     new Set(input.assignedUserNames.map((userName) => userName.trim()).filter(Boolean)),
   );
-  if (!input.entryId || !name || users.length === 0) return null;
+  if (!name || users.length === 0) return null;
 
   const payload: Record<string, unknown> = {
-    config_entry_id: input.entryId,
     name,
     cost: Math.max(1, Math.round(input.cost)),
     assigned_user_names: users,
   };
   if (input.description?.trim()) payload.description = input.description.trim();
+  if (input.approvalRequired) payload.approved = false;
 
   return payload;
 }
 
 export interface UpdateRewardInput {
-  /** ChoreOps config entry id from the system helper (`integration_entry_id`). */
-  entryId: string | null;
   /**
-   * The reward's current name — the handle ChoreOps resolves it by. Renaming
-   * needs the internal reward id, which no entity attribute exposes.
+   * The reward's current name — the handle ChoresMan resolves it by. Renaming
+   * needs the internal reward id, which the edit form does not expose.
    */
   name: string;
   cost?: number;
@@ -330,12 +319,12 @@ export interface UpdateRewardInput {
   assignedUserNames?: string[];
 }
 
-/** Build the `choreops.update_reward` payload. */
+/** Build the ChoresMan update reward payload. */
 export function buildUpdateRewardPayload(input: UpdateRewardInput): Record<string, unknown> | null {
   const name = input.name.trim();
-  if (!input.entryId || !name) return null;
+  if (!name) return null;
 
-  const payload: Record<string, unknown> = { config_entry_id: input.entryId, name };
+  const payload: Record<string, unknown> = { name };
   if (typeof input.cost === 'number' && Number.isFinite(input.cost)) {
     payload.cost = Math.max(1, Math.round(input.cost));
   }
@@ -349,11 +338,11 @@ export function buildUpdateRewardPayload(input: UpdateRewardInput): Record<strin
 }
 
 /**
- * Convert a ChoreOps offset string (`"0d 1h 0m"`, as the status sensor prints
- * it) into the compact form the services accept (`"1h"`).
+ * Convert an expanded ChoresMan offset string (`"0d 1h 0m"`) into its compact
+ * form (`"1h"`).
  * Returns `""` when the offset is zero, which means "no window".
  */
-export function formatChoreOpsOffset(raw: string | null | undefined): string {
+export function formatChoresManOffset(raw: string | null | undefined): string {
   if (!raw) return '';
   const days = Number(/(\d+)\s*d/.exec(raw)?.[1] ?? 0);
   const hours = Number(/(\d+)\s*h/.exec(raw)?.[1] ?? 0);
@@ -363,21 +352,21 @@ export function formatChoreOpsOffset(raw: string | null | undefined): string {
     .join(' ');
 }
 
-export interface ChoreOpsChoreGroup {
+export interface ChoresManChoreGroup {
   key: string;
   member: FamilyMember | null;
   label: string;
-  chores: ChoreOpsChore[];
+  chores: ChoresManChore[];
 }
 
-/** Group chores by ChoreOps user, retaining empty user columns and a shared group. */
-export function groupChoreOpsChores(
-  users: ChoreOpsUser[],
-  chores: ChoreOpsChore[],
+/** Group chores by ChoresMan user, retaining empty user columns and a shared group. */
+export function groupChoresManChores(
+  users: ChoresManUser[],
+  chores: ChoresManChore[],
   members: FamilyMember[],
   sharedLabel: string,
-): ChoreOpsChoreGroup[] {
-  const groups = new Map<string, ChoreOpsChoreGroup>();
+): ChoresManChoreGroup[] {
+  const groups = new Map<string, ChoresManChoreGroup>();
   const ensureGroup = (key: string, member: FamilyMember | null, label: string) => {
     let group = groups.get(key);
     if (!group) {

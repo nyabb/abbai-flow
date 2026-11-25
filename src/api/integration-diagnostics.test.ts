@@ -130,7 +130,6 @@ describe('integration startup diagnostics', () => {
       { entity_id: 'calendar.home', state: 'on' },
       { entity_id: 'todo.groceries', state: '1' },
       { entity_id: 'media_player.abbai', state: 'idle' },
-      { entity_id: 'sensor.family_choreops_points', state: '12' },
       { entity_id: 'weather.home', state: 'sunny' },
     ];
     const fetcher = vi
@@ -161,7 +160,7 @@ describe('integration startup diagnostics', () => {
     expect(verifySpotifyCatalog).toHaveBeenCalledOnce();
     expect(entries.join('\n')).toContain('Home Assistant API: connected and authenticated.');
     expect(entries.join('\n')).toContain(
-      'calendars=1, media_players=1, todo_lists=1, choreops_entities=1',
+      'calendars=1, media_players=1, todo_lists=1',
     );
     expect(entries.join('\n')).toContain('Weather entity weather.home: available.');
     expect(entries.join('\n')).toContain(

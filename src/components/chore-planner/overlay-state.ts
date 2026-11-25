@@ -1,4 +1,4 @@
-import type { ChoreOpsReward } from '../../types/choreops';
+import type { ChoresManReward } from '../../types/choresman';
 
 /**
  * The planner can show one sheet at a time. Keeping each sheet's context in
@@ -13,8 +13,8 @@ export type PlannerOverlayState =
   | { type: 'filter' }
   | { type: 'goals'; memberId: string }
   | { type: 'reward-form'; editingReward: string | null }
-  | { type: 'reward-actions'; reward: ChoreOpsReward }
-  | { type: 'assign'; reward: ChoreOpsReward }
+  | { type: 'reward-actions'; reward: ChoresManReward }
+  | { type: 'assign'; reward: ChoresManReward }
   | { type: 'reward-given'; name: string }
   | { type: 'create' };
 
@@ -28,8 +28,8 @@ export type PlannerOverlayEvent =
   | { type: 'open-filter' }
   | { type: 'open-goals'; memberId: string }
   | { type: 'open-reward-form'; editingReward?: string | null }
-  | { type: 'open-reward-actions'; reward: ChoreOpsReward }
-  | { type: 'open-assign'; reward: ChoreOpsReward }
+  | { type: 'open-reward-actions'; reward: ChoresManReward }
+  | { type: 'open-assign'; reward: ChoresManReward }
   | { type: 'open-reward-given'; name: string }
   | { type: 'open-create' };
 

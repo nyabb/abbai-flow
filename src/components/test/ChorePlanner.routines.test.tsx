@@ -3,25 +3,25 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember, Routine } from '../../types/family';
-import type { ChoreOpsState } from '../../types/choreops';
+import type { ChoresManState } from '../../types/choresman';
 
 const mocks = vi.hoisted(() => ({
-  state: { current: null as ChoreOpsState | null },
+  state: { current: null as ChoresManState | null },
   adjustPoints: vi.fn(async () => {}),
-  pressButton: vi.fn(async () => {}),
+  runActionId: vi.fn(async () => {}),
   createChore: vi.fn(async () => {}),
   updateChore: vi.fn(async () => {}),
   deleteChore: vi.fn(async () => {}),
 }));
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: mocks.state.current,
     loading: false,
     error: null,
     available: true,
     refresh: async () => {},
-    pressButton: mocks.pressButton,
+    runActionId: mocks.runActionId,
     claimChore: async () => {},
     createChore: mocks.createChore,
     updateChore: mocks.updateChore,
@@ -48,10 +48,10 @@ const CHILD: FamilyMember = {
   avatar: '🧒',
   color: '#cf6d55',
   role: 'child',
-  choreops_user: 'Zara',
+
 };
 
-function choreOpsState(): ChoreOpsState {
+function choresManState(): ChoresManState {
   return {
     users: [
       {
@@ -67,7 +67,7 @@ function choreOpsState(): ChoreOpsState {
     chores: [
       {
         id: 'old-routine-chore',
-        statusEntityId: 'sensor.zara_choreops_chore_status_old_routine_chore',
+        plannerRowId: 'choresman-row:legacy-routine-chore:zara',
         name: 'Legacy task',
         icon: null,
         status: 'pending',
@@ -79,8 +79,8 @@ function choreOpsState(): ChoreOpsState {
         canClaim: true,
         canApprove: false,
         frequency: 'daily',
-        labels: ['Old ChoreOps routine'],
-        actions: { claim: 'button.zara_claim_legacy_task' },
+        labels: ['Old ChoresMan routine'],
+        actions: { claim: 'choresman-action:claim-legacy-task' },
       },
     ],
     rewards: [],
@@ -130,9 +130,9 @@ describe('Family routines in the chore planner', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(2024, 0, 1, 8, 0));
     localStorage.clear();
-    mocks.state.current = choreOpsState();
+    mocks.state.current = choresManState();
     mocks.adjustPoints.mockReset();
-    mocks.pressButton.mockReset();
+    mocks.runActionId.mockReset();
     mocks.createChore.mockReset();
   });
 
@@ -140,7 +140,7 @@ describe('Family routines in the chore planner', () => {
     vi.useRealTimers();
   });
 
-  it('reads routine definitions from Abbai Flow and keeps old ChoreOps labels as chores', async () => {
+  it('reads routine definitions from Abbai Flow and keeps old ChoresMan labels as chores', async () => {
     seedRoutines(familyRoutine());
     const { container } = renderPlanner();
 
@@ -172,11 +172,11 @@ describe('Family routines in the chore planner', () => {
         expect.objectContaining({ routine_id: 'routine-child-1', task_id: 'task-1' }),
       ]);
     });
-    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.runActionId).not.toHaveBeenCalled();
     expect(mocks.adjustPoints).not.toHaveBeenCalled();
   });
 
-  it('awards the editable routine bonus through ChoreOps only after a child mission finishes', async () => {
+  it('awards the editable routine bonus through ChoresMan only after a child mission finishes', async () => {
     seedRoutines(
       familyRoutine(CHILD.id, {
         mission_points: 8,
@@ -200,7 +200,7 @@ describe('Family routines in the chore planner', () => {
       8,
       expect.stringContaining('Abbai Flow mission: Morning routine'),
     );
-    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.runActionId).not.toHaveBeenCalled();
     expect(
       JSON.parse(localStorage.getItem('abbai_flow_routine_mission_awards') ?? '[]'),
     ).toHaveLength(1);
@@ -248,8 +248,8 @@ describe('Family routines in the chore planner', () => {
     ]);
   });
 
-  it('releases the bonus reservation when ChoreOps rejects a mission award', async () => {
-    mocks.adjustPoints.mockRejectedValueOnce(new Error('ChoreOps unavailable'));
+  it('releases the bonus reservation when ChoresMan rejects a mission award', async () => {
+    mocks.adjustPoints.mockRejectedValueOnce(new Error('ChoresMan unavailable'));
     seedRoutines(
       familyRoutine(CHILD.id, {
         id: 'routine-failed-award',

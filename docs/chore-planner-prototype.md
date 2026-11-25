@@ -1,5 +1,8 @@
 # Chore Planner Prototype (local preview)
 
+> Historical document: this describes the former Home Assistant ChoreOps integration. The current
+> app uses the local ChoresMan store; integration-specific details below are retained for history.
+
 An original, touch-first chores and routines experience for the wall display, built to explore
 the chore and "Vandaag" flows described in `prd-dedicated-chores-screen.md`.
 

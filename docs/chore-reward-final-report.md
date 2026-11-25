@@ -1,5 +1,8 @@
 # Chores, routines, missions and rewards — final report
 
+> Historical document: this describes the former Home Assistant ChoreOps integration. The current
+> app uses the local ChoresMan store; integration-specific details below are retained for history.
+
 Companion to `docs/chore-reward-review.md` (investigation), `docs/chore-reward-persistence.md`
 (Phase 5) and `docs/chore-reward-migration.md` (Phase 6). This file is the closing record of the
 8-phase rebuild: what was broken, what the model is now, and what remains ChoreOps' call.

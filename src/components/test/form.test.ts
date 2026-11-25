@@ -11,7 +11,7 @@ import {
 import type { PlannerTask } from '../../api/chore-planner-model';
 
 /**
- * The planner form conversions are the bridge between ChoreOps and the edit
+ * The planner form conversions are the bridge between ChoresMan and the edit
  * screen: a wrong field here silently resets a chore's schedule or points when
  * somebody saves an unrelated change.
  */
@@ -44,7 +44,7 @@ describe('planner form helpers', () => {
     expect(form.points).toBe(5);
     expect(form.memberIds).toEqual(['c1']);
     expect(form.free).toBe(false);
-    // Nothing is known about the schedule yet, so it stays "none" for ChoreOps.
+    // Nothing is known about the schedule yet, so it stays "none" for ChoresMan.
     expect(form.liveFrequency).toBe('none');
     expect(form.liveLabels).toBe('');
   });
@@ -55,7 +55,7 @@ describe('planner form helpers', () => {
     expect(form.memberIds).toEqual([]);
   });
 
-  it('prefills the edit form from the ChoreOps chore', () => {
+  it('prefills the edit form from the ChoresMan chore', () => {
     const form = formFromLiveTask(makeTask(), {
       id: 'x',
       name: 'Afwassen',
@@ -77,7 +77,7 @@ describe('planner form helpers', () => {
 
     expect(form.points).toBe(12);
     expect(form.liveFrequency).toBe('weekly');
-    // ChoreOps day keys map onto planner weekday indexes (Monday = 0).
+    // ChoresMan day keys map onto planner weekday indexes (Monday = 0).
     expect(form.liveWeekdays).toEqual([0, 2]);
     expect(form.liveWindow).toBe('1h');
     expect(form.liveAutoApprove).toBe(true);
@@ -86,7 +86,7 @@ describe('planner form helpers', () => {
     expect(DAY_KEYS[form.liveWeekdays[1]]).toBe('wed');
   });
 
-  it('keeps the due date blank when ChoreOps has not set one', () => {
+  it('keeps the due date blank when ChoresMan has not set one', () => {
     const form = formFromLiveTask(makeTask(), {
       id: 'x',
       name: 'Afwassen',

@@ -1,5 +1,8 @@
 # Planner data model and persistence (Phase 5)
 
+> Historical document: this describes the former Home Assistant ChoreOps integration. The current
+> app uses the local ChoresMan store; integration-specific details below are retained for history.
+
 How the chores screen stores what ChoreOps cannot, and what guarantees the store
 gives. Companion to `docs/chore-reward-review.md`.
 

@@ -101,12 +101,15 @@ export const es: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'Pendientes',
   'calendarSidebar.allClear': 'Todo despejado',
   'calendarSidebar.completeItem': 'Completar {name}',
+  'calendarSidebar.household': 'Hogar',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': 'No hay tareas para hoy — disfruta el tiempo libre',
   'taskChecklist.allDone': '¡Todo listo, buen trabajo!',
   'taskChecklist.complete': 'Completar {name}',
   'taskChecklist.undo': 'Deshacer {name}',
+  'taskChecklist.markDone': 'Marcar como hecha',
+  'taskChecklist.done': 'Hecho',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Tarea',
@@ -381,7 +384,7 @@ export const es: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': 'Tareas',
   'settings.chores.desc':
-    'Las tareas y los puntos se gestionan en Home Assistant con la integración ChoreOps.',
+    'ChoresMan gestiona las tareas, los puntos y las recompensas de los perfiles familiares de Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Hora de reinicio diario',
   'settings.chores.dailyResetTimeSublabel': 'Cuándo se reinician las tareas diarias',
   'settings.chores.streakDurationLabel': 'Duración de la racha',
@@ -460,7 +463,7 @@ export const es: Record<TranslationKey, string> = {
   'chores.pinRequired':
     'Configura un PIN en un adulto en Ajustes → Familia para aprobar tareas aquí.',
   'chores.pendingApprovals': '{count} esperando aprobación',
-  'chores.assignToClaim': 'Asigna esta tarea en ChoreOps para que alguien pueda reclamarla.',
+  'chores.assignToClaim': 'Elige a un familiar para esta tarea.',
   'chores.awaitingApproval': 'Esperando a un adulto',
   'chores.refresh': 'Actualizar',
   'chores.everyone': 'Todos',
@@ -487,7 +490,7 @@ export const es: Record<TranslationKey, string> = {
   'chores.noChoresToday': 'No hay nada pendiente ahora.',
   'chores.wellDone': '¡Bien hecho!',
   'chores.missing':
-    'No se encontró ChoreOps en Home Assistant. Instala y configura la integración ChoreOps para ver las tareas aquí.',
+    'Todavía no hay tareas en ChoresMan.',
   'chores.stat.due': 'Para hoy',
   'chores.stat.claimed': 'Reclamadas',
   'chores.stat.approved': 'Aprobadas',
@@ -660,7 +663,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.anyone': 'El primero que llegue',
   'planner.freeTask': 'Libre para que cualquiera la tome',
   'planner.claimModeEditUnavailable':
-    'ChoreOps no permite cambiar aquí el modo de reclamación. Cámbialo en ChoreOps y luego edita aquí las asignaciones.',
+    'ChoresMan no permite cambiar aquí el modo de reclamación. Cámbialo en ChoresMan y luego edita aquí las asignaciones.',
   'planner.frequency': 'Frecuencia',
   'planner.daily': 'Diaria',
   'planner.weekly': 'Semanal',
@@ -704,7 +707,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.sure': '¿Eliminar de verdad?',
   'planner.renameUnavailable':
     'No se pudo identificar esta tarea para cambiarle el nombre. Actualiza las tareas e inténtalo de nuevo.',
-  'planner.renameLocked': 'Solo se puede renombrar en ChoreOps.',
+  'planner.renameLocked': 'Aquí no se pueden cambiar los nombres de las recompensas.',
   'planner.create': 'Crear tarea',
   'planner.noFail': 'No se pudo guardar, inténtalo de nuevo',
   'planner.errorDetailsTitle': 'Detalles completos del error',
@@ -729,7 +732,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.privacy': 'Privacidad',
   'planner.sound': 'Sonido',
   'planner.rewards': 'Recompensas',
-  'planner.noRewards': 'Aún no hay recompensas en ChoreOps.',
+  'planner.noRewards': 'Aún no hay recompensas en ChoresMan.',
   'planner.newReward': 'Añadir recompensa',
   'planner.cost': 'Coste (puntos)',
   'planner.assign': 'Asignar',
@@ -737,7 +740,7 @@ export const es: Record<TranslationKey, string> = {
   'planner.undoShort': 'Deshacer',
   'planner.locked': 'aún no alcanza',
   'planner.assignToClaim':
-    'Esta tarea aún no tiene botón de ChoreOps; asígnala primero en Home Assistant.',
+    'Elige a un familiar antes de asignar esta tarea.',
   'planner.pinTitle': 'Aprobación de un adulto',
   'planner.pinHint': 'Introduce el PIN de un adulto.',
   'planner.pinWrong': 'Ese PIN no es correcto.',

@@ -1,5 +1,8 @@
 # Abbai Flow — Engineering review
 
+> Historical document: this review predates the move from Home Assistant ChoreOps to the local
+> ChoresMan store. Its integration-specific findings are retained for historical context.
+
 Date: 2026-11-09
 Scope: architecture, reliability, security, performance, tests, developer experience.
 

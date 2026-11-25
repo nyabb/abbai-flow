@@ -2,7 +2,7 @@
  * The two blocking dialogs of the chores screen:
  *
  *  - `ConfirmSheet` asks a child to confirm the chore they tapped before
- *    anything is sent to ChoreOps (a mis-tap on a shared display would
+ *    anything is sent to ChoresMan (a mis-tap on a shared display would
  *    otherwise hand out points).
  *  - `PinSheet` asks for a parent PIN before a destructive or approval action.
  */
@@ -12,7 +12,7 @@ import { ActivitySpinner } from '../LoadingPlaceholder';
 
 export interface ConfirmAction {
   taskId: string;
-  entityId: string;
+  actionId: string;
   label: string;
   /** `done` for a parent sign-off, `claim` when the child takes the chore. */
   kind: 'claim' | 'done';

@@ -351,7 +351,7 @@ export function toggleRoutinePaused(meta: PlannerMeta, id: string): PlannerMeta 
   };
 }
 
-/** Drop routine entries for chores that no longer exist in ChoreOps. */
+/** Drop routine entries for chores that no longer exist in ChoresMan. */
 export function pruneRoutineTasks(meta: PlannerMeta, knownChoreNames: string[]): PlannerMeta {
   const known = new Set(knownChoreNames.map((name) => normaliseName(name)));
   let changed = false;

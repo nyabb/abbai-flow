@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { startStack, putData, getData, type E2EStack } from './stack';
+import { loadChoresMan, startStack, putData, getData, type E2EStack } from './stack';
 
 const FAMILY = [
   {
@@ -15,7 +15,6 @@ const FAMILY = [
     avatar: '\u{1F9D2}',
     color: '#cf6d55',
     role: 'child',
-    choreops_user: 'Zara',
   },
 ];
 
@@ -23,7 +22,6 @@ let stack: E2EStack;
 
 test.beforeAll(async () => {
   stack = await startStack();
-  stack.fakeHa.reset({ users: [{ name: 'Zara', points: 10 }], chores: [] });
   await putData(stack.appUrl, 'abbai_flow_family_members', FAMILY);
   await putData(stack.appUrl, 'abbai_flow_routines', []);
   await putData(stack.appUrl, 'abbai_flow_routine_completions', []);
@@ -83,7 +81,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await page.goto(stack.appUrl);
 
   // Settings opens the shared editor. A selected-weekday routine is persisted
-  // as Abbai Flow data and has no ChoreOps side effect.
+  // as Abbai Flow data and has no ChoresMan side effect.
   await openFamilySettings(page);
   await openMemberRoutines(page, 'Zara');
   const schoolDays = new Set([
@@ -106,7 +104,6 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
         tasks: [expect.objectContaining({ name: 'Brush teeth' })],
       },
     ]);
-  expect(stack.fakeHa.serviceCalls('choreops.create_chore')).toHaveLength(0);
 
   // Parents can make the same routines, without a points field or mission.
   await page.getByRole('button', { name: 'Back', exact: true }).click();
@@ -197,7 +194,6 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await expect
     .poll(async () => getData<Array<Record<string, unknown>>>(stack.appUrl, 'abbai_flow_routines'))
     .not.toContainEqual(expect.objectContaining({ name: 'Weekend prep' }));
-  expect(stack.fakeHa.serviceCalls('choreops.create_chore')).toHaveLength(0);
 });
 
 test('starts one routine mission at a time and only enables routines in their time block', async ({
@@ -243,7 +239,6 @@ test('starts one routine mission at a time and only enables routines in their ti
       tasks: [{ id: 'evening-task', name: 'Set out clothes', order: 0 }],
     },
   ];
-  stack.fakeHa.reset({ users: [{ name: 'Zara', points: 10 }], chores: [] });
   await putData(stack.appUrl, 'abbai_flow_family_members', FAMILY);
   await putData(stack.appUrl, 'abbai_flow_routines', routines);
   await putData(stack.appUrl, 'abbai_flow_routine_completions', []);
@@ -276,13 +271,8 @@ test('starts one routine mission at a time and only enables routines in their ti
   await expect(page.locator('.planner-mission-hero')).toContainText('Pack the bag');
   await page.locator('.planner-mission-done').click();
   await expect
-    .poll(() => stack.fakeHa.serviceCalls('choreops.manual_adjust_points').length)
-    .toBe(1);
-  expect(stack.fakeHa.serviceCalls('choreops.manual_adjust_points')[0].data).toMatchObject({
-    user_name: 'Zara',
-    amount: 7,
-    reason: expect.stringContaining('Abbai Flow mission: Pack up'),
-  });
+    .poll(async () => (await loadChoresMan(stack.appUrl)).members.find((member) => member.name === 'Zara')?.points)
+    .toBe(7);
 
   await page.getByRole('button', { name: 'Pass the board', exact: true }).click();
   await page.clock.setFixedTime(new Date(2024, 0, 1, 20, 0));

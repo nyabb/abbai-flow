@@ -1857,13 +1857,13 @@
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.35;
-  /* Error messages come straight from ChoreOps and can be long: wrap them
+  /* Error messages come straight from ChoresMan and can be long: wrap them
      instead of clipping the reason the request failed. */
   overflow-wrap: anywhere;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.18);
 }
 
-/* Green when the request went through, red when ChoreOps refused it. */
+/* Green when the request went through, red when ChoresMan refused it. */
 .planner-toast--success {
   background: var(--color-success);
 }
@@ -2174,7 +2174,7 @@
   }
 }
 
-/* --- Rewards (ChoreOps reward entities) --- */
+/* --- Rewards (ChoresMan reward entities) --- */
 
 /* Rewards whose full cost is set aside are "on hold": grouped under a Done
    heading the way finished chores are, and dimmed so the open goals stay the
@@ -2287,6 +2287,15 @@
   padding: 0 18px;
   font-size: 0.875rem;
   white-space: nowrap;
+}
+
+.planner-reward-action--icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 14px;
 }
 
 .planner-reward-new {
@@ -2891,6 +2900,13 @@
   font-size: 0.6875rem;
 }
 
+.planner-col .planner-reward-action--icon {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: 10px;
+}
+
 .planner-col .planner-reward-actions .planner-task-more {
   width: 32px;
   height: 32px;
@@ -3064,7 +3080,7 @@
   color: var(--planner-green);
 }
 
-/* A step only the registry knows about (ChoreOps has not published it yet). */
+/* A step only the registry knows about (ChoresMan has not published it yet). */
 .planner-step.is-idle {
   color: var(--planner-muted);
   opacity: 0.7;

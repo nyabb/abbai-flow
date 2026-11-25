@@ -101,12 +101,15 @@ export const ja: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'タスク',
   'calendarSidebar.allClear': 'すべて完了',
   'calendarSidebar.completeItem': '{name}を完了する',
+  'calendarSidebar.household': '家族',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': '今日の家事はありません — 自由な時間を楽しんでください',
   'taskChecklist.allDone': 'すべて完了 — よくできました!',
   'taskChecklist.complete': '{name}を完了する',
   'taskChecklist.undo': '{name}を元に戻す',
+  'taskChecklist.markDone': '完了にする',
+  'taskChecklist.done': '完了',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': '家事',
@@ -376,7 +379,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': '家事',
-  'settings.chores.desc': '家事とポイントは Home Assistant の ChoreOps 統合で管理されます。',
+  'settings.chores.desc': 'ChoresMan は Abbai Flow の家族プロフィール向けに家事、ポイント、報酬を管理します。',
   'settings.chores.dailyResetTimeLabel': '毎日のリセット時刻',
   'settings.chores.dailyResetTimeSublabel': '毎日の家事がリセットされる時刻',
   'settings.chores.streakDurationLabel': '連続記録の日数',
@@ -454,7 +457,7 @@ export const ja: Record<TranslationKey, string> = {
   'chores.pinConfirm': 'ロック解除',
   'chores.pinRequired': '設定 → 家族 で保護者に PIN を設定すると、ここで家事を承認できます。',
   'chores.pendingApprovals': '{count} 件が承認待ちです',
-  'chores.assignToClaim': 'ChoreOps でこの家事を割り当てると、引き受けられるようになります。',
+  'chores.assignToClaim': 'この家事を担当する家族を選択してください。',
   'chores.awaitingApproval': '保護者の承認待ち',
   'chores.refresh': '更新',
   'chores.everyone': 'みんな',
@@ -481,7 +484,7 @@ export const ja: Record<TranslationKey, string> = {
   'chores.noChoresToday': '今はやることがありません。',
   'chores.wellDone': 'よくできました！',
   'chores.missing':
-    'Home Assistant に ChoreOps が見つかりません。ChoreOps 統合をインストールして設定すると、ここに家事が表示されます。',
+    'ChoresMan に家事はまだありません。',
   'chores.stat.due': '今日の期限',
   'chores.stat.claimed': '引き受け済み',
   'chores.stat.approved': '承認済み',
@@ -652,7 +655,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.anyone': '早い者勝ち',
   'planner.freeTask': '誰でも受けられる',
   'planner.claimModeEditUnavailable':
-    'ChoreOpsでは、ここから取得モードを変更できません。ChoreOpsでモードを変更してから、ここで担当者を編集してください。',
+    'ChoresManでは、ここから取得モードを変更できません。ChoresManでモードを変更してから、ここで担当者を編集してください。',
   'planner.frequency': '繰り返し',
   'planner.daily': '毎日',
   'planner.weekly': '毎週',
@@ -696,7 +699,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.sure': '本当に削除しますか？',
   'planner.renameUnavailable':
     '名前を変更するタスクを特定できませんでした。家事を更新して、もう一度お試しください。',
-  'planner.renameLocked': '名前の変更は ChoreOps でのみ可能です。',
+  'planner.renameLocked': '報酬の名前はここでは変更できません。',
   'planner.create': 'タスクを作成',
   'planner.noFail': '保存できませんでした。もう一度お試しください',
   'planner.errorDetailsTitle': 'エラーの詳細',
@@ -721,7 +724,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.privacy': 'プライバシー',
   'planner.sound': 'サウンド',
   'planner.rewards': 'ごほうび',
-  'planner.noRewards': 'ChoreOps にはまだごほうびがありません。',
+  'planner.noRewards': 'ChoresMan にはまだごほうびがありません。',
   'planner.newReward': 'ごほうびを追加',
   'planner.cost': 'コスト（ポイント）',
   'planner.assign': '割り当て',
@@ -729,7 +732,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.undoShort': '戻す',
   'planner.locked': 'まだ足りません',
   'planner.assignToClaim':
-    'このタスクにはまだ ChoreOps のボタンがありません。先に Home Assistant で割り当ててください。',
+    '家事を割り当てる前に家族を選択してください。',
   'planner.pinTitle': '保護者の承認',
   'planner.pinHint': '保護者の PIN を入力してください。',
   'planner.pinWrong': 'PIN が正しくありません。',

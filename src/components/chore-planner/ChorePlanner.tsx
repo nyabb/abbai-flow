@@ -14,7 +14,6 @@ import {
 } from '../../api/chore-planner-model';
 import type { PlannerMember } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
-import { resolveMemberForUser } from '../../api/choreops';
 import { FamilyStore } from '../../api/family';
 import { localDayKey } from '../../api/date-keys';
 import { routineAvailableAt, routineOccursOnDate } from '../../api/routine-schedule';
@@ -23,10 +22,9 @@ import {
   fulfilledRedemptions,
   spendableWithRedemptions,
 } from '../../api/reward-redemptions';
-import type { ChoreOpsReward } from '../../types/choreops';
+import type { ChoresManReward } from '../../types/choresman';
 import { recordDebugLog } from '../../api/debug-log';
-import { useChoreOps } from '../../hooks/useChoreOps';
-import type { ChoreProvider } from '../../api/choresman';
+import { useChoresMan } from '../../hooks/useChoresMan';
 import { useRewardRedemptions } from '../../hooks/useRewardRedemptions';
 import { useRoutines } from '../../hooks/useRoutines';
 import { useTranslation } from '../../i18n';
@@ -82,7 +80,6 @@ type ToastKind = 'success' | 'error';
 interface ChorePlannerProps {
   /** Abbai Flow family members supply photos, colours, and display names. */
   members: FamilyMember[];
-  provider?: ChoreProvider;
   /** App language (`AbbaiSettings.locale`), used by the routine editor. */
   locale: string;
   weekStartsOn?: 0 | 1;
@@ -94,12 +91,11 @@ interface ChorePlannerProps {
 
 export function ChorePlanner({
   members,
-  provider = 'choreops',
   locale,
   weekStartsOn = 1,
   createRequest,
 }: ChorePlannerProps) {
-  const choreOps = useChoreOps(provider, provider === 'choresman' ? members : []);
+  const choresMan = useChoresMan(members);
   const routinesApi = useRoutines();
   const {
     routines: familyRoutines,
@@ -109,20 +105,11 @@ export function ChorePlanner({
   } = routinesApi;
   const familyStore = useMemo(() => new FamilyStore(), []);
   const [now, setNow] = useState(new Date());
-  /** ChoreOps owns chore data; routines come from the Family store. */
-  const choreFamily = useMemo(
-    () => provider === 'choresman'
-      ? members.map((member) => {
-          const localMember = { ...member };
-          delete localMember.choreops_user;
-          return localMember;
-        })
-      : members,
-    [members, provider],
-  );
+  /** ChoresMan owns chore data; routines come from the Family store. */
+  const choreFamily = members;
   const view = useMemo(
-    () => buildChorePlannerView(choreOps.data, choreFamily, now),
-    [choreOps.data, choreFamily, now],
+    () => buildChorePlannerView(choresMan.data, choreFamily, now),
+    [choresMan.data, choreFamily, now],
   );
   const plannerMembers = [...view.members];
   const [soundEnabled] = useSoundPreference();
@@ -139,7 +126,10 @@ export function ChorePlanner({
         role: familyMember.role,
         photo: familyMember.photo,
         color: familyMember.color,
-        savings: familyMember.choreops_state?.points ?? 0,
+        savings:
+          choresMan.data?.users.find(
+            (user) => user.slug === familyMember.id || user.name.trim().toLowerCase() === familyMember.name.trim().toLowerCase(),
+          )?.points ?? 0,
       });
     }
   }
@@ -166,12 +156,12 @@ export function ChorePlanner({
    * Chore the child tapped, waiting for "are you sure?".
    *
    * Claiming and completing are one tap away on a shared display and a
-   * mis-tap hands out points, so nothing is sent to ChoreOps until the child
+   * mis-tap hands out points, so nothing is sent to ChoresMan until the child
    * confirms the card they meant.
    */
   const [confirmAction, setConfirmAction] = useState<{
     taskId: string;
-    entityId: string;
+    actionId: string;
     label: string;
     /** `done` for a parent sign-off, `claim` when the child takes the chore. */
     kind: 'claim' | 'done';
@@ -211,7 +201,7 @@ export function ChorePlanner({
   const [livePinError, setLivePinError] = useState(false);
   /**
    * Reward progress (saving → achieved → given). Shared through abbai-flow-store:
-   * ChoreOps owns the definition and the deduction, not the pursuit.
+   * ChoresMan owns the definition and the deduction, not the pursuit.
    */
   const rewardsState = useRewardRedemptions();
   const redemptions = rewardsState.redemptions;
@@ -278,7 +268,7 @@ export function ChorePlanner({
   }, [refreshRoutines]);
   useEffect(() => {
     if (!toast) return;
-    // Errors stay a little longer: a parent needs time to read what ChoreOps
+    // Errors stay a little longer: a parent needs time to read what ChoresMan
     // rejected, successes are just a confirmation.
     const timer = setTimeout(() => setToast(null), toast.kind === 'error' ? 6000 : 2600);
     return () => clearTimeout(timer);
@@ -330,21 +320,19 @@ export function ChorePlanner({
     dispatchOverlay({ type: 'open-actions', taskId, fromRoutine });
   };
 
-  /** Planner member id → ChoreOps user name, for writing back to ChoreOps. */
+  /** Planner member id → ChoresMan user name, for writing back to ChoresMan. */
   const userNameByMemberId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const user of choreOps.data?.users ?? []) {
-      const member = resolveMemberForUser(user.name, members);
-      map.set(member ? member.id : `choreops:${user.name.trim().toLowerCase()}`, user.name);
-    }
-    for (const member of members) {
-      const linkedUser = choreOps.data?.users.find(
-        (user) => user.name.trim().toLowerCase() === member.choreops_user?.trim().toLowerCase(),
+    const map = new Map<string, string>(
+      (choresMan.data?.users ?? []).map((user) => [user.slug, user.name]),
+    );
+    for (const user of choresMan.data?.users ?? []) {
+      const member = members.find(
+        (candidate) => candidate.name.trim().toLowerCase() === user.name.trim().toLowerCase(),
       );
-      if (linkedUser) map.set(member.id, linkedUser.name);
+      if (member) map.set(member.id, user.name);
     }
     return map;
-  }, [choreOps.data, members]);
+  }, [choresMan.data, members]);
   const getTask = (id: string | null) =>
     data.tasks.find((task) => task.id === id) ??
     view.allTasks.find((task) => task.id === id) ??
@@ -361,8 +349,8 @@ export function ChorePlanner({
   const selectedReward = overlay.type === 'reward-actions' ? overlay.reward : null;
   const assigningReward = overlay.type === 'assign' ? overlay.reward : null;
   const givenReward = overlay.type === 'reward-given' ? { name: overlay.name } : null;
-  /** ChoreOps rewards, one entry per user+reward (that is how it publishes them). */
-  const rewards = choreOps.data?.rewards ?? [];
+  /** ChoresMan rewards, one entry per user+reward (that is how it publishes them). */
+  const rewards = choresMan.data?.rewards ?? [];
   const goalMembers = data.members.filter((member) => member.role === 'child');
   const missionTask = getTask(missionIds[missionIndex] ?? null);
 
@@ -391,7 +379,7 @@ export function ChorePlanner({
   const selectedTodayMember = memberFor(todayMemberId);
 
   /**
-   * What a family member can still spend: ChoreOps' balance minus the points already
+   * What a family member can still spend: ChoresMan's balance minus the points already
    * promised to a reward. `rewards` is passed in so claims made in Home
    * Assistant also count as spent (approving one still deducts them later).
    */
@@ -438,7 +426,7 @@ export function ChorePlanner({
    * goals sheet and the child's detail page so both behave identically.
    */
   /** A reward row, shared by the goals sheet and the child detail page. */
-  const renderRewardRow = (reward: ChoreOpsReward) => {
+  const renderRewardRow = (reward: ChoresManReward) => {
     const state = rewardState(reward);
     const approveId = reward.actions.approve;
     return (
@@ -449,13 +437,14 @@ export function ChorePlanner({
         remaining={state.remaining}
         done={state.done}
         pending={state.pending}
+        approvalPending={reward.approvalPending}
         canAdd={state.canAdd}
         copy={c}
         onAssign={() => openAssign(reward)}
         onUndo={() => undoRewardChoice(reward)}
         onApprove={() =>
           requestPin(
-            c.rewards,
+            c.approvePayout,
             reward.name,
             () => void runLiveAction(reward.id, approveId ?? '', reward.name, c.approved),
           )
@@ -593,7 +582,7 @@ export function ChorePlanner({
   };
 
   /**
-   * Chores still up for grabs. ChoreOps publishes one row per user for a
+   * Chores still up for grabs. ChoresMan publishes one row per user for a
    * first-come-first-served chore, so the board shows the chore once and asks
    * which child is taking it when somebody taps it.
    */
@@ -675,8 +664,7 @@ export function ChorePlanner({
     goalsUserName,
     childViewOpen: screen === 'child',
     childUserName,
-    chores: choreOps.data?.chores ?? [],
-    choreOpsAvailable: choreOps.available,
+    choresManAvailable: choresMan.available,
   });
   /** The filter sheet doubles as the board's filter state indicator. */
   const filterOpen = modal === 'filter';
@@ -756,7 +744,7 @@ export function ChorePlanner({
       if (missionFinished && bonus > 0) {
         const userName = userNameByMemberId.get(routine.member_id);
         if (!userName) {
-          throw new Error('Link this family member to a ChoreOps user to award mission points');
+          throw new Error('ChoresMan could not find this family member to award mission points');
         }
         const date = localDayKey();
         const claimed = await familyStore.claimRoutineMissionBonus(
@@ -766,7 +754,7 @@ export function ChorePlanner({
         );
         if (claimed) {
           try {
-            await choreOps.adjustPoints(
+            await choresMan.adjustPoints(
               userName,
               bonus,
               `Abbai Flow mission: ${routine.name} (${date})`,
@@ -816,8 +804,8 @@ export function ChorePlanner({
 
     // Otherwise this is the child's own action: claim a free chore, or mark an
     // assigned one as done so it enters the approval queue.
-    const entityId = task.actions?.claim ?? task.actions?.approve;
-    if (!entityId) {
+    const actionId = task.actions?.claim ?? task.actions?.approve;
+    if (!actionId) {
       showToast(c.assignToClaim);
       return;
     }
@@ -828,17 +816,17 @@ export function ChorePlanner({
     const claiming = task.audience === 'anyone';
     setConfirmAction({
       taskId: task.id,
-      entityId,
+      actionId,
       label: task.name,
       kind: claiming ? 'claim' : 'done',
       action: claiming ? c.claimedToast : task.awaitingReview ? c.approved : c.done,
     });
   };
 
-  /** Press a ChoreOps button and report the outcome, then re-read its entities. */
+  /** Run a ChoresMan action and report the outcome, then refresh the local snapshot. */
   const runLiveAction = async (
     taskId: string,
-    entityId: string,
+    actionId: string,
     label: string,
     action: string,
     celebrate?: 'chore' | 'goal',
@@ -846,9 +834,8 @@ export function ChorePlanner({
     if (pendingTaskId) return;
     setPendingTaskId(taskId);
     try {
-      // The provider decodes its own action; Choresman keeps the exact chore
-      // and member IDs in the action payload for shared/free chores.
-      await choreOps.pressButton(entityId);
+      // The action payload carries exact chore and member IDs for shared chores.
+      await choresMan.runActionId(actionId);
       if (celebrate) setCelebration(celebrate);
       playCompletionSound();
       showToast(toastWith(action, label));
@@ -903,7 +890,7 @@ export function ChorePlanner({
     saving,
     setSaving,
     now,
-    choreOps,
+    choresMan,
     getTask,
     userNameByMemberId,
     hasParentPin,
@@ -936,7 +923,7 @@ export function ChorePlanner({
     deleteGivenReward,
     rewardState,
   } = usePlannerRewards({
-    choreOps,
+    choresMan,
     rewardsState,
     rewards,
     redemptions,
@@ -965,15 +952,15 @@ export function ChorePlanner({
    * every other parent action).
    */
   const approveTask = (task: PlannerTask) => {
-    const entityId = task.actions?.approve;
-    if (!entityId) {
+    const actionId = task.actions?.approve;
+    if (!actionId) {
       showToast(c.awaitingApproval, 'error');
       return;
     }
     requestPin(
       c.approveCompletion,
       task.name,
-      () => void runLiveAction(task.id, entityId, task.name, c.approved, 'chore'),
+      () => void runLiveAction(task.id, actionId, task.name, c.approved, 'chore'),
     );
   };
 
@@ -1015,7 +1002,7 @@ export function ChorePlanner({
     const status = taskStatus(task);
     const assigned = memberFor(task.memberId);
     const deadline = status === 'upcoming' ? task.startsAt : (task.deadlineAt ?? task.expiresAt);
-    // ChoreOps reports completion as a status, so fall back to the due time for
+    // ChoresMan reports completion as a status, so fall back to the due time for
     // the label instead of printing an invalid date.
     const completedAt = task.completedAt ?? deadline;
     // A claimed chore is not "still X minutes left": it waits for a parent.
@@ -1237,7 +1224,7 @@ export function ChorePlanner({
           {c.offline}
         </div>
       )}
-      {screen === 'board' && choreOps.loading && !choreOps.data && (
+      {screen === 'board' && choresMan.loading && !choresMan.data && (
         <div className="planner-loading-board" aria-label={t('planner.loading')} role="status">
           {Array.from(
             { length: Math.max(2, Math.min(data.members.length || 3, 4)) },
@@ -1255,7 +1242,7 @@ export function ChorePlanner({
           )}
         </div>
       )}
-      {screen === 'board' && !(choreOps.loading && !choreOps.data) && (
+      {screen === 'board' && !(choresMan.loading && !choresMan.data) && (
         <ChoreBoard
           boardMembers={boardMembers}
           columnTasks={columnTasks}
@@ -1495,7 +1482,7 @@ export function ChorePlanner({
             {overlay.type === 'create' && (
               <CreateSheet
                 copy={c}
-                chores={(choreOps.data?.chores ?? []).filter((chore) =>
+                chores={(choresMan.data?.chores ?? []).filter((chore) =>
                   view.allTasks.some(
                     (task) =>
                       task.name.trim().toLowerCase() === chore.name.trim().toLowerCase() &&
@@ -1610,7 +1597,7 @@ export function ChorePlanner({
             setConfirmAction(null);
             void runLiveAction(
               action.taskId,
-              action.entityId,
+              action.actionId,
               action.label,
               action.action,
               action.kind === 'done' ? 'chore' : undefined,

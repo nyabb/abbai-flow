@@ -13,8 +13,8 @@ import type { FamilyMember, Routine } from '../../types/family';
  * two-step delete confirmation), the routine editor including task ordering,
  * and the photo-upload error path.
  *
- * `useChoreOps` (HA people lookup) and `useRoutines` (localStorage store) are
- * mocked — the section is what's under test, not the transports.
+ * `useRoutines` (localStorage store) is mocked — the section is what's under
+ * test, not the transport.
  */
 const mocks = vi.hoisted(() => ({
   routines: [] as Routine[],
@@ -33,21 +33,6 @@ vi.mock('../../hooks/useRoutines', () => ({
     refresh: vi.fn(async () => {}),
     isTaskCompletedToday: () => false,
     toggleTask: vi.fn(),
-  }),
-}));
-
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
-    data: {
-      users: [{ name: 'Noor' }, { name: 'Sam' }],
-      people: [
-        { name: 'Noor', picture: '/api/image/serve/noor/512x512' },
-        { name: 'Papa', picture: null },
-      ],
-    },
-    loading: false,
-    error: null,
-    available: true,
   }),
 }));
 

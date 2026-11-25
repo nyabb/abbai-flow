@@ -641,50 +641,194 @@ a:focus:not(:focus-visible) {
   text-overflow: ellipsis;
 }
 
-.task-checklist-assignees {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+.task-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
 }
 
-.task-checklist-assignee {
-  display: inline-flex;
-  align-items: center;
+.task-checklist-empty {
+  color: var(--text-light);
+  font-size: 0.78rem;
+}
+
+.task-checklist-group {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
   min-width: 0;
-  max-width: 100%;
-  padding: 2px 8px 2px 2px;
-  border: 1px solid transparent;
-  border-radius: 999px;
 }
 
-.task-checklist-avatar {
-  display: inline-flex;
-  flex: 0 0 24px;
+.task-checklist-group + .task-checklist-group {
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.task-checklist-person {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
+  gap: 8px;
+  min-height: 30px;
+  color: var(--text-primary);
+}
+
+.task-checklist-person-avatar {
+  display: grid;
+  flex: 0 0 28px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   overflow: hidden;
   border-radius: 50%;
-  font-size: 16px;
+  font-size: 17px;
   line-height: 1;
 }
 
-.task-checklist-avatar .member-photo {
+.task-checklist-person-avatar .member-photo {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.task-checklist-assignee-name {
+.task-checklist-person-avatar--home {
+  background: color-mix(in srgb, var(--accent, #3b82f6) 11%, var(--bg-surface));
+  color: var(--accent, #3b82f6);
+}
+
+.task-checklist-person strong {
   min-width: 0;
   overflow: hidden;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.task-checklist-progress {
+  margin-left: auto;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--bg-muted, #f3f4f6);
+  color: var(--text-muted);
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.task-checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 13px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease;
+}
+
+button.task-checklist-row {
+  cursor: pointer;
+}
+
+button.task-checklist-row:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent, #3b82f6) 35%, var(--border-subtle));
+  background: color-mix(in srgb, var(--accent, #3b82f6) 4%, var(--bg-surface));
+}
+
+.task-checklist-row:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
+
+.task-checklist-icon {
+  display: grid;
+  flex: 0 0 30px;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 9%, var(--bg-surface));
+  color: var(--accent, #3b82f6);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.task-checklist-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.task-checklist-name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-checklist-status {
+  color: var(--accent, #3b82f6);
+  font-size: 0.63rem;
+  font-weight: 650;
+}
+
+.task-checklist-status--done {
+  color: #21845b;
+}
+
+.task-checklist-status--waiting {
+  color: #a86614;
+}
+
+.task-checklist-row--done {
+  border-color: color-mix(in srgb, #21845b 18%, var(--border-subtle));
+  background: color-mix(in srgb, #21845b 5%, var(--bg-surface));
+}
+
+.task-checklist-row--waiting {
+  border-color: color-mix(in srgb, #a86614 18%, var(--border-subtle));
+  background: color-mix(in srgb, #a86614 4%, var(--bg-surface));
+}
+
+.task-checklist-row--done .task-checklist-icon {
+  background: color-mix(in srgb, #21845b 12%, var(--bg-surface));
+  color: #21845b;
+}
+
+.task-checklist-row--completing {
+  animation: task-checklist-pop 220ms ease-out;
+}
+
+@keyframes task-checklist-pop {
+  50% { transform: scale(1.015); }
+}
+
+.task-checklist-done {
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: color-mix(in srgb, #21845b 8%, var(--bg-surface));
+  color: #21845b;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
 /* --- Week Calendar --- */

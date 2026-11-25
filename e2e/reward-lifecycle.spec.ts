@@ -1,5 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { startStack, putData, getData, type E2EStack } from './stack';
+import {
+  callChoresMan,
+  loadChoresMan,
+  startStack,
+  putData,
+  getData,
+  type E2EStack,
+} from './stack';
 
 /**
  * Reward lifecycle, end to end:
@@ -7,12 +14,11 @@ import { startStack, putData, getData, type E2EStack } from './stack';
  *   child proposes a reward ──parent PIN──▶ available
  *   child splits points across goals, keeping some spendable
  *   goal reaches its cost ──▶ locked, waiting for a parent
- *   parent approves payout ──▶ ChoreOps approves once, then "use again / delete"
+ *   parent approves payout ──▶ ChoresMan approves once, then "use again / delete"
  *   use again ──▶ same reward back at 0 allocations
- *   delete    ──▶ reward gone from ChoreOps, history kept
+ *   delete    ──▶ reward gone from ChoresMan, history kept
  *
- * The test runs against the real backend and a fake Home Assistant, so the
- * planner reducer, persistence and the ChoreOps service bridge are all real.
+ * The test runs against the real backend and local ChoresMan store.
  */
 
 const FAMILY = [
@@ -30,7 +36,6 @@ const FAMILY = [
     avatar: '\u{1F9D2}',
     color: '#cf6d55',
     role: 'child',
-    choreops_user: 'Zara',
   },
 ];
 
@@ -38,18 +43,20 @@ let stack: E2EStack;
 
 test.beforeAll(async () => {
   stack = await startStack();
-  stack.fakeHa.reset({
-    users: [{ name: 'Zara', points: 10 }],
-    // Four zero-point chores: each completion opens the award sheet without
-    // changing the balance, so the 5 + 3 allocation stays deterministic.
-    chores: [
-      { user: 'Zara', name: 'Afwassen' },
-      { user: 'Zara', name: 'Tafel dekken' },
-      { user: 'Zara', name: 'Kamer opruimen' },
-      { user: 'Zara', name: 'Vaatwasser' },
-    ],
+  await callChoresMan(stack.appUrl, 'family.sync_members', { members: FAMILY });
+  await callChoresMan(stack.appUrl, 'manual_adjust_points', {
+    user_name: 'Zara',
+    amount: 10,
+    reason: 'E2E starting balance',
   });
-  await putData(stack.appUrl, 'beacon_family_members', FAMILY);
+  for (const name of ['Afwassen', 'Tafel dekken', 'Kamer opruimen', 'Vaatwasser']) {
+    await callChoresMan(stack.appUrl, 'create_chore', {
+      name,
+      assigned_user_names: ['Zara'],
+      points: 0,
+    });
+  }
+  await putData(stack.appUrl, 'abbai_flow_family_members', FAMILY);
 });
 
 test.afterAll(async () => {
@@ -120,11 +127,21 @@ async function createReward(page: Page, name: string, cost: number) {
   await form.getByRole('button', { name: 'Zara', exact: true }).click();
   await form.getByRole('button', { name: 'Save', exact: true }).click();
 
-  // Creating a reward is a parent decision: the PIN sheet must appear.
-  await unlockPin(page);
+  // Children can propose rewards without a PIN, but the goal stays unusable
+  // until a parent approves the definition.
+  await expect(page.locator('.planner-pin-input')).toHaveCount(0);
   await expect(page.locator('.planner-sheet')).toHaveCount(0);
   await openGoals(page);
-  await expect(goalsSheet(page).locator('.planner-reward').filter({ hasText: name })).toBeVisible();
+  const row = rewardRow(page, name);
+  await expect(row).toContainText('Waiting for parent approval');
+  await expect
+    .poll(async () => (await loadChoresMan(stack.appUrl)).rewards.find((reward) => reward.name === name)?.approved)
+    .toBe(false);
+  await row.getByRole('button', { name: 'Approve reward', exact: true }).click();
+  await unlockPin(page);
+  await expect
+    .poll(async () => (await loadChoresMan(stack.appUrl)).rewards.find((reward) => reward.name === name)?.approved)
+    .toBe(true);
 }
 
 function rewardRow(page: Page, name: string) {
@@ -161,17 +178,20 @@ async function approvePayout(page: Page, name: string) {
 
 test('child splits points, parent approves payout, then reuse or delete', async ({ page }) => {
   await page.addInitScript((members) => {
-    localStorage.setItem('beacon_family_members', JSON.stringify(members));
+    localStorage.setItem('abbai_flow_family_members', JSON.stringify(members));
   }, FAMILY);
 
   await page.goto(stack.appUrl);
   await gotoChores(page);
   await expect(zaraColumn(page).locator('.planner-col-points')).toContainText('10');
 
-  // 1. The child proposes both goals; each creation needs a parent PIN.
+  // 1. The child can propose goals without a PIN; a parent must approve each
+  // definition before it can be used.
   await createReward(page, 'Film night', 7);
   await createReward(page, 'Snack', 8);
-  expect(stack.fakeHa.serviceCalls('choreops.create_reward')).toHaveLength(2);
+  await expect
+    .poll(async () => (await loadChoresMan(stack.appUrl)).rewards.map((reward) => reward.name))
+    .toEqual(['Film night', 'Snack']);
 
   // 2. 10 points split as 5 + 3, with 2 still in the savings pot.
   await earnAndAssign(page, 'Afwassen', 'Film night', 5);
@@ -190,15 +210,12 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   await expect(film).toContainText('Waiting for reward');
   await expect(rewardRow(page, 'Snack')).toContainText('3 / 8');
 
-  // 4. A parent approves the payout: ChoreOps is called exactly once.
+  // 4. A parent approves the payout: ChoresMan is called exactly once.
   await approvePayout(page, 'Film night');
-  expect(stack.fakeHa.serviceCalls('choreops.approve_reward')).toHaveLength(1);
-  expect(stack.fakeHa.serviceCalls('choreops.approve_reward')[0].data).toMatchObject({
-    user_name: 'Zara',
-    reward_name: 'Film night',
-  });
-  // ChoreOps deducted the cost (10 - 7), and the reward is back on offer.
-  expect(stack.fakeHa.points('Zara')).toBe(3);
+  // ChoresMan deducted the cost (10 - 7), and the reward is back on offer.
+  await expect
+    .poll(async () => (await loadChoresMan(stack.appUrl)).members.find((member) => member.name === 'Zara')?.points)
+    .toBe(3);
 
   // 5. "Use again" puts the same reward back at zero allocations.
   await sheetWithHeading(page, 'Reward given').getByRole('button', { name: 'Use again' }).click();
@@ -208,7 +225,11 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   await expect(rewardRow(page, 'Snack')).toContainText('3 / 8');
 
   // 6. Give the child more points, then complete Snack and delete it after payout.
-  stack.fakeHa.setPoints('Zara', 8); // 3 still committed to Snack → 5 spendable
+  await callChoresMan(stack.appUrl, 'manual_adjust_points', {
+    user_name: 'Zara',
+    amount: 5,
+    reason: 'E2E replenish savings',
+  }); // 3 still committed to Snack → 5 spendable
   await page.reload();
   await gotoChores(page);
   await earnAndAssign(page, 'Vaatwasser', 'Snack', 5);
@@ -218,9 +239,10 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   await approvePayout(page, 'Snack');
   await sheetWithHeading(page, 'Reward given').getByRole('button', { name: 'Delete' }).click();
 
-  // The definition is gone from ChoreOps, so it disappears from the goals.
-  await expect.poll(() => stack.fakeHa.serviceCalls('choreops.delete_reward').length).toBe(1);
-  expect(stack.fakeHa.rewardNames()).not.toContain('Snack');
+  // The definition is gone from ChoresMan, so it disappears from the goals.
+  await expect
+    .poll(async () => (await loadChoresMan(stack.appUrl)).rewards.map((reward) => reward.name))
+    .not.toContain('Snack');
   await openGoals(page);
   // The goal is gone; the "given rewards" history intentionally keeps its name.
   await expect(

@@ -101,12 +101,15 @@ export const fr: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': 'Tâches',
   'calendarSidebar.allClear': 'Rien à signaler',
   'calendarSidebar.completeItem': 'Terminer {name}',
+  'calendarSidebar.household': 'Maison',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': "Aucune tâche pour aujourd'hui — profitez du temps libre",
   'taskChecklist.allDone': 'Tout est fait, bravo !',
   'taskChecklist.complete': 'Terminer {name}',
   'taskChecklist.undo': 'Annuler {name}',
+  'taskChecklist.markDone': 'Terminer',
+  'taskChecklist.done': 'Terminé',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Corvée',
@@ -384,7 +387,7 @@ export const fr: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': 'Corvées',
   'settings.chores.desc':
-    'Les tâches et les points sont gérés dans Home Assistant par l’intégration ChoreOps.',
+    'ChoresMan gère les tâches, les points et les récompenses des profils familiaux d’Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Heure de réinitialisation quotidienne',
   'settings.chores.dailyResetTimeSublabel': 'Quand les corvées quotidiennes se réinitialisent',
   'settings.chores.streakDurationLabel': 'Durée de la série',
@@ -463,7 +466,7 @@ export const fr: Record<TranslationKey, string> = {
   'chores.pinRequired':
     'Définissez un code sur un parent dans Réglages → Famille pour valider les tâches ici.',
   'chores.pendingApprovals': '{count} en attente de validation',
-  'chores.assignToClaim': 'Attribuez cette tâche dans ChoreOps pour qu’elle puisse être réclamée.',
+  'chores.assignToClaim': 'Choisissez un membre de la famille pour cette tâche.',
   'chores.awaitingApproval': 'En attente d’un parent',
   'chores.refresh': 'Actualiser',
   'chores.everyone': 'Tout le monde',
@@ -490,7 +493,7 @@ export const fr: Record<TranslationKey, string> = {
   'chores.noChoresToday': 'Rien à faire pour le moment.',
   'chores.wellDone': 'Bravo !',
   'chores.missing':
-    'ChoreOps est introuvable dans Home Assistant. Installez et configurez l’intégration ChoreOps pour voir les tâches ici.',
+    'Il n’y a pas encore de tâches dans ChoresMan.',
   'chores.stat.due': 'À faire aujourd’hui',
   'chores.stat.claimed': 'Réclamées',
   'chores.stat.approved': 'Approuvées',
@@ -665,7 +668,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.anyone': 'Le premier arrivé',
   'planner.freeTask': 'Libre pour tout le monde',
   'planner.claimModeEditUnavailable':
-    'ChoreOps ne permet pas de modifier ce mode de réclamation ici. Modifiez-le dans ChoreOps, puis changez les personnes assignées ici.',
+    'ChoresMan ne permet pas de modifier ce mode de réclamation ici. Modifiez-le dans ChoresMan, puis changez les personnes assignées ici.',
   'planner.frequency': 'Fréquence',
   'planner.daily': 'Quotidienne',
   'planner.weekly': 'Hebdomadaire',
@@ -709,7 +712,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.sure': 'Supprimer vraiment ?',
   'planner.renameUnavailable':
     'Impossible d’identifier cette tâche pour la renommer. Actualisez les tâches puis réessayez.',
-  'planner.renameLocked': 'Renommer n’est possible que dans ChoreOps.',
+  'planner.renameLocked': 'Les noms des récompenses ne peuvent pas être modifiés ici.',
   'planner.create': 'Créer une tâche',
   'planner.noFail': 'Enregistrement impossible, réessaie',
   'planner.errorDetailsTitle': 'Détails complets de l’erreur',
@@ -734,7 +737,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.privacy': 'Confidentialité',
   'planner.sound': 'Son',
   'planner.rewards': 'Récompenses',
-  'planner.noRewards': 'Pas encore de récompenses dans ChoreOps.',
+  'planner.noRewards': 'Pas encore de récompenses dans ChoresMan.',
   'planner.newReward': 'Ajouter une récompense',
   'planner.cost': 'Coût (points)',
   'planner.assign': 'Attribuer',
@@ -742,7 +745,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.undoShort': 'Annuler',
   'planner.locked': 'pas encore assez',
   'planner.assignToClaim':
-    'Cette tâche n’a pas encore de bouton ChoreOps ; attribue-la d’abord dans Home Assistant.',
+    'Choisissez un membre de la famille avant d’attribuer cette tâche.',
   'planner.pinTitle': 'Validation parentale',
   'planner.pinHint': 'Saisis le code PIN d’un parent.',
   'planner.pinWrong': 'Ce code PIN est incorrect.',

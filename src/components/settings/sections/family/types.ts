@@ -13,7 +13,6 @@ export interface MemberForm {
   pin: string;
   calendar_entity: string;
   additional_calendar_entities: string[];
-  choreops_user: string;
 }
 
 /** A blank member form: what "add member" starts from. */
@@ -26,7 +25,6 @@ export const EMPTY_FORM: MemberForm = {
   pin: '',
   calendar_entity: '',
   additional_calendar_entities: [],
-  choreops_user: '',
 };
 
 /** What the member form holds while it is being edited. */
@@ -40,11 +38,4 @@ export interface RoutineFormValue {
   days_of_week: number[];
   mission_points: number;
   tasks: { id: string | null; name: string }[];
-}
-
-/** A person the member can be linked to (HA person or ChoreOps user). */
-export interface PersonOption {
-  name: string;
-  hasChoreOps: boolean;
-  picture: string | null;
 }

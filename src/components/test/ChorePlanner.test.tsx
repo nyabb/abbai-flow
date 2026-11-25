@@ -3,36 +3,37 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
-import type { ChoreOpsState } from '../../types/choreops';
+import type { ChoresManState } from '../../types/choresman';
 
 const mocks = vi.hoisted(() => ({
   createReward: vi.fn(async () => {}),
   deleteReward: vi.fn(async () => {}),
   deleteChore: vi.fn(async () => {}),
   approveReward: vi.fn(async () => {}),
-  pressButton: vi.fn(async () => {}),
+  runActionId: vi.fn(async () => {}),
   fetchChoreHistory: vi.fn(
     async () =>
       [] as Array<{
         id: string;
-        entityId: string;
+        choreId: string;
         choreName: string;
         completedAt: string;
         completedAtMs: number;
         points: number | null;
       }>,
   ),
-  state: { current: null as ChoreOpsState | null },
+  fetchRewardHistory: vi.fn(async () => []),
+  state: { current: null as ChoresManState | null },
 }));
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: mocks.state.current,
     loading: false,
     error: null,
     available: true,
     refresh: () => {},
-    pressButton: mocks.pressButton,
+    runActionId: mocks.runActionId,
     claimChore: async () => {},
     createChore: async () => {},
     updateChore: async () => {},
@@ -43,8 +44,9 @@ vi.mock('../../hooks/useChoreOps', () => ({
   }),
 }));
 
-vi.mock('../../api/choreops-chore-history', () => ({
-  fetchChoreOpsChoreHistory: mocks.fetchChoreHistory,
+vi.mock('../../api/choresman-history', () => ({
+  fetchChoresManChoreHistory: mocks.fetchChoreHistory,
+  fetchChoresManRewardHistory: mocks.fetchRewardHistory,
 }));
 
 function makeMember(overrides: Partial<FamilyMember>): FamilyMember {
@@ -59,10 +61,10 @@ function makeMember(overrides: Partial<FamilyMember>): FamilyMember {
 }
 
 const PARENT = makeMember({ id: 'p1', name: 'Papa', role: 'parent', pin: '0123' });
-const ZARA = makeMember({ id: 'c1', name: 'Zara', choreops_user: 'Zara' });
+const ZARA = makeMember({ id: 'c1', name: 'Zara'});
 
-/** Minimal ChoreOps snapshot: one claimable chore and one reward for Zara. */
-function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
+/** Minimal ChoresMan snapshot: one claimable chore and one reward for Zara. */
+function choresManState(overrides: Partial<ChoresManState> = {}): ChoresManState {
   return {
     users: [
       {
@@ -78,7 +80,7 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
     chores: [
       {
         id: 'status:zara::afwassen',
-        statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+        plannerRowId: 'choresman-row:afwassen:zara',
         name: 'Afwassen',
         icon: 'mdi:silverware',
         status: 'pending',
@@ -89,18 +91,18 @@ function choreOpsState(overrides: Partial<ChoreOpsState> = {}): ChoreOpsState {
         dueDate: null,
         canClaim: true,
         canApprove: false,
-        actions: { claim: 'button.zara_choreops_claim_chore_afwassen' },
+        actions: { claim: 'choresman-action:claim-afwassen' },
       },
     ],
     rewards: [
       {
-        id: 'sensor.zara_choreops_reward_status_schermtijd',
+        id: 'choresman:reward-schermtijd:zara',
         name: 'Schermtijd',
         status: 'available',
         cost: 20,
         pendingClaims: 0,
         assignee: 'Zara',
-        actions: { claim: 'button.zara_redeem_schermtijd' },
+        actions: { claim: 'choresman-action:redeem-schermtijd' },
       },
     ],
     people: [],
@@ -161,7 +163,7 @@ function openRewards(container: HTMLElement, name = 'Zara') {
 describe('ChorePlanner parent PIN gate', () => {
   beforeEach(() => {
     localStorage.clear();
-    mocks.state.current = choreOpsState();
+    mocks.state.current = choresManState();
     mocks.createReward.mockClear();
     mocks.deleteChore.mockClear();
   });
@@ -195,8 +197,8 @@ describe('ChorePlanner parent PIN gate', () => {
     await waitFor(() => expect(mocks.deleteChore).toHaveBeenCalledWith('Afwassen'));
   });
 
-  it('keeps ChoreOps routine labels in chores and lists Abbai Flow routines separately', async () => {
-    const base = choreOpsState();
+  it('keeps ChoresMan routine labels in chores and lists Abbai Flow routines separately', async () => {
+    const base = choresManState();
     mocks.state.current = {
       ...base,
       chores: [
@@ -232,18 +234,18 @@ describe('ChorePlanner parent PIN gate', () => {
  */
 /**
  * A chore anybody may take sits in its own column on the board. Once a child
- * claims it ChoreOps hands the row to that child, so it moves into their column
+ * claims it ChoresMan hands the row to that child, so it moves into their column
  * and nobody sees it twice.
  */
 describe('ChorePlanner anyone chores', () => {
-  const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
+  const MAYA = makeMember({ id: 'c2', name: 'Maya'});
 
   /** Two children sharing a `shared_first` chore, one row per child. */
-  function anyoneState(zaraStatus: string, mayaStatus: string): ChoreOpsState {
-    const base = choreOpsState();
+  function anyoneState(zaraStatus: string, mayaStatus: string): ChoresManState {
+    const base = choresManState();
     const row = (name: string, status: string) => ({
       id: `status:${name.toLowerCase()}::tafel dekken`,
-      statusEntityId: `sensor.${name.toLowerCase()}_choreops_chore_status_tafel_dekken`,
+      plannerRowId: `choresman-row:table-setting:${name.toLowerCase()}`,
       name: 'Tafel dekken',
       icon: 'mdi:silverware',
       status,
@@ -255,7 +257,7 @@ describe('ChorePlanner anyone chores', () => {
       canClaim: true,
       canApprove: false,
       actions: {
-        claim: `button.${name.toLowerCase()}_choreops_claim_chore_tafel_dekken`,
+        claim: `choresman-action:claim-table-setting:${name.toLowerCase()}`,
       },
     });
 
@@ -340,9 +342,9 @@ async function assignReward(container: HTMLElement, amount: number) {
   openRewards(container);
 }
 
-describe('ChorePlanner rewards from ChoreOps', () => {
+describe('ChorePlanner rewards from ChoresMan', () => {
   beforeEach(() => {
-    mocks.state.current = choreOpsState();
+    mocks.state.current = choresManState();
     mocks.createReward.mockClear();
     mocks.approveReward.mockClear();
     localStorage.clear();
@@ -365,7 +367,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     const row = [...container.querySelectorAll<HTMLElement>('.planner-reward')].find((element) =>
       element.textContent?.includes('Schermtijd'),
     )!;
-    fireEvent.click(within(row).getByRole('button', { name: 'Toewijzen' }));
+    fireEvent.click(within(row).getByRole('button', { name: 'Punten verdelen: Schermtijd' }));
 
     const sheet = container.querySelector<HTMLElement>('.planner-sheet')!;
     expect(sheet.textContent).toContain('Spaarpot');
@@ -390,7 +392,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   /*
    * Points leave the child's balance the moment they allocate, and the hold is
-   * Abbai Flow-local: no parent confirmation, nothing written to ChoreOps, so the
+   * Abbai Flow-local: no parent confirmation, nothing written to ChoresMan, so the
    * child can take it back whenever they like.
    */
   /*
@@ -399,7 +401,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
    * parent. The pursuit is stored in the shared Abbai Flow document, not in this
    * device's localStorage reservations.
    */
-  it('marks the goal achieved on assign, and never writes to ChoreOps yet', async () => {
+  it('marks the goal achieved on assign, and never writes to ChoresMan yet', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
@@ -410,11 +412,11 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     await waitFor(() =>
       expect(localStorage.getItem('abbai-flow-reward-redemptions')).toContain('schermtijd'),
     );
-    // A reached goal is not a given reward: no ChoreOps deduction happened.
+    // A reached goal is not a given reward: no ChoresMan deduction happened.
     expect(mocks.approveReward).not.toHaveBeenCalled();
   });
 
-  /* Allocation never needs a parent: no PIN sheet and no ChoreOps write. */
+  /* Allocation never needs a parent: no PIN sheet and no ChoresMan write. */
   it('never asks a parent to approve an allocation', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
@@ -428,7 +430,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
   /* Points accumulate: a goal bigger than the balance stays open, partway. */
   it('accumulates points towards a goal instead of reserving the whole cost', async () => {
-    const base = choreOpsState();
+    const base = choresManState();
     mocks.state.current = { ...base, rewards: [{ ...base.rewards[0], cost: 40 }] };
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
@@ -461,7 +463,7 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     expect(mocks.deleteReward).not.toHaveBeenCalled();
   });
 
-  it('creates a per-child reward in ChoreOps', async () => {
+  it('creates a per-child reward in ChoresMan', async () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     openRewards(container);
 
@@ -480,16 +482,14 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Opslaan' }));
 
-    // Creating a reward is a parent action, so the PIN comes first.
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    expect(container.querySelector('.planner-pin-input')).toBeNull();
 
     await waitFor(() =>
       expect(mocks.createReward).toHaveBeenCalledWith({
         name: 'Naar de film',
         cost: 40,
         assignedUserNames: ['Zara'],
+        approvalRequired: true,
       }),
     );
   });
@@ -512,16 +512,14 @@ describe('ChorePlanner rewards from ChoreOps', () => {
     fireEvent.click(zara);
     fireEvent.click(within(sheet).getByRole('button', { name: 'Opslaan' }));
 
-    const pin = container.querySelector<HTMLInputElement>('.planner-pin-input')!;
-    expect(pin).not.toBeNull();
-    fireEvent.change(pin, { target: { value: '0123' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
+    expect(container.querySelector('.planner-pin-input')).toBeNull();
 
     await waitFor(() =>
       expect(mocks.createReward).toHaveBeenCalledWith({
         name: 'Naar de film',
         cost: 40,
         assignedUserNames: ['Zara'],
+        approvalRequired: true,
       }),
     );
   });
@@ -529,13 +527,13 @@ describe('ChorePlanner rewards from ChoreOps', () => {
 
 /**
  * Tapping a card on a shared display must never complete a chore by itself:
- * the child confirms first. Nothing reaches ChoreOps until they say yes, and
+ * the child confirms first. Nothing reaches ChoresMan until they say yes, and
  * only a chore nobody owns yet is worded as a claim.
  */
 describe('ChorePlanner completion confirmation', () => {
   beforeEach(() => {
-    mocks.state.current = choreOpsState();
-    mocks.pressButton.mockClear();
+    mocks.state.current = choresManState();
+    mocks.runActionId.mockClear();
     localStorage.clear();
   });
 
@@ -547,11 +545,11 @@ describe('ChorePlanner completion confirmation', () => {
     // The chore is already Zara's, so this is finishing it, not claiming it.
     expect(container.textContent).toContain('Taakje afronden?');
     expect(container.textContent).not.toContain('Taakje claimen?');
-    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.runActionId).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Annuleren' }));
     expect(container.textContent).not.toContain('Taakje afronden?');
-    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.runActionId).not.toHaveBeenCalled();
   });
 
   it('finishes the chore once the child confirms', async () => {
@@ -561,7 +559,7 @@ describe('ChorePlanner completion confirmation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
 
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_choreops_claim_chore_afwassen'),
+      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:claim-afwassen'),
     );
     // The toast names what happened — this was finishing, not claiming.
     await waitFor(() =>
@@ -570,21 +568,21 @@ describe('ChorePlanner completion confirmation', () => {
   });
 
   it('lets a parent sign the chore off, behind the PIN — never the child', async () => {
-    mocks.pressButton.mockClear();
-    mocks.state.current = choreOpsState({
+    mocks.runActionId.mockClear();
+    mocks.state.current = choresManState({
       chores: [
         {
-          ...choreOpsState().chores[0],
+          ...choresManState().chores[0],
           status: 'claimed',
-          actions: { approve: 'button.zara_approve_afwassen' },
+          actions: { approve: 'choresman-action:approve-afwassen' },
         },
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    // The child's own tap is not an approval: nothing is sent to ChoreOps.
+    // The child's own tap is not an approval: nothing is sent to ChoresMan.
     fireEvent.click(container.querySelector('.planner-row-check')!);
-    expect(mocks.pressButton).not.toHaveBeenCalled();
+    expect(mocks.runActionId).not.toHaveBeenCalled();
     expect(container.querySelector('.planner-sheet--confirm')).toBeNull();
 
     // Signing off lives in the row's actions, and asks for the parent PIN.
@@ -596,15 +594,15 @@ describe('ChorePlanner completion confirmation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Ontgrendelen' }));
 
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_approve_afwassen'),
+    expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:approve-afwassen'),
     );
   });
 
   it('only offers to claim a chore nobody owns yet', async () => {
-    mocks.state.current = choreOpsState({
+    mocks.state.current = choresManState({
       chores: [
         {
-          ...choreOpsState().chores[0],
+          ...choresManState().chores[0],
           completionCriteria: 'shared_first',
           assignedUserNames: ['Zara', 'Maya'],
         },
@@ -622,7 +620,7 @@ describe('ChorePlanner completion confirmation', () => {
     );
 
     await waitFor(() =>
-      expect(mocks.pressButton).toHaveBeenCalledWith('button.zara_choreops_claim_chore_afwassen'),
+      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:claim-afwassen'),
     );
     await waitFor(() =>
       expect(container.querySelector('.planner-toast')?.textContent).toBe('Geclaimd · Afwassen'),
@@ -635,32 +633,32 @@ describe('ChorePlanner completion confirmation', () => {
    * `completeTask`'s in-flight guard and the board needed a page reload.
    */
   it('keeps working after one chore is confirmed (no reload needed)', async () => {
-    mocks.state.current = choreOpsState({
+    mocks.state.current = choresManState({
       chores: [
-        { ...choreOpsState().chores[0], id: 'status:zara::afwassen', name: 'Afwassen' },
+        { ...choresManState().chores[0], id: 'status:zara::afwassen', name: 'Afwassen' },
         {
-          ...choreOpsState().chores[0],
+          ...choresManState().chores[0],
           id: 'status:zara::afdrogen',
           name: 'Afdrogen',
-          actions: { claim: 'button.zara_choreops_claim_chore_afdrogen' },
+          actions: { claim: 'choresman-action:claim-afdrogen' },
         },
       ],
     });
     const { container } = renderPlanner([PARENT, ZARA]);
 
-    for (const [label, entityId] of [
-      ['Afwassen', 'button.zara_choreops_claim_chore_afwassen'],
-      ['Afdrogen', 'button.zara_choreops_claim_chore_afdrogen'],
+    for (const [label, actionId] of [
+      ['Afwassen', 'choresman-action:claim-afwassen'],
+      ['Afdrogen', 'choresman-action:claim-afdrogen'],
     ] as const) {
       const row = [...container.querySelectorAll<HTMLElement>('.planner-row')].find((element) =>
         element.textContent?.includes(label),
       );
       fireEvent.click(row!.querySelector('.planner-row-check')!);
       fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
-      await waitFor(() => expect(mocks.pressButton).toHaveBeenCalledWith(entityId));
+      await waitFor(() => expect(mocks.runActionId).toHaveBeenCalledWith(actionId));
     }
 
-    expect(mocks.pressButton).toHaveBeenCalledTimes(2);
+    expect(mocks.runActionId).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -669,10 +667,10 @@ describe('ChorePlanner completion confirmation', () => {
  * the chores anyone may take. Rows act in place: nothing opens a separate page.
  */
 describe('ChorePlanner board', () => {
-  const MAYA = makeMember({ id: 'c2', name: 'Maya', choreops_user: 'Maya' });
+  const MAYA = makeMember({ id: 'c2', name: 'Maya'});
 
-  function twoChildren(): ChoreOpsState {
-    const base = choreOpsState();
+  function twoChildren(): ChoresManState {
+    const base = choresManState();
     return {
       ...base,
       users: [
@@ -724,7 +722,7 @@ describe('ChorePlanner board', () => {
     expect(column(container, 'Maya').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('keeps a recurring ChoreOps task as a chore even when it has a routine label', () => {
+  it('keeps a recurring ChoresMan task as a chore even when it has a routine label', () => {
     const base = twoChildren();
     mocks.state.current = {
       ...base,
@@ -737,7 +735,7 @@ describe('ChorePlanner board', () => {
           assignee: 'Zara',
           frequency: 'daily',
           labels: ['Ochtendroutine'],
-          actions: { claim: 'button.zara_choreops_claim_chore_kamer_opruimen' },
+          actions: { claim: 'choresman-action:claim-kamer-opruimen' },
         },
       ],
     };
@@ -792,20 +790,20 @@ describe('ChorePlanner board', () => {
 
   it('shows completed chore history with the same date ranges', async () => {
     const now = Date.now();
-    const base = choreOpsState();
+    const base = choresManState();
     mocks.state.current = {
       ...base,
       chores: [
         {
           ...base.chores[0],
-          statusEntityId: 'sensor.zara_choreops_chore_status_afwassen',
+          plannerRowId: 'choresman-row:afwassen:zara',
         },
       ],
     };
     mocks.fetchChoreHistory.mockResolvedValue([
       {
         id: 'recent',
-        entityId: 'sensor.zara_choreops_chore_status_afwassen',
+        choreId: 'chore-afwassen',
         choreName: 'Afwassen vandaag',
         completedAt: new Date(now - 24 * 60 * 60 * 1000).toISOString(),
         completedAtMs: now - 24 * 60 * 60 * 1000,
@@ -813,7 +811,7 @@ describe('ChorePlanner board', () => {
       },
       {
         id: 'older',
-        entityId: 'sensor.zara_choreops_chore_status_afwassen',
+        choreId: 'chore-afwassen',
         choreName: 'Afwassen eerder',
         completedAt: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
         completedAtMs: now - 3 * 24 * 60 * 60 * 1000,
@@ -826,13 +824,7 @@ describe('ChorePlanner board', () => {
       column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
     );
     await waitFor(() => expect(container.textContent).toContain('Afwassen eerder'));
-    expect(mocks.fetchChoreHistory).toHaveBeenCalledWith([
-      {
-        entityId: 'sensor.zara_choreops_chore_status_afwassen',
-        choreName: 'Afwassen',
-        points: 3,
-      },
-    ]);
+    expect(mocks.fetchChoreHistory).toHaveBeenCalledWith('Zara');
 
     const changeHistoryRange = (value: 'twoDays' | 'week') => {
       const history = container.querySelector<HTMLElement>('.planner-detail')!;

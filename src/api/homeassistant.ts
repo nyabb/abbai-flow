@@ -57,12 +57,6 @@ interface HAEventMessage {
   event: unknown;
 }
 
-export interface HAEntityRegistryEntry {
-  entity_id: string;
-  unique_id: string;
-  platform: string;
-}
-
 type PendingRequest = {
   operation: string;
   resolve: (value: unknown) => void;
@@ -474,14 +468,6 @@ export class HomeAssistantClient {
       state: string;
       attributes: Record<string, unknown>;
     }>>;
-  }
-
-  /** Read a single entity's registry identity over Home Assistant's WebSocket API. */
-  async getEntityRegistryEntry(entityId: string): Promise<HAEntityRegistryEntry> {
-    return this.sendMessage({
-      type: 'config/entity_registry/get',
-      entity_id: entityId,
-    }) as Promise<HAEntityRegistryEntry>;
   }
 
   async callService(domain: string, service: string, entityId: string, data?: Record<string, unknown>): Promise<unknown> {

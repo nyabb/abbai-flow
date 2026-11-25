@@ -3,9 +3,9 @@
  * finished today and their routines — the board's per-member drill-down.
  */
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import type { ChoreOpsChoreHistoryEntry } from '../../api/choreops-chore-history';
+import type { ChoresManChoreHistoryEntry } from '../../api/choresman-history';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
-import type { ChoreOpsReward } from '../../types/choreops';
+import type { ChoresManReward } from '../../types/choresman';
 import type { Routine } from '../../types/family';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
@@ -24,12 +24,12 @@ export interface ChildViewProps {
   columnTasks: (memberId: string) => PlannerTask[];
   columnRoutines: (memberId: string) => Routine[];
   completedTasksFor: (memberId: string) => PlannerTask[];
-  completedHistory: ChoreOpsChoreHistoryEntry[] | null;
+  completedHistory: ChoresManChoreHistoryEntry[] | null;
   formatHistoryDate: (value: number) => string;
-  rewardsForMember: (memberId: string) => ChoreOpsReward[];
+  rewardsForMember: (memberId: string) => ChoresManReward[];
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: Routine, memberId: string) => React.ReactNode;
-  renderRewardRow: (reward: ChoreOpsReward) => React.ReactNode;
+  renderRewardRow: (reward: ChoresManReward) => React.ReactNode;
   copy: PlannerCopy;
   onStepChild: (delta: number) => void;
   onStartMissions: (memberId: string) => void;

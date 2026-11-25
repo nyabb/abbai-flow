@@ -1,14 +1,14 @@
 import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import {
-  formatChoreOpsOffset,
+  formatChoresManOffset,
   isChoreOpenToAnyone,
-  CHOREOPS_ALL_USERS,
-  type ChoreOpsFrequency,
-  type ChoreOpsIntervalUnit,
-  type ChoreOpsWeekday,
-} from '../../api/choreops';
+  CHORESMAN_ALL_USERS,
+  type ChoresManFrequency,
+  type ChoresManIntervalUnit,
+  type ChoresManWeekday,
+} from '../../api/chore-model';
 import { normaliseName } from '../../api/planner-meta';
-import type { UseChoreOpsResult } from '../../hooks/useChoreOps';
+import type { UseChoresManResult } from '../../hooks/useChoresMan';
 import type { I18nValue } from '../../i18n';
 import type { PlannerTask } from '../../api/chore-planner-model';
 import { DAY_KEYS, emptyForm, formFromLiveTask, toastWith, type FormValue } from './form';
@@ -23,7 +23,7 @@ interface UseChoreFormActionsOptions {
   saving: boolean;
   setSaving: Dispatch<SetStateAction<boolean>>;
   now: Date;
-  choreOps: UseChoreOpsResult;
+  choresMan: UseChoresManResult;
   getTask: (id: string | null) => PlannerTask | null;
   userNameByMemberId: Map<string, string>;
   hasParentPin: boolean;
@@ -44,7 +44,7 @@ export function useChoreFormActions({
   saving,
   setSaving,
   now,
-  choreOps,
+  choresMan,
   getTask,
   userNameByMemberId,
   hasParentPin,
@@ -73,9 +73,9 @@ export function useChoreFormActions({
   const openEditForm = (task: PlannerTask) => {
     if (hasParentPin) dispatchOverlay({ type: 'close' });
     requestPin(c.edit, task.name, () => {
-      // ChoreOps is the source of truth: prefill from its own record of the chore.
+      // ChoresMan is the source of truth: prefill from its own record of the chore.
       const chore =
-        choreOps.data?.chores.find(
+        choresMan.data?.chores.find(
           (item) => item.name.trim().toLowerCase() === task.name.trim().toLowerCase(),
         ) ?? null;
       const nextForm = formFromLiveTask(task, chore);
@@ -103,16 +103,16 @@ export function useChoreFormActions({
   const replaceChore = async (
     originalName: string,
     choreId: string,
-    replacement: Parameters<UseChoreOpsResult['createChore']>[0],
+    replacement: Parameters<UseChoresManResult['createChore']>[0],
   ) => {
     const temporaryName = `__abbai_flow_recreate_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    await choreOps.updateChore({ name: temporaryName, targetName: originalName, choreId });
+    await choresMan.updateChore({ name: temporaryName, targetName: originalName, choreId });
 
     try {
-      await choreOps.createChore(replacement);
+      await choresMan.createChore(replacement);
     } catch (createError) {
       try {
-        await choreOps.updateChore({
+        await choresMan.updateChore({
           name: originalName,
           targetName: temporaryName,
           choreId,
@@ -135,12 +135,12 @@ export function useChoreFormActions({
     }
 
     try {
-      await choreOps.deleteChore(temporaryName);
+      await choresMan.deleteChore(temporaryName);
     } catch (deleteError) {
       const rollbackErrors: string[] = [];
       const rollbackDetails: string[] = [];
       try {
-        await choreOps.deleteChore(replacement.name.trim());
+        await choresMan.deleteChore(replacement.name.trim());
       } catch (rollbackError) {
         rollbackErrors.push(
           `could not remove the replacement: ${rollbackError instanceof Error ? rollbackError.message : c.noFail}`,
@@ -148,7 +148,7 @@ export function useChoreFormActions({
         rollbackDetails.push(errorDiagnosticText(rollbackError));
       }
       try {
-        await choreOps.updateChore({
+        await choresMan.updateChore({
           name: originalName,
           targetName: temporaryName,
           choreId,
@@ -182,12 +182,12 @@ export function useChoreFormActions({
     if (!form.name.trim() || (!form.memberIds.length && !form.free) || saving) return;
 
     /*
-     * "Free for anyone to claim" is ChoreOps' `*` sentinel, not an empty
-     * assignee list: ChoreOps treats an empty list as a dormant chore and
+     * "Free for anyone to claim" is ChoresMan's `*` sentinel, not an empty
+     * assignee list: ChoresMan treats an empty list as a dormant chore and
      * publishes no entities for it, so the chore would silently vanish.
      */
     const userNames = form.free
-      ? [CHOREOPS_ALL_USERS]
+      ? [CHORESMAN_ALL_USERS]
       : form.memberIds
           .map((id) => userNameByMemberId.get(id))
           .filter((name): name is string => Boolean(name));
@@ -196,12 +196,12 @@ export function useChoreFormActions({
       return;
     }
 
-    /* A new chore is a one-off; edits keep its existing ChoreOps recurrence. */
+    /* A new chore is a one-off; edits keep its existing ChoresMan recurrence. */
     const frequency = form.liveFrequency;
     const originalTask = editingId ? getTask(editingId) : null;
     const originalName = originalTask?.name ?? form.name;
     const originalChore = editingId
-      ? (choreOps.data?.chores.find(
+      ? (choresMan.data?.chores.find(
           (item) => item.name.trim().toLowerCase() === originalName.trim().toLowerCase(),
         ) ?? null)
       : null;
@@ -238,7 +238,7 @@ export function useChoreFormActions({
       customIntervalUnit: form.liveIntervalUnit,
       applicableDays:
         frequency === 'weekly' ? form.liveWeekdays.map((day) => DAY_KEYS[day]) : undefined,
-      // Sent exactly as the form shows it: ChoreOps decides whether the date is
+      // Sent exactly as the form shows it: ChoresMan decides whether the date is
       // acceptable and its message is what the (red) toast shows.
       dueDate: form.deadlineAt ? new Date(form.deadlineAt).toISOString() : undefined,
       description: form.liveDescription,
@@ -262,12 +262,12 @@ export function useChoreFormActions({
     const dueDateChanged = Boolean(
       originalChore && !sameMinute(schedule.dueDate, originalChore.dueDate),
     );
-    const currentWindow = formatChoreOpsOffset(originalChore?.windowOffset);
+    const currentWindow = formatChoresManOffset(originalChore?.windowOffset);
     const windowChanged = Boolean(originalChore && form.liveWindow.trim() !== currentWindow);
     const updateSchedule = {
-      // ChoreOps treats these as real schedule edits. Leave unchanged schedule
-      // fields out of an assignee-only update, especially `due_date`: sensors
-      // can publish an overdue date and the editor may otherwise replay it.
+      // ChoresMan treats these as real schedule edits. Leave unchanged schedule
+      // fields out of an assignee-only update, especially `due_date`: an
+      // overdue stored date should not be replayed as a new schedule edit.
       ...(frequencyChanged ? { frequency: schedule.frequency } : {}),
       ...(frequencyChanged || intervalChanged
         ? {
@@ -295,14 +295,14 @@ export function useChoreFormActions({
         let choreId: string | undefined;
         if (renamed || recreateForClaimModeChange) {
           const resolvedId =
-            originalChore?.statusEntityId && choreOps.resolveChoreId
-              ? await choreOps.resolveChoreId(originalChore.statusEntityId)
+            originalChore?.plannerRowId && choresMan.resolveChoreId
+              ? await choresMan.resolveChoreId(originalChore.plannerRowId)
               : null;
           if (!resolvedId) throw new Error(t('planner.renameUnavailable'));
           choreId = resolvedId;
         }
         if (!recreateForClaimModeChange) {
-          await choreOps.updateChore({
+          await choresMan.updateChore({
             ...updateSchedule,
             name: form.name,
             targetName: originalName,
@@ -349,7 +349,7 @@ export function useChoreFormActions({
           });
         }
       } else {
-        await choreOps.createChore({
+        await choresMan.createChore({
           ...schedule,
           name: form.name,
           assignedUserNames: userNames,
@@ -364,7 +364,7 @@ export function useChoreFormActions({
       dispatchOverlay({ type: 'close' });
       showToast(toastWith(editingId ? c.savedToast : c.created, form.name.trim()));
     } catch (err) {
-      // ChoreOps replies with the exact reason (e.g. "The requested changes
+      // ChoresMan replies with the exact reason (e.g. "The requested changes
       // require a future due date"); show it verbatim in the red toast.
       showError(err);
     } finally {
@@ -374,7 +374,7 @@ export function useChoreFormActions({
 
   const removeTask = async (task: PlannerTask) => {
     try {
-      await choreOps.deleteChore(task.name);
+      await choresMan.deleteChore(task.name);
       dispatchOverlay({ type: 'close' });
       showToast(toastWith(c.removedToast, task.name));
     } catch (err) {
@@ -386,7 +386,7 @@ export function useChoreFormActions({
   const reuseTask = async (task: PlannerTask) => {
     if (saving) return;
     const choreMatches =
-      choreOps.data?.chores.filter(
+      choresMan.data?.chores.filter(
         (item) => normaliseName(item.name) === normaliseName(task.name),
       ) ?? [];
     const taskUserName = task.memberId ? userNameByMemberId.get(task.memberId) : undefined;
@@ -410,25 +410,25 @@ export function useChoreFormActions({
           normaliseName(chore.completionCriteria ?? '') === 'independent' && taskUserName
             ? taskUserName
             : undefined;
-        await choreOps.setChoreDueDate(task.name, futureDueDate, userName);
+        await choresMan.setChoreDueDate(task.name, futureDueDate, userName);
       } else if (normaliseName(chore.completionCriteria ?? '') === 'shared_first') {
         const previousAssignees = chore.assignedUserNames ?? [];
         const needsAllUsers = !previousAssignees.some(
-          (name) => normaliseName(name) === normaliseName(CHOREOPS_ALL_USERS),
+          (name) => normaliseName(name) === normaliseName(CHORESMAN_ALL_USERS),
         );
         if (needsAllUsers) {
-          await choreOps.updateChore({
+          await choresMan.updateChore({
             name: chore.name,
             targetName: chore.name,
-            assignedUserNames: [CHOREOPS_ALL_USERS],
+            assignedUserNames: [CHORESMAN_ALL_USERS],
           });
         }
         try {
-          await choreOps.setChoreDueDate(task.name, futureDueDate);
+          await choresMan.setChoreDueDate(task.name, futureDueDate);
         } catch (resetError) {
           if (needsAllUsers && previousAssignees.length > 0) {
             try {
-              await choreOps.updateChore({
+              await choresMan.updateChore({
                 name: chore.name,
                 targetName: chore.name,
                 assignedUserNames: previousAssignees,
@@ -450,22 +450,22 @@ export function useChoreFormActions({
         }
       } else {
         const choreId =
-          chore.statusEntityId && choreOps.resolveChoreId
-            ? await choreOps.resolveChoreId(chore.statusEntityId)
+          chore.plannerRowId && choresMan.resolveChoreId
+            ? await choresMan.resolveChoreId(chore.plannerRowId)
             : null;
         if (!choreId) throw new Error(t('planner.renameUnavailable'));
         await replaceChore(task.name, choreId, {
           name: chore.name,
-          assignedUserNames: [CHOREOPS_ALL_USERS],
+          assignedUserNames: [CHORESMAN_ALL_USERS],
           completionCriteria: 'shared_first',
           icon: chore.icon,
           points: chore.points,
           description: chore.description,
           labels: chore.labels,
-          frequency: (chore.frequency ?? 'none') as ChoreOpsFrequency,
+          frequency: (chore.frequency ?? 'none') as ChoresManFrequency,
           customInterval: chore.customInterval,
-          customIntervalUnit: chore.customIntervalUnit as ChoreOpsIntervalUnit | null,
-          applicableDays: (chore.applicableDays ?? []) as ChoreOpsWeekday[],
+          customIntervalUnit: chore.customIntervalUnit as ChoresManIntervalUnit | null,
+          applicableDays: (chore.applicableDays ?? []) as ChoresManWeekday[],
           dueDate: futureDueDate ?? undefined,
           windowOffset: chore.windowOffset,
           autoApprove: chore.autoApprove,

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Plus, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { PlannerMember } from '../../../api/chore-planner-model';
 import type { Redemption } from '../../../api/reward-redemptions';
-import type { ChoreOpsRewardHistoryEntry } from '../../../api/choreops-ledger';
-import type { ChoreOpsReward } from '../../../types/choreops';
+import type { ChoresManRewardHistoryEntry } from '../../../api/choresman-history';
+import type { ChoresManReward } from '../../../types/choresman';
 import { MemberAvatar } from '../../MemberAvatar';
 import { ActivitySpinner } from '../../LoadingPlaceholder';
 import type { PlannerCopy } from '../copy';
@@ -17,18 +17,18 @@ function isHistoryRange(value: unknown): value is HistoryRange {
 
 export interface GoalsSheetProps {
   member: PlannerMember;
-  rewards: ChoreOpsReward[];
+  rewards: ChoresManReward[];
   copy: PlannerCopy;
-  renderRewardRow: (reward: ChoreOpsReward) => React.ReactNode;
+  renderRewardRow: (reward: ChoresManReward) => React.ReactNode;
   onNewGoal: (memberId: string) => void;
   /** True once the full cost is set aside, so the reward moves under Done. */
-  isDone: (reward: ChoreOpsReward) => boolean;
+  isDone: (reward: ChoresManReward) => boolean;
   /** Rewards this child has reached and that are waiting for a parent. */
   awaiting?: Redemption[];
   /** Rewards already handed over (newest first). */
   given?: Redemption[];
-  /** Reward spends from ChoreOps' retained point ledger. */
-  ledgerHistory?: ChoreOpsRewardHistoryEntry[];
+  /** Reward spends from ChoresMan's retained point ledger. */
+  ledgerHistory?: ChoresManRewardHistoryEntry[];
   /** Parent-only action, gated by the PIN in the caller. */
   onGive?: (id: string) => void;
   formatDate?: (value: number) => string;
@@ -78,7 +78,7 @@ export function GoalsSheet({
       points: null as number | null,
     })),
     ...ledgerOnly.map((entry) => ({
-      id: `choreops:${entry.id}`,
+      id: `choresman:${entry.id}`,
       rewardLabel: entry.itemName,
       at: entry.timestampMs,
       fulfilledBy: null,
@@ -180,7 +180,7 @@ export function GoalsSheet({
 }
 
 export interface AssignPointsSheetProps {
-  reward: ChoreOpsReward;
+  reward: ChoresManReward;
   /** Points already set aside for this reward. */
   allocated: number;
   /** What the child can still spend right now. */
@@ -259,7 +259,7 @@ export interface RewardGivenSheetProps {
   copy: PlannerCopy;
   /** Keep the goal and put it back at 0 allocations. */
   onReuse: () => void;
-  /** Remove the reward definition from ChoreOps. */
+  /** Remove the reward definition from ChoresMan. */
   onDelete: () => void;
 }
 

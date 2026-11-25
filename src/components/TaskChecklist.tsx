@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Chore, FamilyMember } from '../types/family';
+import { useMemo, useState } from 'react';
+import { ListTodo } from 'lucide-react';
+import type { Chore, FamilyMember } from '../types/family';
 import { hapticMedium, hapticSuccess } from '../hooks/useHaptics';
 import { useTranslation } from '../i18n';
 import { MemberAvatar } from './MemberAvatar';
@@ -7,120 +8,163 @@ import { MemberAvatar } from './MemberAvatar';
 interface TaskChecklistProps {
   chores: Chore[];
   completedIds: Set<string>;
+  waitingIds?: Set<string>;
   onToggle: (choreId: string) => void;
   members?: FamilyMember[];
+  groupByAssignee?: boolean;
 }
 
-function AssigneeBadges({ chore, members }: { chore: Chore; members: FamilyMember[] }) {
-  if (!members.length || !chore.assigned_to?.length) return null;
-  const assignees = chore.assigned_to
-    .map((id) => members.find((m) => m.id === id))
-    .filter((m): m is FamilyMember => Boolean(m));
-  if (assignees.length === 0) return null;
-  return (
-    <span className="task-checklist-assignees">
-      {assignees.map((m) => (
-        <span
-          key={m.id}
-          className="task-checklist-assignee"
-          style={{ backgroundColor: m.color + '22', borderColor: m.color }}
-        >
-          <span className="task-checklist-avatar" aria-hidden="true">
-            <MemberAvatar member={m} size={24} />
-          </span>
-          <span className="task-checklist-assignee-name" style={{ color: m.color }}>
-            {m.name}
-          </span>
-        </span>
-      ))}
-    </span>
-  );
+interface ChoreGroup {
+  id: string;
+  member: FamilyMember | null;
+  chores: Chore[];
 }
 
 export function TaskChecklist({
   chores,
   completedIds,
+  waitingIds = new Set(),
   onToggle,
   members = [],
+  groupByAssignee = false,
 }: TaskChecklistProps) {
   const { t } = useTranslation();
   const [animatingId, setAnimatingId] = useState<string | null>(null);
 
-  const handleToggle = (choreId: string) => {
-    if (!completedIds.has(choreId)) {
-      setAnimatingId(choreId);
-      setTimeout(() => setAnimatingId(null), 400);
-      hapticMedium();
-      // Check if this completes all tasks
-      if (incomplete.length === 1) hapticSuccess();
+  const groups = useMemo<ChoreGroup[]>(() => {
+    if (!groupByAssignee) return [{ id: 'all', member: null, chores }];
+
+    const assignedGroups: ChoreGroup[] = members
+      .map((member) => ({
+        id: member.id,
+        member,
+        chores: chores.filter((chore) => chore.assigned_to?.includes(member.id)),
+      }))
+      .filter((group) => group.chores.length > 0);
+    const ungrouped = chores.filter(
+      (chore) => !chore.assigned_to?.some((id) => members.some((member) => member.id === id)),
+    );
+    if (ungrouped.length > 0) {
+      assignedGroups.push({ id: 'household', member: null, chores: ungrouped });
     }
+    return assignedGroups;
+  }, [chores, groupByAssignee, members]);
+
+  const incompleteCount = chores.filter((chore) => !completedIds.has(chore.id)).length;
+
+  const handleToggle = (choreId: string) => {
+    if (completedIds.has(choreId)) return;
+    setAnimatingId(choreId);
+    setTimeout(() => setAnimatingId(null), 400);
+    hapticMedium();
+    if (incompleteCount === 1) hapticSuccess();
     onToggle(choreId);
   };
-
-  const incomplete = chores.filter((c) => !completedIds.has(c.id));
-  const completed = chores.filter((c) => completedIds.has(c.id));
 
   if (chores.length === 0) {
     return <div className="task-checklist-empty">{t('taskChecklist.empty')}</div>;
   }
 
-  if (incomplete.length === 0) {
-    return <div className="task-checklist-done">{t('taskChecklist.allDone')}</div>;
-  }
-
   return (
-    <ul className="task-checklist">
-      {incomplete.map((chore) => (
-        <li key={chore.id} className="task-checklist-item">
-          <button
-            type="button"
-            className={`task-checkbox ${animatingId === chore.id ? 'task-checkbox--completing' : ''}`}
-            onClick={() => handleToggle(chore.id)}
-            aria-label={t('taskChecklist.complete', { name: chore.name })}
-          >
-            <span className="task-checkbox-box" />
-          </button>
-          <span className="task-checklist-label">
-            {chore.icon && <span className="task-checklist-icon">{chore.icon}</span>}
-            <span className="task-checklist-name" title={chore.name}>
-              {chore.name}
-            </span>
-          </span>
-          <AssigneeBadges chore={chore} members={members} />
-        </li>
-      ))}
-      {completed.map((chore) => (
-        <li key={chore.id} className="task-checklist-item task-checklist-item--done">
-          <button
-            type="button"
-            className="task-checkbox task-checkbox--checked"
-            onClick={() => handleToggle(chore.id)}
-            aria-label={t('taskChecklist.undo', { name: chore.name })}
-          >
-            <span className="task-checkbox-box">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </span>
-          </button>
-          <span className="task-checklist-label task-checklist-label--done">
-            {chore.icon && <span className="task-checklist-icon">{chore.icon}</span>}
-            <span className="task-checklist-name" title={chore.name}>
-              {chore.name}
-            </span>
-          </span>
-          <AssigneeBadges chore={chore} members={members} />
-        </li>
-      ))}
-    </ul>
+    <div className={`task-checklist${groupByAssignee ? ' task-checklist--grouped' : ''}`}>
+      {incompleteCount === 0 && (
+        <div className="task-checklist-done">{t('taskChecklist.allDone')}</div>
+      )}
+      {groups.map((group) => {
+        const groupDone = group.chores.filter((chore) => completedIds.has(chore.id)).length;
+        return (
+          <section className="task-checklist-group" key={group.id}>
+            {groupByAssignee && (
+              <div className="task-checklist-person">
+                {group.member ? (
+                  <span
+                    className="task-checklist-person-avatar"
+                    style={{
+                      backgroundColor: `${group.member.color}22`,
+                      color: group.member.color,
+                    }}
+                  >
+                    <MemberAvatar member={group.member} size={28} />
+                  </span>
+                ) : (
+                  <span className="task-checklist-person-avatar task-checklist-person-avatar--home">
+                    <ListTodo size={16} aria-hidden="true" />
+                  </span>
+                )}
+                <strong>{group.member?.name ?? t('calendarSidebar.household')}</strong>
+                <span
+                  className="task-checklist-progress"
+                  aria-label={`${groupDone}/${group.chores.length}`}
+                >
+                  {groupDone}/{group.chores.length}
+                </span>
+              </div>
+            )}
+            <div className="task-checklist-items">
+              {group.chores.map((chore) => {
+                const done = completedIds.has(chore.id);
+                const waiting = waitingIds.has(chore.id);
+                const className = [
+                  'task-checklist-row',
+                  done ? 'task-checklist-row--done' : '',
+                  waiting ? 'task-checklist-row--waiting' : '',
+                  animatingId === chore.id ? 'task-checklist-row--completing' : '',
+                ].filter(Boolean).join(' ');
+                const contents = (
+                  <>
+                    <span className="task-checklist-icon" aria-hidden="true">
+                      {chore.icon || <ListTodo size={17} />}
+                    </span>
+                    <span className="task-checklist-copy">
+                      <span className="task-checklist-name" title={chore.name}>
+                        {chore.name}
+                      </span>
+                      <span
+                        className={`task-checklist-status${
+                          done
+                            ? ' task-checklist-status--done'
+                            : waiting
+                              ? ' task-checklist-status--waiting'
+                              : ''
+                        }`}
+                      >
+                        {done
+                          ? t('taskChecklist.done')
+                          : waiting
+                            ? t('planner.awaitingApproval')
+                            : t('taskChecklist.markDone')}
+                      </span>
+                    </span>
+                  </>
+                );
+
+                return done || waiting ? (
+                  <div
+                    className={className}
+                    key={chore.id}
+                    role="group"
+                    aria-label={`${chore.name}: ${
+                      done ? t('taskChecklist.done') : t('planner.awaitingApproval')
+                    }`}
+                  >
+                    {contents}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={className}
+                    key={chore.id}
+                    onClick={() => handleToggle(chore.id)}
+                    aria-label={t('taskChecklist.complete', { name: chore.name })}
+                  >
+                    {contents}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
   );
 }

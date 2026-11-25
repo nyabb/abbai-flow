@@ -1,131 +1,77 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  fetchChoreOpsChoreHistory,
-  type ChoreOpsChoreHistoryEntity,
-  type ChoreOpsChoreHistoryEntry,
-} from '../../api/choreops-chore-history';
-import {
-  fetchChoreOpsRewardHistory,
-  type ChoreOpsRewardHistoryEntry,
-} from '../../api/choreops-ledger';
-import type { ChoreOpsChore } from '../../types/choreops';
+  fetchChoresManChoreHistory,
+  fetchChoresManRewardHistory,
+  type ChoresManChoreHistoryEntry,
+  type ChoresManRewardHistoryEntry,
+} from '../../api/choresman-history';
 
 interface UsePlannerHistoryOptions {
   goalsOpen: boolean;
   goalsUserName: string | null;
   childViewOpen: boolean;
   childUserName: string | null;
-  chores: ChoreOpsChore[];
-  choreOpsAvailable: boolean;
+  choresManAvailable: boolean;
 }
 
-/** Owns the optional ChoreOps ledgers shown in the goals and child history sheets. */
+/** Reads completion and reward history from ChoresMan's local store. */
 export function usePlannerHistory({
   goalsOpen,
   goalsUserName,
   childViewOpen,
   childUserName,
-  chores,
-  choreOpsAvailable,
+  choresManAvailable,
 }: UsePlannerHistoryOptions) {
   const [rewardHistory, setRewardHistory] = useState<{
     userName: string;
-    entries: ChoreOpsRewardHistoryEntry[];
+    entries: ChoresManRewardHistoryEntry[];
   } | null>(null);
   const [choreHistory, setChoreHistory] = useState<{
     userName: string;
-    entityKey: string;
-    entries: ChoreOpsChoreHistoryEntry[];
+    entries: ChoresManChoreHistoryEntry[];
   } | null>(null);
 
-  const childHistoryEntities = useMemo<ChoreOpsChoreHistoryEntity[]>(() => {
-    const userKey = childUserName?.trim().toLocaleLowerCase();
-    if (!userKey) return [];
-    return chores.flatMap((chore) => {
-      return chore.statusEntityId && chore.assignee?.trim().toLocaleLowerCase() === userKey
-        ? [
-            {
-              entityId: chore.statusEntityId,
-              choreName: chore.name,
-              points: chore.points,
-            },
-          ]
-        : [];
-    });
-  }, [chores, childUserName]);
-
-  const childHistoryEntityKey = childHistoryEntities
-    .map((entity) => entity.entityId)
-    .sort()
-    .join('|');
-
   useEffect(() => {
-    if (!goalsOpen || !goalsUserName || !choreOpsAvailable) {
+    if (!goalsOpen || !goalsUserName || !choresManAvailable) {
       setRewardHistory(null);
       return;
     }
-
     let current = true;
     setRewardHistory(null);
-    void fetchChoreOpsRewardHistory(goalsUserName)
+    void fetchChoresManRewardHistory(goalsUserName)
       .then((entries) => {
         if (current) setRewardHistory({ userName: goalsUserName, entries });
       })
       .catch(() => {
-        // Older ChoreOps versions may not expose get_ledger. Keep the
-        // Abbai Flow history available when the optional ledger query fails.
         if (current) setRewardHistory({ userName: goalsUserName, entries: [] });
       });
-
     return () => {
       current = false;
     };
-  }, [goalsOpen, goalsUserName, choreOpsAvailable]);
+  }, [goalsOpen, goalsUserName, choresManAvailable]);
 
   useEffect(() => {
-    if (!childViewOpen || !childUserName || !choreOpsAvailable) {
+    if (!childViewOpen || !childUserName || !choresManAvailable) {
       setChoreHistory(null);
       return;
     }
-
     let current = true;
     setChoreHistory(null);
-    void fetchChoreOpsChoreHistory(childHistoryEntities)
+    void fetchChoresManChoreHistory(childUserName)
       .then((entries) => {
-        if (current) {
-          setChoreHistory({
-            userName: childUserName,
-            entityKey: childHistoryEntityKey,
-            entries,
-          });
-        }
+        if (current) setChoreHistory({ userName: childUserName, entries });
       })
       .catch(() => {
-        if (current) {
-          setChoreHistory({
-            userName: childUserName,
-            entityKey: childHistoryEntityKey,
-            entries: [],
-          });
-        }
+        if (current) setChoreHistory({ userName: childUserName, entries: [] });
       });
-
     return () => {
       current = false;
     };
-  }, [
-    childViewOpen,
-    childUserName,
-    childHistoryEntities,
-    childHistoryEntityKey,
-    choreOpsAvailable,
-  ]);
+  }, [childViewOpen, childUserName, choresManAvailable]);
 
   return {
     goalsLedgerHistory: rewardHistory?.userName === goalsUserName ? rewardHistory.entries : [],
     childChoreHistory:
-      choreHistory?.userName === childUserName && choreHistory.entityKey === childHistoryEntityKey
-        ? choreHistory.entries
-        : null,
+      choreHistory?.userName === childUserName ? choreHistory.entries : null,
   };
 }

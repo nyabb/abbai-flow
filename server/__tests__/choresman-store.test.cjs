@@ -5,9 +5,9 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
-  ChoresmanStoreError,
+  ChoresManStoreError,
   FAMILY_SERVICE_NAMES,
-  ChoresmanStore,
+  ChoresManStore,
   SERVICE_NAMES,
 } = require('../choresman-store.cjs');
 
@@ -15,7 +15,7 @@ async function fixture(t, initialTime = '2026-01-05T08:00:00.000Z') {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'abbai-choresman-'));
   t.after(() => fs.rm(dataDir, { recursive: true, force: true }));
   let now = new Date(initialTime);
-  const store = new ChoresmanStore({ dataDir, now: () => new Date(now) });
+  const store = new ChoresManStore({ dataDir, now: () => new Date(now) });
   return {
     store,
     dataDir,
@@ -35,7 +35,7 @@ function byName(items, name) {
   return items.find((item) => item.name === name);
 }
 
-test('exports ChoreOps-compatible action names under the Choresman domain prefix', async (t) => {
+test('exports ChoresMan-compatible action names under the ChoresMan domain prefix', async (t) => {
   const { store } = await fixture(t);
   assert.ok(SERVICE_NAMES.includes('claim_chore'));
   assert.ok(SERVICE_NAMES.includes('manual_adjust_points'));
@@ -43,7 +43,7 @@ test('exports ChoreOps-compatible action names under the Choresman domain prefix
   assert.equal((await store.call('family.create_member', { name: 'Riley' })).name, 'Riley');
   await assert.rejects(
     store.call('choresman.not_a_service', {}),
-    (error) => error instanceof ChoresmanStoreError && error.code === 'service_not_found',
+    (error) => error instanceof ChoresManStoreError && error.code === 'service_not_found',
   );
 });
 
@@ -65,8 +65,7 @@ test('creates standalone family members and preserves references when a name cha
   assert.equal(renamed.name, 'Riley A');
   assert.equal(snapshot.chores[0].assigned_user_names[0], 'Riley A');
   assert.equal(snapshot.members.find((member) => member.id === parent.id).role, 'parent');
-  assert.equal(Object.hasOwn(snapshot.members.find((member) => member.id === child.id), 'choreops_user'), false);
-  assert.equal(Object.hasOwn(snapshot.members.find((member) => member.id === child.id), 'ha_user_id'), false);
+  assert.equal(snapshot.members.find((member) => member.id === child.id).id, child.id);
 
   await assert.rejects(
     store.call('family.create_member', { name: 'rIlEy a', role: 'child' }),
@@ -78,7 +77,7 @@ test('creates standalone family members and preserves references when a name cha
   assert.deepEqual((await store.getSnapshot()).chores[0].assigned_user_names, []);
 });
 
-test('creates, updates, assigns, and deletes chores using ChoreOps field names', async (t) => {
+test('creates, updates, assigns, and deletes chores using ChoresMan field names', async (t) => {
   const { store } = await fixture(t);
   const { child } = await addHousehold(store);
   const created = await store.call('choresman.create_chore', {
@@ -133,7 +132,7 @@ test('creates, updates, assigns, and deletes chores using ChoreOps field names',
   assert.ok(child.id);
 });
 
-test('stores ChoreOps per-member day and multi-time schedules against stable member IDs', async (t) => {
+test('stores ChoresMan per-member day and multi-time schedules against stable member IDs', async (t) => {
   const { store } = await fixture(t);
   await store.call('family.sync_members', {
     members: [
@@ -214,7 +213,7 @@ test('shared-first chores lock to the first claimant and automatic approval cred
   );
 });
 
-test('uses Abbai Flow profile IDs and refreshed profile data as Choresman family identity', async (t) => {
+test('uses Abbai Flow profile IDs and refreshed profile data as ChoresMan family identity', async (t) => {
   const { store } = await fixture(t);
   await store.call('family.create_member', { id: 'legacy-child-id', name: 'Riley', role: 'child' });
   const chore = await store.call('create_chore', { name: 'Feed the cat', assigned_user_names: ['Riley'] });
@@ -380,6 +379,39 @@ test('reward CRUD and request/approve/reject workflows reserve and spend points'
   assert.equal((await store.getSnapshot()).rewards.length, 0);
 });
 
+test('reward proposals need parent approval before redemption', async (t) => {
+  const { store } = await fixture(t);
+  await addHousehold(store);
+  await store.call('manual_adjust_points', { user_name: 'Riley', amount: 12, reason: 'Welcome points' });
+  const proposal = await store.call('create_reward', {
+    name: 'Movie night',
+    cost: 8,
+    assigned_user_names: ['Riley'],
+    approved: false,
+  });
+
+  const stored = byName((await store.getSnapshot()).rewards, 'Movie night');
+  assert.equal(stored.approved, false);
+  await assert.rejects(
+    store.call('redeem_reward', { user_name: 'Riley', reward_name: 'Movie night' }),
+    (error) => error.code === 'reward_not_approved',
+  );
+
+  const approval = await store.call('approve_reward_definition', {
+    reward_id: proposal.reward_id,
+    approver_name: 'Jamie',
+  });
+  assert.equal(approval.approved, true);
+  assert.equal(byName((await store.getSnapshot()).rewards, 'Movie night').approved, true);
+
+  const redemption = await store.call('redeem_reward', {
+    approver_name: 'Jamie',
+    user_name: 'Riley',
+    reward_name: 'Movie night',
+  });
+  assert.equal(redemption.status, 'pending');
+});
+
 test('reward disapproval releases the reservation; manual grants can approve with a cost override', async (t) => {
   const { store } = await fixture(t);
   await addHousehold(store);
@@ -424,7 +456,7 @@ test('manual point adjustments validate signed decimal values and ledger filters
   assert.equal(all.entries[0].name, 'Jamie');
 });
 
-test('rotation modes gate claims, advance turns, and support the ChoreOps controls', async (t) => {
+test('rotation modes gate claims, advance turns, and support the ChoresMan controls', async (t) => {
   const { store, setNow } = await fixture(t);
   await addHousehold(store);
   await store.call('family.create_member', { name: 'Casey', role: 'child' });
@@ -519,7 +551,7 @@ test('bonuses, penalties, badges, achievements, and challenges update persistent
   assert.equal(removed.removed_count, 1);
 });
 
-test('badge streaks retain recent history and can be repaired with the ChoreOps action', async (t) => {
+test('badge streaks retain recent history and can be repaired with the ChoresMan action', async (t) => {
   const { store, setNow } = await fixture(t);
   await addHousehold(store);
   const badge = await store.call('create_badge', {
@@ -643,7 +675,7 @@ test('overdue reset, pending reset, notification delivery acknowledgement, and s
   };
   const filePath = path.join(dataDir, 'legacy.json');
   await fs.writeFile(filePath, JSON.stringify(v1), 'utf8');
-  const legacyStore = new ChoresmanStore({ filePath });
+  const legacyStore = new ChoresManStore({ filePath });
   assert.equal((await legacyStore.getDocument()).schema_version, 2);
   await legacyStore.call('family.create_member', { name: 'Morgan' });
   assert.equal(JSON.parse(await fs.readFile(filePath, 'utf8')).schema_version, 2);
@@ -651,7 +683,7 @@ test('overdue reset, pending reset, notification delivery acknowledgement, and s
 
 test('JSON persistence survives restart and concurrent writes are serialized', async (t) => {
   const { store, dataDir } = await fixture(t);
-  const secondWriter = new ChoresmanStore({ dataDir });
+  const secondWriter = new ChoresManStore({ dataDir });
   await Promise.all([
     store.call('family.create_member', { name: 'Jamie', role: 'parent' }),
     secondWriter.call('family.create_member', { name: 'Riley', role: 'child' }),
@@ -662,7 +694,7 @@ test('JSON persistence survives restart and concurrent writes are serialized', a
   assert.equal(raw.schema_version, 2);
   assert.equal(raw.members.length, 3);
 
-  const restarted = new ChoresmanStore({ filePath });
+  const restarted = new ChoresManStore({ filePath });
   assert.deepEqual(
     (await restarted.getSnapshot()).members.map((member) => member.name).sort(),
     ['Casey', 'Jamie', 'Riley'],

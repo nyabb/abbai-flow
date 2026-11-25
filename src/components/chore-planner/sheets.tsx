@@ -4,7 +4,7 @@
  */
 import { CheckCheck, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
-import type { ChoreOpsReward } from '../../types/choreops';
+import type { ChoresManReward } from '../../types/choresman';
 import type { I18nValue } from '../../i18n';
 import { MemberAvatar } from '../MemberAvatar';
 import type { PlannerCopy } from './copy';
@@ -76,9 +76,9 @@ export interface AwardSheetProps {
   task: PlannerTask;
   copy: PlannerCopy;
   t: I18nValue['t'];
-  rewards: ChoreOpsReward[];
-  rewardState: (reward: ChoreOpsReward) => RewardState;
-  onAssign: (reward: ChoreOpsReward) => void;
+  rewards: ChoresManReward[];
+  rewardState: (reward: ChoresManReward) => RewardState;
+  onAssign: (reward: ChoresManReward) => void;
   onNewGoal: () => void;
 }
 
@@ -189,7 +189,7 @@ export interface ClaimSheetProps {
   onClose: () => void;
 }
 
-/** ChoreOps publishes one row per user for a first-come-first-served chore. */
+/** ChoresMan publishes one row per user for a first-come-first-served chore. */
 export function ClaimSheet({
   task,
   options,

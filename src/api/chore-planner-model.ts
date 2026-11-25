@@ -5,7 +5,7 @@ export type PlannerTimeBlock = 'morning' | 'afternoon' | 'evening' | 'custom';
  * Who a chore is for:
  * - `member`: one particular child (the usual case)
  * - `anyone`: several children share one chore and whoever gets there first
- *   takes it (ChoreOps `shared_first`)
+ *   takes it (ChoresMan `shared_first`)
  * - `everyone`: the same chore is assigned to the whole household
  */
 export type PlannerTaskAudience = 'member' | 'anyone' | 'everyone';
@@ -24,7 +24,7 @@ export interface PlannerMember {
 export interface PlannerTask {
   id: string;
   name: string;
-  /** Emoji shown in the card badge; `null` when ChoreOps has no icon. */
+  /** Emoji shown in the card badge; `null` when ChoresMan has no icon. */
   icon: string | null;
   points: number;
   memberId: string | null;
@@ -40,22 +40,22 @@ export interface PlannerTask {
   awardDestination?: 'pot' | string;
   awardPotAmount?: number;
   awardGoalAmount?: number;
-  /** Live ChoreOps task: status comes from ChoreOps, not from local dates. */
+  /** Live ChoresMan task: status comes from ChoresMan, not from local dates. */
   statusOverride?: PlannerTaskStatus;
   /** Who the chore is meant for; drives the "anyone"/"everyone" chip. */
   audience?: PlannerTaskAudience;
   /**
-   * ChoreOps `shared_first`: whoever grabs it first keeps the points. It stays
+   * ChoresMan `shared_first`: whoever grabs it first keeps the points. It stays
    * flagged after a child claims it, so the free-chores tab can keep showing
    * the chore to the child who took it.
    */
   freeForAll?: boolean;
-  /** Live ChoreOps task: entity ids for claim/approve/decline. */
+  /** ChoresMan action IDs for claim/approve/decline. */
   actions?: { claim?: string; approve?: string; disapprove?: string };
-  /** Live ChoreOps task: the child finished it and a parent must sign off. */
+  /** Live ChoresMan task: the child finished it and a parent must sign off. */
   awaitingReview?: boolean;
   /**
-   * ChoreOps `auto_approve`: the child's own completion is final for this
+   * ChoresMan `auto_approve`: the child's own completion is final for this
    * chore, so no parent step is expected. It is never assumed — only the chore
    * configuration can turn approval off.
    */
@@ -91,12 +91,12 @@ export interface PlannerRoutine {
   customStart?: string;
   customEnd?: string;
   points: number;
-  /** Chore names in execution order (Abbai Flow metadata: ChoreOps has no ordering). */
+  /** Chore names in execution order (Abbai Flow metadata: ChoresMan has no ordering). */
   taskNames?: string[];
   /** Paused routines are hidden from missions but stay on the board. */
   paused?: boolean;
   /**
-   * "Other daily tasks": daily chores without a ChoreOps label, collected here
+   * "Other daily tasks": daily chores without a ChoresMan label, collected here
    * only once the household has at least one named routine. The UI shows a
    * localized title for this group instead of `name`.
    */

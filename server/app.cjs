@@ -28,7 +28,7 @@ const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
-const { ChoresmanStore, ChoresmanStoreError } = require('./choresman-store.cjs');
+const { ChoresManStore, ChoresManStoreError } = require('./choresman-store.cjs');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -657,46 +657,6 @@ async function handleCalendarEventAction(req, res, config) {
       error: err.message,
       code: err.code || null,
     });
-  }
-}
-
-/** POST /beacon-action/entity-registry { entity_id } */
-async function handleEntityRegistryLookup(req, res, config) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'Method not allowed' });
-    return;
-  }
-  if (!hasJsonContentType(req)) {
-    sendJson(res, 415, { error: 'Expected application/json' });
-    return;
-  }
-
-  const { value, error } = await readJsonObject(req);
-  if (error) {
-    sendJson(res, error.status, { error: error.message });
-    return;
-  }
-
-  const { entity_id } = value;
-  if (typeof entity_id !== 'string' || !/^[a-z0-9_]+\.[a-z0-9_]+$/i.test(entity_id)) {
-    sendJson(res, 400, { error: 'Invalid entity_id' });
-    return;
-  }
-
-  try {
-    const entry = await haWsCommand(config, {
-      type: 'config/entity_registry/get',
-      entity_id,
-    });
-    if (!entry || entry.platform !== 'choreops' || typeof entry.unique_id !== 'string') {
-      sendJson(res, 200, { entry: null });
-      return;
-    }
-    sendJson(res, 200, {
-      entry: { entity_id: entry.entity_id, unique_id: entry.unique_id, platform: entry.platform },
-    });
-  } catch (err) {
-    sendJson(res, 502, { error: err.message, code: err.code || null });
   }
 }
 
@@ -1675,7 +1635,7 @@ function createApp(options) {
     encore: options.encore || createEncore(),
     spotifyCatalog: options.spotifyCatalog || createSpotifyCatalog(),
     spotifyPlaylists: options.spotifyPlaylists || createSpotifyPlaylists(),
-    choresman: options.choresman || new ChoresmanStore({ dataDir: config.dataDir }),
+    choresman: options.choresman || new ChoresManStore({ dataDir: config.dataDir }),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1785,7 +1745,6 @@ async function route(req, res, config, services, bluetooth) {
       '/abbai-flow/action/voice': '/beacon-action/voice',
       '/abbai-flow/action/service': '/beacon-action/service',
       '/abbai-flow/action/calendar-event': '/beacon-action/calendar-event',
-      '/abbai-flow/action/entity-registry': '/beacon-action/entity-registry',
     }[pathname] || pathname;
 
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
@@ -1796,7 +1755,6 @@ async function route(req, res, config, services, bluetooth) {
     actionPath === '/beacon-action/voice' ||
     actionPath === '/beacon-action/service' ||
     actionPath === '/beacon-action/calendar-event' ||
-    actionPath === '/beacon-action/entity-registry' ||
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname === '/abbai-flow/settings/integrations' ||
@@ -1837,11 +1795,11 @@ async function route(req, res, config, services, bluetooth) {
           snapshot: await services.choresman.getSnapshot(),
         }, { 'Cache-Control': 'no-store' });
       } catch (err) {
-        const status = err instanceof ChoresmanStoreError && err.code === 'service_not_found' ? 404 :
-          err instanceof ChoresmanStoreError ? 400 : 500;
+        const status = err instanceof ChoresManStoreError && err.code === 'service_not_found' ? 404 :
+          err instanceof ChoresManStoreError ? 400 : 500;
         sendJson(res, status, {
-          error: err instanceof ChoresmanStoreError ? err.message : 'Choresman action failed',
-          ...(err instanceof ChoresmanStoreError ? { code: err.code } : {}),
+          error: err instanceof ChoresManStoreError ? err.message : 'ChoresMan action failed',
+          ...(err instanceof ChoresManStoreError ? { code: err.code } : {}),
         });
       }
       return;
@@ -1946,10 +1904,6 @@ async function route(req, res, config, services, bluetooth) {
     }
     if (actionPath === '/beacon-action/calendar-event') {
       await handleCalendarEventAction(req, res, config);
-      return;
-    }
-    if (actionPath === '/beacon-action/entity-registry') {
-      await handleEntityRegistryLookup(req, res, config);
       return;
     }
     if (pathname.startsWith('/beacon-data/') || pathname.startsWith('/abbai-flow/data/')) {

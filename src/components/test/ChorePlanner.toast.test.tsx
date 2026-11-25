@@ -3,26 +3,26 @@ import { render, fireEvent, screen, waitFor, within } from '@testing-library/rea
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
 import type { FamilyMember } from '../../types/family';
-import type { ChoreOpsState } from '../../types/choreops';
+import type { ChoresManState } from '../../types/choresman';
 
 /**
- * ChoreOps rejects some edits with its own wording ("The requested changes
+ * ChoresMan rejects some edits with its own wording ("The requested changes
  * require a future due date"). Those messages used to be swallowed; they must
  * now land in the notification in red, while successful requests stay green.
  */
 const mocks = vi.hoisted(() => ({
   createChore: vi.fn(),
-  state: { current: null as ChoreOpsState | null },
+  state: { current: null as ChoresManState | null },
 }));
 
-vi.mock('../../hooks/useChoreOps', () => ({
-  useChoreOps: () => ({
+vi.mock('../../hooks/useChoresMan', () => ({
+  useChoresMan: () => ({
     data: mocks.state.current,
     loading: false,
     error: null,
     available: true,
     refresh: () => {},
-    pressButton: async () => {},
+    runActionId: async () => {},
     claimChore: async () => {},
     createChore: mocks.createChore,
     updateChore: async () => {},
@@ -40,7 +40,7 @@ const ZARA: FamilyMember = {
   role: 'child',
 };
 
-function state(): ChoreOpsState {
+function state(): ChoresManState {
   return {
     users: [
       {
@@ -99,7 +99,7 @@ describe('ChorePlanner notifications', () => {
     mocks.createChore.mockReset();
   });
 
-  it('shows the ChoreOps rejection verbatim in a red toast', async () => {
+  it('shows the ChoresMan rejection verbatim in a red toast', async () => {
     mocks.createChore.mockRejectedValue(
       new Error('The requested changes require a future due date'),
     );

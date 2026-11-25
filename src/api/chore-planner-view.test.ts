@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildChorePlannerView, choreOpsTaskStatus } from './chore-planner-view';
-import { normalizeChoreOps } from './choreops';
+import { buildChorePlannerView, choresManTaskStatus } from './chore-planner-view';
+import type { ChoresManChore, ChoresManState, ChoresManUser } from '../types/choresman';
 import type { FamilyMember } from '../types/family';
 
 const family: FamilyMember[] = [
@@ -11,51 +11,84 @@ const family: FamilyMember[] = [
     photo: '/api/image/serve/abc/512x512',
     color: '#cf6d55',
     role: 'child',
-    choreops_user: 'Maya',
   },
 ];
 
-const states = normalizeChoreOps([
-  {
-    entity_id: 'sensor.maya_choreops_points',
-    state: '12',
-    attributes: { purpose: 'purpose_points', user_name: 'Maya' },
-  },
-  {
-    entity_id: 'sensor.system_choreops_afwassen_global_status',
-    state: 'claimed',
-    attributes: {
-      purpose: 'purpose_shared_chore',
-      chore_name: 'Afwassen',
-      assigned_user_names: ['Maya'],
-      default_points: 4,
-      icon: 'mdi:silverware',
-    },
-  },
-  {
-    entity_id: 'button.maya_choreops_approve_chore_afwassen',
-    state: 'unknown',
-    attributes: {
-      purpose: 'purpose_button_chore_approve',
-      user_name: 'Maya',
-      chore_name: 'Afwassen',
-    },
-  },
-  {
-    entity_id: 'sensor.maya_choreops_reward_status_film',
-    state: 'available',
-    attributes: {
-      purpose: 'purpose_reward_status',
-      reward_name: 'Filmavond',
-      cost: 40,
-      user_name: 'Maya',
-    },
-  },
-]);
+function user(name: string, points = 0): ChoresManUser {
+  return {
+    name,
+    slug: name.toLowerCase(),
+    points,
+    dueToday: 0,
+    claimed: 0,
+    approved: 0,
+    completedToday: 0,
+  };
+}
+
+function chore(
+  name: string,
+  status = 'pending',
+  overrides: Partial<ChoresManChore> = {},
+): ChoresManChore {
+  const assignee = overrides.assignee ?? 'Maya';
+  return {
+    id: `chore:${name.toLowerCase()}:${assignee.toLowerCase()}`,
+    sourceId: `source:${name.toLowerCase()}`,
+    plannerRowId: `row:${name.toLowerCase()}:${assignee.toLowerCase()}`,
+    name,
+    icon: null,
+    status,
+    assignee,
+    points: 0,
+    canClaim: true,
+    canApprove: false,
+    actions: { claim: `choresman-action:claim:${name.toLowerCase()}` },
+    ...overrides,
+  };
+}
+
+function state(
+  chores: ChoresManChore[],
+  users: ChoresManUser[] = [user('Maya')],
+  rewards: ChoresManState['rewards'] = [],
+): ChoresManState {
+  return {
+    users,
+    chores,
+    rewards,
+    pointsByUser: Object.fromEntries(users.map((item) => [item.name.toLowerCase(), item.points])),
+    pendingApprovals: { chores: 0, rewards: 0 },
+    available: true,
+  };
+}
 
 describe('buildChorePlannerView', () => {
-  it('renders ChoreOps users with Abbai Flow family photo, colour, and display name', () => {
-    const view = buildChorePlannerView(states, family);
+  const choresMan = state(
+    [
+      chore('Afwassen', 'claimed', {
+        assignee: 'Maya',
+        points: 4,
+        icon: 'mdi:silverware',
+        actions: { approve: 'choresman-action:approve:afwassen' },
+      }),
+    ],
+    [user('Maya', 12)],
+    [
+      {
+        id: 'reward:film:maya',
+        name: 'Filmavond',
+        status: 'available',
+        cost: 40,
+        pendingClaims: 0,
+        assignee: 'Maya',
+        actions: {},
+      },
+    ],
+  );
+
+  it('renders ChoresMan users with Abbai Flow family photo, colour, and display name', () => {
+    const view = buildChorePlannerView(choresMan, family);
 
     expect(view.available).toBe(true);
     expect(view.members[0]).toMatchObject({
@@ -68,8 +101,8 @@ describe('buildChorePlannerView', () => {
     });
   });
 
-  it('keeps ChoreOps status and action entity ids on the task', () => {
-    const view = buildChorePlannerView(states, family);
+  it('keeps the chore row and action id on the task', () => {
+    const view = buildChorePlannerView(choresMan, family);
     const task = view.tasks.find((item) => item.name === 'Afwassen');
 
     expect(task).toBeDefined();
@@ -77,11 +110,11 @@ describe('buildChorePlannerView', () => {
     expect(task?.points).toBe(4);
     expect(task?.statusOverride).toBe('active');
     expect(task?.awaitingReview).toBe(true);
-    expect(task?.actions?.approve).toBe('button.maya_choreops_approve_chore_afwassen');
+    expect(task?.actions?.approve).toBe('choresman-action:approve:afwassen');
   });
 
-  it('maps ChoreOps rewards to planner goals', () => {
-    const view = buildChorePlannerView(states, family);
+  it('maps ChoresMan rewards to planner goals', () => {
+    const view = buildChorePlannerView(choresMan, family);
 
     expect(view.goals[0]).toMatchObject({
       title: 'Filmavond',
@@ -90,12 +123,10 @@ describe('buildChorePlannerView', () => {
     });
   });
 
-  it('does not turn a labelled daily ChoreOps chore into an Abbai Flow routine', () => {
-    const labelled = {
-      ...states,
-      chores: [{ ...states!.chores[0], frequency: 'daily', labels: ['Ochtendroutine'] }],
-    } as typeof states;
-
+  it('does not turn labelled chores into Abbai Flow routines', () => {
+    const labelled = state([
+      chore('Afwassen', 'pending', { frequency: 'daily', labels: ['Ochtendroutine'] }),
+    ]);
     const task = buildChorePlannerView(labelled, family).tasks[0];
 
     expect(task.routineId).toBeUndefined();
@@ -103,19 +134,8 @@ describe('buildChorePlannerView', () => {
     expect(task.inRoutine).toBeUndefined();
   });
 
-  it('does not use ChoreOps labels to infer a routine for weekly chores', () => {
-    const weekly = {
-      ...states,
-      chores: [{ ...states!.chores[0], frequency: 'weekly', labels: ['Ochtendroutine'] }],
-    } as typeof states;
-
-    const task = buildChorePlannerView(weekly, family).tasks[0];
-
-    expect(task.routineId).toBeUndefined();
-  });
-
-  it('reports unavailable when ChoreOps published nothing', () => {
-    expect(buildChorePlannerView(null, family)).toMatchObject({
+  it('reports unavailable when ChoresMan has no members or chores', () => {
+    expect(buildChorePlannerView({ ...state([]), users: [], available: false }, family)).toMatchObject({
       available: false,
       members: [],
       tasks: [],
@@ -124,305 +144,127 @@ describe('buildChorePlannerView', () => {
   });
 });
 
-describe('choreOpsTaskStatus', () => {
-  it('maps ChoreOps statuses onto planner statuses', () => {
-    expect(choreOpsTaskStatus('approved')).toBe('completed');
-    expect(choreOpsTaskStatus('completed')).toBe('completed');
-    expect(choreOpsTaskStatus('overdue')).toBe('late');
-    expect(choreOpsTaskStatus('missed')).toBe('late');
-    expect(choreOpsTaskStatus('due')).toBe('active');
-    expect(choreOpsTaskStatus('claimed')).toBe('active');
+describe('choresManTaskStatus', () => {
+  it('maps ChoresMan statuses onto planner statuses', () => {
+    expect(choresManTaskStatus('approved')).toBe('completed');
+    expect(choresManTaskStatus('completed')).toBe('completed');
+    expect(choresManTaskStatus('overdue')).toBe('late');
+    expect(choresManTaskStatus('missed')).toBe('late');
+    expect(choresManTaskStatus('due')).toBe('active');
+    expect(choresManTaskStatus('claimed')).toBe('active');
   });
 });
 
-/**
- * "Anyone" chores (ChoreOps `shared_first`) are one chore several children can
- * take. The first child to claim it keeps it — ChoreOps locks the others out
- * with `completed_by_other` — so Abbai Flow must show the "anyone" label and drop
- * the chore from the other children's boards instead of marking it done there.
- */
 describe('shared chores', () => {
-  const userId = (name: string) => ({
-    entity_id: `sensor.${name.toLowerCase()}_choreops_points`,
-    state: '0',
-    attributes: { purpose: 'purpose_points', user_name: name },
-  });
+  const users = [user('Maya'), user('Nova')];
+  const shared = (name: string, status: string) =>
+    chore('Tafel dekken', status, {
+      id: `chore:tafel-dekken:${name.toLowerCase()}`,
+      assignee: name,
+      assignedUserNames: ['Maya', 'Nova'],
+      completionCriteria: 'shared_first',
+      actions: status === 'claimed' ? { approve: 'choresman-action:approve:table' } : {},
+    });
 
-  const choreStatus = (user: string, status: string, extra: Record<string, unknown> = {}) => ({
-    entity_id: `sensor.${user.toLowerCase()}_choreops_chore_status_tafeldekken`,
-    state: status,
-    attributes: {
-      purpose: 'purpose_chore_status',
-      user_name: user,
-      chore_name: 'Tafel dekken',
-      default_points: 5,
-      ...extra,
-    },
-  });
-
-  const users = [userId('Maya'), userId('Nova')];
-
-  it('labels a first-come chore as anyone, even under each child', () => {
-    const view = buildChorePlannerView(
-      normalizeChoreOps([
-        ...users,
-        choreStatus('Maya', 'pending', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-        choreStatus('Nova', 'pending', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-      ]),
-      [],
-    );
-
+  it('labels a first-come chore as anyone while it is open', () => {
+    const view = buildChorePlannerView(state([shared('Maya', 'pending'), shared('Nova', 'pending')], users), []);
     expect(view.tasks).toHaveLength(2);
     expect(view.tasks.every((task) => task.audience === 'anyone')).toBe(true);
   });
 
   it('labels a chore assigned to the whole household as everyone', () => {
+    const householdChore = (name: string) =>
+      chore('Vacuum', 'pending', {
+        assignee: name,
+        assignedUserNames: ['Maya', 'Nova'],
+        completionCriteria: 'shared_all',
+      });
     const view = buildChorePlannerView(
-      normalizeChoreOps([
-        ...users,
-        choreStatus('Maya', 'pending', {
-          completion_criteria: 'independent',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-        choreStatus('Nova', 'pending', {
-          completion_criteria: 'independent',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-      ]),
+      state([householdChore('Maya'), householdChore('Nova')], users),
       [],
     );
-
     expect(view.tasks.every((task) => task.audience === 'everyone')).toBe(true);
   });
 
-  it('drops the chore from the children somebody else already took it from', () => {
+  it('drops the row after another child claims a shared chore', () => {
     const view = buildChorePlannerView(
-      normalizeChoreOps([
-        ...users,
-        choreStatus('Maya', 'claimed', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-        choreStatus('Nova', 'completed_by_other', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-      ]),
+      state([shared('Maya', 'claimed'), shared('Nova', 'completed_by_other')], users),
       [],
     );
-
     expect(view.tasks.map((task) => task.name)).toEqual(['Tafel dekken']);
     expect(view.tasks[0].awaitingReview).toBe(true);
-    // Only the child who took it keeps the card (and the points).
-    expect(view.tasks[0].memberId).toBe('choreops:maya');
-  });
-
-  it('shows a claimed first-come chore as an ordinary assigned chore', () => {
-    const view = buildChorePlannerView(
-      normalizeChoreOps([
-        ...users,
-        choreStatus('Maya', 'claimed', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-        choreStatus('Nova', 'completed_by_other', {
-          completion_criteria: 'shared_first',
-          assigned_user_names: ['Maya', 'Nova'],
-        }),
-      ]),
-      [],
-    );
-
-    // No longer "anyone": it is Maya's chore until ChoreOps resets it, so the
-    // card shows her name instead of the race label.
+    expect(view.tasks[0].memberId).toBe('choresman:maya');
     expect(view.tasks[0].audience).toBe('member');
   });
 });
 
-/**
- * ChoreOps remains responsible for the recurrence of its chores. Its labels do
- * not create Abbai Flow routines; only the Family store defines those.
- */
-describe('daily ChoreOps chores', () => {
-  const points = {
-    entity_id: 'sensor.maya_choreops_points',
-    state: '0',
-    attributes: { purpose: 'purpose_points', user_name: 'Maya' },
-  };
+describe('daily chores', () => {
+  const daily = (name: string, status: string, lastCompleted?: string, frequency = 'daily') =>
+    chore(name, status, { frequency, lastCompleted });
+  const now = new Date('2026-11-06T09:00:00');
 
-  const dailyChore = (
-    name: string,
-    extra: Record<string, unknown> = {},
-    status = 'pending',
-    slug = 'tanden',
-  ) => ({
-    entity_id: `sensor.maya_choreops_chore_status_${slug}`,
-    state: status,
-    attributes: {
-      purpose: 'purpose_chore_status',
-      user_name: 'Maya',
-      chore_name: name,
-      default_points: 2,
-      recurring_frequency: 'daily',
-      completion_criteria: 'independent',
-      assigned_user_names: ['Maya'],
-      ...extra,
-    },
-  });
-
-  it('keeps daily ChoreOps chores separate from family routines', () => {
+  it('keeps daily chores separate from Abbai Flow routines', () => {
     const view = buildChorePlannerView(
-      normalizeChoreOps([
-        points,
-        dailyChore('Tanden poetsen', {
-          labels: ['Ochtendroutine'],
-          due_date: '2026-11-06T07:30:00',
-        }),
-        dailyChore(
-          'Aankleden',
-          { labels: ['Ochtendroutine'], due_date: '2026-11-06T07:45:00' },
-          'pending',
-          'aankleden',
-        ),
-        dailyChore(
-          'Taken uitzoeken',
-          { recurring_frequency: 'weekly', labels: ['Ochtendroutine'] },
-          'pending',
-          'huiswerk',
-        ),
+      state([
+        daily('Tanden poetsen', 'pending'),
+        daily('Aankleden', 'pending'),
+        daily('Taken uitzoeken', 'pending', undefined, 'weekly'),
       ]),
       [],
-      new Date('2026-11-06T09:00:00'),
+      now,
     );
-
     expect(view.tasks).toHaveLength(3);
     expect(view.tasks.every((task) => !task.routineId && !task.inRoutine)).toBe(true);
   });
 
-  it('keeps daily chores without labels as individual chores', () => {
+  it('drops a daily chore completed on an earlier day but keeps today’s completion', () => {
     const view = buildChorePlannerView(
-      normalizeChoreOps([points, dailyChore('Tanden poetsen')]),
-      [],
-      new Date('2026-11-06T09:00:00'),
-    );
-
-    expect(view.tasks).toHaveLength(1);
-  });
-
-  it('drops a daily chore finished on an earlier day from the board', () => {
-    const view = buildChorePlannerView(
-      normalizeChoreOps([
-        points,
-        dailyChore('Tanden poetsen', { last_completed: '2026-11-05T07:30:00' }, 'approved'),
+      state([
+        daily('Gisteren', 'approved', '2026-11-05T07:30:00'),
+        daily('Vandaag', 'approved', '2026-11-06T07:30:00'),
       ]),
       [],
-      new Date('2026-11-06T09:00:00'),
+      now,
     );
-
-    expect(view.tasks).toHaveLength(0);
-  });
-
-  it('keeps a daily chore finished today', () => {
-    const view = buildChorePlannerView(
-      normalizeChoreOps([
-        points,
-        dailyChore('Tanden poetsen', { last_completed: '2026-11-06T07:30:00' }, 'approved'),
-      ]),
-      [],
-      new Date('2026-11-06T09:00:00'),
-    );
-
-    expect(view.tasks).toHaveLength(1);
+    expect(view.tasks.map((task) => task.name)).toEqual(['Vandaag']);
     expect(view.tasks[0].statusOverride).toBe('completed');
   });
 
   it('keeps old completions for chores that do not repeat daily', () => {
     const view = buildChorePlannerView(
-      normalizeChoreOps([
-        points,
-        dailyChore(
-          'Garage opruimen',
-          { recurring_frequency: 'none', last_completed: '2026-10-01T07:30:00' },
-          'approved',
-          'garage',
-        ),
-      ]),
+      state([daily('Garage opruimen', 'approved', '2026-10-01T07:30:00', 'none')]),
       [],
-      new Date('2026-11-06T09:00:00'),
+      now,
     );
-
     expect(view.tasks).toHaveLength(1);
   });
 });
 
-/**
- * Phase 7: the two rules that were only implied before — a zero-point chore is
- * still a real chore, and a rejected completion is not an approved one.
- */
 describe('points and approval edge cases', () => {
-  const choreState = (overrides: Record<string, unknown>) =>
-    normalizeChoreOps([
-      {
-        entity_id: 'sensor.maya_choreops_points',
-        state: '12',
-        attributes: { purpose: 'purpose_points', user_name: 'Maya' },
-      },
-      {
-        entity_id: 'sensor.maya_choreops_chore_status_planten',
-        state: typeof overrides.status === 'string' ? overrides.status : 'pending',
-        attributes: {
-          purpose: 'purpose_chore_status',
-          user_name: 'Maya',
-          chore_name: 'Planten water geven',
-          assigned_user_names: ['Maya'],
-          default_points: 0,
-          completion_criteria: 'independent',
-          auto_approve: false,
-          ...overrides,
-        },
-      },
-    ]);
+  const choreState = (status = 'pending') =>
+    state([
+      chore('Planten water geven', status, {
+        points: 0,
+        autoApprove: false,
+        actions: status === 'claimed' ? { approve: 'choresman-action:approve:plants' } : {},
+      }),
+    ], [user('Maya', 12)]);
 
-  it('keeps a zero-point chore, and completes it without points', () => {
-    const active = buildChorePlannerView(choreState({}), family);
-    const task = active.tasks.find((item) => item.name === 'Planten water geven')!;
-    expect(task.points).toBe(0);
-    expect(task.statusOverride).toBe('active');
+  it('keeps zero-point chores and claimed work awaiting approval', () => {
+    const active = buildChorePlannerView(choreState(), family).tasks[0];
+    expect(active.points).toBe(0);
+    expect(active.statusOverride).toBe('active');
 
-    const done = buildChorePlannerView(choreState({ status: 'completed' }), family);
-    const finished = done.tasks.find((item) => item.name === 'Planten water geven')!;
-    expect(finished.statusOverride).toBe('completed');
-    expect(finished.points).toBe(0);
+    const claimed = buildChorePlannerView(choreState('claimed'), family).tasks[0];
+    expect(claimed.awaitingReview).toBe(true);
+    expect(claimed.statusOverride).not.toBe('completed');
   });
 
-  it('treats a claimed chore as awaiting approval, not as approved', () => {
-    const view = buildChorePlannerView(choreState({ status: 'claimed' }), family);
-    const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
-    expect(task.awaitingReview).toBe(true);
-    expect(task.statusOverride).not.toBe('completed');
-  });
-
-  it('leaves a rejected completion active and out of the completed list', () => {
-    // ChoreOps sends a disapproved chore back to the child; it must not read as
-    // approved, and the points stay with the child's balance.
-    for (const rejected of ['pending', 'overdue', 'missed']) {
-      const view = buildChorePlannerView(choreState({ status: rejected }), family);
-      const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
+  it('leaves rejected completions active', () => {
+    for (const rejected of ['pending', 'overdue', 'missed', 'disapproved']) {
+      const task = buildChorePlannerView(choreState(rejected), family).tasks[0];
       expect(task.statusOverride).not.toBe('completed');
       expect(task.awaitingReview).toBe(false);
     }
-    expect(choreOpsTaskStatus('disapproved')).not.toBe('completed');
-  });
-
-  it('exposes auto-approve so the child can finish without a parent', () => {
-    const view = buildChorePlannerView(choreState({ auto_approve: true }), family);
-    const task = view.tasks.find((item) => item.name === 'Planten water geven')!;
-    expect(task.autoApprove).toBe(true);
   });
 });

@@ -1,13 +1,11 @@
 /**
- * Family settings: the member list, the add/edit form (avatar, photo, colour,
- * PIN, linked HA person and calendars) and the per-member routine editor.
+ * Family settings: the member list, add/edit form and per-member routine editor.
  *
  * This file owns the state and the writes; the three views live in `./family/`
  * and are pure — they render props and call back.
  */
 import { useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
-import { useChoreOps } from '../../../hooks/useChoreOps';
 import { useRoutines } from '../../../hooks/useRoutines';
 import { normalizePin, type FamilyMember, type Routine } from '../../../types/family';
 import { imageFileToDataUrl } from '../../../utils/member-photo';
@@ -20,7 +18,6 @@ import {
   EMPTY_FORM,
   type MemberForm,
   type MemberFormMode,
-  type PersonOption,
 } from './family/types';
 import type { SettingsSectionContext } from './context';
 
@@ -48,40 +45,6 @@ export function FamilySection({
   calendars,
 }: FamilySectionProps) {
   const [editingMember, setEditingMember] = useState<string | null>(null);
-
-  const isChoresman = settings.choresProvider === 'choresman';
-  const { data: choreOpsData } = useChoreOps(settings.choresProvider, isChoresman ? members : []);
-  const choreOpsUsers = choreOpsData?.users ?? [];
-  const choreOpsNames = new Set(choreOpsUsers.map((u) => u.name.trim().toLowerCase()));
-
-  /** `entity_picture` published on an HA person entity, if they have one. */
-  const personPicture = (personName: string): string | null =>
-    (choreOpsData?.people ?? []).find(
-      (person) => person.name.trim().toLowerCase() === personName.trim().toLowerCase(),
-    )?.picture ?? null;
-
-  /** HA people (incl. non-ChoreOps members such as parents) + ChoreOps users. */
-  const peopleOptions: PersonOption[] = isChoresman ? [] : [
-    ...choreOpsUsers.map((u) => ({
-      name: u.name,
-      hasChoreOps: true,
-      picture: personPicture(u.name),
-    })),
-    ...(choreOpsData?.people ?? [])
-      .filter((p) => !choreOpsNames.has(p.name.trim().toLowerCase()))
-      .map((p) => ({ name: p.name, hasChoreOps: false, picture: p.picture })),
-  ];
-
-  /** True when a person is already attached to a different member. */
-  const isLinkedElsewhere = (personName: string): boolean => {
-    const target = personName.trim().toLowerCase();
-    return members.some(
-      (m) =>
-        m.id !== editingMember &&
-        ((m.choreops_user ?? '').trim().toLowerCase() === target ||
-          m.name.trim().toLowerCase() === target),
-    );
-  };
 
   const [memberForm, setMemberForm] = useState<MemberForm>(EMPTY_FORM);
   const [memberFormMode, setMemberFormMode] = useState<MemberFormMode>('list');
@@ -133,7 +96,6 @@ export function FamilySection({
       pin: member.pin ?? '',
       calendar_entity: member.calendar_entity ?? '',
       additional_calendar_entities: member.additional_calendar_entities ?? [],
-      choreops_user: member.choreops_user ?? '',
     });
     setPhotoError(null);
     setEditingMember(member.id);
@@ -174,7 +136,6 @@ export function FamilySection({
         memberForm.additional_calendar_entities.length > 0
           ? memberForm.additional_calendar_entities
           : undefined,
-      choreops_user: memberForm.choreops_user || undefined,
     };
     if (memberFormMode === 'edit' && editingMember) {
       onUpdateMember(editingMember, data);
@@ -254,10 +215,6 @@ export function FamilySection({
           form={memberForm}
           mode={memberFormMode === 'edit' ? 'edit' : 'add'}
           photoError={photoError}
-          linkedPhoto={personPicture(memberForm.choreops_user)}
-          peopleOptions={peopleOptions}
-          localProvider={isChoresman}
-          isLinkedElsewhere={isLinkedElsewhere}
           calendars={calendars}
           t={t}
           onChange={setMemberForm}

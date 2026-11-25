@@ -9,13 +9,13 @@ import { FakeHa } from './fake-ha';
 /**
  * One complete Abbai Flow deployment for the browser suite:
  *
- *   browser → server/app.cjs (SPA + /beacon-data + /api/planner/mutate)
- *                    │
- *                    └── /api/* and /beacon-action/service → FakeHa
+ *   browser → server/app.cjs (SPA + /beacon-data + planner + local ChoresMan)
+ *                    ├── /abbai-flow/choresman → the real local JSON store
+ *                    └── unrelated Home Assistant probes → FakeHa
  *
  * Running the real backend (rather than intercepting fetch in the page) is what
- * makes the test cover the server-side planner reducer, idempotency keys and
- * the persisted redemption document as well.
+ * makes the test cover the local chore store, planner reducer, idempotency keys
+ * and persisted redemption document as well.
  */
 const require = createRequire(import.meta.url);
 const { createApp } = require('../server/app.cjs') as {
@@ -93,4 +93,40 @@ export async function getData<T>(appUrl: string, key: string): Promise<T | null>
   const res = await fetch(`${appUrl}/beacon-data/${key}`);
   if (!res.ok) throw new Error(`Read ${key} failed: ${res.status}`);
   return (await res.json()) as T | null;
+}
+
+/** Call the app's local chore store endpoint directly for E2E setup/assertions. */
+export interface E2EChoresManSnapshot {
+  members: Array<{ id: string; name: string; points: number; role?: string }>;
+  chores: Array<{
+    id: string;
+    name: string;
+    assigned_user_names: string[];
+    completion_criteria?: string;
+    [field: string]: unknown;
+  }>;
+  rewards: Array<{ id: string; name: string; assigned_user_names: string[]; cost: number; approved?: boolean }>;
+  ledger: Array<Record<string, unknown>>;
+  [field: string]: unknown;
+}
+
+export async function callChoresMan<T = unknown>(
+  appUrl: string,
+  action: string,
+  data: Record<string, unknown> = {},
+): Promise<{ result?: T; snapshot: E2EChoresManSnapshot }> {
+  const res = await fetch(`${appUrl}/abbai-flow/choresman`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ action, data }),
+  });
+  if (!res.ok) throw new Error(`ChoresMan action ${action} failed: ${res.status} ${await res.text()}`);
+  return (await res.json()) as { result?: T; snapshot: E2EChoresManSnapshot };
+}
+
+export async function loadChoresMan(appUrl: string): Promise<E2EChoresManSnapshot> {
+  const res = await fetch(`${appUrl}/abbai-flow/choresman`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`Read ChoresMan snapshot failed: ${res.status}`);
+  const body = (await res.json()) as { snapshot: E2EChoresManSnapshot };
+  return body.snapshot;
 }

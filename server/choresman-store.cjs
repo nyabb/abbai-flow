@@ -1,11 +1,9 @@
 /**
- * Choresman is Abbai Flow's local, JSON-backed chore and rewards module.
+ * ChoresMan is Abbai Flow's local, JSON-backed chore and rewards module.
  *
- * Its `choresman.*` actions and snake_case payloads use ChoreOps' service naming
- * and argument conventions. Family members are first-class Abbai Flow records
- * and have no Home Assistant/ChoreOps identity link.
- * Service argument conventions are based on:
- * https://github.com/ccpk1/ChoreOps/wiki/Services:-Reference
+ * Its service-shaped action names and snake_case payloads are part of the
+ * local HTTP API. Family members are first-class Abbai Flow records and have
+ * no external account identity link.
  */
 
 const fs = require('node:fs/promises');
@@ -25,6 +23,7 @@ const SERVICE_NAMES = [
   'set_chore_due_date',
   'skip_chore_due_date',
   'create_reward',
+  'approve_reward_definition',
   'update_reward',
   'delete_reward',
   'redeem_reward',
@@ -45,7 +44,7 @@ const SERVICE_NAMES = [
   'set_rotation_turn',
   'reset_rotation',
   'open_rotation_cycle',
-  // Choresman-local configuration and delivery-neutral extensions.
+  // ChoresMan-local configuration and delivery-neutral extensions.
   'create_bonus', 'update_bonus', 'delete_bonus',
   'create_penalty', 'update_penalty', 'delete_penalty',
   'create_badge', 'update_badge', 'delete_badge', 'award_badge',
@@ -194,7 +193,7 @@ function clone(value) {
 
 function normaliseName(value, label = 'name') {
   if (typeof value !== 'string' || !value.trim()) {
-    throw new ChoresmanStoreError('invalid_data', `${label} is required`);
+    throw new ChoresManStoreError('invalid_data', `${label} is required`);
   }
   return value.trim();
 }
@@ -206,7 +205,7 @@ function nameKey(value) {
 function finiteNumber(value, label, { min = -Infinity, max = Infinity, decimals = 2 } = {}) {
   const number = Number(value);
   if (!Number.isFinite(number) || number < min || number > max) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must be a finite number`);
+    throw new ChoresManStoreError('invalid_data', `${label} must be a finite number`);
   }
   const factor = 10 ** decimals;
   return Math.round(number * factor) / factor;
@@ -216,18 +215,18 @@ function decimalNumber(value, label, decimals) {
   const number = Number(value);
   const factor = 10 ** decimals;
   if (!Number.isFinite(number) || Math.abs(number * factor - Math.round(number * factor)) > 1e-8) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must have at most ${decimals} decimal places`);
+    throw new ChoresManStoreError('invalid_data', `${label} must have at most ${decimals} decimal places`);
   }
   return Math.round(number * factor) / factor;
 }
 
 function stringList(value, label, { allowEmpty = true } = {}) {
   if (!Array.isArray(value)) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must be an array of strings`);
+    throw new ChoresManStoreError('invalid_data', `${label} must be an array of strings`);
   }
   const values = [...new Set(value.map((item) => normaliseName(item, label)))];
   if (!allowEmpty && values.length === 0) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must contain at least one value`);
+    throw new ChoresManStoreError('invalid_data', `${label} must contain at least one value`);
   }
   return values;
 }
@@ -235,7 +234,7 @@ function stringList(value, label, { allowEmpty = true } = {}) {
 function isoNow(now) {
   const date = now();
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-    throw new ChoresmanStoreError('invalid_clock', 'The configured clock returned an invalid date');
+    throw new ChoresManStoreError('invalid_clock', 'The configured clock returned an invalid date');
   }
   return date.toISOString();
 }
@@ -244,7 +243,7 @@ function parseDate(value, label = 'date') {
   if (value === null || value === undefined || value === '') return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must be a valid date`);
+    throw new ChoresManStoreError('invalid_data', `${label} must be a valid date`);
   }
   return date;
 }
@@ -278,7 +277,7 @@ function durationMilliseconds(value, label) {
     parts.length === 0 ||
     parts.map((part) => part[0]).join('').replace(/\s/g, '') !== text.replace(/\s/g, '')
   ) {
-    throw new ChoresmanStoreError(
+    throw new ChoresManStoreError(
       'invalid_data',
       `${label} must use minutes or a duration such as 1d 2h 30m`,
     );
@@ -459,12 +458,12 @@ function nextDueDate(chore, baseValue, memberId = null) {
 function normaliseTimes(value, label) {
   const source = typeof value === 'string' ? value.split('|') : value;
   if (!Array.isArray(source)) {
-    throw new ChoresmanStoreError('invalid_data', `${label} must be an array or pipe-separated HH:MM string`);
+    throw new ChoresManStoreError('invalid_data', `${label} must be an array or pipe-separated HH:MM string`);
   }
   const times = [...new Set(source.map((item) => {
     const time = String(item).trim();
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-      throw new ChoresmanStoreError('invalid_data', `${label} entries must use HH:MM`);
+      throw new ChoresManStoreError('invalid_data', `${label} entries must use HH:MM`);
     }
     return time;
   }))].sort();
@@ -479,19 +478,19 @@ function metricKind(value) {
   if (metric.includes('overdue')) return 'no_overdue';
   if (metric.includes('count') || metric.includes('completion') || metric.includes('chore')) return 'count';
   if (GOAL_METRICS.has(metric)) return metric;
-  throw new ChoresmanStoreError('invalid_data', `Unsupported goal metric: ${value}`);
+  throw new ChoresManStoreError('invalid_data', `Unsupported goal metric: ${value}`);
 }
 
-class ChoresmanStoreError extends Error {
+class ChoresManStoreError extends Error {
   constructor(code, message, details) {
     super(message);
-    this.name = 'ChoresmanStoreError';
+    this.name = 'ChoresManStoreError';
     this.code = code;
     if (details !== undefined) this.details = details;
   }
 }
 
-class ChoresmanStore {
+class ChoresManStore {
   constructor(options = {}) {
     const dataDir = options.dataDir || process.env.ABBAI_FLOW_DATA || '/data';
     this.filePath = path.resolve(options.filePath || path.join(dataDir, 'choresman.json'));
@@ -522,7 +521,7 @@ class ChoresmanStore {
     try {
     document = migrateDocument(JSON.parse(raw));
     } catch {
-      throw new ChoresmanStoreError('storage_corrupt', 'Choresman JSON data is not valid JSON');
+      throw new ChoresManStoreError('storage_corrupt', 'ChoresMan JSON data is not valid JSON');
     }
     if (
       !document ||
@@ -546,9 +545,9 @@ class ChoresmanStore {
       !Array.isArray(document.notifications) ||
       !Array.isArray(document.ui_controls)
     ) {
-      throw new ChoresmanStoreError(
+      throw new ChoresManStoreError(
         'storage_version',
-        'Choresman JSON data has an unsupported or invalid schema',
+        'ChoresMan JSON data has an unsupported or invalid schema',
       );
     }
     return document;
@@ -602,7 +601,7 @@ class ChoresmanStore {
       return false;
     });
     if (!member || (active && !member.active)) {
-      throw new ChoresmanStoreError('user_not_found', `Family member not found: ${targetName || targetId || ''}`);
+      throw new ChoresManStoreError('user_not_found', `Family member not found: ${targetName || targetId || ''}`);
     }
     return member;
   }
@@ -616,7 +615,7 @@ class ChoresmanStore {
       return false;
     });
     if (!chore) {
-      throw new ChoresmanStoreError('chore_not_found', `Chore not found: ${targetName || targetId || ''}`);
+      throw new ChoresManStoreError('chore_not_found', `Chore not found: ${targetName || targetId || ''}`);
     }
     return chore;
   }
@@ -630,7 +629,7 @@ class ChoresmanStore {
       return false;
     });
     if (!reward) {
-      throw new ChoresmanStoreError('reward_not_found', `Reward not found: ${targetName || targetId || ''}`);
+      throw new ChoresManStoreError('reward_not_found', `Reward not found: ${targetName || targetId || ''}`);
     }
     return reward;
   }
@@ -940,14 +939,14 @@ class ChoresmanStore {
     return this._mutate((document) => {
       const name = normaliseName(data.name ?? data.user_name, 'name');
       if (document.members.some((member) => nameKey(member.name) === nameKey(name))) {
-        throw new ChoresmanStoreError('duplicate_user', `Family member already exists: ${name}`);
+        throw new ChoresManStoreError('duplicate_user', `Family member already exists: ${name}`);
       }
       const role = data.role || 'child';
       if (!['parent', 'child'].includes(role)) {
-        throw new ChoresmanStoreError('invalid_data', 'role must be parent or child');
+        throw new ChoresManStoreError('invalid_data', 'role must be parent or child');
       }
       if (data.notification_preferences !== undefined && (!data.notification_preferences || typeof data.notification_preferences !== 'object' || Array.isArray(data.notification_preferences))) {
-        throw new ChoresmanStoreError('invalid_data', 'notification_preferences must be an object');
+        throw new ChoresManStoreError('invalid_data', 'notification_preferences must be an object');
       }
       const member = {
         id: data.id || this.idFactory(),
@@ -975,7 +974,7 @@ class ChoresmanStore {
   _rekeyMember(document, member, nextId) {
     if (member.id === nextId) return;
     if (document.members.some((candidate) => candidate !== member && candidate.id === nextId)) {
-      throw new ChoresmanStoreError('duplicate_user', `Family member id already exists: ${nextId}`);
+      throw new ChoresManStoreError('duplicate_user', `Family member id already exists: ${nextId}`);
     }
     const previousId = member.id;
     member.id = nextId;
@@ -1005,20 +1004,20 @@ class ChoresmanStore {
 
   async syncMembers(data = {}) {
     if (!Array.isArray(data.members)) {
-      throw new ChoresmanStoreError('invalid_data', 'members must be an array');
+      throw new ChoresManStoreError('invalid_data', 'members must be an array');
     }
     return this._mutate((document) => {
       const activeFamilyIds = new Set();
       const synced = [];
       for (const profile of data.members) {
         if (!profile || typeof profile !== 'object' || Array.isArray(profile)) {
-          throw new ChoresmanStoreError('invalid_data', 'each family member must be an object');
+          throw new ChoresManStoreError('invalid_data', 'each family member must be an object');
         }
         const familyMemberId = normaliseName(profile.id, 'family member id');
         const name = normaliseName(profile.name, 'name');
         const role = profile.role || 'child';
         if (!['parent', 'child'].includes(role)) {
-          throw new ChoresmanStoreError('invalid_data', 'role must be parent or child');
+          throw new ChoresManStoreError('invalid_data', 'role must be parent or child');
         }
         activeFamilyIds.add(familyMemberId);
         let member = document.members.find((candidate) => candidate.family_member_id === familyMemberId) ||
@@ -1026,7 +1025,7 @@ class ChoresmanStore {
           document.members.find((candidate) => nameKey(candidate.name) === nameKey(name));
         if (member) {
           if (document.members.some((candidate) => candidate.id !== member.id && candidate.active && nameKey(candidate.name) === nameKey(name))) {
-            throw new ChoresmanStoreError('duplicate_user', `Family member already exists: ${name}`);
+            throw new ChoresManStoreError('duplicate_user', `Family member already exists: ${name}`);
           }
           this._rekeyMember(document, member, familyMemberId);
           member.name = name;
@@ -1085,20 +1084,20 @@ class ChoresmanStore {
       if (Object.hasOwn(data, 'name') || Object.hasOwn(data, 'user_name')) {
         const name = normaliseName(data.name ?? data.user_name, 'name');
         if (document.members.some((candidate) => candidate.id !== member.id && nameKey(candidate.name) === nameKey(name))) {
-          throw new ChoresmanStoreError('duplicate_user', `Family member already exists: ${name}`);
+          throw new ChoresManStoreError('duplicate_user', `Family member already exists: ${name}`);
         }
         member.name = name;
       }
       if (Object.hasOwn(data, 'role')) {
         if (!['parent', 'child'].includes(data.role)) {
-          throw new ChoresmanStoreError('invalid_data', 'role must be parent or child');
+          throw new ChoresManStoreError('invalid_data', 'role must be parent or child');
         }
         member.role = data.role;
       }
       if (Object.hasOwn(data, 'avatar')) member.avatar = String(data.avatar || '');
       if (Object.hasOwn(data, 'color')) {
         if (typeof data.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.color)) {
-          throw new ChoresmanStoreError('invalid_data', 'color must be a six-digit hex color');
+          throw new ChoresManStoreError('invalid_data', 'color must be a six-digit hex color');
         }
         member.color = data.color;
       }
@@ -1106,7 +1105,7 @@ class ChoresmanStore {
       if (Object.hasOwn(data, 'gamification_enabled')) member.gamification_enabled = Boolean(data.gamification_enabled);
       if (Object.hasOwn(data, 'notification_preferences')) {
         if (!data.notification_preferences || typeof data.notification_preferences !== 'object' || Array.isArray(data.notification_preferences)) {
-          throw new ChoresmanStoreError('invalid_data', 'notification_preferences must be an object');
+          throw new ChoresManStoreError('invalid_data', 'notification_preferences must be an object');
         }
         member.notification_preferences = clone(data.notification_preferences);
       }
@@ -1139,10 +1138,10 @@ class ChoresmanStore {
   async _createChore(document, data) {
     const name = normaliseName(data.name, 'name');
     if (document.chores.some((chore) => nameKey(chore.name) === nameKey(name))) {
-      throw new ChoresmanStoreError('duplicate_chore', `Chore already exists: ${name}`);
+      throw new ChoresManStoreError('duplicate_chore', `Chore already exists: ${name}`);
     }
     if (!Object.hasOwn(data, 'assigned_user_names')) {
-      throw new ChoresmanStoreError('invalid_data', 'assigned_user_names is required');
+      throw new ChoresManStoreError('invalid_data', 'assigned_user_names is required');
     }
     const assignedIds = this._resolveAssignees(document, data.assigned_user_names, { allowEmpty: false });
     const chore = {
@@ -1182,13 +1181,13 @@ class ChoresmanStore {
   _applyChoreFields(document, chore, data, { create = false } = {}) {
     if (Object.hasOwn(data, 'completion_criteria')) {
       if (!create) {
-        throw new ChoresmanStoreError(
+        throw new ChoresManStoreError(
           'immutable_field',
           'completion_criteria can only be set when a chore is created',
         );
       }
       if (!COMPLETION_CRITERIA.has(data.completion_criteria)) {
-        throw new ChoresmanStoreError('invalid_data', 'completion_criteria is not supported');
+        throw new ChoresManStoreError('invalid_data', 'completion_criteria is not supported');
       }
       chore.completion_criteria = data.completion_criteria;
     }
@@ -1198,15 +1197,15 @@ class ChoresmanStore {
       if (field === 'points') chore.points = finiteNumber(value, field, { min: 0 });
       else if (field === 'custom_interval') chore.custom_interval = Math.max(1, Math.round(finiteNumber(value, field, { min: 1 })));
       else if (field === 'custom_interval_unit') {
-        if (!INTERVAL_UNITS.has(value)) throw new ChoresmanStoreError('invalid_data', 'custom_interval_unit is invalid');
+        if (!INTERVAL_UNITS.has(value)) throw new ChoresManStoreError('invalid_data', 'custom_interval_unit is invalid');
         chore.custom_interval_unit = value;
       } else if (field === 'frequency') {
-        if (!FREQUENCIES.has(value)) throw new ChoresmanStoreError('invalid_data', 'frequency is invalid');
+        if (!FREQUENCIES.has(value)) throw new ChoresManStoreError('invalid_data', 'frequency is invalid');
         chore.frequency = value;
       } else if (field === 'applicable_days' || field === 'labels') {
         const values = stringList(value, field).map((item) => item.toLowerCase());
         if (field === 'applicable_days' && values.some((day) => !Object.hasOwn(WEEKDAY_INDEX, day))) {
-          throw new ChoresmanStoreError(
+          throw new ChoresManStoreError(
             'invalid_data',
             'applicable_days must contain weekday keys such as mon or wed',
           );
@@ -1216,7 +1215,7 @@ class ChoresmanStore {
         chore.daily_multi_times = normaliseTimes(value, field);
       } else if (field === 'daily_multi_times_by_member' || field === 'applicable_days_by_member') {
         if (!value || typeof value !== 'object' || Array.isArray(value)) {
-          throw new ChoresmanStoreError('invalid_data', `${field} must map member names to arrays`);
+          throw new ChoresManStoreError('invalid_data', `${field} must map member names to arrays`);
         }
         const memberMap = {};
         for (const [userName, entries] of Object.entries(value)) {
@@ -1225,7 +1224,7 @@ class ChoresmanStore {
             ? normaliseTimes(entries, field)
             : stringList(entries, field).map((item) => item.toLowerCase());
           if (field === 'applicable_days_by_member' && list.some((day) => !Object.hasOwn(WEEKDAY_INDEX, day))) {
-            throw new ChoresmanStoreError('invalid_data', 'applicable_days_by_member must use weekday keys such as mon or wed');
+            throw new ChoresManStoreError('invalid_data', 'applicable_days_by_member must use weekday keys such as mon or wed');
           }
           memberMap[member.id] = list;
         }
@@ -1246,33 +1245,33 @@ class ChoresmanStore {
           'show_on_calendar',
         ].includes(field)
       ) {
-        if (typeof value !== 'boolean') throw new ChoresmanStoreError('invalid_data', `${field} must be boolean`);
+        if (typeof value !== 'boolean') throw new ChoresManStoreError('invalid_data', `${field} must be boolean`);
         chore[field] = value;
       } else if (field === 'standby_claim_mode') {
         if (!['anytime', 'on_overdue', 'manual_only'].includes(value)) {
-          throw new ChoresmanStoreError('invalid_data', 'standby_claim_mode must be anytime, on_overdue, or manual_only');
+          throw new ChoresManStoreError('invalid_data', 'standby_claim_mode must be anytime, on_overdue, or manual_only');
         }
         chore[field] = value;
       } else if (field === 'notification_importance') {
         if (!['min', 'low', 'default', 'high', 'max'].includes(String(value))) {
-          throw new ChoresmanStoreError('invalid_data', 'notification_importance must be min, low, default, high, or max');
+          throw new ChoresManStoreError('invalid_data', 'notification_importance must be min, low, default, high, or max');
         }
         chore[field] = value;
       } else if (field === 'notification_priority') {
         if (!['normal', 'high'].includes(String(value))) {
-          throw new ChoresmanStoreError('invalid_data', 'notification_priority must be normal or high');
+          throw new ChoresManStoreError('invalid_data', 'notification_priority must be normal or high');
         }
         chore[field] = value;
       } else if (field === 'notification_ttl') {
         if (!Number.isInteger(Number(value))) {
-          throw new ChoresmanStoreError('invalid_data', 'notification_ttl must be an integer number of seconds');
+          throw new ChoresManStoreError('invalid_data', 'notification_ttl must be an integer number of seconds');
         }
         chore[field] = finiteNumber(value, field, { min: 0, max: MAX_NOTIFICATION_TTL_SECONDS, decimals: 0 });
       } else if (field === 'approval_reset_type') {
-        if (!APPROVAL_RESET_TYPES.has(value)) throw new ChoresmanStoreError('invalid_data', 'approval_reset_type is invalid');
+        if (!APPROVAL_RESET_TYPES.has(value)) throw new ChoresManStoreError('invalid_data', 'approval_reset_type is invalid');
         chore[field] = value;
       } else if (field === 'pending_claims') {
-        if (!PENDING_CLAIM_ACTIONS.has(value)) throw new ChoresmanStoreError('invalid_data', 'pending_claims is invalid');
+        if (!PENDING_CLAIM_ACTIONS.has(value)) throw new ChoresManStoreError('invalid_data', 'pending_claims is invalid');
         chore[field] = value;
       } else if (value === null) {
         chore[field] = null;
@@ -1288,7 +1287,7 @@ class ChoresmanStore {
     }
     if (isNeverOverdue(chore.overdue_handling) &&
       !['rotation_simple', 'rotation_simple_from_turn_holder'].includes(chore.completion_criteria)) {
-      throw new ChoresmanStoreError(
+      throw new ChoresManStoreError(
         'invalid_data',
         'never_overdue requires rotation_simple or rotation_simple_from_turn_holder completion criteria',
       );
@@ -1303,7 +1302,7 @@ class ChoresmanStore {
     if (Object.hasOwn(data, 'name') && hasId) {
       const name = normaliseName(data.name, 'name');
       if (document.chores.some((candidate) => candidate.id !== chore.id && nameKey(candidate.name) === nameKey(name))) {
-        throw new ChoresmanStoreError('duplicate_chore', `Chore already exists: ${name}`);
+        throw new ChoresManStoreError('duplicate_chore', `Chore already exists: ${name}`);
       }
       chore.name = name;
     }
@@ -1320,7 +1319,7 @@ class ChoresmanStore {
           ? document.members.filter((member) => member.active && !requested.includes(member.id)).map((member) => member.id)
           : chore.assigned_member_ids.filter((id) => !requested.includes(id));
       } else {
-        throw new ChoresmanStoreError('invalid_data', 'assignment_action must be replace, add, or remove');
+        throw new ChoresManStoreError('invalid_data', 'assignment_action must be replace, add, or remove');
       }
       if (ROTATION_CRITERIA.has(chore.completion_criteria)) {
         const activeIds = this._rotationMembers(document, chore);
@@ -1370,37 +1369,37 @@ class ChoresmanStore {
     if (member.paused && member.paused_until && Date.parse(member.paused_until) <= Date.parse(claimTime)) {
       await this._pauseUserChores(document, { user_id: member.id, paused: false });
     }
-    if (member.paused) throw new ChoresmanStoreError('user_paused', `${member.name}'s chores are paused`);
+    if (member.paused) throw new ChoresManStoreError('user_paused', `${member.name}'s chores are paused`);
     if (!this._isAssigned(chore, member.id)) {
-      throw new ChoresmanStoreError('user_not_assigned', `${member.name} is not assigned to ${chore.name}`);
+      throw new ChoresManStoreError('user_not_assigned', `${member.name} is not assigned to ${chore.name}`);
     }
     const nowDate = this.now();
     const dueDate = this._effectiveDueDate(chore, member.id);
     const resetMode = chore.approval_reset_type || 'upon_completion';
     if (['at_midnight_once', 'at_midnight_multi'].includes(resetMode) && dueDate && Date.parse(nowDate) < Date.parse(dueDate)) {
-      throw new ChoresmanStoreError('chore_not_due', `${chore.name} is not available until its due boundary`);
+      throw new ChoresManStoreError('chore_not_due', `${chore.name} is not available until its due boundary`);
     }
     if (chore.chore_claim_lock_until_window && dueDate && Date.parse(nowDate) < Date.parse(dueDate)) {
       const windowOffset = durationMilliseconds(chore.due_window_offset, 'due_window_offset');
       const opensAt = Date.parse(dueDate) - windowOffset;
       if (windowOffset > 0 && Date.parse(nowDate) < opensAt) {
-        throw new ChoresmanStoreError('claim_window_closed', 'This chore is locked until its due window opens');
+        throw new ChoresManStoreError('claim_window_closed', 'This chore is locked until its due window opens');
       }
     }
     const occurrence = cycleKey(chore, member.id, nowDate);
     const resetType = chore.approval_reset_type || 'upon_completion';
     const earlierApproval = document.chore_claims.find((claim) => claim.chore_id === chore.id && claim.member_id === member.id && claim.status === 'approved');
     if (resetType === 'manual_reset_only' && earlierApproval) {
-      throw new ChoresmanStoreError('chore_already_claimed', `${chore.name} requires a manual reset before it can be claimed again`);
+      throw new ChoresManStoreError('chore_already_claimed', `${chore.name} requires a manual reset before it can be claimed again`);
     }
     if (resetType === 'at_due_date' && dueDate && Date.parse(dueDate) <= Date.parse(nowDate) && document.chore_claims.some((claim) => claim.chore_id === chore.id && claim.member_id === member.id && claim.status === 'approved' && claim.due_date_at_claim === dueDate)) {
-      throw new ChoresmanStoreError('chore_already_claimed', `${chore.name} is waiting for its due-date reset`);
+      throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is waiting for its due-date reset`);
     }
     let rotationStolen = false;
     if (ROTATION_CRITERIA.has(chore.completion_criteria)) {
       const competingClaim = document.chore_claims.find((claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && ['claimed', 'approved'].includes(claim.status));
       if (competingClaim && competingClaim.member_id !== member.id) {
-        throw new ChoresmanStoreError('chore_already_claimed', `${chore.name} is already claimed for this rotation`);
+        throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed for this rotation`);
       }
       const turn = this._rotationTurn(document, chore);
       const members = this._rotationMembers(document, chore);
@@ -1411,12 +1410,12 @@ class ChoresmanStore {
         const due = this._effectiveDueDate(chore, member.id);
         const overdue = due && Date.parse(nowDate) >= Date.parse(due);
         if (mode === 'manual_only' || (mode === 'on_overdue' && !overdue)) {
-          throw new ChoresmanStoreError('not_my_turn', `${member.name} is on standby for ${chore.name}`);
+          throw new ChoresManStoreError('not_my_turn', `${member.name} is on standby for ${chore.name}`);
         }
       } else if (!isPrimaryStandby && turn !== member.id && !chore.rotation_state?.open) {
         const due = this._effectiveDueDate(chore, member.id);
         const canSteal = chore.allow_steal === true && due && Date.parse(nowDate) >= Date.parse(due);
-        if (!canSteal) throw new ChoresmanStoreError('not_my_turn', `${member.name} does not have the current turn for ${chore.name}`);
+        if (!canSteal) throw new ChoresManStoreError('not_my_turn', `${member.name} does not have the current turn for ${chore.name}`);
         rotationStolen = true;
       }
     }
@@ -1424,11 +1423,11 @@ class ChoresmanStore {
       const otherClaim = document.chore_claims.find(
         (claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && ['claimed', 'approved'].includes(claim.status),
       );
-      if (otherClaim) throw new ChoresmanStoreError('chore_already_claimed', `${chore.name} is already claimed`);
+      if (otherClaim) throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed`);
     }
     let claim = this._claimFor(document, chore, member, nowDate);
     if (claim && ['claimed', 'approved'].includes(claim.status)) {
-      throw new ChoresmanStoreError('chore_already_claimed', `${chore.name} is already claimed for this period`);
+      throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed for this period`);
     }
     const timestamp = isoNow(this.now);
     this._clearNotifications(document, chore.id);
@@ -1474,7 +1473,7 @@ class ChoresmanStore {
     const approverName = normaliseName(data.approver_name, 'approver_name');
     const claim = this._claimFor(document, chore, member, this.now());
     if (!claim || claim.status !== 'claimed') {
-      throw new ChoresmanStoreError('claim_not_pending', `No pending claim for ${member.name} on ${chore.name}`);
+      throw new ChoresManStoreError('claim_not_pending', `No pending claim for ${member.name} on ${chore.name}`);
     }
     const basePoints = Object.hasOwn(data, 'points_awarded')
       ? finiteNumber(data.points_awarded, 'points_awarded', { min: 0 })
@@ -1512,7 +1511,7 @@ class ChoresmanStore {
     const approverName = normaliseName(data.approver_name, 'approver_name');
     const claim = this._claimFor(document, chore, member, this.now());
     if (!claim || claim.status !== 'claimed') {
-      throw new ChoresmanStoreError('claim_not_pending', `No pending claim for ${member.name} on ${chore.name}`);
+      throw new ChoresManStoreError('claim_not_pending', `No pending claim for ${member.name} on ${chore.name}`);
     }
     claim.status = 'disapproved';
     claim.disapproved_at = isoNow(this.now);
@@ -1609,12 +1608,12 @@ class ChoresmanStore {
 
   async _pauseUserChores(document, data) {
     const member = this._findMember(document, data);
-    if (Object.hasOwn(data, 'paused') && typeof data.paused !== 'boolean') throw new ChoresmanStoreError('invalid_data', 'paused must be boolean');
+    if (Object.hasOwn(data, 'paused') && typeof data.paused !== 'boolean') throw new ChoresManStoreError('invalid_data', 'paused must be boolean');
     const paused = data.paused !== false;
     const actions = ['unpause', 'unpause_shift_independent', 'unpause_shift_all_primary', 'unpause_shift_all'];
     const requestedAction = data.unpause_action;
     if (requestedAction && !actions.includes(requestedAction)) {
-      throw new ChoresmanStoreError('invalid_data', 'unpause_action is invalid');
+      throw new ChoresManStoreError('invalid_data', 'unpause_action is invalid');
     }
     if (!paused) {
       const action = requestedAction || member.unpause_action || 'unpause';
@@ -1639,7 +1638,7 @@ class ChoresmanStore {
   async _createReward(document, data) {
     const name = normaliseName(data.name, 'name');
     if (document.rewards.some((reward) => nameKey(reward.name) === nameKey(name))) {
-      throw new ChoresmanStoreError('duplicate_reward', `Reward already exists: ${name}`);
+      throw new ChoresManStoreError('duplicate_reward', `Reward already exists: ${name}`);
     }
     const cost = finiteNumber(data.cost, 'cost', { min: 0 });
     const assignedIds = Object.hasOwn(data, 'assigned_user_names')
@@ -1654,6 +1653,7 @@ class ChoresmanStore {
       labels: [],
       created_at: isoNow(this.now),
       updated_at: isoNow(this.now),
+      approved: data.approved !== false,
     };
     this._applyRewardFields(reward, data, { create: true });
     document.rewards.push(reward);
@@ -1675,7 +1675,7 @@ class ChoresmanStore {
     if (Object.hasOwn(data, 'name') && (data.id || data.reward_id)) {
       const name = normaliseName(data.name, 'name');
       if (document.rewards.some((candidate) => candidate.id !== reward.id && nameKey(candidate.name) === nameKey(name))) {
-        throw new ChoresmanStoreError('duplicate_reward', `Reward already exists: ${name}`);
+        throw new ChoresManStoreError('duplicate_reward', `Reward already exists: ${name}`);
       }
       reward.name = name;
     }
@@ -1684,6 +1684,24 @@ class ChoresmanStore {
     }
     this._applyRewardFields(reward, data);
     return { reward_id: reward.id, id: reward.id, name: reward.name };
+  }
+
+  async _approveRewardDefinition(document, data) {
+    const reward = this._findReward(document, data);
+    const approverName = normaliseName(data.approver_name, 'approver_name');
+    if (reward.approved !== true) {
+      reward.approved = true;
+      reward.approved_at = isoNow(this.now);
+      reward.approved_by = approverName;
+      reward.updated_at = isoNow(this.now);
+      this._event(document, {
+        type: 'reward_definition_approved',
+        reward_id: reward.id,
+        reward_name: reward.name,
+        approver_name: approverName,
+      });
+    }
+    return { reward_id: reward.id, approved: true };
   }
 
   async _deleteReward(document, data) {
@@ -1709,14 +1727,17 @@ class ChoresmanStore {
 
   async _redeemReward(document, data) {
     const reward = this._findReward(document, data);
+    if (reward.approved === false) {
+      throw new ChoresManStoreError('reward_not_approved', `${reward.name} is waiting for parent approval`);
+    }
     const member = this._findMember(document, data);
     const approverName = normaliseName(data.approver_name, 'approver_name');
     if (this._pendingReward(document, reward, member)) {
-      throw new ChoresmanStoreError('reward_already_pending', `${reward.name} is already awaiting approval`);
+      throw new ChoresManStoreError('reward_already_pending', `${reward.name} is already awaiting approval`);
     }
     const spendable = this._balance(document, member.id) - this._reservedPoints(document, member.id);
     if (spendable < reward.cost) {
-      throw new ChoresmanStoreError('insufficient_points', `${member.name} does not have enough points`);
+      throw new ChoresManStoreError('insufficient_points', `${member.name} does not have enough points`);
     }
     const claim = {
       id: this.idFactory(),
@@ -1740,6 +1761,9 @@ class ChoresmanStore {
 
   async _approveReward(document, data) {
     const reward = this._findReward(document, data);
+    if (reward.approved === false) {
+      throw new ChoresManStoreError('reward_not_approved', `${reward.name} is waiting for parent approval`);
+    }
     const member = this._findMember(document, data);
     const approverName = normaliseName(data.approver_name, 'approver_name');
     const pending = this._pendingReward(document, reward, member);
@@ -1747,7 +1771,7 @@ class ChoresmanStore {
       ? finiteNumber(data.cost_override, 'cost_override', { min: 0 })
       : pending?.cost ?? reward.cost;
     if (this._balance(document, member.id) - (pending ? this._reservedPoints(document, member.id) - pending.cost : this._reservedPoints(document, member.id)) < cost) {
-      throw new ChoresmanStoreError('insufficient_points', `${member.name} does not have enough points`);
+      throw new ChoresManStoreError('insufficient_points', `${member.name} does not have enough points`);
     }
     const transactionId = pending?.id || this.idFactory();
     if (pending) {
@@ -1790,7 +1814,7 @@ class ChoresmanStore {
     const member = this._findMember(document, data);
     const approverName = normaliseName(data.approver_name, 'approver_name');
     const claim = this._pendingReward(document, reward, member);
-    if (!claim) throw new ChoresmanStoreError('claim_not_pending', `No pending request for ${reward.name}`);
+    if (!claim) throw new ChoresManStoreError('claim_not_pending', `No pending request for ${reward.name}`);
     claim.status = 'disapproved';
     claim.disapproved_at = isoNow(this.now);
     claim.approver_name = approverName;
@@ -1805,7 +1829,7 @@ class ChoresmanStore {
   async _manualAdjustPoints(document, data) {
     const member = this._findMember(document, data);
     const amount = decimalNumber(data.amount, 'amount', 2);
-    if (amount === 0) throw new ChoresmanStoreError('invalid_data', 'amount cannot be 0');
+    if (amount === 0) throw new ChoresManStoreError('invalid_data', 'amount cannot be 0');
     const reason = normaliseName(data.reason, 'reason');
     const approverName = data.approver_name ? normaliseName(data.approver_name, 'approver_name') : undefined;
     const entry = this._appendLedger(document, member, amount, {
@@ -1857,14 +1881,14 @@ class ChoresmanStore {
     const id = data.id || data[`${label}_id`];
     const name = data[`${label}_name`] || data.name;
     const item = document[collection].find((candidate) => id ? candidate.id === id : name && nameKey(candidate.name) === nameKey(name));
-    if (!item) throw new ChoresmanStoreError(`${label}_not_found`, `${label} not found: ${name || id || ''}`);
+    if (!item) throw new ChoresManStoreError(`${label}_not_found`, `${label} not found: ${name || id || ''}`);
     return item;
   }
 
   _catalogCreate(document, collection, label, data, { pointsField = null } = {}) {
     const name = normaliseName(data.name, 'name');
     if (document[collection].some((item) => nameKey(item.name) === nameKey(name))) {
-      throw new ChoresmanStoreError(`duplicate_${label}`, `${label} already exists: ${name}`);
+      throw new ChoresManStoreError(`duplicate_${label}`, `${label} already exists: ${name}`);
     }
     const item = {
       id: data.id || this.idFactory(),
@@ -1900,7 +1924,7 @@ class ChoresmanStore {
     if (Object.hasOwn(data, 'name') && (data.id || data[`${label}_id`])) {
       const name = normaliseName(data.name, 'name');
       if (document[collection].some((candidate) => candidate.id !== item.id && nameKey(candidate.name) === nameKey(name))) {
-        throw new ChoresmanStoreError(`duplicate_${label}`, `${label} already exists: ${name}`);
+        throw new ChoresManStoreError(`duplicate_${label}`, `${label} already exists: ${name}`);
       }
       item.name = name;
     }
@@ -1943,9 +1967,9 @@ class ChoresmanStore {
 
   _setRotationTurn(document, data) {
     const chore = this._findChore(document, data);
-    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresmanStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
+    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresManStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
     const member = this._findMember(document, data);
-    if (!this._isAssigned(chore, member.id)) throw new ChoresmanStoreError('user_not_assigned', `${member.name} is not assigned to ${chore.name}`);
+    if (!this._isAssigned(chore, member.id)) throw new ChoresManStoreError('user_not_assigned', `${member.name} is not assigned to ${chore.name}`);
     chore.rotation_state ||= { current_member_id: null, open: false };
     chore.rotation_state.current_member_id = member.id;
     chore.rotation_state.open = false;
@@ -1956,7 +1980,7 @@ class ChoresmanStore {
 
   _resetRotation(document, data) {
     const chore = this._findChore(document, data);
-    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresmanStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
+    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresManStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
     const members = this._rotationMembers(document, chore);
     chore.rotation_state = { current_member_id: members[0] || null, open: false };
     chore.updated_at = isoNow(this.now);
@@ -1966,7 +1990,7 @@ class ChoresmanStore {
 
   _openRotationCycle(document, data) {
     const chore = this._findChore(document, data);
-    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresmanStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
+    if (!ROTATION_CRITERIA.has(chore.completion_criteria)) throw new ChoresManStoreError('not_a_rotation', `${chore.name} does not use a rotation`);
     chore.rotation_state ||= { current_member_id: this._rotationMembers(document, chore)[0] || null, open: false };
     chore.rotation_state.open = true;
     chore.updated_at = isoNow(this.now);
@@ -1978,7 +2002,7 @@ class ChoresmanStore {
     const member = this._findMember(document, data, { active: false });
     const action = data.ui_control_action;
     if (!['create', 'update', 'remove'].includes(action)) {
-      throw new ChoresmanStoreError('invalid_data', 'ui_control_action must be create, update, or remove');
+      throw new ChoresManStoreError('invalid_data', 'ui_control_action must be create, update, or remove');
     }
     const key = String(data.key || '').trim().replace(/^\/+|\/+$/g, '');
     let controls = document.ui_controls.find((entry) => entry.member_id === member.id);
@@ -1989,25 +2013,25 @@ class ChoresmanStore {
     if (!key && action === 'remove') {
       controls.values = {};
     } else {
-      if (!key || key.split('/').some((part) => !part.trim())) throw new ChoresmanStoreError('invalid_data', 'key must be a slash-delimited path');
+      if (!key || key.split('/').some((part) => !part.trim())) throw new ChoresManStoreError('invalid_data', 'key must be a slash-delimited path');
       const parts = key.split('/');
       let cursor = controls.values;
       for (const part of parts.slice(0, -1)) {
         if (cursor[part] === undefined) cursor[part] = {};
-        if (!cursor[part] || typeof cursor[part] !== 'object' || Array.isArray(cursor[part])) throw new ChoresmanStoreError('invalid_data', `key path conflicts at ${part}`);
+        if (!cursor[part] || typeof cursor[part] !== 'object' || Array.isArray(cursor[part])) throw new ChoresManStoreError('invalid_data', `key path conflicts at ${part}`);
         cursor = cursor[part];
       }
       const leaf = parts.at(-1);
       if (action === 'create') {
-        if (!Object.hasOwn(data, 'value')) throw new ChoresmanStoreError('invalid_data', 'value is required for create');
-        if (Object.hasOwn(cursor, leaf)) throw new ChoresmanStoreError('ui_control_exists', `UI control already exists: ${key}`);
+        if (!Object.hasOwn(data, 'value')) throw new ChoresManStoreError('invalid_data', 'value is required for create');
+        if (Object.hasOwn(cursor, leaf)) throw new ChoresManStoreError('ui_control_exists', `UI control already exists: ${key}`);
         cursor[leaf] = clone(data.value);
       } else if (action === 'update') {
-        if (!Object.hasOwn(data, 'value')) throw new ChoresmanStoreError('invalid_data', 'value is required for update');
-        if (!Object.hasOwn(cursor, leaf)) throw new ChoresmanStoreError('ui_control_not_found', `UI control not found: ${key}`);
+        if (!Object.hasOwn(data, 'value')) throw new ChoresManStoreError('invalid_data', 'value is required for update');
+        if (!Object.hasOwn(cursor, leaf)) throw new ChoresManStoreError('ui_control_not_found', `UI control not found: ${key}`);
         cursor[leaf] = clone(data.value);
       } else {
-        if (!Object.hasOwn(cursor, leaf)) throw new ChoresmanStoreError('ui_control_not_found', `UI control not found: ${key}`);
+        if (!Object.hasOwn(cursor, leaf)) throw new ChoresManStoreError('ui_control_not_found', `UI control not found: ${key}`);
         delete cursor[leaf];
       }
     }
@@ -2023,7 +2047,7 @@ class ChoresmanStore {
 
   _acknowledgeNotification(document, data) {
     const notification = document.notifications.find((item) => item.id === data.notification_id || item.id === data.id);
-    if (!notification) throw new ChoresmanStoreError('notification_not_found', 'Notification not found');
+    if (!notification) throw new ChoresManStoreError('notification_not_found', 'Notification not found');
     notification.status = 'delivered';
     notification.delivered_at = isoNow(this.now);
     return { notification_id: notification.id, status: notification.status };
@@ -2033,7 +2057,7 @@ class ChoresmanStore {
     if (kind === 'badge') return 'badges';
     if (kind === 'achievement') return 'achievements';
     if (kind === 'challenge') return 'challenges';
-    throw new ChoresmanStoreError('invalid_data', `Unsupported goal type: ${kind}`);
+    throw new ChoresManStoreError('invalid_data', `Unsupported goal type: ${kind}`);
   }
 
   _findGoal(document, kind, data) {
@@ -2041,7 +2065,7 @@ class ChoresmanStore {
     const id = data.id || data[`${kind}_id`];
     const name = data[`${kind}_name`] || data.name;
     const goal = document[collection].find((candidate) => id ? candidate.id === id : name && nameKey(candidate.name) === nameKey(name));
-    if (!goal) throw new ChoresmanStoreError(`${kind}_not_found`, `${kind} not found: ${name || id || ''}`);
+    if (!goal) throw new ChoresManStoreError(`${kind}_not_found`, `${kind} not found: ${name || id || ''}`);
     return goal;
   }
 
@@ -2053,7 +2077,7 @@ class ChoresmanStore {
     if (kind === 'badge') {
       const requestedType = data.badge_type ?? data.type;
       if (requestedType !== undefined) {
-        if (!GOAL_TYPES.has(requestedType)) throw new ChoresmanStoreError('invalid_data', 'badge_type must be cumulative, periodic, daily, special, or linked');
+        if (!GOAL_TYPES.has(requestedType)) throw new ChoresManStoreError('invalid_data', 'badge_type must be cumulative, periodic, daily, special, or linked');
         goal.type = requestedType;
       }
     } else if (Object.hasOwn(data, 'type')) {
@@ -2069,20 +2093,20 @@ class ChoresmanStore {
     }
     for (const field of ['enabled', 'no_overdue', 'due_only', 'recurring', 'one_time']) {
       if (Object.hasOwn(data, field)) {
-        if (typeof data[field] !== 'boolean') throw new ChoresmanStoreError('invalid_data', `${field} must be boolean`);
+        if (typeof data[field] !== 'boolean') throw new ChoresManStoreError('invalid_data', `${field} must be boolean`);
         goal[field] = data[field];
       }
     }
     if (Object.hasOwn(data, 'labels')) goal.labels = stringList(data.labels, 'labels').map((entry) => entry.toLowerCase());
     if (Object.hasOwn(data, 'awards')) {
       if (!Array.isArray(data.awards) || data.awards.some((award) => !award || typeof award !== 'object' || Array.isArray(award))) {
-        throw new ChoresmanStoreError('invalid_data', 'awards must be an array of objects');
+        throw new ChoresManStoreError('invalid_data', 'awards must be an array of objects');
       }
       goal.awards = clone(data.awards);
     }
     if (Object.hasOwn(data, 'penalties')) {
       if (!Array.isArray(data.penalties) || data.penalties.some((penalty) => !penalty || typeof penalty !== 'object' || Array.isArray(penalty))) {
-        throw new ChoresmanStoreError('invalid_data', 'penalties must be an array of objects');
+        throw new ChoresManStoreError('invalid_data', 'penalties must be an array of objects');
       }
       goal.penalties = clone(data.penalties);
     }
@@ -2100,10 +2124,10 @@ class ChoresmanStore {
       if (metric) metricKind(metric);
     }
     if (kind === 'badge' && goal.type === 'daily' && metricKind(goal.target_type || goal.metric || goal.criteria) === 'streak') {
-      throw new ChoresmanStoreError('invalid_data', 'daily badges cannot use a streak target');
+      throw new ChoresManStoreError('invalid_data', 'daily badges cannot use a streak target');
     }
     if (kind === 'challenge' && goal.start_date && goal.end_date && Date.parse(goal.end_date) < Date.parse(goal.start_date)) {
-      throw new ChoresmanStoreError('invalid_data', 'end_date must be on or after start_date');
+      throw new ChoresManStoreError('invalid_data', 'end_date must be on or after start_date');
     }
     goal.updated_at = isoNow(this.now);
   }
@@ -2111,10 +2135,10 @@ class ChoresmanStore {
   _createGoal(document, kind, data) {
     const collection = this._goalCollection(kind);
     const name = normaliseName(data.name, 'name');
-    if (document[collection].some((goal) => nameKey(goal.name) === nameKey(name))) throw new ChoresmanStoreError(`duplicate_${kind}`, `${kind} already exists: ${name}`);
-    if (Object.hasOwn(data, 'assigned_user_names') && !Array.isArray(data.assigned_user_names)) throw new ChoresmanStoreError('invalid_data', 'assigned_user_names must be an array');
-    if (kind !== 'badge' && !Object.hasOwn(data, 'assigned_user_names')) throw new ChoresmanStoreError('invalid_data', 'assigned_user_names is required');
-    if (kind === 'badge' && !Object.hasOwn(data, 'assigned_user_names')) throw new ChoresmanStoreError('invalid_data', 'assigned_user_names is required');
+    if (document[collection].some((goal) => nameKey(goal.name) === nameKey(name))) throw new ChoresManStoreError(`duplicate_${kind}`, `${kind} already exists: ${name}`);
+    if (Object.hasOwn(data, 'assigned_user_names') && !Array.isArray(data.assigned_user_names)) throw new ChoresManStoreError('invalid_data', 'assigned_user_names must be an array');
+    if (kind !== 'badge' && !Object.hasOwn(data, 'assigned_user_names')) throw new ChoresManStoreError('invalid_data', 'assigned_user_names is required');
+    if (kind === 'badge' && !Object.hasOwn(data, 'assigned_user_names')) throw new ChoresManStoreError('invalid_data', 'assigned_user_names is required');
     const goal = { id: this.idFactory(), name, created_at: isoNow(this.now), updated_at: isoNow(this.now), enabled: true };
     if (kind === 'badge') goal.type = data.badge_type || data.type || 'periodic';
     this._goalFields(document, goal, data, kind, { create: true });
@@ -2127,7 +2151,7 @@ class ChoresmanStore {
     const goal = this._findGoal(document, kind, data);
     if (Object.hasOwn(data, 'name') && (data.id || data[`${kind}_id`])) {
       const name = normaliseName(data.name, 'name');
-      if (document[collection].some((candidate) => candidate.id !== goal.id && nameKey(candidate.name) === nameKey(name))) throw new ChoresmanStoreError(`duplicate_${kind}`, `${kind} already exists: ${name}`);
+      if (document[collection].some((candidate) => candidate.id !== goal.id && nameKey(candidate.name) === nameKey(name))) throw new ChoresManStoreError(`duplicate_${kind}`, `${kind} already exists: ${name}`);
       goal.name = name;
     }
     this._goalFields(document, goal, data, kind);
@@ -2202,10 +2226,10 @@ class ChoresmanStore {
     const member = this._findMember(document, data);
     const metric = metricKind(badge.target_type || badge.metric || badge.criteria);
     if (!['periodic', 'daily'].includes(badge.type) || metric !== 'streak' || badge.no_overdue === true) {
-      throw new ChoresmanStoreError('streak_repair_unsupported', 'Only periodic streak badges can be repaired');
+      throw new ChoresManStoreError('streak_repair_unsupported', 'Only periodic streak badges can be repaired');
     }
     if (badge.assigned_member_ids && !badge.assigned_member_ids.includes(ASSIGN_ALL) && !badge.assigned_member_ids.includes(member.id)) {
-      throw new ChoresmanStoreError('user_not_assigned', `${member.name} is not assigned to ${badge.name}`);
+      throw new ChoresManStoreError('user_not_assigned', `${member.name} is not assigned to ${badge.name}`);
     }
 
     const explicitCount = data.badge_streak_count;
@@ -2213,7 +2237,7 @@ class ChoresmanStore {
     if (explicitCount !== undefined) {
       const parsedCount = Number(explicitCount);
       if (!Number.isInteger(parsedCount) || parsedCount < 0) {
-        throw new ChoresmanStoreError('invalid_data', 'badge_streak_count must be a non-negative integer');
+        throw new ChoresManStoreError('invalid_data', 'badge_streak_count must be a non-negative integer');
       }
       repairedCount = parsedCount;
     } else {
@@ -2222,7 +2246,7 @@ class ChoresmanStore {
       const firstHistoryDate = new Date(Date.parse(`${today}T00:00:00.000Z`) - 4 * 86_400_000).toISOString().slice(0, 10);
       const history = (progress?.streak_history || []).filter((entry) => entry.date >= firstHistoryDate && entry.date <= today);
       if (history.length === 0) {
-        throw new ChoresmanStoreError('streak_history_unavailable', 'No badge streak history is available to repair');
+        throw new ChoresManStoreError('streak_history_unavailable', 'No badge streak history is available to repair');
       }
       repairedCount = Math.max(...history.map((entry) => Number(entry.count) || 0));
     }
@@ -2385,7 +2409,7 @@ class ChoresmanStore {
     const badge = this._findGoal(document, 'badge', data);
     const member = this._findMember(document, data);
     if (badge.assigned_member_ids && !badge.assigned_member_ids.includes(ASSIGN_ALL) && !badge.assigned_member_ids.includes(member.id)) {
-      throw new ChoresmanStoreError('user_not_assigned', `${member.name} is not assigned to ${badge.name}`);
+      throw new ChoresManStoreError('user_not_assigned', `${member.name} is not assigned to ${badge.name}`);
     }
     const award = this._awardBadge(document, badge, member, {
       source: 'manual', approverName: data.approver_name ? normaliseName(data.approver_name, 'approver_name') : 'Manual',
@@ -2395,7 +2419,7 @@ class ChoresmanStore {
 
   _matchesChoreSelection(document, chore, data) {
     for (const field of ['chore_ids', 'chore_names', 'user_ids', 'user_names']) {
-      if (data[field] !== undefined && !Array.isArray(data[field])) throw new ChoresmanStoreError('invalid_data', `${field} must be an array`);
+      if (data[field] !== undefined && !Array.isArray(data[field])) throw new ChoresManStoreError('invalid_data', `${field} must be an array`);
     }
     const ids = [...(data.chore_ids || []), ...(data.chore_id ? [data.chore_id] : [])].map(String);
     const names = [...(data.chore_names || []), ...(data.chore_name ? [data.chore_name] : [])].map(nameKey);
@@ -2415,7 +2439,7 @@ class ChoresmanStore {
 
   _rescheduleChoresAfter(document, data) {
     const after = parseDate(data.after, 'after');
-    if (!after) throw new ChoresmanStoreError('invalid_data', 'after is required');
+    if (!after) throw new ChoresManStoreError('invalid_data', 'after is required');
     const selectedTypes = new Set();
     if (data.reschedule_independent === true) selectedTypes.add('independent');
     if (data.reschedule_primary_standby === true) selectedTypes.add('primary_standby');
@@ -2537,13 +2561,13 @@ class ChoresmanStore {
   }
 
   _resetTransactionalData(document, data) {
-    if (data.confirm_destructive !== true) throw new ChoresmanStoreError('confirmation_required', 'confirm_destructive must be true');
+    if (data.confirm_destructive !== true) throw new ChoresManStoreError('confirmation_required', 'confirm_destructive must be true');
     const scope = data.scope || 'global';
-    if (!['global', 'user'].includes(scope)) throw new ChoresmanStoreError('invalid_data', 'scope must be global or user');
+    if (!['global', 'user'].includes(scope)) throw new ChoresManStoreError('invalid_data', 'scope must be global or user');
     const member = scope === 'user' ? this._findMember(document, data, { active: false }) : null;
     const type = data.item_type || null;
     const allowed = ['points', 'chores', 'rewards', 'badges', 'achievements', 'challenges', 'penalties', 'bonuses'];
-    if (type && !allowed.includes(type)) throw new ChoresmanStoreError('invalid_data', 'item_type is invalid');
+    if (type && !allowed.includes(type)) throw new ChoresManStoreError('invalid_data', 'item_type is invalid');
     const itemName = data.item_name ? nameKey(data.item_name) : null;
     const memberMatch = (entry) => !member || entry.member_id === member.id || entry.user_id === member.id;
     const nameMatch = (entry) => !itemName || nameKey(entry.item_name || entry.chore_name || entry.reward_name || entry.badge_name || entry.goal_name || '') === itemName;
@@ -2790,7 +2814,7 @@ class ChoresmanStore {
     const escape = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
     const html = `<article><h1>${escape(title)}</h1><p><em>${escape(range)}${member ? ` · ${escape(member.name)}` : ''}</em></p><ul><li>Approved chores: ${approved}</li><li>Missed or reset chores: ${missed}</li><li>Points earned: ${earned}</li><li>Points spent: ${spent}</li></ul><h2>Recent activity</h2><ul>${events.length ? events.slice(-50).reverse().map((event) => `<li>${escape(event.timestamp)}: ${escape(event.user_name || 'Family')} — ${escape(event.type.replaceAll('_', ' '))}${event.chore_name ? ` (${escape(event.chore_name)})` : ''}</li>`).join('') : '<li>No activity recorded.</li>'}</ul></article>`;
     const format = data.output_format || 'both';
-    if (!['markdown', 'html', 'both'].includes(format)) throw new ChoresmanStoreError('invalid_data', 'output_format must be markdown, html, or both');
+    if (!['markdown', 'html', 'both'].includes(format)) throw new ChoresManStoreError('invalid_data', 'output_format must be markdown, html, or both');
     const report = {
       user_name: member?.name || null,
       period_start: start.toISOString(), period_end: end.toISOString(),
@@ -2814,26 +2838,26 @@ class ChoresmanStore {
   async call(serviceName, data = {}) {
     const requested = String(serviceName || '');
     const familyService = requested.startsWith('family.') ? requested.slice('family.'.length) : null;
-    const choreOpsService = requested.startsWith('choresman.')
+    const choresManService = requested.startsWith('choresman.')
       ? requested.slice('choresman.'.length)
       : requested;
     if (!data || typeof data !== 'object' || Array.isArray(data)) {
-      throw new ChoresmanStoreError('invalid_data', 'Service payload must be an object');
+      throw new ChoresManStoreError('invalid_data', 'Service payload must be an object');
     }
     if (familyService) {
       if (!FAMILY_SERVICE_NAMES.includes(familyService)) {
-        throw new ChoresmanStoreError('service_not_found', `Unsupported family service: ${requested}`);
+        throw new ChoresManStoreError('service_not_found', `Unsupported family service: ${requested}`);
       }
       if (familyService === 'create_member') return this.createMember(data);
       if (familyService === 'update_member') return this.updateMember(data);
       if (familyService === 'sync_members') return this.syncMembers(data);
       return this.deleteMember(data);
     }
-    if (!SERVICE_NAMES.includes(choreOpsService)) {
-      throw new ChoresmanStoreError('service_not_found', `Unsupported Choresman action: ${serviceName}`);
+    if (!SERVICE_NAMES.includes(choresManService)) {
+      throw new ChoresManStoreError('service_not_found', `Unsupported ChoresMan action: ${serviceName}`);
     }
-    if (choreOpsService === 'get_ledger') return this.getLedger(data);
-    if (choreOpsService === 'get_notifications') return this.getNotifications(data);
+    if (choresManService === 'get_ledger') return this.getLedger(data);
+    if (choresManService === 'get_notifications') return this.getNotifications(data);
 
     const handlers = {
       pause_user_chores: (document) => this._pauseUserChores(document, data),
@@ -2846,6 +2870,7 @@ class ChoresmanStore {
       set_chore_due_date: (document) => this._setChoreDueDate(document, data),
       skip_chore_due_date: (document) => this._skipChoreDueDate(document, data),
       create_reward: (document) => this._createReward(document, data),
+      approve_reward_definition: (document) => this._approveRewardDefinition(document, data),
       update_reward: (document) => this._updateReward(document, data),
       delete_reward: (document) => this._deleteReward(document, data),
       redeem_reward: (document) => this._redeemReward(document, data),
@@ -2884,13 +2909,13 @@ class ChoresmanStore {
       run_scheduled_maintenance: (document) => this._runScheduledMaintenance(document),
       acknowledge_notification: (document) => this._acknowledgeNotification(document, data),
     };
-    return this._mutate(handlers[choreOpsService]);
+    return this._mutate(handlers[choresManService]);
   }
 }
 
 module.exports = {
-  ChoresmanStoreError,
-  ChoresmanStore,
+  ChoresManStoreError,
+  ChoresManStore,
   SERVICE_NAMES,
   FAMILY_SERVICE_NAMES,
   SCHEMA_VERSION,

@@ -1,8 +1,8 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { activeRedemption } from '../../api/reward-redemptions';
 import type { Redemption } from '../../api/reward-redemptions';
-import type { ChoreOpsReward } from '../../types/choreops';
-import type { UseChoreOpsResult } from '../../hooks/useChoreOps';
+import type { ChoresManReward } from '../../types/choresman';
+import type { UseChoresManResult } from '../../hooks/useChoresMan';
 import type { UseRewardRedemptionsResult } from '../../hooks/useRewardRedemptions';
 import type { PlannerMember } from '../../api/chore-planner-model';
 import { normaliseName } from '../../api/planner-meta';
@@ -11,9 +11,9 @@ import type { PlannerCopy } from './copy';
 import type { PlannerOverlayEvent } from './overlay-state';
 
 interface UsePlannerRewardsOptions {
-  choreOps: UseChoreOpsResult;
+  choresMan: UseChoresManResult;
   rewardsState: UseRewardRedemptionsResult;
-  rewards: ChoreOpsReward[];
+  rewards: ChoresManReward[];
   redemptions: Redemption[];
   members: PlannerMember[];
   userNameByMemberId: Map<string, string>;
@@ -33,7 +33,7 @@ interface UsePlannerRewardsOptions {
 
 /** Reward assignment, redemption and payout behavior. */
 export function usePlannerRewards({
-  choreOps,
+  choresMan,
   rewardsState,
   rewards,
   redemptions,
@@ -58,8 +58,8 @@ export function usePlannerRewards({
     members.find(
       (member) => member.name.trim().toLowerCase() === (name ?? '').trim().toLowerCase(),
     ) ?? null;
-  /** The rewards ChoreOps assigns to one planner member (via its ChoreOps user). */
-  const rewardsForMember = (memberId: string | null): ChoreOpsReward[] => {
+  /** The rewards ChoresMan assigns to one planner member (via its ChoresMan user). */
+  const rewardsForMember = (memberId: string | null): ChoresManReward[] => {
     const userName = memberId ? userNameByMemberId.get(memberId) : null;
     if (!userName) return [];
     const key = userName.trim().toLowerCase();
@@ -89,10 +89,10 @@ export function usePlannerRewards({
   };
 
   /**
-   * Create or update a reward in ChoreOps for the chosen children.
+   * Create or update a reward in ChoresMan for the chosen children.
    *
-   * ChoreOps publishes one reward entity per user, so `assigned_user_names` is
-   * what makes the reward belong to that child — different kids can have
+   * ChoresMan shows one reward row per assigned member, so `assigned_user_names`
+   * determines which child can claim it — different kids can have
    * different rewards with different costs.
    */
   const saveReward = async () => {
@@ -108,7 +108,7 @@ export function usePlannerRewards({
       const update = async () => {
         try {
           setSaving(true);
-          await choreOps.updateReward({
+          await choresMan.updateReward({
             name: editingReward,
             cost: rewardForm.cost,
             assignedUserNames: userNames,
@@ -130,10 +130,11 @@ export function usePlannerRewards({
     const create = async () => {
       try {
         setSaving(true);
-        await choreOps.createReward({
+        await choresMan.createReward({
           name: rewardForm.name.trim(),
           cost: rewardForm.cost,
           assignedUserNames: userNames,
+          approvalRequired: true,
         });
         dispatchOverlay({ type: 'close' });
         showToast(`${c.savedToast} \u00b7 ${rewardForm.name.trim()}`);
@@ -143,21 +144,21 @@ export function usePlannerRewards({
         setSaving(false);
       }
     };
-    requestPin(c.newReward, rewardForm.name.trim(), () => void create());
+    void create();
   };
 
   /**
-   * Delete a reward from ChoreOps.
+   * Delete a reward from ChoresMan.
    *
    * `skipPin` is only used by the post-payout prompt: the parent has already
    * unlocked the payout in this very flow, so asking for the PIN twice would be
    * noise rather than a second decision.
    */
-  const removeReward = async (reward: Pick<ChoreOpsReward, 'name'>, skipPin = false) => {
+  const removeReward = async (reward: Pick<ChoresManReward, 'name'>, skipPin = false) => {
     const remove = async () => {
       try {
         setSaving(true);
-        await choreOps.deleteReward(reward.name);
+        await choresMan.deleteReward(reward.name);
         dispatchOverlay({ type: 'close' });
         showToast(toastWith(c.removedToast, reward.name));
       } catch (err) {
@@ -187,7 +188,7 @@ export function usePlannerRewards({
    * (5 here, 3 there) and leave the rest in the savings pot. The old button
    * silently took as much as the goal still needed.
    */
-  const openAssign = (reward: ChoreOpsReward) => {
+  const openAssign = (reward: ChoresManReward) => {
     if (!rewardState(reward).canAdd) return;
     dispatchOverlay({ type: 'open-assign', reward });
   };
@@ -196,13 +197,13 @@ export function usePlannerRewards({
    * Put points aside for a reward.
    *
    * Approval-free and Abbai Flow-only: the balance drops the moment the child
-   * allocates, and nothing is written to ChoreOps, so they can still change
+   * allocates, and nothing is written to ChoresMan, so they can still change
    * their mind. The amount is chosen explicitly by the child; points accumulate
    * towards the cost instead of being reserved in one go -- that is what makes
    * "on hold" (partway) and "reached the goal" (fully covered) two different
    * states.
    */
-  const assignReward = async (reward: ChoreOpsReward, amount: number) => {
+  const assignReward = async (reward: ChoresManReward, amount: number) => {
     const userName =
       reward.assignee ??
       (selectedTodayMember ? userNameByMemberId.get(selectedTodayMember.id) : null);
@@ -245,7 +246,7 @@ export function usePlannerRewards({
   };
 
   /** Give the points back -- the child changed their mind, or wants it again. */
-  const undoRewardChoice = (reward: ChoreOpsReward) => {
+  const undoRewardChoice = (reward: ChoresManReward) => {
     const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
     if (pursuit) {
       void rewardsState.runOp({ type: 'release', id: pursuit.id });
@@ -256,7 +257,7 @@ export function usePlannerRewards({
   /**
    * Parent hands a reached reward over.
    *
-   * ChoreOps deducts the cost through `approve_reward` and Abbai Flow records who
+   * ChoresMan deducts the cost through `approve_reward` and Abbai Flow records who
    * gave what and when. A child can never reach this: it is behind the PIN, and
    * the redemption only exists once the goal is actually achieved.
    */
@@ -271,7 +272,7 @@ export function usePlannerRewards({
       void (async () => {
         try {
           setSaving(true);
-          await choreOps.approveReward(userName, redemption.rewardLabel, approverName);
+          await choresMan.approveReward(userName, redemption.rewardLabel, approverName);
           await rewardsState.runOp({
             type: 'fulfil',
             id: redemption.id,
@@ -323,17 +324,17 @@ export function usePlannerRewards({
    * `done` means *the goal is achieved* — not that the child has the reward.
    * The reward is still waiting for a parent at that point.
    */
-  const rewardState = (reward: ChoreOpsReward) => {
+  const rewardState = (reward: ChoresManReward) => {
     const owner = memberByName(reward.assignee);
     const pursuit = activeRedemption(redemptions, reward.assignee, reward.name);
     const saved = owner ? spendableFor(owner) : 0;
     const allocated = pursuit?.points ?? 0;
     const remaining = Math.max(0, reward.cost - allocated);
     const status = reward.status.toLowerCase();
-    // ChoreOps marks rewards `locked` when the balance is below the full
+    // ChoresMan marks rewards `locked` when the balance is below the full
     // cost. Abbai Flow supports smaller allocations, so the child can still
     // save toward a locked reward while they have points.
-    const canSave = status === 'available' || status === 'locked';
+    const canSave = !reward.approvalPending && (status === 'available' || status === 'locked');
     return {
       owner,
       pursuit,

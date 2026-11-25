@@ -103,12 +103,15 @@ export const en = {
   'calendarSidebar.tasks': 'Tasks',
   'calendarSidebar.allClear': 'All clear',
   'calendarSidebar.completeItem': 'Complete {name}',
+  'calendarSidebar.household': 'Household',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': 'No tasks for today — enjoy the free time',
   'taskChecklist.allDone': 'All done — great job!',
   'taskChecklist.complete': 'Complete {name}',
   'taskChecklist.undo': 'Undo {name}',
+  'taskChecklist.markDone': 'Mark done',
+  'taskChecklist.done': 'Done',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': 'Chore',
@@ -231,8 +234,8 @@ export const en = {
   'settings.family.haMembersLabel': 'From Home Assistant',
   'settings.family.haMembersEmpty':
     'No Home Assistant people found. Check that Abbai Flow can reach Home Assistant, then reload.',
-  'settings.family.localChoresmanMember': 'Local family member',
-  'settings.family.localChoresmanMemberHelp': 'Choresman stores this profile in Abbai Flow. No Home Assistant or ChoreOps link is needed.',
+  'settings.family.localChoresManMember': 'Local family member',
+  'settings.family.localChoresManMemberHelp': 'ChoresMan uses this family profile directly.',
   'settings.family.avatarCategory.people': 'People',
   'settings.family.avatarCategory.skinTones': 'Skin Tones',
   'settings.family.avatarCategory.faces': 'Faces',
@@ -430,12 +433,9 @@ export const en = {
 
   // ---- settings: chores ----
   'settings.chores.title': 'Chores',
-  'settings.chores.desc':
-    'Chores and points are managed in Home Assistant by the ChoreOps integration.',
-  'settings.chores.providerLabel': 'Chore data source',
-  'settings.chores.providerSublabel': 'Choose where chores, family members, points, and rewards are stored.',
-  'settings.chores.providerChoreOps': 'ChoreOps',
-  'settings.chores.providerChoresman': 'Choresman',
+  'settings.chores.desc': 'ChoresMan manages chores, points, and rewards for Abbai Flow family profiles.',
+  'settings.chores.sourceLabel': 'ChoresMan',
+  'settings.chores.sourceSublabel': 'Chores and rewards are stored locally with Abbai Flow.',
   'settings.chores.dailyResetTimeLabel': 'Daily Reset Time',
   'settings.chores.dailyResetTimeSublabel': 'When daily chores reset',
   'settings.chores.streakDurationLabel': 'Streak Duration',
@@ -520,7 +520,7 @@ export const en = {
   'chores.pinConfirm': 'Unlock',
   'chores.pinRequired': 'Set a PIN on a parent in Settings → Family to approve chores here.',
   'chores.pendingApprovals': '{count} waiting for approval',
-  'chores.assignToClaim': 'Assign this chore in ChoreOps so someone can claim it.',
+  'chores.assignToClaim': 'Choose a family member for this chore.',
   'chores.awaitingApproval': 'Waiting for a parent',
   'chores.refresh': 'Refresh',
   'chores.everyone': 'Everyone',
@@ -547,7 +547,7 @@ export const en = {
   'chores.noChoresToday': 'Nothing to do right now.',
   'chores.wellDone': 'Well done!',
   'chores.missing':
-    'ChoreOps was not found in Home Assistant. Install and configure the ChoreOps integration to see chores here.',
+    'There are no chores in ChoresMan yet.',
   'chores.stat.due': 'Due today',
   'chores.stat.claimed': 'Claimed',
   'chores.stat.approved': 'Approved',
@@ -794,7 +794,7 @@ export const en = {
   'planner.anyone': 'Anyone (first)',
   'planner.freeTask': 'Free for anyone to claim',
   'planner.claimModeEditUnavailable':
-    'ChoreOps does not allow changing a chore’s claim mode through this update. Change it in ChoreOps, then edit assignees here.',
+    'ChoresMan does not allow changing a chore’s claim mode through this update. Change it in ChoresMan, then edit assignees here.',
   'planner.frequency': 'Frequency',
   'planner.daily': 'Daily',
   'planner.weekly': 'Weekly',
@@ -838,7 +838,7 @@ export const en = {
   'planner.sure': 'Delete for sure?',
   'planner.renameUnavailable':
     'Could not identify this chore for renaming. Refresh the chores and try again.',
-  'planner.renameLocked': 'Renaming is only possible in ChoreOps.',
+  'planner.renameLocked': 'Reward names cannot be changed here.',
   'planner.create': 'Create chore',
   'planner.noFail': 'Could not save, try again',
   'planner.errorDetailsTitle': 'Full error details',
@@ -864,7 +864,7 @@ export const en = {
   'planner.privacy': 'Privacy',
   'planner.sound': 'Sound',
   'planner.rewards': 'Rewards',
-  'planner.noRewards': 'No rewards in ChoreOps yet.',
+  'planner.noRewards': 'No rewards in ChoresMan yet.',
   'planner.newReward': 'Add reward',
   'planner.cost': 'Cost (points)',
   'planner.assign': 'Assign',
@@ -872,7 +872,7 @@ export const en = {
   'planner.undoShort': 'Undo',
   'planner.locked': 'not enough yet',
   'planner.assignToClaim':
-    'This chore has no ChoreOps button yet; assign it in Home Assistant first.',
+    'Choose a family member before assigning this chore.',
   'planner.pinTitle': 'Parent approval',
   'planner.pinHint': "Enter a parent's PIN to approve.",
   'planner.pinWrong': 'That PIN is not correct.',

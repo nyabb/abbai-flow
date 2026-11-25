@@ -3,7 +3,7 @@
  * nobody owns yet.
  *
  * It renders only what the planner hands it (already filtered tasks, routines
- * and row renderers), so the board has no ChoreOps knowledge of its own.
+ * and row renderers), so the board has no ChoresMan knowledge of its own.
  */
 import { useEffect } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
@@ -25,7 +25,7 @@ export interface ChoreBoardProps {
   canRunMissions: (memberId: string) => boolean;
   /** Chores still up for grabs, deduplicated by name. */
   freeTasks: PlannerTask[];
-  /** What one member can still spend (ChoreOps balance minus reservations). */
+  /** What one member can still spend (ChoresMan balance minus reservations). */
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: Routine, memberId: string) => React.ReactNode;

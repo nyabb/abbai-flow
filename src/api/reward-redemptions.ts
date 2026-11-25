@@ -1,7 +1,7 @@
 /**
  * Reward redemptions — the child's path from "saving" to "given".
  *
- * ChoreOps owns reward *definitions* and the deduction (`approve_reward`). It
+ * ChoresMan owns reward *definitions* and the deduction (`approve_reward`). It
  * does not own the progress a child makes between chores, so that lives here:
  *
  *   saving ──(points reach the cost)──▶ awaiting_fulfilment ──(parent)──▶ fulfilled
@@ -64,7 +64,7 @@ export function committedRedemptionPoints(
 }
 
 /**
- * What the child can still allocate: their ChoreOps balance minus everything
+ * What the child can still allocate: their ChoresMan balance minus everything
  * already promised to a reward. Claims made in Home Assistant count too
  * (`pendingClaims`), but only when Abbai Flow has no redemption for that reward —
  * otherwise the same points would be held twice.

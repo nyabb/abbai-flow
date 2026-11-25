@@ -100,12 +100,15 @@ export const ko: Record<TranslationKey, string> = {
   'calendarSidebar.tasks': '할 일',
   'calendarSidebar.allClear': '모두 완료',
   'calendarSidebar.completeItem': '{name} 완료',
+  'calendarSidebar.household': '가족',
 
   // ---- task checklist (chores) ----
   'taskChecklist.empty': '오늘 할 집안일이 없습니다 — 자유 시간을 즐기세요',
   'taskChecklist.allDone': '모두 완료했어요, 잘했어요!',
   'taskChecklist.complete': '{name} 완료',
   'taskChecklist.undo': '{name} 취소',
+  'taskChecklist.markDone': '완료로 표시',
+  'taskChecklist.done': '완료',
 
   // ---- omni add (FAB) ----
   'omniAdd.chore': '집안일',
@@ -374,7 +377,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': '집안일',
-  'settings.chores.desc': '집안일과 포인트는 Home Assistant의 ChoreOps 통합에서 관리됩니다.',
+  'settings.chores.desc': 'ChoresMan은 Abbai Flow 가족 프로필의 집안일, 포인트, 보상을 관리합니다.',
   'settings.chores.dailyResetTimeLabel': '매일 초기화 시간',
   'settings.chores.dailyResetTimeSublabel': '매일 집안일이 초기화되는 시간',
   'settings.chores.streakDurationLabel': '연속 기록 기간',
@@ -452,7 +455,7 @@ export const ko: Record<TranslationKey, string> = {
   'chores.pinConfirm': '잠금 해제',
   'chores.pinRequired': '설정 → 가족에서 보호자 PIN을 설정하면 여기서 집안일을 승인할 수 있습니다.',
   'chores.pendingApprovals': '{count}건 승인 대기 중',
-  'chores.assignToClaim': 'ChoreOps에서 이 집안일을 할당하면 맡을 수 있습니다.',
+  'chores.assignToClaim': '이 집안일을 맡을 가족 구성원을 선택하세요.',
   'chores.awaitingApproval': '보호자 승인 대기 중',
   'chores.refresh': '새로고침',
   'chores.everyone': '모두',
@@ -479,7 +482,7 @@ export const ko: Record<TranslationKey, string> = {
   'chores.noChoresToday': '지금 할 일이 없습니다.',
   'chores.wellDone': '잘했어요!',
   'chores.missing':
-    'Home Assistant에서 ChoreOps를 찾을 수 없습니다. ChoreOps 통합을 설치하고 설정하면 여기에 집안일이 표시됩니다.',
+    'ChoresMan에 아직 집안일이 없습니다.',
   'chores.stat.due': '오늘 마감',
   'chores.stat.claimed': '맡은 일',
   'chores.stat.approved': '승인됨',
@@ -648,7 +651,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.anyone': '먼저 하는 사람',
   'planner.freeTask': '누구나 선택 가능',
   'planner.claimModeEditUnavailable':
-    'ChoreOps에서는 여기서 선택 방식을 변경할 수 없습니다. ChoreOps에서 방식을 바꾼 뒤 여기서 담당자를 수정하세요.',
+    'ChoresMan에서는 여기서 선택 방식을 변경할 수 없습니다. ChoresMan에서 방식을 바꾼 뒤 여기서 담당자를 수정하세요.',
   'planner.frequency': '반복',
   'planner.daily': '매일',
   'planner.weekly': '매주',
@@ -692,7 +695,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.sure': '정말 삭제할까요?',
   'planner.renameUnavailable':
     '이 집안일의 이름을 변경할 수 없습니다. 집안일 목록을 새로고침한 뒤 다시 시도하세요.',
-  'planner.renameLocked': '이름 변경은 ChoreOps에서만 가능합니다.',
+  'planner.renameLocked': '여기서는 보상 이름을 변경할 수 없습니다.',
   'planner.create': '집안일 만들기',
   'planner.noFail': '저장하지 못했습니다. 다시 시도하세요',
   'planner.errorDetailsTitle': '전체 오류 세부정보',
@@ -717,7 +720,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.privacy': '개인정보',
   'planner.sound': '소리',
   'planner.rewards': '보상',
-  'planner.noRewards': 'ChoreOps에 아직 보상이 없습니다.',
+  'planner.noRewards': 'ChoresMan에 아직 보상이 없습니다.',
   'planner.newReward': '보상 추가',
   'planner.cost': '비용(포인트)',
   'planner.assign': '배정',
@@ -725,7 +728,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.undoShort': '되돌리기',
   'planner.locked': '아직 부족',
   'planner.assignToClaim':
-    '이 집안일에는 아직 ChoreOps 버튼이 없습니다. 먼저 Home Assistant에서 배정하세요.',
+    '집안일을 배정하기 전에 가족 구성원을 선택하세요.',
   'planner.pinTitle': '부모 승인',
   'planner.pinHint': '부모의 PIN을 입력하세요.',
   'planner.pinWrong': 'PIN이 올바르지 않습니다.',

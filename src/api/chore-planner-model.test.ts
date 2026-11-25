@@ -22,7 +22,7 @@ function makeTask(overrides: Partial<PlannerTask> = {}): PlannerTask {
 const NOW = new Date('2026-11-06T12:00:00.000Z');
 
 describe('getPlannerTaskStatus', () => {
-  it('uses the ChoreOps status when the task has one', () => {
+  it('uses the ChoresMan status when the task has one', () => {
     expect(getPlannerTaskStatus(makeTask({ statusOverride: 'late' }), NOW)).toBe('late');
     expect(getPlannerTaskStatus(makeTask({ statusOverride: 'completed' }), NOW)).toBe('completed');
   });
