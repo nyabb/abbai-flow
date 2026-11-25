@@ -7,10 +7,8 @@
   bottom: 24px;
   right: 24px;
   z-index: 90;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  width: 56px;
+  height: 56px;
   pointer-events: none;
 }
 
@@ -47,26 +45,25 @@
   }
 }
 
-/* ---- Action buttons container ---- */
+/* Keep the action stack anchored to the FAB without reserving space beside it. */
 .omni-add-actions {
+  position: absolute;
+  right: 50%;
+  bottom: calc(100% + 12px);
+  transform: translateX(50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 16px;
-  opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateY(28px);
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease;
+  transition: visibility 0s linear var(--omni-hide-delay, 700ms);
 }
 
 .omni-add--expanded .omni-add-actions {
-  opacity: 1;
   visibility: visible;
   pointer-events: auto;
-  transform: translateY(0);
+  transition: visibility 0s;
 }
 
 /* ---- Individual action button ---- */
@@ -81,17 +78,18 @@
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   opacity: 0;
-  transform: translateY(24px) scale(0.82);
+  transform: translateY(var(--omni-origin-y, 68px)) scale(0.4);
   transition:
-    opacity 200ms ease,
-    transform 200ms ease;
-  transition-delay: var(--omni-delay, 0ms);
+    opacity 260ms ease,
+    transform 360ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  transition-delay: var(--omni-close-delay, 0ms);
   pointer-events: none;
 }
 
 .omni-add--expanded .omni-add-action {
   opacity: 1;
   transform: translateY(0) scale(1);
+  transition-delay: var(--omni-open-delay, 0ms);
   pointer-events: auto;
 }
 
@@ -132,6 +130,9 @@
 
 /* ---- Main FAB ---- */
 .omni-add-fab {
+  position: absolute;
+  right: 0;
+  bottom: 0;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -156,6 +157,11 @@
 
 /* Scale up FAB on large displays */
 @media (min-width: 1400px) {
+  .omni-add {
+    width: 72px;
+    height: 72px;
+  }
+
   .omni-add-fab {
     width: 72px;
     height: 72px;
@@ -203,6 +209,11 @@
     height: 52px;
   }
 
+  .omni-add {
+    width: 52px;
+    height: 52px;
+  }
+
   .omni-add-fab-icon {
     font-size: 1.5rem;
   }
@@ -223,6 +234,11 @@
     width: 48px;
     height: 48px;
   }
+
+  .omni-add {
+    width: 48px;
+    height: 48px;
+  }
 }
 
 /* Desktop keeps its sidebar quick-add trigger. The floating trigger is for
@@ -230,5 +246,23 @@
 @media (min-width: 769px) {
   .omni-add:not(.omni-add--sidebar-bottom) .omni-add-fab {
     display: none;
+  }
+}
+
+.abbai-flow--reduce-motion .omni-add-actions {
+  --omni-hide-delay: 0ms;
+}
+
+.abbai-flow--reduce-motion .omni-add-action {
+  transition-delay: 0ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .omni-add-actions {
+    --omni-hide-delay: 0ms;
+  }
+
+  .omni-add-action {
+    transition-delay: 0ms !important;
   }
 }

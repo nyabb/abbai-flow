@@ -147,7 +147,11 @@ export function OmniAdd({
             key={action.id}
             type="button"
             className="omni-add-action"
-            style={{ '--omni-delay': `${i * 50}ms` } as React.CSSProperties}
+            style={{
+              '--omni-origin-y': `${(actions.length - 1 - i) * 76 + 68}px`,
+              '--omni-open-delay': `${(actions.length - 1 - i) * 55}ms`,
+              '--omni-close-delay': `${i * 55}ms`,
+            } as React.CSSProperties}
             onClick={() => handleAction(action)}
             tabIndex={expanded ? 0 : -1}
             aria-label={action.label}
