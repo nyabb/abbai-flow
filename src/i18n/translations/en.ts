@@ -395,6 +395,10 @@ export const en = {
   'settings.integrations.icloudDataRetrieved':
     'Reminders data was fetched. The preview includes reminder text; it is shown only here and is not logged.',
   'settings.integrations.icloudPreviewLabel': 'Decoded Apple Reminders response preview',
+  'settings.integrations.icloudCopyResponse': 'Copy response',
+  'settings.integrations.icloudResponseCopied': 'Copied!',
+  'settings.integrations.icloudCopyFailed':
+    'Could not copy the response. Select its text and copy it.',
   'settings.integrations.icloudBackendRequired':
     'A server-backed Abbai Flow deployment is required for PyICloud credentials and authentication.',
   'settings.integrations.calendarSourcesTitle': 'Calendar connection settings',

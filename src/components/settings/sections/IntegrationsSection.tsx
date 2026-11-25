@@ -5,7 +5,7 @@
  * The todo-list lookup only feeds these controls, so the fetch lives here.
  */
 import { useEffect, useState } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Check, Copy, Trash2 } from 'lucide-react';
 import { HomeAssistantTodoClient } from '../../../api/home-assistant-todo';
 import {
   loadIntegrationSettings,
@@ -40,6 +40,31 @@ const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
   datePath: '',
   sourceUrlPath: '',
 };
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    // Fall back for embedded browsers and non-secure contexts.
+  }
+
+  const field = document.createElement('textarea');
+  field.value = value;
+  field.setAttribute('readonly', '');
+  field.style.position = 'fixed';
+  field.style.opacity = '0';
+  document.body.appendChild(field);
+  field.select();
+  field.setSelectionRange(0, field.value.length);
+  try {
+    return document.execCommand('copy');
+  } finally {
+    field.remove();
+  }
+}
 
 const MEAL_MAPPING_FIELDS: {
   key: keyof MealDataMapping;
@@ -179,6 +204,7 @@ export function IntegrationsSection({
   const [icloudDevices, setIcloudDevices] = useState<Array<{ index: number; name: string }>>([]);
   const [icloudDeviceIndex, setIcloudDeviceIndex] = useState(0);
   const [icloudPreview, setIcloudPreview] = useState('');
+  const [icloudPreviewCopied, setIcloudPreviewCopied] = useState(false);
   const [calendarSources, setCalendarSources] = useState<CalendarSourceSetting[]>([]);
   const [integrationBusy, setIntegrationBusy] = useState(false);
   const [integrationError, setIntegrationError] = useState('');
@@ -315,6 +341,7 @@ export function IntegrationsSection({
     }
     if (result.state === 'fetched') {
       setIcloudPreview(JSON.stringify(result, null, 2));
+      setIcloudPreviewCopied(false);
       setIntegrationNotice(t('settings.integrations.icloudDataRetrieved'));
     } else if (result.state === 'verification_required') {
       setIntegrationNotice(t('settings.integrations.icloudVerificationSent'));
@@ -348,6 +375,19 @@ export function IntegrationsSection({
       );
     } finally {
       setIntegrationBusy(false);
+    }
+  };
+
+  const copyIcloudPreview = async () => {
+    setIntegrationError('');
+    try {
+      if (await copyText(icloudPreview)) {
+        setIcloudPreviewCopied(true);
+      } else {
+        setIntegrationError(t('settings.integrations.icloudCopyFailed'));
+      }
+    } catch {
+      setIntegrationError(t('settings.integrations.icloudCopyFailed'));
     }
   };
 
@@ -978,22 +1018,50 @@ export function IntegrationsSection({
               </div>
             )}
             {icloudPreview && (
-              <pre
-                aria-label={t('settings.integrations.icloudPreviewLabel')}
-                style={{
-                  maxHeight: 360,
-                  overflow: 'auto',
-                  padding: 12,
-                  borderRadius: 8,
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  whiteSpace: 'pre-wrap',
-                  overflowWrap: 'anywhere',
-                  fontSize: '0.78rem',
-                }}
-              >
-                {icloudPreview}
-              </pre>
+              <>
+                <div className="settings-row" style={{ justifyContent: 'space-between' }}>
+                  <div className="settings-row-label">
+                    {t('settings.integrations.icloudPreviewLabel')}
+                  </div>
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() => void copyIcloudPreview()}
+                    aria-label={
+                      icloudPreviewCopied
+                        ? t('settings.integrations.icloudResponseCopied')
+                        : t('settings.integrations.icloudCopyResponse')
+                    }
+                  >
+                    {icloudPreviewCopied ? (
+                      <Check size={16} aria-hidden="true" />
+                    ) : (
+                      <Copy size={16} aria-hidden="true" />
+                    )}
+                    <span>
+                      {icloudPreviewCopied
+                        ? t('settings.integrations.icloudResponseCopied')
+                        : t('settings.integrations.icloudCopyResponse')}
+                    </span>
+                  </button>
+                </div>
+                <pre
+                  aria-label={t('settings.integrations.icloudPreviewLabel')}
+                  style={{
+                    maxHeight: 360,
+                    overflow: 'auto',
+                    padding: 12,
+                    borderRadius: 8,
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                    fontSize: '0.78rem',
+                  }}
+                >
+                  {icloudPreview}
+                </pre>
+              </>
             )}
           </>
         ) : (
