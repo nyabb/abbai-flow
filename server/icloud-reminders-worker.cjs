@@ -2,6 +2,77 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 
+const CLOUDKIT_DIAGNOSTIC_OPERATIONS = new Set([
+  'records/query',
+  'records/lookup',
+  'changes/zone',
+]);
+
+function safeDiagnosticValue(value, depth = 0) {
+  if (depth > 3) return '<nested>';
+  if (value === null || typeof value === 'boolean') return value;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value === 'string') return value.slice(0, 240);
+  if (Array.isArray(value)) {
+    return value.slice(0, 10).map((item) => safeDiagnosticValue(item, depth + 1));
+  }
+  if (!value || typeof value !== 'object') return undefined;
+  return Object.fromEntries(
+    Object.entries(value)
+      .slice(0, 12)
+      .map(([key, item]) => [key.slice(0, 80), safeDiagnosticValue(item, depth + 1)])
+      .filter(([, item]) => item !== undefined),
+  );
+}
+
+function safeCloudKitDiagnostic(entry) {
+  if (!CLOUDKIT_DIAGNOSTIC_OPERATIONS.has(entry.operation)) return null;
+  if (!['private', 'shared'].includes(entry.scope)) return null;
+  if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return null;
+
+  const recordTypeCounts = Array.isArray(entry.record_type_counts)
+    ? entry.record_type_counts.slice(0, 30).flatMap((item) => (
+      item && typeof item.recordType === 'string' && Number.isInteger(item.count)
+        ? [{ recordType: item.recordType.slice(0, 100), count: item.count }]
+        : []
+    ))
+    : [];
+  const records = Array.isArray(entry.records)
+    ? entry.records.slice(0, 30).flatMap((item) => {
+      if (!item || typeof item.recordType !== 'string' || typeof item.recordIdHash !== 'string') {
+        return [];
+      }
+      const record = {
+        recordType: item.recordType.slice(0, 100),
+        recordIdHash: item.recordIdHash.slice(0, 32),
+        fieldNames: Array.isArray(item.fieldNames)
+          ? item.fieldNames.filter((field) => typeof field === 'string').slice(0, 80).map((field) => field.slice(0, 100))
+          : [],
+      };
+      if (item.sectionCandidates && typeof item.sectionCandidates === 'object' && !Array.isArray(item.sectionCandidates)) {
+        record.sectionCandidates = Object.fromEntries(
+          Object.entries(item.sectionCandidates)
+            .slice(0, 8)
+            .map(([key, value]) => [key.slice(0, 80), safeDiagnosticValue(value)])
+            .filter(([, value]) => value !== undefined),
+        );
+      }
+      return [record];
+    })
+    : [];
+
+  return {
+    scope: entry.scope,
+    operation: entry.operation,
+    list_key: entry.list_key,
+    ...(typeof entry.request_id === 'string' ? { request_id: entry.request_id.slice(0, 100) } : {}),
+    record_count: Number.isInteger(entry.record_count) ? entry.record_count : 0,
+    record_type_counts: recordTypeCounts,
+    records,
+    records_truncated: Boolean(entry.records_truncated),
+  };
+}
+
 class ICloudRemindersWorker {
   constructor({ dataDir, python = process.env.ABBAI_FLOW_PYTHON || 'python3', scriptPath } = {}) {
     this.dataDir = dataDir;
@@ -92,13 +163,28 @@ class ICloudRemindersWorker {
     if (
       !entry ||
       entry.service !== 'pyicloud-reminders' ||
-      !['worker_started', 'request_started', 'request_finished', 'request_failed'].includes(
+      ![
+        'worker_started',
+        'request_started',
+        'request_finished',
+        'request_failed',
+        'cloudkit_response_inspected',
+        'cloudkit_diagnostic_unavailable',
+      ].includes(
         entry.event,
       )
     ) {
       return;
     }
     const safeEntry = { service: entry.service, event: entry.event };
+    if (entry.event === 'cloudkit_response_inspected') {
+      const diagnostic = safeCloudKitDiagnostic(entry);
+      if (!diagnostic) return;
+      Object.assign(safeEntry, diagnostic);
+    } else if (entry.event === 'cloudkit_diagnostic_unavailable') {
+      if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
+      safeEntry.list_key = entry.list_key;
+    }
     for (const key of [
       'pyicloud_available',
       'pyicloud_version',
