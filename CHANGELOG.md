@@ -1,3 +1,11 @@
+# [2.22.0](https://github.com/nyabb/abbai-flow/compare/v2.21.3...v2.22.0) (2026-11-25)
+
+
+### Features
+
+* improve mobile page navigation ([955330b](https://github.com/nyabb/abbai-flow/commit/955330b11ce82357987fc1634dc01c2210e9ec78))
+* streamline display and screen saver ([9cb7acf](https://github.com/nyabb/abbai-flow/commit/9cb7acf53171de10c1457086edad217a162598fd))
+
 ## [2.21.3](https://github.com/nyabb/abbai-flow/compare/v2.21.2...v2.21.3) (2026-11-24)
 
 
