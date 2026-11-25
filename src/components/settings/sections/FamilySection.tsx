@@ -49,7 +49,8 @@ export function FamilySection({
 }: FamilySectionProps) {
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
-  const { data: choreOpsData } = useChoreOps();
+  const isChoresman = settings.choresProvider === 'choresman';
+  const { data: choreOpsData } = useChoreOps(settings.choresProvider, isChoresman ? members : []);
   const choreOpsUsers = choreOpsData?.users ?? [];
   const choreOpsNames = new Set(choreOpsUsers.map((u) => u.name.trim().toLowerCase()));
 
@@ -60,7 +61,7 @@ export function FamilySection({
     )?.picture ?? null;
 
   /** HA people (incl. non-ChoreOps members such as parents) + ChoreOps users. */
-  const peopleOptions: PersonOption[] = [
+  const peopleOptions: PersonOption[] = isChoresman ? [] : [
     ...choreOpsUsers.map((u) => ({
       name: u.name,
       hasChoreOps: true,
@@ -255,6 +256,7 @@ export function FamilySection({
           photoError={photoError}
           linkedPhoto={personPicture(memberForm.choreops_user)}
           peopleOptions={peopleOptions}
+          localProvider={isChoresman}
           isLinkedElsewhere={isLinkedElsewhere}
           calendars={calendars}
           t={t}

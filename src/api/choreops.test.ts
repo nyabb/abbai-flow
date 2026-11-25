@@ -130,6 +130,9 @@ describe('buildCreateChorePayload', () => {
       claimLockUntilWindow: true,
       notificationChannel: 'mobile_app',
       notificationImportance: 'normal',
+      notificationPriority: 'high',
+      notificationTtl: 3600,
+      showOnCalendar: false,
     });
 
     expect(payload).toMatchObject({
@@ -141,6 +144,9 @@ describe('buildCreateChorePayload', () => {
       chore_claim_lock_until_window: true,
       notification_channel: 'mobile_app',
       notification_importance: 'normal',
+      notification_priority: 'high',
+      notification_ttl: 3600,
+      show_on_calendar: false,
       custom_interval: 3,
       custom_interval_unit: 'weeks',
       due_date: '2026-11-30T07:00:00.000Z',

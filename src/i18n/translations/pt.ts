@@ -40,8 +40,6 @@ export const pt: Record<TranslationKey, string> = {
     'Membro do ecrã infantil não encontrado — a mostrar a aplicação completa.',
   'app.dismiss': 'Dispensar',
   'app.connecting': 'A ligar...',
-  'app.choresDisabled':
-    'As tarefas estão desativadas. Ative-as em Definições → Tarefas para usar este ecrã.',
   'app.previewMode': 'Modo de visualizacao',
   'debugConsole.tab': 'Depuração',
   'debugConsole.title': 'Atividade de depuração',
@@ -381,8 +379,6 @@ export const pt: Record<TranslationKey, string> = {
   'settings.chores.title': 'Tarefas',
   'settings.chores.desc':
     'As tarefas e os pontos são geridos no Home Assistant pela integração ChoreOps.',
-  'settings.chores.enableLabel': 'Ativar tarefas',
-  'settings.chores.enableSublabel': 'Mostra o registo de tarefas e recompensas',
   'settings.chores.dailyResetTimeLabel': 'Hora de reinício diário',
   'settings.chores.dailyResetTimeSublabel': 'Quando as tarefas diárias reiniciam',
   'settings.chores.streakDurationLabel': 'Duração da sequência',

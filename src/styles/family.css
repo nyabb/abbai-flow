@@ -256,21 +256,6 @@
   font-size: 0.9rem;
 }
 
-.chores-empty--disabled {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  text-align: left;
-}
-
-@media (max-width: 480px) {
-  .chores-empty--disabled {
-    align-items: flex-end;
-    flex-direction: column;
-  }
-}
-
 .chores-group {
   margin-bottom: 20px;
 }

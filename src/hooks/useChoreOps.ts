@@ -38,6 +38,9 @@ import type {
   UpdateRewardInput,
 } from '../api/choreops';
 import type { ChoreOpsEntityState, ChoreOpsState } from '../types/choreops';
+import type { FamilyMember } from '../types/family';
+import { callChoresman, loadChoresmanSnapshot } from '../api/choresman';
+import type { ChoreProvider, ChoresmanSnapshot } from '../api/choresman';
 
 const REFETCH_DEBOUNCE_MS = 400;
 
@@ -96,6 +99,24 @@ export interface UseChoreOpsResult {
   setChoreDueDate: (choreName: string, dueDate?: string | null, userName?: string) => Promise<void>;
 }
 
+const CHORESMAN_ACTION_PREFIX = 'choresman-action:';
+const EMPTY_FAMILY_MEMBERS: readonly FamilyMember[] = [];
+
+function choresmanAction(action: string, data: Record<string, unknown>): string {
+  return `${CHORESMAN_ACTION_PREFIX}${encodeURIComponent(JSON.stringify({ action, data }))}`;
+}
+
+function readChoresmanAction(value: string): { action: string; data: Record<string, unknown> } | null {
+  if (!value.startsWith(CHORESMAN_ACTION_PREFIX)) return null;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(value.slice(CHORESMAN_ACTION_PREFIX.length)));
+    if (typeof parsed?.action !== 'string' || !parsed.data || typeof parsed.data !== 'object') return null;
+    return parsed as { action: string; data: Record<string, unknown> };
+  } catch {
+    return null;
+  }
+}
+
 interface ChoreOpsSnapshot {
   data: ChoreOpsState | null;
   loading: boolean;
@@ -138,10 +159,21 @@ let snapshot: ChoreOpsSnapshot = { data: null, loading: true, error: null };
 const listeners = new Set<() => void>();
 let refCount = 0;
 let teardown: (() => void) | null = null;
+let choresmanSnapshot: ChoreOpsSnapshot = { data: null, loading: true, error: null };
+const choresmanListeners = new Set<() => void>();
+let choresmanRefCount = 0;
+let choresmanTeardown: (() => void) | null = null;
+let choresmanSyncedSignature = '';
+let choresmanSyncInFlight: { signature: string; promise: Promise<void> } | null = null;
 
 function emit(patch: Partial<ChoreOpsSnapshot>): void {
   snapshot = { ...snapshot, ...patch };
   for (const listener of listeners) listener();
+}
+
+function emitChoresman(patch: Partial<ChoreOpsSnapshot>): void {
+  choresmanSnapshot = { ...choresmanSnapshot, ...patch };
+  for (const listener of choresmanListeners) listener();
 }
 
 function subscribe(listener: () => void): () => void {
@@ -155,8 +187,171 @@ function getSnapshot(): ChoreOpsSnapshot {
   return snapshot;
 }
 
+function subscribeChoresman(listener: () => void): () => void {
+  choresmanListeners.add(listener);
+  return () => choresmanListeners.delete(listener);
+}
+
+function getChoresmanSnapshot(): ChoreOpsSnapshot {
+  return choresmanSnapshot;
+}
+
 function applyStates(states: ChoreOpsEntityState[]): void {
   emit({ data: normalizeChoreOps(states), error: null, loading: false });
+}
+
+function mapChoresmanSnapshot(source: ChoresmanSnapshot): ChoreOpsState {
+  const users = source.members.filter((member) => member.active !== false).map((member) => ({
+    name: member.name,
+    slug: String(member.id),
+    points: Number(member.points) || 0,
+    dueToday: 0,
+    claimed: source.chore_claims.filter((claim) => claim.member_id === member.id && claim.status === 'claimed').length,
+    approved: source.chore_claims.filter((claim) => claim.member_id === member.id && claim.status === 'approved').length,
+    completedToday: source.chore_claims.filter((claim) => claim.member_id === member.id && claim.status === 'approved' &&
+      typeof claim.approved_at === 'string' && new Date(claim.approved_at).toDateString() === new Date().toDateString()).length,
+  }));
+  const chores = source.chores.flatMap((chore) => {
+    const assignedNames = chore.assigned_user_names.includes('*')
+      ? users.map((user) => user.name)
+      : chore.assigned_user_names;
+    return assignedNames.flatMap((name) => {
+      const user = users.find((candidate) => candidate.name.trim().toLowerCase() === name.trim().toLowerCase());
+      if (!user) return [];
+      const statusByMember = (chore.status_by_member || {}) as Record<string, Record<string, unknown>>;
+      const dueByMember = (chore.due_date_by_member_name || {}) as Record<string, string>;
+      const statusInfo = statusByMember[name];
+      const rawStatus = String(statusInfo?.status || 'pending');
+      const status = ['approved', 'claimed', 'due', 'overdue'].includes(rawStatus) ? rawStatus : 'pending';
+      const dueDate = dueByMember[name] || statusInfo?.due_date || chore.due_date || null;
+      const parent = users.find((candidate) => source.members.find((member) => member.name === candidate.name)?.role === 'parent');
+      const actionData = { chore_id: chore.id, user_name: name };
+      const actions = status === 'claimed'
+        ? {
+            approve: choresmanAction('approve_chore', { ...actionData, approver_name: parent?.name || 'Abbai Flow' }),
+            disapprove: choresmanAction('disapprove_chore', { ...actionData, approver_name: parent?.name || 'Abbai Flow' }),
+          }
+        : status === 'approved'
+          ? {}
+          : { claim: choresmanAction('claim_chore', actionData) };
+      return [{
+        id: `choresman:${chore.id}:${user.slug}`,
+        sourceId: chore.id,
+        statusEntityId: `choresman-status:${chore.id}:${user.slug}`,
+        name: chore.name,
+        icon: typeof chore.icon === 'string' ? chore.icon : null,
+        status,
+        assignee: name,
+        points: Number(chore.points) || 0,
+        dueDate: typeof dueDate === 'string' ? dueDate : null,
+        description: typeof chore.description === 'string' ? chore.description : null,
+        frequency: typeof chore.frequency === 'string' ? chore.frequency : null,
+        applicableDays: Array.isArray(chore.applicable_days) ? chore.applicable_days as string[] : [],
+        labels: Array.isArray(chore.labels) ? chore.labels as string[] : [],
+        customInterval: typeof chore.custom_interval === 'number' ? chore.custom_interval : null,
+        customIntervalUnit: typeof chore.custom_interval_unit === 'string' ? chore.custom_interval_unit : null,
+        approvalReset: typeof chore.approval_reset_type === 'string' ? chore.approval_reset_type : null,
+        pendingClaims: typeof chore.pending_claims === 'string' ? chore.pending_claims : null,
+        overdueHandling: typeof chore.overdue_handling === 'string' ? chore.overdue_handling : null,
+        claimLockUntilWindow: chore.chore_claim_lock_until_window === true,
+        notificationChannel: typeof chore.notification_channel === 'string' ? chore.notification_channel : null,
+        notificationImportance: typeof chore.notification_importance === 'string' ? chore.notification_importance : null,
+        notificationPriority: typeof chore.notification_priority === 'string' ? chore.notification_priority : null,
+        notificationTtl: typeof chore.notification_ttl === 'number' ? chore.notification_ttl : null,
+        lastCompleted: typeof statusInfo?.last_completed === 'string' ? statusInfo.last_completed : null,
+        windowOffset: typeof chore.due_window_offset === 'string' ? chore.due_window_offset : null,
+        autoApprove: chore.auto_approve === true,
+        assignedUserNames: assignedNames,
+        completionCriteria: typeof chore.completion_criteria === 'string' ? chore.completion_criteria : null,
+        canClaim: Boolean(actions.claim),
+        canApprove: Boolean(actions.approve),
+        actions,
+        showOnCalendar: chore.show_on_calendar !== false,
+      }];
+    });
+  });
+  const rewards = source.rewards.flatMap((reward) => {
+    const assignedNames = reward.assigned_user_names.includes('*')
+      ? users.map((user) => user.name)
+      : reward.assigned_user_names;
+    return assignedNames.map((name) => {
+      const claim = [...source.reward_claims].reverse().find((candidate) =>
+        candidate.reward_id === reward.id && candidate.user_name === name && candidate.status === 'pending');
+      const data = { reward_id: reward.id, reward_name: reward.name, user_name: name };
+      return {
+        id: `choresman:${reward.id}:${name}`,
+        name: reward.name,
+        status: claim ? 'claimed' : 'pending',
+        cost: Number(reward.cost) || 0,
+        pendingClaims: claim ? 1 : 0,
+        assignee: name,
+        actions: claim
+          ? { approve: choresmanAction('approve_reward', { ...data, approver_name: users.find((user) => source.members.find((member) => member.name === user.name)?.role === 'parent')?.name || 'Abbai Flow' }) }
+          : { claim: choresmanAction('redeem_reward', data) },
+      };
+    });
+  });
+  const pointsByUser = Object.fromEntries(users.map((user) => [user.name.trim().toLowerCase(), user.points]));
+  return {
+    users,
+    chores,
+    rewards,
+    people: [],
+    pointsByUser,
+    pendingApprovals: source.pending_approvals,
+    entryId: 'choresman-local',
+    available: users.length > 0 || chores.length > 0,
+  };
+}
+
+function applyChoresmanSnapshot(source: ChoresmanSnapshot): void {
+  emitChoresman({ data: mapChoresmanSnapshot(source), error: null, loading: false });
+}
+
+async function syncChoresmanMembers(members: readonly FamilyMember[]): Promise<void> {
+  if (members.length === 0 && choresmanSyncedSignature === '') {
+    applyChoresmanSnapshot(await loadChoresmanSnapshot());
+    return;
+  }
+  const profiles = members.map(({ id, name, role, avatar, color }) => ({ id, name, role, avatar, color }));
+  const signature = JSON.stringify(profiles);
+  if (signature === choresmanSyncedSignature) {
+    applyChoresmanSnapshot(await loadChoresmanSnapshot());
+    return;
+  }
+  if (choresmanSyncInFlight?.signature === signature) return choresmanSyncInFlight.promise;
+  const promise = callChoresman('family.sync_members', { members: profiles })
+    .then((response) => {
+      choresmanSyncedSignature = signature;
+      applyChoresmanSnapshot(response.snapshot);
+    })
+    .catch((error) => {
+      emitChoresman({ error: errorMessage(error), loading: false });
+      throw error;
+    })
+    .finally(() => {
+      if (choresmanSyncInFlight?.signature === signature) choresmanSyncInFlight = null;
+    });
+  choresmanSyncInFlight = { signature, promise };
+  return promise;
+}
+
+async function loadChoresman(members: readonly FamilyMember[] = []): Promise<void> {
+  try {
+    if (members.length > 0 || choresmanSyncedSignature !== '') {
+      await syncChoresmanMembers(members);
+      return;
+    }
+    applyChoresmanSnapshot(await loadChoresmanSnapshot());
+  } catch (error) {
+    emitChoresman({ error: errorMessage(error), loading: false });
+  }
+}
+
+async function runChoresman(action: string, data: Record<string, unknown> = {}): Promise<unknown> {
+  const response = await callChoresman(action, data);
+  applyChoresmanSnapshot(response.snapshot);
+  return response.result;
 }
 
 function errorMessage(err: unknown): string {
@@ -284,11 +479,45 @@ function acquire(start: () => () => void): () => void {
   };
 }
 
-export function useChoreOps(): UseChoreOpsResult {
+function acquireChoresman(start: () => () => void): () => void {
+  choresmanRefCount += 1;
+  if (choresmanRefCount === 1) {
+    emitChoresman({ loading: choresmanSnapshot.data === null });
+    choresmanTeardown = start();
+  }
+  return () => {
+    choresmanRefCount -= 1;
+    if (choresmanRefCount > 0) return;
+    choresmanTeardown?.();
+    choresmanTeardown = null;
+  };
+}
+
+function startChoresmanPolling(members: readonly FamilyMember[]): () => void {
+  void loadChoresman(members);
+  const interval = setInterval(() => {
+    if (!document.hidden) void loadChoresman(members);
+  }, REST_POLL_MS);
+  const onVisibilityChange = () => {
+    if (!document.hidden) void loadChoresman(members);
+  };
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', onVisibilityChange);
+  return () => {
+    clearInterval(interval);
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', onVisibilityChange);
+  };
+}
+
+export function useChoreOps(provider: ChoreProvider = 'choreops', familyMembers: readonly FamilyMember[] = EMPTY_FAMILY_MEMBERS): UseChoreOpsResult {
   const { client, connected } = useHomeAssistant();
-  const state = useSyncExternalStore(subscribe, getSnapshot);
+  const localMembers = provider === 'choresman' ? familyMembers : EMPTY_FAMILY_MEMBERS;
+  const state = useSyncExternalStore(
+    provider === 'choresman' ? subscribeChoresman : subscribe,
+    provider === 'choresman' ? getChoresmanSnapshot : getSnapshot,
+  );
 
   useEffect(() => {
+    if (provider === 'choresman') return acquireChoresman(() => startChoresmanPolling(localMembers));
     const activeClient = client();
     if (activeClient && connected) {
       return acquire(() => startClient(activeClient));
@@ -303,9 +532,14 @@ export function useChoreOps(): UseChoreOpsResult {
     }
 
     return undefined;
-  }, [client, connected]);
+  }, [client, connected, provider, localMembers]);
 
   const refresh = useCallback(() => {
+    if (provider === 'choresman') {
+      emitChoresman({ loading: choresmanSnapshot.data === null });
+      void loadChoresman(localMembers);
+      return;
+    }
     emit({ loading: snapshot.data === null });
     const activeClient = client();
     if (activeClient && connected) {
@@ -313,10 +547,13 @@ export function useChoreOps(): UseChoreOpsResult {
       return;
     }
     void loadViaRest();
-  }, [client, connected]);
+  }, [client, connected, provider, localMembers]);
 
   const resolveChoreId = useCallback(
     async (statusEntityId: string): Promise<string | null> => {
+      if (provider === 'choresman') {
+        return state.data?.chores.find((chore) => chore.statusEntityId === statusEntityId)?.sourceId ?? null;
+      }
       const entryId = snapshot.data?.entryId;
       if (!entryId || !statusEntityId) return null;
 
@@ -347,7 +584,7 @@ export function useChoreOps(): UseChoreOpsResult {
         return null;
       }
     },
-    [client, connected],
+    [client, connected, provider, state.data],
   );
 
   /**
@@ -360,6 +597,10 @@ export function useChoreOps(): UseChoreOpsResult {
    * showing the old values until the next poll or a page reload.
    */
   const reloadAfterWrite = useCallback(async (): Promise<void> => {
+    if (provider === 'choresman') {
+      await loadChoresman(localMembers);
+      return;
+    }
     const before = signature(snapshot.data);
     const activeClient = client();
     const read = activeClient && connected ? () => loadViaClient(activeClient) : loadViaRest;
@@ -369,7 +610,7 @@ export function useChoreOps(): UseChoreOpsResult {
       if (signature(snapshot.data) !== before) return;
       await delay(WRITE_REFRESH_INTERVAL_MS);
     }
-  }, [client, connected]);
+  }, [client, connected, provider, localMembers]);
 
   /**
    * Invoke a ChoreOps action by pressing its button entity.
@@ -378,6 +619,12 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const pressButton = useCallback(
     async (entityId: string): Promise<void> => {
+      if (provider === 'choresman') {
+        const action = readChoresmanAction(entityId);
+        if (!action) throw new Error('This action is not available in Choresman');
+        await runChoresman(action.action, action.data);
+        return;
+      }
       if (!entityId.startsWith('button.')) {
         throw new Error(`Not a button entity: ${entityId}`);
       }
@@ -392,7 +639,7 @@ export function useChoreOps(): UseChoreOpsResult {
       // Show the result of the press straight away in both transports.
       await reloadAfterWrite();
     },
-    [client, connected, reloadAfterWrite],
+    [client, connected, provider, reloadAfterWrite],
   );
 
   /**
@@ -405,6 +652,10 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const claimChore = useCallback(
     async (choreName: string, userName: string): Promise<void> => {
+      if (provider === 'choresman') {
+        await runChoresman('claim_chore', { chore_name: choreName, user_name: userName });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       const target = {
         ...(entryId ? { config_entry_id: entryId } : {}),
@@ -426,7 +677,7 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /**
@@ -435,6 +686,12 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const createChore = useCallback(
     async (input: Omit<CreateChoreInput, 'entryId'>): Promise<void> => {
+      if (provider === 'choresman') {
+        const payload = buildCreateChorePayload({ ...input, entryId: 'choresman-local' });
+        if (!payload) throw new Error('Choresman needs a name and at least one assignee');
+        await runChoresman('create_chore', payload);
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       const payload = buildCreateChorePayload({ ...input, entryId });
       if (!payload) throw new Error('ChoreOps needs a name and at least one assignee');
@@ -442,12 +699,18 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Create a reward for the given ChoreOps users. */
   const createReward = useCallback(
     async (input: Omit<CreateRewardInput, 'entryId'>): Promise<void> => {
+      if (provider === 'choresman') {
+        const payload = buildCreateRewardPayload({ ...input, entryId: 'choresman-local' });
+        if (!payload) throw new Error('Choresman needs a reward name and at least one member');
+        await runChoresman('create_reward', payload);
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       const payload = buildCreateRewardPayload({ ...input, entryId });
       if (!payload) throw new Error('ChoreOps needs a reward name and at least one user');
@@ -456,12 +719,18 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Update a reward's cost and, when provided, its assigned users. */
   const updateReward = useCallback(
     async (input: Omit<UpdateRewardInput, 'entryId'>): Promise<void> => {
+      if (provider === 'choresman') {
+        const payload = buildUpdateRewardPayload({ ...input, entryId: 'choresman-local' });
+        if (!payload) throw new Error('Choresman needs a reward name to update it');
+        await runChoresman('update_reward', payload);
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       const payload = buildUpdateRewardPayload({ ...input, entryId });
       if (!payload) throw new Error('ChoreOps needs a reward name to update it');
@@ -470,12 +739,16 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Remove a reward from ChoreOps by name. */
   const deleteReward = useCallback(
     async (rewardName: string): Promise<void> => {
+      if (provider === 'choresman') {
+        await runChoresman('delete_reward', { name: rewardName });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       await callHaService('choreops', 'delete_reward', {
         ...(entryId ? { config_entry_id: entryId } : {}),
@@ -484,7 +757,7 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /**
@@ -497,6 +770,14 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const approveReward = useCallback(
     async (userName: string, rewardName: string, approverName?: string): Promise<void> => {
+      if (provider === 'choresman') {
+        await runChoresman('approve_reward', {
+          approver_name: approverName?.trim() || 'Abbai Flow',
+          user_name: userName,
+          reward_name: rewardName,
+        });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       await callHaService('choreops', 'approve_reward', {
         ...(entryId ? { config_entry_id: entryId } : {}),
@@ -507,12 +788,18 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Credit a routine mission bonus without creating a chore approval. */
   const adjustPoints = useCallback(
     async (userName: string, amount: number, reason: string): Promise<void> => {
+      if (provider === 'choresman') {
+        if (!userName.trim()) throw new Error('Choresman member is required to award points');
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        await runChoresman('manual_adjust_points', { user_name: userName, amount, reason });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       if (!userName.trim()) throw new Error('ChoreOps user is required to award points');
       if (!Number.isFinite(amount) || amount <= 0) return;
@@ -524,12 +811,16 @@ export function useChoreOps(): UseChoreOpsResult {
       });
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Delete a ChoreOps chore by name (the id ChoreOps publishes). */
   const deleteChore = useCallback(
     async (choreName: string): Promise<void> => {
+      if (provider === 'choresman') {
+        await runChoresman('delete_chore', { name: choreName });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       await callHaService('choreops', 'delete_chore', {
         ...(entryId ? { config_entry_id: entryId } : {}),
@@ -538,12 +829,20 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /** Set or clear a chore due date; ChoreOps resets the affected task to pending. */
   const setChoreDueDate = useCallback(
     async (choreName: string, dueDate?: string | null, userName?: string): Promise<void> => {
+      if (provider === 'choresman') {
+        await runChoresman('set_chore_due_date', {
+          chore_name: choreName,
+          due_date: dueDate ?? null,
+          ...(userName ? { user_name: userName } : {}),
+        });
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       await callHaService('choreops', 'set_chore_due_date', {
         ...(entryId ? { config_entry_id: entryId } : {}),
@@ -554,7 +853,7 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   /**
@@ -566,6 +865,12 @@ export function useChoreOps(): UseChoreOpsResult {
    */
   const updateChore = useCallback(
     async (input: Omit<UpdateChoreInput, 'entryId'>): Promise<void> => {
+      if (provider === 'choresman') {
+        const payload = buildUpdateChorePayload({ ...input, entryId: 'choresman-local' });
+        if (!payload) throw new Error('Choresman needs a chore name to update it');
+        await runChoresman('update_chore', payload);
+        return;
+      }
       const entryId = snapshot.data?.entryId ?? null;
       const payload = buildUpdateChorePayload({ ...input, entryId });
       if (!payload) throw new Error('ChoreOps needs a chore name to update it');
@@ -574,7 +879,7 @@ export function useChoreOps(): UseChoreOpsResult {
 
       await reloadAfterWrite();
     },
-    [reloadAfterWrite],
+    [provider, reloadAfterWrite],
   );
 
   return useMemo(

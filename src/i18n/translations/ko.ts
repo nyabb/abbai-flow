@@ -39,8 +39,6 @@ export const ko: Record<TranslationKey, string> = {
   'app.kidDisplayNotFound': '어린이 화면 구성원을 찾을 수 없습니다 — 전체 앱을 표시합니다.',
   'app.dismiss': '닫기',
   'app.connecting': '연결 중...',
-  'app.choresDisabled':
-    '집안일 기능이 꺼져 있습니다. 이 화면을 사용하려면 설정 → 집안일에서 켜세요.',
   'app.previewMode': '미리보기 모드',
   'debugConsole.tab': '디버그',
   'debugConsole.title': '디버그 활동',
@@ -376,8 +374,6 @@ export const ko: Record<TranslationKey, string> = {
   // ---- settings: chores ----
   'settings.chores.title': '집안일',
   'settings.chores.desc': '집안일과 포인트는 Home Assistant의 ChoreOps 통합에서 관리됩니다.',
-  'settings.chores.enableLabel': '집안일 활성화',
-  'settings.chores.enableSublabel': '집안일 추적과 보상을 표시합니다',
   'settings.chores.dailyResetTimeLabel': '매일 초기화 시간',
   'settings.chores.dailyResetTimeSublabel': '매일 집안일이 초기화되는 시간',
   'settings.chores.streakDurationLabel': '연속 기록 기간',

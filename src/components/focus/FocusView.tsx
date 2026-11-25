@@ -30,7 +30,7 @@ const GREETINGS = {
 export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   const { members } = useFamily();
   const routinesApi = useRoutines(memberId);
-  const choreOps = useChoreOps();
+  const choreOps = useChoreOps(settings.choresProvider, settings.choresProvider === 'choresman' ? members : []);
   const { t } = useTranslation();
   const [routineEditorRequest, setRoutineEditorRequest] = useState<RoutineEditorRequest | null>(
     null,
@@ -85,8 +85,16 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
   // ChoreOps owns chore data: resolve this member's ChoreOps user, then take
   // the chores ChoreOps assigns to them.
   const choreOpsUser = useMemo(
-    () => (member ? findUserForMember(member, choreOps.data?.users ?? []) : null),
-    [member, choreOps.data],
+    () => {
+      if (!member) return null;
+      if (settings.choresProvider === 'choresman') {
+        const localMember = { ...member };
+        delete localMember.choreops_user;
+        return findUserForMember(localMember, choreOps.data?.users ?? []);
+      }
+      return findUserForMember(member, choreOps.data?.users ?? []);
+    },
+    [member, choreOps.data, settings.choresProvider],
   );
 
   const memberChores = useMemo(() => {

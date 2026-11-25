@@ -91,6 +91,25 @@ describe('buildUpdateChorePayload', () => {
     });
   });
 
+  it('preserves calendar visibility and notification delivery options', () => {
+    const payload = buildUpdateChorePayload({
+      entryId: 'e1',
+      name: 'Afwassen',
+      notificationChannel: 'mobile_app',
+      notificationImportance: 'high',
+      notificationPriority: 'high',
+      notificationTtl: 3600,
+      showOnCalendar: false,
+    });
+    expect(payload).toMatchObject({
+      notification_channel: 'mobile_app',
+      notification_importance: 'high',
+      notification_priority: 'high',
+      notification_ttl: 3600,
+      show_on_calendar: false,
+    });
+  });
+
   it('clears the due window with 0 and omits an untouched reminder', () => {
     const cleared = buildUpdateChorePayload({ entryId: 'e1', name: 'Afwassen', windowOffset: '' });
     expect(cleared).toMatchObject({ due_window_offset: '0' });

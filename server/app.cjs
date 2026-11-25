@@ -28,6 +28,7 @@ const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
+const { ChoresmanStore, ChoresmanStoreError } = require('./choresman-store.cjs');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1674,6 +1675,7 @@ function createApp(options) {
     encore: options.encore || createEncore(),
     spotifyCatalog: options.spotifyCatalog || createSpotifyCatalog(),
     spotifyPlaylists: options.spotifyPlaylists || createSpotifyPlaylists(),
+    choresman: options.choresman || new ChoresmanStore({ dataDir: config.dataDir }),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1681,11 +1683,21 @@ function createApp(options) {
   const server = http.createServer((req, res) => {
     void route(req, res, config, services, bluetooth);
   });
+  const choresmanMaintenanceTimer = typeof services.choresman.call === 'function'
+    ? setInterval(() => {
+        void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
+      }, 60_000)
+    : null;
+  choresmanMaintenanceTimer?.unref?.();
+  if (choresmanMaintenanceTimer) {
+    void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
+  }
 
   server.on('upgrade', (req, socket, head) => {
     handleUpgrade(req, socket, head, config);
   });
   server.on('close', () => {
+    if (choresmanMaintenanceTimer) clearInterval(choresmanMaintenanceTimer);
     services.encore.stop();
     bluetooth.stop();
   });
@@ -1791,6 +1803,7 @@ async function route(req, res, config, services, bluetooth) {
     pathname.startsWith('/abbai-flow/music/control') ||
     pathname.startsWith('/abbai-flow/music/library/') ||
     pathname.startsWith('/abbai-flow/bluetooth/control') ||
+    pathname === '/abbai-flow/choresman' ||
     url.startsWith('/api/');
 
   if (guarded && isMutation && !isAllowedOrigin(req, config.allowedOrigins)) {
@@ -1799,6 +1812,40 @@ async function route(req, res, config, services, bluetooth) {
   }
 
   try {
+    if (pathname === '/abbai-flow/choresman') {
+      if (req.method === 'GET') {
+        sendJson(res, 200, { snapshot: await services.choresman.getSnapshot() }, { 'Cache-Control': 'no-store' });
+        return;
+      }
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      if (typeof value.action !== 'string' || !value.action.trim()) {
+        sendJson(res, 400, { error: 'action is required' });
+        return;
+      }
+      try {
+        const result = await services.choresman.call(value.action, value.data || {});
+        sendJson(res, 200, {
+          result,
+          snapshot: await services.choresman.getSnapshot(),
+        }, { 'Cache-Control': 'no-store' });
+      } catch (err) {
+        const status = err instanceof ChoresmanStoreError && err.code === 'service_not_found' ? 404 :
+          err instanceof ChoresmanStoreError ? 400 : 500;
+        sendJson(res, status, {
+          error: err instanceof ChoresmanStoreError ? err.message : 'Choresman action failed',
+          ...(err instanceof ChoresmanStoreError ? { code: err.code } : {}),
+        });
+      }
+      return;
+    }
     if (pathname === '/abbai-flow/settings/integrations') {
       if (req.method === 'GET') {
         sendJson(res, 200, publicIntegrationSettings(config), { 'Cache-Control': 'no-store' });

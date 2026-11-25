@@ -343,6 +343,9 @@ export function useChoreFormActions({
             claimLockUntilWindow: originalChore?.claimLockUntilWindow,
             notificationChannel: originalChore?.notificationChannel,
             notificationImportance: originalChore?.notificationImportance,
+            notificationPriority: originalChore?.notificationPriority,
+            notificationTtl: originalChore?.notificationTtl,
+            showOnCalendar: originalChore?.showOnCalendar,
           });
         }
       } else {
@@ -472,6 +475,9 @@ export function useChoreFormActions({
           claimLockUntilWindow: chore.claimLockUntilWindow,
           notificationChannel: chore.notificationChannel,
           notificationImportance: chore.notificationImportance,
+          notificationPriority: chore.notificationPriority,
+          notificationTtl: chore.notificationTtl,
+          showOnCalendar: chore.showOnCalendar,
         });
       }
       dispatchOverlay({ type: 'close' });

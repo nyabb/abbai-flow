@@ -161,6 +161,7 @@ function normalizeChore(item: unknown, fallbackAssignee: string | null): ChoreOp
     icon: str(item, 'icon'),
     status: str(item, 'status') ?? str(item, 'state') ?? 'unknown',
     assignee,
+    showOnCalendar: typeof item.show_on_calendar === 'boolean' ? item.show_on_calendar : undefined,
     points: pointsOf(item),
     canClaim: flag(item, 'can_claim'),
     canApprove: flag(item, 'can_approve'),
@@ -242,11 +243,14 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       claimLockUntilWindow: boolean;
       notificationChannel: string | null;
       notificationImportance: string | null;
+      notificationPriority: string | null;
+      notificationTtl: number | null;
       autoApprove: boolean;
       assignedUserNames: string[];
       completionCriteria: string | null;
       labels: string[];
       lastCompleted: string | null;
+      showOnCalendar?: boolean;
       canClaim: boolean;
       canApprove: boolean;
     }
@@ -392,9 +396,14 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
           claimLockUntilWindow: flag(entity.attributes, 'claim_lock_until_window'),
           notificationChannel: str(entity.attributes, 'notification_channel'),
           notificationImportance: str(entity.attributes, 'notification_importance'),
+          notificationPriority: str(entity.attributes, 'notification_priority'),
+          notificationTtl: num(entity.attributes, 'notification_ttl'),
           autoApprove: flag(entity.attributes, 'auto_approve'),
           assignedUserNames: stringList(entity.attributes, 'assigned_user_names'),
           completionCriteria: str(entity.attributes, 'completion_criteria'),
+          ...(typeof entity.attributes.show_on_calendar === 'boolean'
+            ? { showOnCalendar: entity.attributes.show_on_calendar }
+            : {}),
           canClaim: flag(entity.attributes, 'can_claim'),
           canApprove: flag(entity.attributes, 'can_approve'),
         });
@@ -528,6 +537,8 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.claimLockUntilWindow = record.claimLockUntilWindow;
       existing.notificationChannel = record.notificationChannel ?? existing.notificationChannel;
       existing.notificationImportance = record.notificationImportance ?? existing.notificationImportance;
+      existing.notificationPriority = record.notificationPriority ?? existing.notificationPriority;
+      existing.notificationTtl = record.notificationTtl ?? existing.notificationTtl;
       existing.autoApprove = record.autoApprove;
       if (record.assignedUserNames.length > 0) {
         existing.assignedUserNames = record.assignedUserNames;
@@ -535,6 +546,7 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       existing.completionCriteria = record.completionCriteria ?? existing.completionCriteria;
       if (record.labels.length > 0) existing.labels = record.labels;
       existing.lastCompleted = record.lastCompleted ?? existing.lastCompleted;
+      if (typeof record.showOnCalendar === 'boolean') existing.showOnCalendar = record.showOnCalendar;
       existing.canClaim = record.canClaim;
       existing.canApprove = record.canApprove;
       continue;
@@ -560,11 +572,14 @@ export function normalizeChoreOps(states: ChoreOpsEntityState[]): ChoreOpsState 
       claimLockUntilWindow: record.claimLockUntilWindow,
       notificationChannel: record.notificationChannel,
       notificationImportance: record.notificationImportance,
+      notificationPriority: record.notificationPriority,
+      notificationTtl: record.notificationTtl,
       autoApprove: record.autoApprove,
       assignedUserNames: record.assignedUserNames,
       completionCriteria: record.completionCriteria,
       labels: record.labels,
       lastCompleted: record.lastCompleted,
+      showOnCalendar: record.showOnCalendar,
       canClaim: record.canClaim,
       canApprove: record.canApprove,
       actions: {},

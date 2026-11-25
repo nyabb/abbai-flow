@@ -40,8 +40,6 @@ export const de: Record<TranslationKey, string> = {
     'Mitglied für Kinderanzeige nicht gefunden — die vollständige App wird angezeigt.',
   'app.dismiss': 'Verwerfen',
   'app.connecting': 'Verbindung wird hergestellt...',
-  'app.choresDisabled':
-    'Aufgaben sind deaktiviert. Aktiviere sie unter Einstellungen → Aufgaben, um diesen Bildschirm zu nutzen.',
   'app.previewMode': 'Vorschaumodus',
   'debugConsole.tab': 'Debug',
   'debugConsole.title': 'Debug-Aktivität',
@@ -383,8 +381,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.chores.title': 'Aufgaben',
   'settings.chores.desc':
     'Aufgaben und Punkte werden in Home Assistant von der ChoreOps-Integration verwaltet.',
-  'settings.chores.enableLabel': 'Aufgaben aktivieren',
-  'settings.chores.enableSublabel': 'Zeigt Aufgabenverfolgung und Belohnungen an',
   'settings.chores.dailyResetTimeLabel': 'Tägliche Rücksetzzeit',
   'settings.chores.dailyResetTimeSublabel': 'Wann tägliche Aufgaben zurückgesetzt werden',
   'settings.chores.streakDurationLabel': 'Serien-Dauer',

@@ -21,6 +21,8 @@ export interface MemberFormViewProps {
   /** A photo already published on the linked HA person, if any. */
   linkedPhoto: string | null;
   peopleOptions: PersonOption[];
+  /** Choresman members are local and do not need a Home Assistant link. */
+  localProvider?: boolean;
   isLinkedElsewhere: (personName: string) => boolean;
   calendars: FamilyCalendarSummary[];
   t: I18nValue['t'];
@@ -36,6 +38,7 @@ export function MemberFormView({
   photoError,
   linkedPhoto,
   peopleOptions,
+  localProvider = false,
   isLinkedElsewhere,
   calendars,
   t,
@@ -187,46 +190,54 @@ export function MemberFormView({
           <span style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{photoError}</span>
         </div>
       )}
-      {/* Always rendered: when the picker vanished entirely it looked
-          like the feature was missing rather than "HA returned nobody". */}
-      <div className="settings-row">
-        <div className="settings-row-label">{t('settings.family.haMembersLabel')}</div>
-        {peopleOptions.length > 0 ? (
-          <select
-            value={form.choreops_user}
-            onChange={(e) => {
-              const value = e.target.value;
-              onChange((f) => {
-                // Keep a hand-written name; adopt the HA name when the
-                // field is blank or was auto-filled from a previous pick.
-                const autoNamed = !f.name.trim() || f.name === f.choreops_user;
-                return {
-                  ...f,
-                  choreops_user: value,
-                  name: value && autoNamed ? value : f.name,
-                };
-              });
-            }}
-            className="settings-select"
-          >
-            <option value="">Not linked</option>
-            {peopleOptions.map((person) => {
-              const added = isLinkedElsewhere(person.name);
-              return (
-                <option key={person.name} value={person.name} disabled={added}>
-                  {person.name}
-                  {person.hasChoreOps ? ' · ChoreOps' : ''}
-                  {added ? ' (already added)' : ''}
-                </option>
-              );
-            })}
-          </select>
-        ) : (
-          <span className="settings-row-sublabel" style={{ maxWidth: 320 }}>
-            {t('settings.family.haMembersEmpty')}
-          </span>
-        )}
-      </div>
+      {localProvider ? (
+        <div className="settings-row">
+          <div>
+            <div className="settings-row-label">{t('settings.family.localChoresmanMember')}</div>
+            <div className="settings-row-sublabel">{t('settings.family.localChoresmanMemberHelp')}</div>
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Keep the HA link picker visible so an empty result is clear. */}
+          <div className="settings-row">
+            <div className="settings-row-label">{t('settings.family.haMembersLabel')}</div>
+            {peopleOptions.length > 0 ? (
+              <select
+                value={form.choreops_user}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  onChange((f) => {
+                    const autoNamed = !f.name.trim() || f.name === f.choreops_user;
+                    return {
+                      ...f,
+                      choreops_user: value,
+                      name: value && autoNamed ? value : f.name,
+                    };
+                  });
+                }}
+                className="settings-select"
+              >
+                <option value="">Not linked</option>
+                {peopleOptions.map((person) => {
+                  const added = isLinkedElsewhere(person.name);
+                  return (
+                    <option key={person.name} value={person.name} disabled={added}>
+                      {person.name}
+                      {person.hasChoreOps ? ' · ChoreOps' : ''}
+                      {added ? ' (already added)' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            ) : (
+              <span className="settings-row-sublabel" style={{ maxWidth: 320 }}>
+                {t('settings.family.haMembersEmpty')}
+              </span>
+            )}
+          </div>
+        </>
+      )}
       <div className="settings-row" style={{ alignItems: 'flex-start' }}>
         <div className="settings-row-label" style={{ paddingTop: 4 }}>
           {t('settings.family.colorLabel')}
