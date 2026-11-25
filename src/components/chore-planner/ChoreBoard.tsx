@@ -25,6 +25,8 @@ export interface ChoreBoardProps {
   canRunMissions: (memberId: string) => boolean;
   /** Chores still up for grabs, deduplicated by name. */
   freeTasks: PlannerTask[];
+  /** Select the child's chore list after they claim a shared chore. */
+  claimNavigation?: { memberId: string; request: number } | null;
   /** What one member can still spend (ChoresMan balance minus reservations). */
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
@@ -48,6 +50,7 @@ export function ChoreBoard({
   columnRoutines,
   canRunMissions,
   freeTasks,
+  claimNavigation = null,
   spendableFor,
   renderRow,
   routineRow,
@@ -90,6 +93,13 @@ export function ChoreBoard({
     if (activeMemberId && boardMembers.some((member) => member.id === activeMemberId)) return;
     setActiveMemberId(boardMembers[0]?.id ?? null);
   }, [activeMemberId, boardMembers, setActiveMemberId]);
+
+  useEffect(() => {
+    if (!compact || !claimNavigation) return;
+    if (!boardMembers.some((member) => member.id === claimNavigation.memberId)) return;
+    setActiveMemberId(claimNavigation.memberId);
+    setTab('chores');
+  }, [compact, claimNavigation, boardMembers, setActiveMemberId, setTab]);
 
   if (compact) {
     const member = boardMembers.find((item) => item.id === activeMemberId) ?? boardMembers[0];
