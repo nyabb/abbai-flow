@@ -9,7 +9,7 @@ between authenticate and verify requests.
 from __future__ import annotations
 
 import dataclasses
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 import datetime as dt
 import enum
 import hashlib
@@ -41,6 +41,20 @@ two_step_device: dict[str, Any] | None = None
 auth_mode: str | None = None
 
 
+_SECTION_FIELD_PARTS = ("section", "membership", "group")
+_SECTION_NAME_FIELDS = {
+    "name",
+    "title",
+    "displayname",
+    "sectionname",
+    "titledocument",
+    "namedocument",
+}
+_MAX_DIAGNOSTIC_RECORDS = 30
+_MAX_DIAGNOSTIC_FIELDS = 80
+_MAX_SECTION_CANDIDATES = 8
+
+
 def respond(value: dict[str, Any]) -> None:
     protocol_output.write(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n")
     protocol_output.flush()
@@ -50,6 +64,153 @@ def log_event(event: str, **fields: Any) -> None:
     entry = {"service": "pyicloud-reminders", "event": event, **fields}
     sys.stderr.write(json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n")
     sys.stderr.flush()
+
+
+def _short_hash(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()[:16]
+
+
+def _safe_section_value(value: Any, depth: int = 0) -> Any:
+    """Keep section diagnostics useful without logging reminder content."""
+    if depth >= 3:
+        return "<nested>"
+    if isinstance(value, dict):
+        # CloudKit values wrap their payload as {"type": ..., "value": ...}.
+        if "value" in value and "type" in value:
+            return _safe_section_value(value.get("value"), depth + 1)
+        nested: dict[str, Any] = {}
+        for key, item in list(value.items())[:12]:
+            normalized_key = str(key).lower()
+            if any(part in normalized_key for part in _SECTION_FIELD_PARTS) or normalized_key in _SECTION_NAME_FIELDS:
+                nested[str(key)[:80]] = _safe_section_value(item, depth + 1)
+        return nested or "<structured section value>"
+    if isinstance(value, (list, tuple)):
+        return [_safe_section_value(item, depth + 1) for item in list(value)[:10]]
+    if isinstance(value, str):
+        return value[:240]
+    if value is None or isinstance(value, (int, float, bool)):
+        return value
+    return f"<{type(value).__name__}>"
+
+
+def _section_candidate_value(record_type: str, field_name: str, value: Any) -> Any:
+    """Decode section title documents when the wire record identifies one."""
+    normalized_name = field_name.lower()
+    if "section" in record_type.lower() and normalized_name in {"titledocument", "namedocument"}:
+        wrapped_value = value.get("value") if isinstance(value, dict) else value
+        try:
+            from pyicloud.services.reminders._protocol import _decode_crdt_document
+
+            decoded = _decode_crdt_document(wrapped_value)
+            return str(decoded)[:240]
+        except Exception:
+            return "<encoded section name; decode unavailable>"
+    return _safe_section_value(value)
+
+
+def _cloudkit_record_summaries(response: Any) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
+    """Summarize raw CloudKit records, exposing section candidates only."""
+    if not isinstance(response, dict):
+        return 0, [], []
+
+    records = response.get("records")
+    if not isinstance(records, list):
+        records = []
+        zones = response.get("zones")
+        if isinstance(zones, list):
+            for zone in zones:
+                if isinstance(zone, dict) and isinstance(zone.get("records"), list):
+                    records.extend(zone["records"])
+
+    type_counts: dict[str, int] = {}
+    summaries: list[dict[str, Any]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        record_type = str(record.get("recordType") or "<unknown>")[:100]
+        type_counts[record_type] = type_counts.get(record_type, 0) + 1
+        if len(summaries) >= _MAX_DIAGNOSTIC_RECORDS:
+            continue
+
+        fields = record.get("fields") if isinstance(record.get("fields"), dict) else {}
+        plugin_fields = record.get("pluginFields") if isinstance(record.get("pluginFields"), dict) else {}
+        field_names = sorted({str(key)[:100] for key in fields} | {f"pluginFields.{str(key)[:90]}" for key in plugin_fields})
+        summary: dict[str, Any] = {
+            "recordType": record_type,
+            "recordIdHash": _short_hash(str(record.get("recordName") or "<unnamed>")),
+            "fieldNames": field_names[:_MAX_DIAGNOSTIC_FIELDS],
+        }
+
+        section_record = "section" in record_type.lower()
+        candidates: dict[str, Any] = {}
+        for source_name, source_fields in (("fields", fields), ("pluginFields", plugin_fields)):
+            for field_name, value in source_fields.items():
+                normalized_name = str(field_name).lower()
+                is_candidate = any(part in normalized_name for part in _SECTION_FIELD_PARTS)
+                is_section_name = section_record and normalized_name in _SECTION_NAME_FIELDS
+                if not (is_candidate or is_section_name):
+                    continue
+                candidates[f"{source_name}.{str(field_name)[:80]}"] = _section_candidate_value(
+                    record_type,
+                    normalized_name,
+                    value,
+                )
+                if len(candidates) >= _MAX_SECTION_CANDIDATES:
+                    break
+            if len(candidates) >= _MAX_SECTION_CANDIDATES:
+                break
+        if candidates:
+            summary["sectionCandidates"] = candidates
+        summaries.append(summary)
+
+    ordered_types = [
+        {"recordType": name, "count": count}
+        for name, count in sorted(type_counts.items())
+    ]
+    return len(records), ordered_types, summaries
+
+
+@contextmanager
+def inspect_cloudkit_responses(reminders_service: Any, list_key: str, request_id: str):
+    """Log safe CloudKit response structure before PyICloud maps it to models."""
+    patched: list[tuple[Any, Any]] = []
+    for scope, raw_name in (("private", "_raw"), ("shared", "_shared_raw")):
+        raw_client = getattr(reminders_service, raw_name, None)
+        cloudkit_client = getattr(raw_client, "_client", None)
+        http = getattr(cloudkit_client, "_http", None)
+        original_post = getattr(http, "post", None)
+        if not callable(original_post):
+            continue
+
+        def inspected_post(path: str, payload: Any, *args: Any, _original=original_post, _scope=scope, **kwargs: Any):
+            response = _original(path, payload, *args, **kwargs)
+            operation = str(path).strip("/")
+            if operation not in {"records/query", "records/lookup", "changes/zone"}:
+                return response
+            record_count, record_type_counts, records = _cloudkit_record_summaries(response)
+            log_event(
+                "cloudkit_response_inspected",
+                scope=_scope,
+                operation=operation,
+                list_key=list_key,
+                request_id=request_id,
+                record_count=record_count,
+                record_type_counts=record_type_counts,
+                records=records,
+                records_truncated=record_count > len(records),
+            )
+            return response
+
+        http.post = inspected_post
+        patched.append((http, original_post))
+
+    if not patched:
+        log_event("cloudkit_diagnostic_unavailable", list_key=list_key)
+    try:
+        yield
+    finally:
+        for http, original_post in patched:
+            http.post = original_post
 
 
 def safe_error(exc: Exception) -> dict[str, str]:
@@ -245,28 +406,33 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
     try:
         reminders_service = api.reminders
-        lists = list(reminders_service.lists())
         selected_key = str(request.get("listKey") or "")
-        reminder_list = next(
-            (
-                item
-                for item in lists
-                if not getattr(item, "deleted", False)
-                and reminders_list_key(item) == selected_key
-            ),
-            None,
-        )
-        if reminder_list is None:
-            return {
-                "ok": False,
-                "errorCode": "selected_list_not_found",
-                "error": "Choose an active iCloud Reminders list, then load its preview again.",
-            }
-        batch = reminders_service.list_reminders(
-            reminder_list,
-            include_completed=True,
-            results_limit=10,
-        )
+        with inspect_cloudkit_responses(
+            reminders_service,
+            selected_key,
+            str(request.get("requestId") or "")[:100],
+        ):
+            lists = list(reminders_service.lists())
+            reminder_list = next(
+                (
+                    item
+                    for item in lists
+                    if not getattr(item, "deleted", False)
+                    and reminders_list_key(item) == selected_key
+                ),
+                None,
+            )
+            if reminder_list is None:
+                return {
+                    "ok": False,
+                    "errorCode": "selected_list_not_found",
+                    "error": "Choose an active iCloud Reminders list, then load its preview again.",
+                }
+            batch = reminders_service.list_reminders(
+                reminder_list,
+                include_completed=True,
+                results_limit=10,
+            )
         reminders = list(getattr(batch, "reminders", []) or [])
         summary = reminders_list_summary(reminder_list)
         summary["reminderCountReturned"] = len(reminders)
