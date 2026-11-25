@@ -1,3 +1,10 @@
+## [2.27.1](https://github.com/nyabb/abbai-flow/compare/v2.27.0...v2.27.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* route iCloud auth requests to server ([c62c017](https://github.com/nyabb/abbai-flow/commit/c62c017e70bac7b53c505a556d6f0e3f755940d9))
+
 # [2.27.0](https://github.com/nyabb/abbai-flow/compare/v2.26.0...v2.27.0) (2026-11-25)
 
 
