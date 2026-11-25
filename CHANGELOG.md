@@ -1,3 +1,10 @@
+## [2.31.1](https://github.com/nyabb/abbai-flow/compare/v2.31.0...v2.31.1) (2026-11-25)
+
+
+### Bug Fixes
+
+* redact and inspect iCloud section assets ([9a35991](https://github.com/nyabb/abbai-flow/commit/9a35991774e0c05d53543a24927b9052da23b939))
+
 # [2.31.0](https://github.com/nyabb/abbai-flow/compare/v2.30.0...v2.31.0) (2026-11-25)
 
 
