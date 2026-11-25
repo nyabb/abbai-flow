@@ -1,3 +1,10 @@
+## [2.23.2](https://github.com/nyabb/abbai-flow/compare/v2.23.1...v2.23.2) (2026-11-25)
+
+
+### Bug Fixes
+
+* magnify active mobile navigation tab ([06be2e4](https://github.com/nyabb/abbai-flow/commit/06be2e42e77e772dfb1b480ed978ebb0789481a3))
+
 ## [2.23.1](https://github.com/nyabb/abbai-flow/compare/v2.23.0...v2.23.1) (2026-11-25)
 
 
