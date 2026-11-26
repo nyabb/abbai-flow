@@ -412,7 +412,7 @@ export const en = {
     'A server-backed Abbai Flow deployment is required for PyICloud credentials and authentication.',
   'settings.integrations.calendarSourcesTitle': 'Calendar connection settings',
   'settings.integrations.calendarSourcesHelp':
-    'Add and test CalDAV sources here. Discovered calendars become available in Calendar settings and the calendar view.',
+    'Add CalDAV calendars or read-only ICS feeds here. They appear in Calendar settings and the calendar view.',
   'settings.integrations.calendarNameLabel': 'Calendar name',
   'settings.integrations.calendarProviderLabel': 'Source type',
   'settings.integrations.calendarProviderCaldav': 'CalDAV (iCloud or another server)',
@@ -426,11 +426,13 @@ export const en = {
   'settings.integrations.calendarClientSecretLabel': 'Google client secret',
   'settings.integrations.calendarCredentialsOnly':
     'This source configuration is stored only. Calendar data is not connected or syncing yet.',
+  'settings.integrations.calendarIcsHelp':
+    'Enter a direct ICS subscription URL. Its events are read-only and will appear in Calendar settings so you can show or hide the feed.',
   'settings.integrations.calendarCaldavHelp':
     'For iCloud, use your Apple Account email and an app-specific password. Test to discover calendars, then save to show them in the calendar and enable event changes.',
-  'settings.integrations.calendarTestConnection': 'Test credentials and retrieve calendars',
+  'settings.integrations.calendarTestConnection': 'Test connection',
   'settings.integrations.calendarTesting': 'Retrieving calendars…',
-  'settings.integrations.calendarTestSuccess': '{count} CalDAV calendar(s) retrieved.',
+  'settings.integrations.calendarTestSuccess': '{count} calendar(s) retrieved.',
   'settings.integrations.calendarAddSource': 'Add calendar source',
   'settings.integrations.calendarSaving': 'Saving calendar…',
   'settings.integrations.calendarRemoveSource': 'Remove source',

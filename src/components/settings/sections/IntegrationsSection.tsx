@@ -21,7 +21,7 @@ import {
   type IntegrationSettingsStatus,
   type CalendarSourceSetting,
 } from '../../../api/integration-settings';
-import { testCaldavSource } from '../../../api/caldav-calendars';
+import { testCalendarSource as testCalendarSourceApi } from '../../../api/caldav-calendars';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
@@ -643,7 +643,7 @@ export function IntegrationsSection({
       return next;
     });
     try {
-      const result = await testCaldavSource(source);
+      const result = await testCalendarSourceApi(source);
       setCalendarTestResults((results) => ({
         ...results,
         [source.id]: result.calendars.map((calendar) => calendar.name),
@@ -1475,7 +1475,9 @@ export function IntegrationsSection({
                   <div className="settings-row-sublabel">
                     {source.provider === 'caldav'
                       ? t('settings.integrations.calendarCaldavHelp')
-                      : t('settings.integrations.calendarCredentialsOnly')}
+                      : source.provider === 'ics'
+                        ? t('settings.integrations.calendarIcsHelp')
+                        : t('settings.integrations.calendarCredentialsOnly')}
                   </div>
                   {testedCalendars && (
                     <div
@@ -1498,12 +1500,19 @@ export function IntegrationsSection({
                     </div>
                   )}
                   <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-                    {source.provider === 'caldav' && (
+                    {(source.provider === 'caldav' || source.provider === 'ics') && (
                       <button
                         type="button"
                         className="settings-btn"
                         onClick={() => void testCalendarSource(source)}
-                        disabled={integrationBusy || integrationStatusLoading}
+                        disabled={
+                          integrationBusy ||
+                          integrationStatusLoading ||
+                          !source.url.trim() ||
+                          (source.provider === 'caldav' &&
+                            (!source.username.trim() ||
+                              !(source.password?.trim() || source.passwordConfigured)))
+                        }
                       >
                         {calendarTestingSourceId === source.id
                           ? t('settings.integrations.calendarTesting')

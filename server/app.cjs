@@ -1813,7 +1813,7 @@ async function route(req, res, config, services, bluetooth) {
         const events = await services.caldavCalendars.fetchEvents(calendarId, start, end);
         sendJson(res, 200, { events }, { 'Cache-Control': 'no-store' });
       } catch {
-        sendJson(res, 502, { error: 'Could not retrieve events from the CalDAV calendar.' }, {
+        sendJson(res, 502, { error: 'Could not retrieve events from the selected calendar.' }, {
           'Cache-Control': 'no-store',
         });
       }
@@ -1831,7 +1831,29 @@ async function route(req, res, config, services, bluetooth) {
       }
       const submitted = normalizeCalendarSources([value.source])[0];
       if (!submitted) {
-        sendJson(res, 400, { error: 'Choose a CalDAV calendar source.' });
+        sendJson(res, 400, { error: 'Choose a calendar source.' });
+        return;
+      }
+      if (submitted.provider === 'ics') {
+        if (!submitted.url) {
+          sendJson(res, 400, { error: 'Enter an ICS feed URL.' });
+          return;
+        }
+        try {
+          sendJson(res, 200, await services.caldavCalendars.testSource(submitted), {
+            'Cache-Control': 'no-store',
+          });
+        } catch (error) {
+          sendJson(res, 502, {
+            error: error instanceof Error ? error.message : 'Could not retrieve the ICS feed.',
+          }, {
+            'Cache-Control': 'no-store',
+          });
+        }
+        return;
+      }
+      if (submitted.provider !== 'caldav') {
+        sendJson(res, 400, { error: 'Choose CalDAV or an ICS feed as the calendar source type.' });
         return;
       }
       const saved = config.calendarSources.find((item) => item.id === submitted.id);

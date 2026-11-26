@@ -1,4 +1,4 @@
-const { randomUUID } = require('crypto');
+const { createHash, randomUUID } = require('crypto');
 const { createDAVClient } = require('tsdav');
 const ICAL = require('ical.js');
 
@@ -102,6 +102,139 @@ function parseCalendarObject(object, calendar) {
       const status = String(component?.getFirstPropertyValue('status') || '').toUpperCase();
       return event.start && event.end && event.hasStableId && status !== 'CANCELLED';
     });
+}
+
+function icsCalendarId(sourceId) {
+  return `ics/${Buffer.from(sourceId).toString('base64url')}`;
+}
+
+function decodeIcsCalendarId(value) {
+  if (typeof value !== 'string') throw new Error('Choose an ICS calendar.');
+  const match = value.match(/^ics\/([A-Za-z0-9_-]+)$/u);
+  if (!match) throw new Error('Choose a valid ICS calendar.');
+  try {
+    const sourceId = Buffer.from(match[1], 'base64url').toString('utf8');
+    if (!sourceId) throw new Error('empty source id');
+    return sourceId;
+  } catch {
+    throw new Error('Choose a valid ICS calendar.');
+  }
+}
+
+function createIcsCalendar(source) {
+  let url;
+  try {
+    url = new URL(source.url);
+  } catch {
+    throw new Error('Enter a valid ICS feed URL.');
+  }
+  if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) {
+    throw new Error('Enter a valid ICS feed URL using http or https.');
+  }
+  if (!source.name || !source.name.trim()) throw new Error('Enter a name for the ICS calendar.');
+  return {
+    id: icsCalendarId(source.id),
+    name: source.name.trim(),
+    url: url.href,
+    sourceId: source.id,
+    sourceName: source.name.trim(),
+    provider: 'ics',
+    readOnly: true,
+  };
+}
+
+async function readIcsFeed(calendar, fetchImpl = globalThis.fetch) {
+  if (typeof fetchImpl !== 'function') throw new Error('ICS feed retrieval is unavailable.');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetchImpl(calendar.url, {
+      headers: { Accept: 'text/calendar, text/plain;q=0.9, */*;q=0.1' },
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    if (!response.ok) throw new Error(`The ICS feed returned HTTP ${response.status}.`);
+    const contentLength = Number(response.headers?.get?.('content-length'));
+    if (Number.isFinite(contentLength) && contentLength > 10 * 1024 * 1024) {
+      throw new Error('The ICS feed is larger than 10 MB.');
+    }
+    const data = await response.text();
+    if (Buffer.byteLength(data, 'utf8') > 10 * 1024 * 1024) {
+      throw new Error('The ICS feed is larger than 10 MB.');
+    }
+    const normalized = data.replace(/^\uFEFF/u, '').trim();
+    if (!/^BEGIN:VCALENDAR(?:\r?\n|$)/imu.test(normalized)) {
+      throw new Error('The URL did not return a valid iCalendar feed.');
+    }
+    return new ICAL.Component(ICAL.parse(normalized));
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function parseIcsFeed(component, calendar, start, end) {
+  const from = ICAL.Time.fromJSDate(new Date(start), true);
+  const to = ICAL.Time.fromJSDate(new Date(end), true);
+  const vevents = component.getAllSubcomponents('vevent');
+  const parsedEvents = vevents.map((vevent) => new ICAL.Event(vevent));
+  const result = [];
+  const maxOccurrencesPerSeries = 100000;
+
+  const appendEvent = (event, occurrenceStart, occurrenceEnd, recurrenceId = '') => {
+    const eventComponent = event.component;
+    const status = String(eventComponent.getFirstPropertyValue('status') || '').toUpperCase();
+    if (
+      status === 'CANCELLED' ||
+      !occurrenceStart ||
+      !occurrenceEnd ||
+      occurrenceStart.compare(to) >= 0 ||
+      occurrenceEnd.compare(from) <= 0
+    ) {
+      return;
+    }
+    const uid = event.uid || createHash('sha256').update(eventComponent.toString()).digest('hex');
+    const id = `ics:${Buffer.from(JSON.stringify([uid, recurrenceId])).toString('base64url')}`;
+    result.push({
+      id,
+      title: event.summary || 'Untitled',
+      start: timeValue(occurrenceStart),
+      end: timeValue(occurrenceEnd),
+      allDay: Boolean(occurrenceStart.isDate),
+      description: textValue(eventComponent, 'description'),
+      location: textValue(eventComponent, 'location'),
+      hasStableId: Boolean(event.uid),
+      calendarId: calendar.id,
+      calendarName: calendar.name,
+      color: calendar.color,
+      readOnly: true,
+    });
+  };
+
+  for (const event of parsedEvents) {
+    if (event.isRecurrenceException()) continue;
+    if (!event.isRecurring()) {
+      appendEvent(event, event.startDate, event.endDate);
+      continue;
+    }
+
+    const iterator = event.iterator();
+    let occurrence;
+    let occurrenceCount = 0;
+    while ((occurrence = iterator.next())) {
+      if (occurrence.compare(to) >= 0) break;
+      occurrenceCount += 1;
+      if (occurrenceCount > maxOccurrencesPerSeries) break;
+      const details = event.getOccurrenceDetails(occurrence);
+      const occurrenceEvent = details.item || event;
+      appendEvent(
+        occurrenceEvent,
+        details.startDate,
+        details.endDate,
+        occurrence.toString(),
+      );
+    }
+  }
+  return result.sort((a, b) => a.start.localeCompare(b.start));
 }
 
 function escapeIcsText(value) {
@@ -337,6 +470,14 @@ function createCaldavCalendarService(options = {}) {
     return calendars;
   }
 
+  function sourceByIcsId(sourceId) {
+    const source = getSources().find((item) => item.id === sourceId && item.provider === 'ics');
+    if (!source || !source.url) {
+      throw new Error('The ICS feed is no longer configured. Refresh the calendar list.');
+    }
+    return source;
+  }
+
   async function resolveCalendar(id) {
     const { sourceId, calendarUrl } = decodeCalendarId(id);
     const source = sourceById(sourceId);
@@ -348,8 +489,19 @@ function createCaldavCalendarService(options = {}) {
 
   return {
     async testSource(source) {
-      if (!source || typeof source !== 'object' || source.provider !== 'caldav') {
-        throw new Error('Choose CalDAV as the calendar source type.');
+      if (!source || typeof source !== 'object') {
+        throw new Error('Choose a calendar source.');
+      }
+      if (source.provider === 'ics') {
+        const calendar = createIcsCalendar(source);
+        await readIcsFeed(calendar, options.fetch || globalThis.fetch);
+        return {
+          calendars: [{ id: calendar.id, name: calendar.name }],
+          calendarCount: 1,
+        };
+      }
+      if (source.provider !== 'caldav') {
+        throw new Error('Choose CalDAV or an ICS feed as the calendar source type.');
       }
       if (!source.url || !source.username || !source.password) {
         throw new Error('Enter the CalDAV server URL, username, and password.');
@@ -359,12 +511,27 @@ function createCaldavCalendarService(options = {}) {
     },
 
     async listCalendars() {
-      const sources = getSources().filter((source) => source.provider === 'caldav');
-      const results = await Promise.allSettled(sources.map((source) => calendarsForSource(source)));
+      const sources = getSources().filter(
+        (source) => source.provider === 'caldav' || source.provider === 'ics',
+      );
+      const results = await Promise.allSettled(
+        sources.map((source) =>
+          source.provider === 'ics'
+            ? Promise.resolve([createIcsCalendar(source)])
+            : calendarsForSource(source),
+        ),
+      );
       return results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []));
     },
 
     async fetchEvents(id, start, end) {
+      if (typeof id === 'string' && id.startsWith('ics/')) {
+        const sourceId = decodeIcsCalendarId(id);
+        const source = sourceByIcsId(sourceId);
+        const calendar = createIcsCalendar(source);
+        const component = await readIcsFeed(calendar, options.fetch || globalThis.fetch);
+        return parseIcsFeed(component, calendar, start, end);
+      }
       const { calendar, client } = await resolveCalendar(id);
       const objects = await client.fetchCalendarObjects({
         calendar,

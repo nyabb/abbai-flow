@@ -6,6 +6,7 @@ import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
 import { useChoresMan } from './hooks/useChoresMan';
 import { resolveMemberForUser } from './api/chore-model';
+import { CHORESMAN_CALENDAR_PREFIX } from './api/choresman-calendar';
 import { choreIconForDisplay } from './api/chore-planner-view';
 import { WeekCalendar } from './components/WeekCalendar';
 import { PortraitAgenda } from './components/PortraitAgenda';
@@ -279,7 +280,9 @@ export function App() {
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
     if (event.readOnly) {
-      setActiveView('chores');
+      if (event.calendarId.startsWith(CHORESMAN_CALENDAR_PREFIX)) {
+        setActiveView('chores');
+      }
       return;
     }
     setEventDialog({ type: 'edit', event });

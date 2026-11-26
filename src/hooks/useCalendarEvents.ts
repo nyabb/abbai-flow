@@ -8,6 +8,7 @@ import {
   fetchCaldavEvents,
   listCaldavCalendars,
   updateCaldavEvent,
+  type CaldavCalendar,
 } from '../api/caldav-calendars';
 
 /** How many calendars are queried at the same time. */
@@ -31,6 +32,7 @@ async function loadCalendarEvents(
       calendarId: calendar.id,
       calendarName: calendar.name,
       color: calendar.color,
+      readOnly: calendar.readOnly || event.readOnly,
     }));
   } catch (error) {
     if (!isAbortError(error)) {
@@ -59,7 +61,7 @@ export function useCalendarEvents(colorOptions?: { calendarColors?: Record<strin
   );
 
   const fetchCalendars = useCallback(async () => {
-    let sources: Array<{ id: string; name: string }> = [];
+    let sources: CaldavCalendar[] = [];
     try {
       sources = await listCaldavCalendars();
     } catch (error) {
@@ -70,6 +72,7 @@ export function useCalendarEvents(colorOptions?: { calendarColors?: Record<strin
       id: calendar.id,
       name: calendar.name,
       color: resolveCalendarColor(calendar.id, index, colorOptionsRef.current),
+      readOnly: calendar.readOnly,
     }));
     calendarsRef.current = nextCalendars;
     setCalendars(nextCalendars);
