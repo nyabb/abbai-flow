@@ -4,6 +4,8 @@ import {
   createICloudReminder,
   deleteICloudReminder,
   fetchICloudRemindersList,
+  getCachedICloudRemindersList,
+  getCachedICloudRemindersLists,
   loadICloudRemindersLists,
   moveICloudReminderSection,
   updateICloudReminder,
@@ -105,7 +107,12 @@ export function GroceryView({
   taskListIds = [],
 }: GroceryViewProps) {
   const { t } = useTranslation();
-  const [icloudLists, setIcloudLists] = useState<UnifiedList[]>([]);
+  const cachedListCatalog = getCachedICloudRemindersLists();
+  const [icloudLists, setIcloudLists] = useState<UnifiedList[]>(() =>
+    (cachedListCatalog || [])
+      .filter((list) => !list.deleted && !list.isGroup)
+      .map((list) => ({ id: list.key, name: list.title, source: 'icloud' as const })),
+  );
   const [sections, setSections] = useState<ICloudReminderSection[]>([]);
   const [icloudItems, setIcloudItems] = useState<TodoItem[]>([]);
   const [localItems, setLocalItems] = useState<TodoItem[]>([]);
@@ -124,9 +131,9 @@ export function GroceryView({
     (listId: string) => setSelectedListIds((current) => ({ ...current, [tab]: listId })),
     [setSelectedListIds, tab],
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(cachedListCatalog == null);
   const [refreshing, setRefreshing] = useState(false);
-  const [listsLoaded, setListsLoaded] = useState(false);
+  const [listsLoaded, setListsLoaded] = useState(cachedListCatalog != null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
   const [newItemSectionID, setNewItemSectionID] = useState('');
@@ -158,7 +165,16 @@ export function GroceryView({
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    const cachedLists = getCachedICloudRemindersLists();
+    if (cachedLists) {
+      setIcloudLists(cachedLists
+        .filter((list) => !list.deleted && !list.isGroup)
+        .map((list) => ({ id: list.key, name: list.title, source: 'icloud' as const })));
+      setListsLoaded(true);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
     loadICloudRemindersLists()
       .then((result) => {
         if (cancelled) return;
@@ -220,8 +236,16 @@ export function GroceryView({
   const loadList = useCallback(async (listId: string, showRefreshIndicator = false) => {
     if (!listId) return;
     if (showRefreshIndicator) setRefreshing(true);
+    const cachedList = getCachedICloudRemindersList(listId);
+    if (cachedList) {
+      if (typeof cachedList.revision === 'number') listRevisions.current[listId] = cachedList.revision;
+      setIcloudItems(reminderItems(cachedList.reminders || []));
+      setSections(cachedList.sections || []);
+      setLoadError(null);
+      setLoading(false);
+    }
     const revision = listRevisions.current[listId];
-    if (revision == null) setLoading(true);
+    if (revision == null && !cachedList) setLoading(true);
     try {
       const result = await fetchICloudRemindersList(listId, revision);
       if (typeof result.revision === 'number') listRevisions.current[listId] = result.revision;

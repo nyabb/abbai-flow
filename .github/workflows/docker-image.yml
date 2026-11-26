@@ -9,6 +9,11 @@ name: Docker image
 
 on:
   workflow_call:
+    inputs:
+      release_tag:
+        description: Semantic release tag to build, such as v2.35.0
+        required: false
+        type: string
   push:
     branches: [main]
     tags: ['v*']
@@ -19,7 +24,7 @@ permissions:
   packages: write
 
 concurrency:
-  group: docker-image-${{ github.ref }}
+  group: docker-image-${{ inputs.release_tag || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,6 +32,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+
+      - name: Verify Docker release version
+        if: inputs.release_tag != '' || github.ref_type == 'tag'
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          release_version="${RELEASE_TAG#v}"
+          package_version="$(node -p 'require("./package.json").version')"
+          if [[ "$release_version" != "$package_version" ]]; then
+            echo "::error::Docker release tag $RELEASE_TAG does not match package.json version $package_version"
+            exit 1
+          fi
 
       # ghcr.io requires a lowercase path; repository owners may not be.
       - name: Resolve image name
@@ -51,12 +70,12 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=ref,event=branch,enable=${{ inputs.release_tag == '' }}
+            type=semver,pattern={{version}},value=${{ inputs.release_tag || github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.release_tag || github.ref_name }}
+            type=semver,pattern={{major}},value=${{ inputs.release_tag || github.ref_name }}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ inputs.release_tag != '' || github.ref_type == 'tag' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6

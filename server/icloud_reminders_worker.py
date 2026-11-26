@@ -22,6 +22,7 @@ import os
 import plistlib
 import sys
 import time
+import zlib
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -115,52 +116,26 @@ def _safe_section_value(value: Any, depth: int = 0) -> Any:
     return f"<{type(value).__name__}>"
 
 
-def _download_section_asset(raw_client: Any, asset: Any) -> dict[str, Any]:
-    """Download and safely summarize a CloudKit section metadata asset."""
+def _section_asset_cache_key(asset: Any) -> str | None:
     if not isinstance(asset, dict):
-        return {"state": "unavailable", "reason": "asset_metadata_missing"}
+        return None
+    for field_name in ("fileChecksum", "referenceChecksum"):
+        value = asset.get(field_name)
+        if isinstance(value, str) and value:
+            return f"{field_name}:{value}"
     url = asset.get("downloadURL")
-    if not isinstance(url, str):
-        return {"state": "unavailable", "reason": "download_url_missing"}
-    try:
-        parsed_url = urlsplit(url)
-        hostname = (parsed_url.hostname or "").lower()
-    except ValueError:
-        return {"state": "skipped", "reason": "invalid_download_url"}
-    if parsed_url.scheme != "https" or not (hostname == "icloud-content.com" or hostname.endswith(".icloud-content.com")):
-        return {"state": "skipped", "reason": "untrusted_download_host"}
-    declared_size = asset.get("size")
-    if isinstance(declared_size, int) and declared_size > _MAX_SECTION_ASSET_BYTES:
-        return {"state": "skipped", "reason": "asset_too_large", "declaredBytes": declared_size}
-    asset_client = getattr(raw_client, "_client", None)
-    downloader = getattr(asset_client, "download_asset_stream", None)
-    if not callable(downloader):
-        downloader = getattr(raw_client, "download_asset_stream", None)
-    if not callable(downloader):
-        return {"state": "unavailable", "reason": "asset_download_not_supported"}
+    return f"url:{_short_hash(url)}" if isinstance(url, str) and url else None
 
-    chunks: list[bytes] = []
-    total_bytes = 0
-    try:
-        for chunk in downloader(url, chunk_size=65_536):
-            if not isinstance(chunk, bytes):
-                continue
-            total_bytes += len(chunk)
-            if total_bytes > _MAX_SECTION_ASSET_BYTES:
-                return {"state": "skipped", "reason": "asset_too_large", "downloadedBytes": total_bytes}
-            chunks.append(chunk)
-    except Exception as exc:
-        return {"state": "download_failed", "errorType": type(exc).__name__}
 
-    payload = b"".join(chunks)
+def _summarize_section_asset_payload(payload: bytes) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "state": "downloaded",
         "byteCount": len(payload),
         "sha256": hashlib.sha256(payload).hexdigest(),
     }
     try:
-        decoded_json = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+        decoded_json = _decode_section_asset_json(payload)
+    except SectionAssetDecodeError:
         decoded_json = None
     if decoded_json is not None:
         summary["decodedJson"] = _full_section_value(decoded_json)
@@ -184,7 +159,60 @@ def _download_section_asset(raw_client: Any, asset: Any) -> dict[str, Any]:
     return summary
 
 
-def _download_section_asset_bytes(raw_client: Any, asset: Any) -> bytes:
+def _download_section_asset(
+    raw_client: Any,
+    asset: Any,
+    payload_cache: dict[str, bytes] | None = None,
+) -> dict[str, Any]:
+    """Download and safely summarize a CloudKit section metadata asset."""
+    if not isinstance(asset, dict):
+        return {"state": "unavailable", "reason": "asset_metadata_missing"}
+    url = asset.get("downloadURL")
+    if not isinstance(url, str):
+        return {"state": "unavailable", "reason": "download_url_missing"}
+    try:
+        parsed_url = urlsplit(url)
+        hostname = (parsed_url.hostname or "").lower()
+    except ValueError:
+        return {"state": "skipped", "reason": "invalid_download_url"}
+    if parsed_url.scheme != "https" or not (hostname == "icloud-content.com" or hostname.endswith(".icloud-content.com")):
+        return {"state": "skipped", "reason": "untrusted_download_host"}
+    declared_size = asset.get("size")
+    if isinstance(declared_size, int) and declared_size > _MAX_SECTION_ASSET_BYTES:
+        return {"state": "skipped", "reason": "asset_too_large", "declaredBytes": declared_size}
+    cache_key = _section_asset_cache_key(asset)
+    payload = payload_cache.get(cache_key) if payload_cache is not None and cache_key else None
+    if not isinstance(payload, bytes):
+        asset_client = getattr(raw_client, "_client", None)
+        downloader = getattr(asset_client, "download_asset_stream", None)
+        if not callable(downloader):
+            downloader = getattr(raw_client, "download_asset_stream", None)
+        if not callable(downloader):
+            return {"state": "unavailable", "reason": "asset_download_not_supported"}
+
+        chunks: list[bytes] = []
+        total_bytes = 0
+        try:
+            for chunk in downloader(url, chunk_size=65_536):
+                if not isinstance(chunk, bytes):
+                    continue
+                total_bytes += len(chunk)
+                if total_bytes > _MAX_SECTION_ASSET_BYTES:
+                    return {"state": "skipped", "reason": "asset_too_large", "downloadedBytes": total_bytes}
+                chunks.append(chunk)
+        except Exception as exc:
+            return {"state": "download_failed", "errorType": type(exc).__name__}
+        payload = b"".join(chunks)
+        if payload_cache is not None and cache_key:
+            payload_cache[cache_key] = payload
+    return _summarize_section_asset_payload(payload)
+
+
+def _download_section_asset_bytes(
+    raw_client: Any,
+    asset: Any,
+    payload_cache: dict[str, bytes] | None = None,
+) -> bytes:
     """Fetch a section asset for a read/modify/write operation."""
     if not isinstance(asset, dict):
         raise ValueError("The section membership asset is missing.")
@@ -200,20 +228,33 @@ def _download_section_asset_bytes(raw_client: Any, asset: Any) -> bytes:
     declared_size = asset.get("size")
     if isinstance(declared_size, int) and declared_size > _MAX_SECTION_ASSET_BYTES:
         raise ValueError("The section membership asset is too large.")
+    cache_key = _section_asset_cache_key(asset)
+    cached_payload = payload_cache.get(cache_key) if payload_cache is not None and cache_key else None
+    if isinstance(cached_payload, bytes):
+        return cached_payload
     cloudkit_client = getattr(raw_client, "_client", None)
     downloader = getattr(cloudkit_client, "download_asset_stream", None)
-    if not callable(downloader):
-        raise RuntimeError("This PyICloud version cannot download section assets.")
-    chunks: list[bytes] = []
-    total_bytes = 0
-    for chunk in downloader(url, chunk_size=65_536):
-        if not isinstance(chunk, bytes):
-            continue
-        total_bytes += len(chunk)
-        if total_bytes > _MAX_SECTION_ASSET_BYTES:
-            raise ValueError("The section membership asset is too large.")
-        chunks.append(chunk)
-    return b"".join(chunks)
+    if callable(downloader):
+        chunks: list[bytes] = []
+        total_bytes = 0
+        for chunk in downloader(url, chunk_size=65_536):
+            if not isinstance(chunk, bytes):
+                continue
+            total_bytes += len(chunk)
+            if total_bytes > _MAX_SECTION_ASSET_BYTES:
+                raise ValueError("The section membership asset is too large.")
+            chunks.append(chunk)
+        payload = b"".join(chunks)
+    else:
+        downloader = getattr(raw_client, "download_asset_bytes", None)
+        if not callable(downloader):
+            raise RuntimeError("This PyICloud version cannot download section assets.")
+        payload = downloader(url)
+        if not isinstance(payload, bytes) or len(payload) > _MAX_SECTION_ASSET_BYTES:
+            raise ValueError("The section membership asset is too large or invalid.")
+    if payload_cache is not None and cache_key:
+        payload_cache[cache_key] = payload
+    return payload
 
 
 class SectionMutationError(RuntimeError):
@@ -225,12 +266,14 @@ class SectionMutationError(RuntimeError):
         *,
         apple_error_code: str | None = None,
         http_status: int | None = None,
+        failure_detail: str | None = None,
         message: str = "iCloud could not save the section change. Refresh the list and try again.",
     ) -> None:
         super().__init__(message)
         self.stage = stage
         self.apple_error_code = _safe_cloudkit_error_code(apple_error_code)
         self.http_status = http_status if isinstance(http_status, int) and 100 <= http_status <= 599 else None
+        self.failure_detail = _safe_cloudkit_error_code(failure_detail)
 
 
 def _safe_cloudkit_error_code(value: Any) -> str | None:
@@ -252,6 +295,7 @@ def _section_mutation_error(exc: Exception, stage: str) -> SectionMutationError:
         stage,
         apple_error_code=_safe_cloudkit_error_code(code),
         http_status=status,
+        failure_detail=getattr(exc, "diagnostic_code", None),
     )
 
 
@@ -270,11 +314,58 @@ def _section_mutation_failure(
         result["appleErrorCode"] = exc.apple_error_code
     if exc.http_status:
         result["httpStatus"] = exc.http_status
+    if exc.failure_detail:
+        result["failureDetail"] = exc.failure_detail
     if reminder_id:
         result["partial"] = True
         result["reminderId"] = reminder_id
         result["error"] = "The reminder was created, but iCloud could not move it into the selected section. Check the list before retrying."
     return result
+
+
+class SectionAssetDecodeError(ValueError):
+    """A safe section-asset decoding failure code."""
+
+    def __init__(self, detail: str) -> None:
+        super().__init__("Apple's section membership asset has an unsupported format.")
+        self.diagnostic_code = detail
+
+
+def _decode_section_asset_json(payload: bytes) -> Any:
+    """Decode a JSON asset, accepting plain, zlib, and gzip encoded bytes."""
+    candidates = [payload]
+    for window_bits in (zlib.MAX_WBITS, zlib.MAX_WBITS | 16):
+        try:
+            decompressor = zlib.decompressobj(window_bits)
+            decoded = decompressor.decompress(payload, _MAX_SECTION_ASSET_BYTES + 1)
+            if len(decoded) > _MAX_SECTION_ASSET_BYTES or decompressor.unconsumed_tail:
+                raise SectionAssetDecodeError("decompressed_asset_too_large")
+            decoded += decompressor.flush(_MAX_SECTION_ASSET_BYTES + 1 - len(decoded))
+            if len(decoded) <= _MAX_SECTION_ASSET_BYTES:
+                candidates.append(decoded)
+        except zlib.error:
+            continue
+    if not payload:
+        raise SectionAssetDecodeError("empty_asset")
+    last_detail = "invalid_json"
+    for candidate in candidates:
+        try:
+            document = json.loads(candidate.decode("utf-8"))
+        except UnicodeDecodeError:
+            last_detail = "invalid_utf8"
+            continue
+        except json.JSONDecodeError:
+            continue
+        return document
+    raise SectionAssetDecodeError(last_detail)
+
+
+def _decode_section_memberships(payload: bytes) -> dict[str, Any]:
+    """Decode the JSON membership asset, including compressed CloudKit payloads."""
+    document = _decode_section_asset_json(payload)
+    if not isinstance(document, dict) or not isinstance(document.get("memberships"), list):
+        raise SectionAssetDecodeError("unsupported_membership_schema")
+    return document
 
 
 def _full_section_value(
@@ -368,6 +459,30 @@ def _cloudkit_response_records(response: Any) -> list[dict[str, Any]]:
             if isinstance(zone, dict) and isinstance(zone.get("records"), list):
                 records.extend(record for record in zone["records"] if isinstance(record, dict))
     return records
+
+
+def _section_asset_fingerprint(record: Any) -> str:
+    fields = record.get("fields") if isinstance(record, dict) else None
+    if not isinstance(fields, dict):
+        return ""
+    relevant: dict[str, Any] = {}
+    for field_name in (
+        "MembershipsOfRemindersInSectionsChecksum",
+        "MembershipsOfRemindersInSectionsAsData",
+        "SectionIDsOrderingAsData",
+    ):
+        value = fields.get(field_name)
+        if isinstance(value, dict) and "value" in value:
+            value = value.get("value")
+        if field_name.endswith("AsData") and isinstance(value, dict):
+            value = {
+                key: value.get(key)
+                for key in ("fileChecksum", "referenceChecksum", "size")
+                if value.get(key) is not None
+            }
+        relevant[field_name] = value
+    encoded = json.dumps(relevant, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _section_ids_from_summaries(records: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
@@ -574,7 +689,6 @@ def _move_reminder_section_impl(
     """Update Apple's list-level membership asset using CloudKit change tags."""
     selected_list_ref["section_mutation_stage"] = "list_record_context"
     record_id = str(getattr(reminder_list, "id", ""))
-    _log_selected_section_assets(selected_list_ref, list_key, "", record_id)
     context = selected_list_ref.get("section_query_context")
     captured = context if isinstance(context, dict) else {}
     raw_client = captured.get("raw_client")
@@ -601,14 +715,27 @@ def _move_reminder_section_impl(
             raise ValueError("Choose an existing section in this iCloud Reminders list.")
 
     selected_list_ref["section_mutation_stage"] = "membership_asset_download"
-    payload = _download_section_asset_bytes(raw_client, asset)
+    payload_cache = selected_list_ref.get("section_asset_payloads")
+    payload_cache = payload_cache if isinstance(payload_cache, dict) else None
+    cache_key = _section_asset_cache_key(asset)
+    reused_payload = bool(cache_key and isinstance(payload_cache.get(cache_key), bytes)) if payload_cache is not None else False
+    payload = _download_section_asset_bytes(
+        raw_client,
+        asset,
+        payload_cache,
+    )
     selected_list_ref["section_mutation_stage"] = "membership_asset_decode"
     try:
-        document = json.loads(payload.decode("utf-8"))
-    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError("Apple's section membership asset could not be decoded safely.") from exc
-    if not isinstance(document, dict) or not isinstance(document.get("memberships"), list):
-        raise RuntimeError("Apple's section membership asset has an unsupported format.")
+        document = _decode_section_memberships(payload)
+    except SectionAssetDecodeError:
+        if not reused_payload or payload_cache is None or cache_key is None:
+            raise
+        # Avoid retrying a stale/colliding local asset cache entry once. CloudKit
+        # asset URLs are scoped to this record response, so a fresh download is
+        # the safest recovery before refusing the mutation.
+        payload_cache.pop(cache_key, None)
+        payload = _download_section_asset_bytes(raw_client, asset, payload_cache)
+        document = _decode_section_memberships(payload)
 
     memberships = [
         membership
@@ -757,6 +884,7 @@ def _cloudkit_record_summaries(
     response: Any,
     selected_record_id_hash: str | None = None,
     raw_client: Any = None,
+    asset_payload_cache: dict[str, bytes] | None = None,
 ) -> tuple[int, list[dict[str, Any]], list[dict[str, Any]]]:
     """Summarize raw CloudKit records, exposing section candidates only."""
     records = _cloudkit_response_records(response)
@@ -805,7 +933,11 @@ def _cloudkit_record_summaries(
                     normalized_name,
                     value,
                     asset_downloader=(
-                        lambda asset, _raw_client=raw_client: _download_section_asset(_raw_client, asset)
+                        lambda asset, _raw_client=raw_client, _payload_cache=asset_payload_cache: _download_section_asset(
+                            _raw_client,
+                            asset,
+                            _payload_cache,
+                        )
                     ) if matches_selected_list and raw_client is not None else None,
                 )
                 if len(candidates) >= _MAX_SECTION_CANDIDATES:
@@ -844,11 +976,13 @@ def _log_selected_section_assets(
         {"records": [record]},
         selected_record_id_hash=selected_record_id_hash,
         raw_client=raw_client,
+        asset_payload_cache=selected_list_ref.setdefault("section_asset_payloads", {}),
     )
     section_ids, ordered_section_ids = _section_ids_from_summaries(records)
     selected_list_ref["section_ids"] = section_ids
     selected_list_ref["ordered_section_ids"] = ordered_section_ids
     selected_list_ref["section_memberships"] = _section_memberships_from_summaries(records)
+    selected_list_ref["section_asset_fingerprint"] = _section_asset_fingerprint(record)
     selected_list_ref["section_query_context"] = captured
     return section_ids
 
@@ -941,6 +1075,11 @@ def inspect_cloudkit_responses(
                 response_to_summarize,
                 selected_record_id_hash=selected_record_id_hash,
                 raw_client=_raw_client,
+                asset_payload_cache=(
+                    selected_list_ref.setdefault("section_asset_payloads", {})
+                    if selected_list_ref is not None
+                    else None
+                ),
             )
             if selected_list_ref is not None and selected_record_id_hash:
                 selected_summaries = [
@@ -956,6 +1095,10 @@ def inspect_cloudkit_responses(
                         selected_summaries
                     )
                     captured = selected_list_ref.get("section_records", {}).get(selected_record_id_hash)
+                    if isinstance(captured, dict) and isinstance(captured.get("record"), dict):
+                        selected_list_ref["section_asset_fingerprint"] = _section_asset_fingerprint(
+                            captured["record"]
+                        )
                     if isinstance(captured, dict):
                         selected_list_ref["section_query_context"] = captured
             if lookup_record_type:
@@ -1330,6 +1473,84 @@ def _apply_reminder_change(event: Any) -> None:
         _bump_cache_revision(cache)
 
 
+def _cloudkit_change_record_dict(record: Any) -> dict[str, Any]:
+    if isinstance(record, dict):
+        return record
+    value = json_value(record)
+    return value if isinstance(value, dict) else {}
+
+
+def _invalidate_list_metadata_change(record: Any) -> None:
+    """Invalidate only the list/section snapshots touched by a CloudKit delta."""
+    global _REMINDER_LIST_CATALOG_DIRTY
+    data = _cloudkit_change_record_dict(record)
+    record_type = str(data.get("recordType") or getattr(record, "recordType", ""))
+    record_name = str(data.get("recordName") or getattr(record, "recordName", ""))
+    normalized_name = _normalized_record_identifier(record_name)
+    normalized_type = record_type.lower()
+
+    if normalized_type == "list" or record_name.lower().startswith("list/"):
+        _REMINDER_LIST_CATALOG_DIRTY = True
+        for cache in _REMINDER_LIST_CACHE.values():
+            route = cache.get("route")
+            if not isinstance(route, tuple) or not route or _normalized_record_identifier(route[-1]) != normalized_name:
+                continue
+            cache["sections_loaded"] = False
+            _bump_cache_revision(cache)
+        return
+
+    is_section = normalized_type == "listsection" or record_name.lower().startswith("listsection/")
+    if not is_section:
+        return
+    section_id = normalized_name
+    for cache in _REMINDER_LIST_CACHE.values():
+        response = cache.get("response")
+        lists = response.get("lists", []) if isinstance(response, dict) else []
+        if not lists or not isinstance(lists[0], dict):
+            continue
+        summary = lists[0]
+        section_ids = {
+            _normalized_record_identifier(section.get("id"))
+            for section in summary.get("sections", [])
+            if isinstance(section, dict) and isinstance(section.get("id"), str)
+        }
+        reminder_section_ids = {
+            _normalized_record_identifier(reminder.get("sectionID"))
+            for reminder in summary.get("reminders", [])
+            if isinstance(reminder, dict) and isinstance(reminder.get("sectionID"), str)
+        }
+        if section_id in section_ids or section_id in reminder_section_ids:
+            cache["sections_loaded"] = False
+            _bump_cache_revision(cache)
+
+
+def _read_list_metadata_changes(reminders_service: Any, since: str) -> bool:
+    """Read list and ListSection records from the same zone delta cursor."""
+    reads = getattr(reminders_service, "_reads", None)
+    iterator = getattr(reads, "_iter_zone_change_pages", None)
+    if not callable(iterator):
+        return False
+    desired_keys = [
+        "Name",
+        "Deleted",
+        "ReminderIDs",
+        "MembershipsOfRemindersInSectionsAsData",
+        "MembershipsOfRemindersInSectionsChecksum",
+        "SectionIDsOrderingAsData",
+        "DisplayName",
+        "CanonicalName",
+    ]
+    for page in iterator(
+        desired_record_types=["List", "ListSection"],
+        desired_keys=desired_keys,
+        sync_token=since,
+        reverse=False,
+    ):
+        for record in getattr(page, "records", []) or []:
+            _invalidate_list_metadata_change(record)
+    return True
+
+
 def _read_reminder_changes(reminders_service: Any, since: str | None) -> bool:
     """Advance the account-wide cursor and apply only changed reminders to cached lists."""
     global _REMINDER_SYNC_CURSOR, _REMINDER_LIST_CATALOG_DIRTY
@@ -1338,11 +1559,14 @@ def _read_reminder_changes(reminders_service: Any, since: str | None) -> bool:
     try:
         next_cursor = reminders_service.sync_cursor()
         if since and since != next_cursor:
-            _REMINDER_LIST_CATALOG_DIRTY = True
-            for cache in _REMINDER_LIST_CACHE.values():
-                cache["sections_loaded"] = False
             for event in reminders_service.iter_changes(since=since):
                 _apply_reminder_change(event)
+            if not _read_list_metadata_changes(reminders_service, since):
+                # Pinned PyICloud exposes the zone-page reader. If it is absent,
+                # fall back conservatively so the cache cannot hide metadata edits.
+                _REMINDER_LIST_CATALOG_DIRTY = True
+                for cache in _REMINDER_LIST_CACHE.values():
+                    cache["sections_loaded"] = False
         _REMINDER_SYNC_CURSOR = next_cursor
         return True
     except Exception:
@@ -1376,6 +1600,7 @@ def _cache_list_response(
     reminder_list: Any,
     *,
     sections_loaded: bool,
+    section_asset_fingerprint: str | None = None,
 ) -> None:
     revision = _next_reminder_revision()
     cached_response = json.loads(json.dumps(response, ensure_ascii=False))
@@ -1385,6 +1610,7 @@ def _cache_list_response(
         "route": _list_route(reminder_list),
         "sections_loaded": sections_loaded,
         "revision": revision,
+        "section_asset_fingerprint": section_asset_fingerprint or "",
     }
 
 
@@ -1510,6 +1736,7 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                 {key: value for key, value in result.items() if key != "decodedAppleSample"},
                 reminder_list,
                 sections_loaded=True,
+                section_asset_fingerprint=selected_list_ref.get("section_asset_fingerprint"),
             )
         return result
     except LookupError as exc:
@@ -1956,6 +2183,12 @@ for line in sys.stdin:
             state=result.get("state"),
             error_code=result.get("errorCode"),
             failure_stage=result.get("failureStage"),
+            failure_detail=result.get("failureDetail"),
+            error_detail=(
+                str(result.get("error"))[:200]
+                if result.get("errorCode") == "invalid_request" and result.get("error")
+                else None
+            ),
             apple_error_code=result.get("appleErrorCode"),
             http_status=result.get("httpStatus"),
             partial=result.get("partial"),

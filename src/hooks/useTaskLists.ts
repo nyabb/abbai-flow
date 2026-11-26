@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   fetchICloudRemindersTaskLists,
+  getCachedICloudRemindersLists,
+  getCachedICloudRemindersTaskLists,
   loadICloudRemindersLists,
   updateICloudReminder,
   type ICloudReminder,
@@ -33,6 +35,24 @@ function isGroceryList(name: string): boolean {
   return GROCERY_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
+function selectedTaskListKeys(
+  available: Array<{ key: string; title: string; deleted: boolean; isGroup: boolean }>,
+  configuredGroceryIds: string[],
+  configuredTaskIds: string[],
+): string[] {
+  const active = available.filter((list) => !list.deleted && !list.isGroup);
+  const availableIds = new Set(active.map((list) => list.key));
+  const groceryIds = new Set(configuredGroceryIds.filter((id) => availableIds.has(id)));
+  const explicitTaskIds = configuredTaskIds.filter((id) => availableIds.has(id));
+  const selected = explicitTaskIds.length > 0
+    ? active.filter((list) => explicitTaskIds.includes(list.key) && !groceryIds.has(list.key))
+    : active.filter((list) =>
+        !groceryIds.has(list.key) &&
+        !(groceryIds.size === 0 && isGroceryList(list.title)),
+      );
+  return selected.map((list) => list.key);
+}
+
 function isToday(value: string | null | undefined): boolean {
   if (!value) return false;
   const date = new Date(value);
@@ -51,14 +71,24 @@ export function useTaskLists(
   refreshKey = 0,
 ) {
   const { getTasksForList, toggleTask } = useLocalTasks();
-  const [reminders, setReminders] = useState<Array<{ listKey: string; reminder: ICloudReminder }>>([]);
-  const [activeListKeys, setActiveListKeys] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const revisions = useRef<Record<string, number>>({});
-  const cachedListKeys = useRef(new Set<string>());
-  const activeListKeysRef = useRef<string[]>([]);
-  cachedListKeys.current = new Set(reminders.map((item) => item.listKey));
-  activeListKeysRef.current = activeListKeys;
+  const initialCatalog = getCachedICloudRemindersLists();
+  const initialListKeys = selectedTaskListKeys(
+    initialCatalog || [],
+    groceryListIds,
+    taskListIds,
+  );
+  const initialTaskCache = getCachedICloudRemindersTaskLists(initialListKeys);
+  const [reminders, setReminders] = useState<Array<{ listKey: string; reminder: ICloudReminder }>>(() =>
+    initialTaskCache.lists.flatMap((list) => (list.reminders || [])
+      .filter((reminder) => !reminder.deleted)
+      .map((reminder) => ({ listKey: list.key, reminder }))),
+  );
+  const [activeListKeys, setActiveListKeys] = useState<string[]>(initialListKeys);
+  const [loading, setLoading] = useState(() => initialListKeys.some((key) =>
+    !initialTaskCache.lists.some((list) => list.key === key),
+  ));
+  const revisions = useRef<Record<string, number>>(initialTaskCache.revisions);
+  const cachedListKeys = useRef(new Set(initialTaskCache.lists.map((list) => list.key)));
 
   // Depend on list contents rather than array identity; callers can pass inline defaults.
   const groceryKey = groceryListIds.join('|');
@@ -83,8 +113,10 @@ export function useTaskLists(
         if (cancelled) return;
         if (result.revisions) {
           revisions.current = { ...revisions.current, ...result.revisions };
+          for (const key of Object.keys(result.revisions)) cachedListKeys.current.add(key);
         }
         const changedLists = result.lists || [];
+        for (const list of changedLists) cachedListKeys.current.add(list.key);
         if (initial || result.changed) {
           const changedKeys = new Set(changedLists.map((list) => list.key));
           setReminders((current) => [
@@ -100,24 +132,30 @@ export function useTaskLists(
     }
 
     async function initialize() {
-      setLoading((current) => current || activeListKeysRef.current.length === 0);
       try {
         const listResult = await loadICloudRemindersLists();
         if (cancelled) return;
         const available = (listResult.lists || []).filter(
           (list) => !list.deleted && !list.isGroup,
         );
-        const availableIds = new Set(available.map((list) => list.key));
-        const groceryIds = new Set(configuredGroceryIds.filter((id) => availableIds.has(id)));
-        const explicitTaskIds = configuredTaskIds.filter((id) => availableIds.has(id));
-        const selected = explicitTaskIds.length > 0
-          ? available.filter((list) => explicitTaskIds.includes(list.key) && !groceryIds.has(list.key))
-          : available.filter((list) =>
-              !groceryIds.has(list.key) &&
-              !(groceryIds.size === 0 && isGroceryList(list.title)),
-            );
-        requestedListKeys = selected.map((list) => list.key);
+        requestedListKeys = selectedTaskListKeys(
+          available,
+          configuredGroceryIds,
+          configuredTaskIds,
+        );
         setActiveListKeys(requestedListKeys);
+        const cached = getCachedICloudRemindersTaskLists(requestedListKeys);
+        revisions.current = { ...revisions.current, ...cached.revisions };
+        for (const list of cached.lists) cachedListKeys.current.add(list.key);
+        if (cached.lists.length > 0) {
+          const cachedKeys = new Set(cached.lists.map((list) => list.key));
+          setReminders((current) => [
+            ...current.filter((item) => !cachedKeys.has(item.listKey)),
+            ...cached.lists.flatMap((list) => (list.reminders || [])
+              .filter((reminder) => !reminder.deleted)
+              .map((reminder) => ({ listKey: list.key, reminder }))),
+          ]);
+        }
         setLoading(requestedListKeys.some((key) => !cachedListKeys.current.has(key)));
         await fetchTasks(true);
       } catch (error) {
@@ -191,7 +229,8 @@ export function useTaskLists(
           : item,
       ));
       try {
-        await updateICloudReminder(listKey, reminder.id, { completed });
+        const result = await updateICloudReminder(listKey, reminder.id, { completed });
+        if (typeof result.revision === 'number') revisions.current[listKey] = result.revision;
       } catch (error) {
         console.warn('Failed to toggle iCloud reminder:', error);
         setReminders((current) => current.map((item) =>
