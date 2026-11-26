@@ -1,3 +1,10 @@
+# [2.39.0](https://github.com/nyabb/abbai-flow/compare/v2.38.1...v2.39.0) (2026-11-26)
+
+
+### Features
+
+* add screen saver photo library ([f8c16f7](https://github.com/nyabb/abbai-flow/commit/f8c16f7a8220ace239ff7a3b5bb5f73356f58896))
+
 ## [2.38.1](https://github.com/nyabb/abbai-flow/compare/v2.38.0...v2.38.1) (2026-11-26)
 
 
