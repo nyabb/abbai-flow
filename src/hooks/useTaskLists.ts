@@ -52,8 +52,13 @@ export function useTaskLists(
 ) {
   const { getTasksForList, toggleTask } = useLocalTasks();
   const [reminders, setReminders] = useState<Array<{ listKey: string; reminder: ICloudReminder }>>([]);
+  const [activeListKeys, setActiveListKeys] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const revisions = useRef<Record<string, number>>({});
+  const cachedListKeys = useRef(new Set<string>());
+  const activeListKeysRef = useRef<string[]>([]);
+  cachedListKeys.current = new Set(reminders.map((item) => item.listKey));
+  activeListKeysRef.current = activeListKeys;
 
   // Depend on list contents rather than array identity; callers can pass inline defaults.
   const groceryKey = groceryListIds.join('|');
@@ -61,17 +66,20 @@ export function useTaskLists(
 
   useEffect(() => {
     let cancelled = false;
-    let selectedListKeys: string[] = [];
+    let requestedListKeys: string[] = [];
     const configuredGroceryIds = groceryKey ? groceryKey.split('|') : [];
     const configuredTaskIds = taskKey ? taskKey.split('|') : [];
 
     async function fetchTasks(initial = false) {
-      if (!selectedListKeys.length) {
-        if (initial && !cancelled) setReminders([]);
+      if (!requestedListKeys.length) {
+        if (initial && !cancelled) {
+          setActiveListKeys([]);
+          setLoading(false);
+        }
         return;
       }
       try {
-        const result = await fetchICloudRemindersTaskLists(selectedListKeys, revisions.current);
+        const result = await fetchICloudRemindersTaskLists(requestedListKeys, revisions.current);
         if (cancelled) return;
         if (result.revisions) {
           revisions.current = { ...revisions.current, ...result.revisions };
@@ -92,9 +100,7 @@ export function useTaskLists(
     }
 
     async function initialize() {
-      setLoading(true);
-      setReminders([]);
-      revisions.current = {};
+      setLoading((current) => current || activeListKeysRef.current.length === 0);
       try {
         const listResult = await loadICloudRemindersLists();
         if (cancelled) return;
@@ -110,7 +116,9 @@ export function useTaskLists(
               !groceryIds.has(list.key) &&
               !(groceryIds.size === 0 && isGroceryList(list.title)),
             );
-        selectedListKeys = selected.map((list) => list.key);
+        requestedListKeys = selected.map((list) => list.key);
+        setActiveListKeys(requestedListKeys);
+        setLoading(requestedListKeys.some((key) => !cachedListKeys.current.has(key)));
         await fetchTasks(true);
       } catch (error) {
         console.warn('Failed to fetch iCloud task lists:', error);
@@ -135,6 +143,7 @@ export function useTaskLists(
   }, [groceryKey, taskKey, refreshKey]);
 
   const items: TaskTodoItem[] = useMemo(() => {
+    const selectedKeys = new Set(activeListKeys);
     const local: TaskTodoItem[] = getTasksForList('abbai-flow-todo')
       .filter((task) => task.status === 'needs_action' || isToday(task.completedAt))
       .map((task) => ({
@@ -144,6 +153,7 @@ export function useTaskLists(
         listId: 'abbai-flow-todo',
       }));
     const fromICloud: TaskTodoItem[] = reminders
+      .filter(({ listKey }) => selectedKeys.has(listKey))
       .filter(({ reminder }) => reminder.completed
         ? isToday(reminder.completed_date)
         : true)
@@ -160,7 +170,7 @@ export function useTaskLists(
       seen.add(key);
       return true;
     });
-  }, [getTasksForList, reminders]);
+  }, [activeListKeys, getTasksForList, reminders]);
 
   const toggleItem = useCallback(
     async (uid: string, currentStatus: string, listId?: string) => {

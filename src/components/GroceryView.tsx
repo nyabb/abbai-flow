@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import {
   createICloudReminder,
   deleteICloudReminder,
@@ -125,6 +125,7 @@ export function GroceryView({
     [setSelectedListIds, tab],
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [listsLoaded, setListsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -216,8 +217,9 @@ export function GroceryView({
   const uncheckedItems = useMemo(() => items.filter((item) => item.status === 'needs_action'), [items]);
   const checkedItems = useMemo(() => items.filter((item) => item.status === 'completed'), [items]);
 
-  const loadList = useCallback(async (listId: string) => {
+  const loadList = useCallback(async (listId: string, showRefreshIndicator = false) => {
     if (!listId) return;
+    if (showRefreshIndicator) setRefreshing(true);
     const revision = listRevisions.current[listId];
     if (revision == null) setLoading(true);
     try {
@@ -234,6 +236,7 @@ export function GroceryView({
       setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
     } finally {
       setLoading(false);
+      if (showRefreshIndicator) setRefreshing(false);
     }
   }, [t]);
 
@@ -561,11 +564,24 @@ export function GroceryView({
           </button>
         </div>
         <div className="grocery-view-selector">
-          <select className="grocery-view-select" value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)}>
+          <select className={`grocery-view-select${tab === 'tasks' && selectedList?.source === 'icloud' ? ' grocery-view-select--refreshable' : ''}`} value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)}>
             {allLists.length === 0 && <option value="">{t('grocery.noListsAvailable')}</option>}
             {allLists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}
           </select>
           <ChevronDown size={16} className="grocery-view-select-icon" />
+          {tab === 'tasks' && selectedList?.source === 'icloud' && (
+            <button
+              type="button"
+              className="grocery-view-refresh"
+              onClick={() => void loadList(selectedListId, true)}
+              disabled={refreshing || loading}
+              aria-label={t('chores.refresh')}
+              title={t('chores.refresh')}
+              aria-busy={refreshing}
+            >
+              <RefreshCw size={18} className={refreshing ? 'is-refreshing' : undefined} />
+            </button>
+          )}
         </div>
       </div>
 

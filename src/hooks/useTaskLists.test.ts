@@ -154,4 +154,37 @@ describe('useTaskLists', () => {
     );
     expect(result.current.items).toHaveLength(1);
   });
+
+  it('keeps the cached task snapshot and revision when a refresh finds no server changes', async () => {
+    iCloudMocks.fetchTaskLists
+      .mockResolvedValueOnce({
+        ok: true,
+        state: 'fetched',
+        changed: true,
+        revisions: { 'icloud-tasks-a': 42 },
+        lists: [{ key: 'icloud-tasks-a', reminders: [reminderFor('icloud-tasks-a')] }],
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        state: 'unchanged',
+        changed: false,
+        revisions: { 'icloud-tasks-a': 42 },
+        lists: [],
+      });
+
+    const { result, rerender } = renderHook(
+      ({ refreshKey }: { refreshKey: number }) => useTaskLists([], ['icloud-tasks-a'], refreshKey),
+      { initialProps: { refreshKey: 0 } },
+    );
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
+
+    rerender({ refreshKey: 1 });
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(2));
+
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenLastCalledWith(
+      ['icloud-tasks-a'],
+      { 'icloud-tasks-a': 42 },
+    );
+    expect(result.current.items).toHaveLength(1);
+  });
 });
