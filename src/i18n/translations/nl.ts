@@ -51,7 +51,6 @@ export const nl: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Logboek wissen',
   'debugConsole.empty': 'Nog geen verzoeken of fouten vastgelegd.',
 
-
   // ---- meal planner ----
   'meals.today': 'Vandaag',
   'meals.thisWeek': 'Deze week',
@@ -63,18 +62,21 @@ export const nl: Record<TranslationKey, string> = {
   'meals.noDinnerPlanned': 'Er is voor deze dag geen avondeten gepland.',
   'meals.noDinnerPlannedHelp': 'Het gezinsmenu verschijnt hier zodra er een avondeten is gekozen.',
   'meals.noRecipes': 'Er zijn nog geen recepten beschikbaar.',
-  'meals.noRecipesHelp': 'Recepten verschijnen hier wanneer ze aan het gezinsmenu zijn toegevoegd of uit een bron zijn geïmporteerd.',
+  'meals.noRecipesHelp':
+    'Recepten verschijnen hier wanneer ze aan het gezinsmenu zijn toegevoegd of uit een bron zijn geïmporteerd.',
   'meals.catalogFromPlans': 'Recepten uit het gezinsmenu.',
   'meals.searchRecipes': 'Recepten zoeken',
   'meals.recipeDetailsUnavailable': 'De bereidingsstappen voor dit gerecht zijn niet beschikbaar.',
   'meals.unplanned': 'Geen avondeten gepland',
   'meals.sourceSettings': 'Instellingen voor de maaltijdbron',
-  'meals.sourceSettingsHelp': 'Stel de feed-URL, optionele bearer-token en JSON-veldtoewijzing in via Instellingen → Integraties.',
+  'meals.sourceSettingsHelp':
+    'Stel de feed-URL, optionele bearer-token en JSON-veldtoewijzing in via Instellingen → Integraties.',
   'meals.sourceConfigured': 'Maaltijdbron ingesteld',
   'meals.sourceNotConfigured': 'Er is nog geen maaltijdbron ingesteld.',
   'meals.bearerConfigured': 'Een bearer-token is veilig op de server opgeslagen.',
   'meals.bearerNotConfigured': 'Deze bron heeft geen bearer-token.',
-  'meals.sourceRequiresServer': 'Stel maaltijdbronnen in via Instellingen → Integraties op een installatie met server.',
+  'meals.sourceRequiresServer':
+    'Stel maaltijdbronnen in via Instellingen → Integraties op een installatie met server.',
   'meals.openSettings': 'Integratie-instellingen openen',
 
   // ---- weather conditions ----
@@ -224,7 +226,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.family.child': 'Kind',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint': "Wordt getoond in plaats van de emoji bij gezinsleden.",
+  'settings.family.photoHint': 'Wordt getoond in plaats van de emoji bij gezinsleden.',
   'settings.family.photoUpload': 'Foto uploaden',
   'settings.family.photoRemove': 'Foto verwijderen',
   'settings.family.photoFromHa': 'Foto uit Home Assistant gebruiken',
@@ -244,12 +246,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.family.colorLabel': 'Kleur',
   'settings.family.pinLabel': 'PIN',
   'settings.family.pinSublabel': 'Optioneel, 4-6 cijfers',
-  'settings.family.calendarLabel': 'Agenda',
-  'settings.family.calendarSublabel': 'Koppelen aan hun HA-agenda',
-  'settings.family.additionalCalendarsLabel': "Extra agenda's",
-  'settings.family.additionalCalendarsSublabel':
-    "Groepeer ook andere agenda's (bijv. een sportteam) onder dit lid",
-  'settings.family.addAnotherCalendar': '+ Nog een agenda toevoegen…',
   'settings.family.namePlaceholder': 'Naam van gezinslid',
   'settings.family.saveChanges': 'Wijzigingen opslaan',
   'settings.family.addMemberBtn': 'Lid toevoegen',
@@ -290,7 +286,7 @@ export const nl: Record<TranslationKey, string> = {
   'settings.calendar.desc': 'Configureer de agendaweergave en standaardwaarden.',
   'settings.calendar.connectedCalendarsTitle': "Gekoppelde agenda's",
   'settings.calendar.noCalendars':
-    "Geen agenda's gevonden. Verbind Home Assistant om agenda's te zien.",
+    "Geen agenda's gevonden. Voeg een CalDAV-bron toe via Instellingen → Integraties.",
   'settings.calendar.editColor': 'Agendakleur bewerken',
   'settings.calendar.editColorFor': 'Kleur van {name} bewerken',
   'settings.calendar.setColorTo': '{name} instellen op {color}',
@@ -405,7 +401,8 @@ export const nl: Record<TranslationKey, string> = {
   'settings.display.desc': 'Stel de schermbeveiliging en het Kinderscherm in.',
   'settings.display.screenSaverLabel': 'Schermbeveiliging',
   'settings.display.screenSaverModeLabel': 'Inhoud schermbeveiliging',
-  'settings.display.screenSaverModeSublabel': 'Kies wat verschijnt zodra de schermbeveiliging start',
+  'settings.display.screenSaverModeSublabel':
+    'Kies wat verschijnt zodra de schermbeveiliging start',
   'settings.display.screenSaverClock': 'Alleen klok',
   'settings.display.screenSaverPhotos': "Alleen foto's",
   'settings.display.screenSaverMixed': "Klok en foto's",
@@ -542,8 +539,7 @@ export const nl: Record<TranslationKey, string> = {
   'chores.missionsHint': 'Werk je taakjes af',
   'chores.noChoresToday': 'Nu even niets te doen.',
   'chores.wellDone': 'Goed gedaan!',
-  'chores.missing':
-    'Er staan nog geen taken in ChoresMan.',
+  'chores.missing': 'Er staan nog geen taken in ChoresMan.',
   'chores.stat.due': 'Vandaag te doen',
   'chores.stat.claimed': 'Geclaimd',
   'chores.stat.approved': 'Goedgekeurd',
@@ -884,8 +880,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.assigned': 'Toegewezen · wacht op bevestiging',
   'planner.undoShort': 'Terug',
   'planner.locked': 'nog niet genoeg',
-  'planner.assignToClaim':
-    'Kies eerst een gezinslid voordat je deze taak toewijst.',
+  'planner.assignToClaim': 'Kies eerst een gezinslid voordat je deze taak toewijst.',
   'planner.pinTitle': 'Goedkeuring door ouder',
   'planner.pinHint': 'Voer de pincode van een ouder in.',
   'planner.pinWrong': 'Die pincode klopt niet.',

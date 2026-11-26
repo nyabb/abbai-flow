@@ -51,7 +51,6 @@ export const it: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Cancella registro',
   'debugConsole.empty': 'Nessuna richiesta o errore registrato.',
 
-
   // ---- meal planner ----
   'meals.today': 'Oggi',
   'meals.thisWeek': 'Questa settimana',
@@ -61,22 +60,27 @@ export const it: Record<TranslationKey, string> = {
   'meals.ingredients': 'Ingredienti',
   'meals.steps': 'Procedimento',
   'meals.noDinnerPlanned': 'Non è prevista una cena per questo giorno.',
-  'meals.noDinnerPlannedHelp': 'Il piano dei pasti della famiglia apparirà qui dopo aver scelto una cena.',
+  'meals.noDinnerPlannedHelp':
+    'Il piano dei pasti della famiglia apparirà qui dopo aver scelto una cena.',
   'meals.noRecipes': 'Non ci sono ancora ricette disponibili.',
-  'meals.noRecipesHelp': 'Le ricette appariranno qui quando saranno incluse in un piano dei pasti o importate da una fonte.',
+  'meals.noRecipesHelp':
+    'Le ricette appariranno qui quando saranno incluse in un piano dei pasti o importate da una fonte.',
   'meals.catalogFromPlans': 'Ricette dal piano dei pasti della famiglia.',
   'meals.searchRecipes': 'Cerca ricette',
   'meals.recipeDetailsUnavailable': 'Il procedimento per questa ricetta non è disponibile.',
   'meals.unplanned': 'Nessuna cena pianificata',
   'meals.sourceSettings': 'Impostazioni della fonte dei pasti',
-  'meals.sourceSettingsHelp': 'Imposta l’URL del feed, il token bearer facoltativo e la mappatura dei campi JSON in Impostazioni → Integrazioni.',
+  'meals.sourceSettingsHelp':
+    'Imposta l’URL del feed, il token bearer facoltativo e la mappatura dei campi JSON in Impostazioni → Integrazioni.',
   'meals.sourceConfigured': 'Fonte dei pasti configurata',
   'meals.sourceNotConfigured': 'Non è ancora configurata una fonte dei pasti.',
   'meals.bearerConfigured': 'Un token bearer è salvato in modo sicuro sul server.',
   'meals.bearerNotConfigured': 'Questa fonte non ha un token bearer.',
-  'meals.sourceRequiresServer': 'Configura le fonti dei pasti in Impostazioni → Integrazioni con un’installazione dotata di server.',
+  'meals.sourceRequiresServer':
+    'Configura le fonti dei pasti in Impostazioni → Integrazioni con un’installazione dotata di server.',
   'meals.openSettings': 'Apri le impostazioni delle integrazioni',
-  'settings.integrations.mealSourceBackendRequired': 'Per salvare i token bearer in modo sicuro è necessaria un’installazione di Abbai Flow con server.',
+  'settings.integrations.mealSourceBackendRequired':
+    'Per salvare i token bearer in modo sicuro è necessaria un’installazione di Abbai Flow con server.',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': 'Notte serena',
@@ -227,7 +231,8 @@ export const it: Record<TranslationKey, string> = {
   'settings.family.child': 'Bambino/a',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint': "Mostrata al posto dell’emoji negli avatar dei membri della famiglia.",
+  'settings.family.photoHint':
+    'Mostrata al posto dell’emoji negli avatar dei membri della famiglia.',
   'settings.family.photoUpload': 'Carica foto',
   'settings.family.photoRemove': 'Rimuovi foto',
   'settings.family.photoFromHa': 'Usa la foto di Home Assistant',
@@ -247,12 +252,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.family.colorLabel': 'Colore',
   'settings.family.pinLabel': 'PIN',
   'settings.family.pinSublabel': 'Opzionale, 4-6 cifre',
-  'settings.family.calendarLabel': 'Calendario',
-  'settings.family.calendarSublabel': 'Collega al loro calendario HA',
-  'settings.family.additionalCalendarsLabel': 'Calendari aggiuntivi',
-  'settings.family.additionalCalendarsSublabel':
-    'Raggruppa anche altri calendari (es. una squadra sportiva) sotto questo membro',
-  'settings.family.addAnotherCalendar': '+ Aggiungi un altro calendario…',
   'settings.family.namePlaceholder': 'Nome del membro della famiglia',
   'settings.family.saveChanges': 'Salva modifiche',
   'settings.family.addMemberBtn': 'Aggiungi membro',
@@ -293,7 +292,7 @@ export const it: Record<TranslationKey, string> = {
   'settings.calendar.desc': 'Configura la visualizzazione e i valori predefiniti del calendario.',
   'settings.calendar.connectedCalendarsTitle': 'Calendari collegati',
   'settings.calendar.noCalendars':
-    'Nessun calendario trovato. Collega Home Assistant per vedere i calendari.',
+    'Nessun calendario trovato. Aggiungi una fonte CalDAV in Impostazioni → Integrazioni.',
   'settings.calendar.editColor': 'Modifica colore calendario',
   'settings.calendar.editColorFor': 'Modifica colore di {name}',
   'settings.calendar.setColorTo': 'Imposta {name} su {color}',
@@ -350,7 +349,8 @@ export const it: Record<TranslationKey, string> = {
   'settings.display.desc': 'Configura il salvaschermo e la schermata bambini.',
   'settings.display.screenSaverLabel': 'Salvaschermo',
   'settings.display.screenSaverModeLabel': 'Contenuto salvaschermo',
-  'settings.display.screenSaverModeSublabel': 'Scegli cosa mostrare quando si attiva il salvaschermo',
+  'settings.display.screenSaverModeSublabel':
+    'Scegli cosa mostrare quando si attiva il salvaschermo',
   'settings.display.screenSaverClock': 'Solo orologio',
   'settings.display.screenSaverPhotos': 'Solo foto',
   'settings.display.screenSaverMixed': 'Orologio e foto',
@@ -487,8 +487,7 @@ export const it: Record<TranslationKey, string> = {
   'chores.missionsHint': 'Completa i tuoi compiti',
   'chores.noChoresToday': 'Niente da fare per ora.',
   'chores.wellDone': 'Ben fatto!',
-  'chores.missing':
-    'Non ci sono ancora attività in ChoresMan.',
+  'chores.missing': 'Non ci sono ancora attività in ChoresMan.',
   'chores.stat.due': 'In scadenza oggi',
   'chores.stat.claimed': 'Rivendicate',
   'chores.stat.approved': 'Approvate',
@@ -751,8 +750,7 @@ export const it: Record<TranslationKey, string> = {
   'planner.assigned': 'Assegnata · in attesa di conferma',
   'planner.undoShort': 'Annulla',
   'planner.locked': 'non basta ancora',
-  'planner.assignToClaim':
-    'Scegli un familiare prima di assegnare questa attività.',
+  'planner.assignToClaim': 'Scegli un familiare prima di assegnare questa attività.',
   'planner.pinTitle': 'Approvazione genitore',
   'planner.pinHint': 'Inserisci il PIN di un genitore.',
   'planner.pinWrong': 'Questo PIN non è corretto.',

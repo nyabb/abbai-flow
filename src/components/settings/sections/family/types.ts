@@ -11,8 +11,6 @@ export interface MemberForm {
   color: string;
   role: 'parent' | 'child';
   pin: string;
-  calendar_entity: string;
-  additional_calendar_entities: string[];
 }
 
 /** A blank member form: what "add member" starts from. */
@@ -23,8 +21,6 @@ export const EMPTY_FORM: MemberForm = {
   color: MEMBER_COLORS[0],
   role: 'child',
   pin: '',
-  calendar_entity: '',
-  additional_calendar_entities: [],
 };
 
 /** What the member form holds while it is being edited. */

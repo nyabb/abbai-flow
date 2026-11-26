@@ -59,10 +59,11 @@ function renderSettings(
 ) {
   const onUpdateSettings = vi.fn();
   const nl = createI18n('nl');
-  const utils = render(
+  const settings = makeSettings(overrides);
+  const renderView = (calendarSources: Array<{ id: string; name: string; color?: string }>) => (
     <I18nContext.Provider value={nl}>
       <SettingsView
-        settings={makeSettings(overrides)}
+        settings={settings}
         onUpdateSettings={onUpdateSettings}
         onResetSettings={vi.fn()}
         onExportSettings={() => '{}'}
@@ -74,12 +75,18 @@ function renderSettings(
         onRemoveMember={vi.fn()}
         connected={false}
         haUrl=""
-        calendars={calendars}
+        calendars={calendarSources}
         onEnterFocusMode={vi.fn()}
       />
-    </I18nContext.Provider>,
+    </I18nContext.Provider>
   );
-  return { ...utils, onUpdateSettings };
+  const utils = render(renderView(calendars));
+  return {
+    ...utils,
+    onUpdateSettings,
+    rerenderWithCalendars: (calendarSources: Array<{ id: string; name: string; color?: string }>) =>
+      utils.rerender(renderView(calendarSources)),
+  };
 }
 
 describe('SettingsView', () => {
@@ -125,8 +132,11 @@ describe('SettingsView', () => {
   });
 
   it('lists discovered CalDAV calendars in the calendar settings selector', () => {
-    renderSettings({}, [{ id: 'caldav/apple/family', name: 'Apple: Family' }]);
+    const { rerenderWithCalendars } = renderSettings();
     fireEvent.click(screen.getByRole('button', { name: 'Agenda' }));
+
+    expect(screen.queryByRole('option', { name: 'Apple: Family' })).not.toBeInTheDocument();
+    rerenderWithCalendars([{ id: 'caldav/apple/family', name: 'Apple: Family' }]);
 
     expect(screen.getByRole('option', { name: 'Apple: Family' })).toBeInTheDocument();
   });

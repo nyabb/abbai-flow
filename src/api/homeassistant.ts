@@ -1,41 +1,7 @@
-import { CalendarEvent, CalendarInfo, WeatherData, CalendarColorMember, resolveCalendarColor } from '../types';
-import {
-  recordDebugLog,
-  sanitizeDebugUrl,
-  stringifyDebugValue,
-  updateDebugLog,
-} from './debug-log';
+import type { WeatherData } from '../types';
+import { recordDebugLog, sanitizeDebugUrl, stringifyDebugValue, updateDebugLog } from './debug-log';
 
 type MessageHandler = (message: HAMessage) => void;
-
-/**
- * Convert the app's REST-shaped event fields (start_date_time, end_date_time,
- * start_date, end_date, summary, description, location, rrule) into the shape
- * HA's WS calendar event commands expect (dtstart, dtend, summary, description,
- * location, rrule — see homeassistant/components/calendar/const.py EVENT_START
- * = "dtstart", EVENT_END = "dtend"). Only forwards fields that are present.
- */
-export function toWsEventPayload(event: {
-  summary?: string;
-  start_date_time?: string;
-  end_date_time?: string;
-  start_date?: string;
-  end_date?: string;
-  description?: string;
-  location?: string;
-  rrule?: string;
-}): Record<string, string> {
-  const payload: Record<string, string> = {};
-  if (event.summary !== undefined) payload.summary = event.summary;
-  if (event.description !== undefined) payload.description = event.description;
-  if (event.location !== undefined) payload.location = event.location;
-  if (event.rrule !== undefined) payload.rrule = event.rrule;
-  const dtstart = event.start_date_time ?? event.start_date;
-  const dtend = event.end_date_time ?? event.end_date;
-  if (dtstart !== undefined) payload.dtstart = dtstart;
-  if (dtend !== undefined) payload.dtend = dtend;
-  return payload;
-}
 
 interface HAMessage {
   id?: number;
@@ -118,10 +84,12 @@ export class HomeAssistantClient {
         const msg = JSON.parse(event.data) as HAMessage;
 
         if (msg.type === 'auth_required') {
-          this.ws?.send(JSON.stringify({
-            type: 'auth',
-            access_token: this.token,
-          }));
+          this.ws?.send(
+            JSON.stringify({
+              type: 'auth',
+              access_token: this.token,
+            }),
+          );
           return;
         }
 
@@ -271,148 +239,27 @@ export class HomeAssistantClient {
     });
   }
 
-  private getRestUrl(): string {
-    return this.url.replace(/\/api\/websocket$/, '').replace(/^ws/, 'http');
-  }
-
-  async getCalendars(colorOptions?: {
-    calendarColors?: Record<string, string>;
-    members?: CalendarColorMember[];
-  }): Promise<CalendarInfo[]> {
-    const baseUrl = this.getRestUrl();
-    const response = await fetch(`${baseUrl}/api/calendars`, {
-      headers: { Authorization: `Bearer ${this.token}` },
-    });
-    if (!response.ok) throw new Error(`Failed to fetch calendars: ${response.status}`);
-    const data = await response.json() as Array<{ entity_id: string; name: string }>;
-
-    return data.map((cal, index) => ({
-      id: cal.entity_id,
-      name: cal.name,
-      color: resolveCalendarColor(cal.entity_id, index, colorOptions),
-    }));
-  }
-
-  async getEvents(calendarId: string, start: string, end: string): Promise<CalendarEvent[]> {
-    const baseUrl = this.getRestUrl();
-    const params = new URLSearchParams({ start, end });
-    const response = await fetch(`${baseUrl}/api/calendars/${calendarId}?${params}`, {
-      headers: { Authorization: `Bearer ${this.token}` },
-    });
-    if (!response.ok) throw new Error(`Failed to fetch events: ${response.status}`);
-    const result = await response.json() as Array<{
-      uid?: string;
-      summary: string;
-      start: string | { dateTime: string; date: string };
-      end: string | { dateTime: string; date: string };
-      description?: string;
-      location?: string;
-      recurrence_id?: string;
-    }>;
-
-    return (result || []).map((ev, i) => {
-      const startStr = typeof ev.start === 'string' ? ev.start : (ev.start.dateTime || ev.start.date);
-      const endStr = typeof ev.end === 'string' ? ev.end : (ev.end.dateTime || ev.end.date);
-      const allDay = typeof ev.start === 'string'
-        ? ev.start.length === 10
-        : !!ev.start.date && !ev.start.dateTime;
-
-      return {
-        id: ev.uid || ev.recurrence_id || `${calendarId}-${i}`,
-        title: ev.summary,
-        start: startStr,
-        end: endStr,
-        allDay,
-        description: ev.description,
-        location: ev.location,
-        calendarId,
-        calendarName: calendarId,
-        color: '', // will be set by consumer
-      };
-    });
-  }
-
-  /**
-   * Create a new calendar event. HA requires the calendar/event/create WS
-   * command (not calendar.create_event REST service) to support recurring
-   * events (rrule) — the service silently ignores/rejects rrule. This method
-   * uses the WS command with dtstart/dtend fields that match update/delete.
-   */
-  async createEvent(calendarId: string, event: {
-    summary: string;
-    start_date_time?: string;
-    end_date_time?: string;
-    start_date?: string;
-    end_date?: string;
-    description?: string;
-    location?: string;
-    rrule?: string;
-  }): Promise<void> {
-    await this.sendMessage({
-      type: 'calendar/event/create',
-      entity_id: calendarId,
-      event: toWsEventPayload(event),
-    });
-  }
-
-  /**
-   * Update an existing event. HA moved this off the `calendar.update_event`
-   * REST service to a WS-only command (`calendar/event/update`) with a
-   * different field schema (dtstart/dtend/summary, not start_date_time/
-   * end_date_time) — see homeassistant/components/calendar/__init__.py.
-   * Calendars that don't support CalendarEntityFeature.UPDATE_EVENT (many
-   * providers don't) reject this with error code "not_supported"; callers
-   * should catch that and fall back to delete+recreate or show a clear
-   * "this calendar doesn't support editing" message.
-   */
-  async updateEvent(calendarId: string, uid: string, event: {
-    summary?: string;
-    start_date_time?: string;
-    end_date_time?: string;
-    start_date?: string;
-    end_date?: string;
-    description?: string;
-  }): Promise<void> {
-    await this.sendMessage({
-      type: 'calendar/event/update',
-      entity_id: calendarId,
-      uid,
-      event: toWsEventPayload(event),
-    });
-  }
-
-  /**
-   * Delete an event. HA moved this off `calendar.delete_event` (REST
-   * service) to the WS-only `calendar/event/delete` command — see note on
-   * updateEvent above.
-   */
-  async deleteEvent(calendarId: string, uid: string): Promise<void> {
-    await this.sendMessage({
-      type: 'calendar/event/delete',
-      entity_id: calendarId,
-      uid,
-    });
-  }
-
   async getWeather(entityId: string): Promise<WeatherData> {
-    const states = await this.sendMessage({ type: 'get_states' }) as Array<{
+    const states = (await this.sendMessage({ type: 'get_states' })) as Array<{
       entity_id: string;
       state: string;
       attributes: Record<string, unknown>;
     }>;
 
-    const weather = states.find(s => s.entity_id === entityId);
+    const weather = states.find((s) => s.entity_id === entityId);
     if (!weather) {
       throw new Error(`Weather entity ${entityId} not found`);
     }
 
     const attrs = weather.attributes;
-    const forecast = ((attrs.forecast as Array<{
-      datetime: string;
-      condition: string;
-      temperature: number;
-      templow: number;
-    }>) || []).slice(0, 5);
+    const forecast = (
+      (attrs.forecast as Array<{
+        datetime: string;
+        condition: string;
+        temperature: number;
+        templow: number;
+      }>) || []
+    ).slice(0, 5);
 
     return {
       temperature: attrs.temperature as number,
@@ -420,7 +267,7 @@ export class HomeAssistantClient {
       condition: weather.state,
       humidity: attrs.humidity as number | undefined,
       windSpeed: attrs.wind_speed as number | undefined,
-      forecast: forecast.map(f => ({
+      forecast: forecast.map((f) => ({
         date: f.datetime,
         condition: f.condition,
         tempHigh: f.temperature,
@@ -434,11 +281,13 @@ export class HomeAssistantClient {
     this.subscriptions.set(id, handler);
 
     if (this.ws && this.authenticated) {
-      this.ws.send(JSON.stringify({
-        id,
-        type: 'subscribe_events',
-        event_type: eventType,
-      }));
+      this.ws.send(
+        JSON.stringify({
+          id,
+          type: 'subscribe_events',
+          event_type: eventType,
+        }),
+      );
     }
 
     return id;
@@ -458,19 +307,28 @@ export class HomeAssistantClient {
     this.subscriptions.clear();
   }
 
-  async getStates(): Promise<Array<{
-    entity_id: string;
-    state: string;
-    attributes: Record<string, unknown>;
-  }>> {
-    return this.sendMessage({ type: 'get_states' }) as Promise<Array<{
+  async getStates(): Promise<
+    Array<{
       entity_id: string;
       state: string;
       attributes: Record<string, unknown>;
-    }>>;
+    }>
+  > {
+    return this.sendMessage({ type: 'get_states' }) as Promise<
+      Array<{
+        entity_id: string;
+        state: string;
+        attributes: Record<string, unknown>;
+      }>
+    >;
   }
 
-  async callService(domain: string, service: string, entityId: string, data?: Record<string, unknown>): Promise<unknown> {
+  async callService(
+    domain: string,
+    service: string,
+    entityId: string,
+    data?: Record<string, unknown>,
+  ): Promise<unknown> {
     return this.sendMessage({
       type: 'call_service',
       domain,

@@ -10,12 +10,6 @@ export interface FamilyMember {
   color: string; // hex color
   pin?: string; // 4-6 digit PIN
   role: 'parent' | 'child';
-  calendar_entity?: string; // HA calendar entity_id (primary calendar)
-  /** Additional HA calendar entity_ids linked to this member (e.g. a
-   *  kid's sports team calendar), so their events group under this member
-   *  too instead of falling into the "Other" bucket. `calendar_entity`
-   *  remains the primary/back-compat single-calendar field. */
-  additional_calendar_entities?: string[];
 }
 
 export function normalizePin(pin: unknown): string {

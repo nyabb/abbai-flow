@@ -107,35 +107,15 @@ describe('getPastelColor / getFullColor', () => {
 });
 
 describe('resolveCalendarColor', () => {
-  const members = [
-    { color: '#3b82f6', calendar_entity: 'calendar.mom' },
-    {
-      color: '#22c55e',
-      calendar_entity: 'calendar.dad',
-      additional_calendar_entities: ['calendar.dad_soccer'],
-    },
-  ];
-
-  it('prioritizes a user-customized calendar color above everything else', () => {
+  it('prioritizes a user-customized calendar color over the default', () => {
     const color = resolveCalendarColor('calendar.mom', 0, {
       calendarColors: { 'calendar.mom': '#ff00ff' },
-      members,
     });
     expect(color).toBe('#ff00ff');
   });
 
-  it('falls back to the linked family member color when no user override exists', () => {
-    const color = resolveCalendarColor('calendar.mom', 0, { members });
-    expect(color).toBe('#3b82f6');
-  });
-
-  it('matches a calendar linked via additional_calendar_entities, not just the primary calendar_entity', () => {
-    const color = resolveCalendarColor('calendar.dad_soccer', 5, { members });
-    expect(color).toBe('#22c55e');
-  });
-
-  it('falls back to the positional palette when no user color or member link exists', () => {
-    const color = resolveCalendarColor('calendar.unlinked', 1, { members });
+  it('falls back to the positional palette when no override or default exists', () => {
+    const color = resolveCalendarColor('calendar.unlinked', 1);
     expect(color).toBe(getCalendarColor(1));
   });
 

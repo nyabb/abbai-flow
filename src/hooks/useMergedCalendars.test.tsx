@@ -21,10 +21,10 @@ const localApi = {
   refresh: vi.fn(),
 };
 
-const haApi = {
-  calendars: [{ id: 'calendar.home', name: 'Home', color: '#22c55e' }],
+const caldavApi = {
+  calendars: [{ id: 'caldav/home', name: 'Home', color: '#22c55e' }],
   events: [
-    { id: 'h1', title: 'HA early', start: '2026-01-02T08:00:00Z', end: '2026-01-02T09:00:00Z' },
+    { id: 'c1', title: 'CalDAV early', start: '2026-01-02T08:00:00Z', end: '2026-01-02T09:00:00Z' },
   ],
   fetchCalendars: vi.fn(),
   fetchEvents: vi.fn(),
@@ -36,24 +36,23 @@ const haApi = {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(useLocalCalendar).mockReturnValue(localApi as never);
-  vi.mocked(useCalendarEvents).mockReturnValue(haApi as never);
+  vi.mocked(useCalendarEvents).mockReturnValue(caldavApi as never);
 });
 
 describe('useMergedCalendars', () => {
   it('puts the local calendar first and merges events by start time', () => {
-    const { result } = renderHook(() => useMergedCalendars({ connected: true }));
+    const { result } = renderHook(() => useMergedCalendars());
 
     expect(result.current.calendars.map((calendar) => calendar.id)).toEqual([
       'local',
-      'calendar.home',
+      'caldav/home',
     ]);
-    expect(result.current.events.map((event) => event.id)).toEqual(['h1', 'l1']);
-    // Local events adopt the resolved local colour so the UI has one source.
+    expect(result.current.events.map((event) => event.id)).toEqual(['c1', 'l1']);
     expect(result.current.events.find((event) => event.id === 'l1')?.color).toBe('#6366f1');
   });
 
   it('routes create/update/delete for the local calendar to the local store', async () => {
-    const { result } = renderHook(() => useMergedCalendars({ connected: true }));
+    const { result } = renderHook(() => useMergedCalendars());
 
     await result.current.createEvent('local', { summary: 'Dinner' });
     await result.current.updateEvent('local', 'l1', { summary: 'Dinner 2' });
@@ -62,25 +61,27 @@ describe('useMergedCalendars', () => {
     expect(localApi.createEvent).toHaveBeenCalledWith({ summary: 'Dinner' });
     expect(localApi.updateEvent).toHaveBeenCalledWith('l1', { summary: 'Dinner 2' });
     expect(localApi.deleteEvent).toHaveBeenCalledWith('l1');
-    expect(haApi.createEvent).not.toHaveBeenCalled();
-    expect(haApi.updateEvent).not.toHaveBeenCalled();
-    expect(haApi.deleteEvent).not.toHaveBeenCalled();
+    expect(caldavApi.createEvent).not.toHaveBeenCalled();
+    expect(caldavApi.updateEvent).not.toHaveBeenCalled();
+    expect(caldavApi.deleteEvent).not.toHaveBeenCalled();
   });
 
-  it('routes everything else to Home Assistant', async () => {
-    const { result } = renderHook(() => useMergedCalendars({ connected: true }));
+  it('routes external calendar CRUD to CalDAV', async () => {
+    const { result } = renderHook(() => useMergedCalendars());
 
-    await result.current.createEvent('calendar.home', { summary: 'Dinner' });
-    await result.current.updateEvent('calendar.home', 'h1', { summary: 'Dinner 2' });
-    await result.current.deleteEvent('calendar.home', 'h1');
+    await result.current.createEvent('caldav/home', { summary: 'Dinner' });
+    await result.current.updateEvent('caldav/home', 'c1', { summary: 'Dinner 2' });
+    await result.current.deleteEvent('caldav/home', 'c1');
 
-    expect(haApi.createEvent).toHaveBeenCalledWith('calendar.home', { summary: 'Dinner' });
-    expect(haApi.updateEvent).toHaveBeenCalledWith('calendar.home', 'h1', { summary: 'Dinner 2' });
-    expect(haApi.deleteEvent).toHaveBeenCalledWith('calendar.home', 'h1');
+    expect(caldavApi.createEvent).toHaveBeenCalledWith('caldav/home', { summary: 'Dinner' });
+    expect(caldavApi.updateEvent).toHaveBeenCalledWith('caldav/home', 'c1', {
+      summary: 'Dinner 2',
+    });
+    expect(caldavApi.deleteEvent).toHaveBeenCalledWith('caldav/home', 'c1');
     expect(localApi.createEvent).not.toHaveBeenCalled();
   });
 
-  it('keeps calendar listing unchanged and fetches scheduled ChoresMan events with HA events', async () => {
+  it('merges generated ChoresMan calendars and fetches their scheduled events', async () => {
     const chores: ChoresManChore[] = [
       {
         id: 'choresman:chore-1:zara',
@@ -102,18 +103,16 @@ describe('useMergedCalendars', () => {
     const members = [
       { id: 'zara', name: 'Zara', role: 'child' as const, color: '#22c55e', avatar: '🙂' },
     ];
-    const { result } = renderHook(() =>
-      useMergedCalendars({ connected: true, members, chores }),
-    );
+    const { result } = renderHook(() => useMergedCalendars({ members, chores }));
 
-    expect(result.current.fetchCalendars).toBe(haApi.fetchCalendars);
+    expect(result.current.fetchCalendars).toBe(caldavApi.fetchCalendars);
     expect(result.current.calendars.map((calendar) => calendar.id)).toContain('choresman:zara');
 
     await act(async () => {
       await result.current.fetchEvents('2026-11-23T00:00:00', '2026-12-07T00:00:00');
     });
 
-    expect(haApi.fetchEvents).toHaveBeenCalledWith(
+    expect(caldavApi.fetchEvents).toHaveBeenCalledWith(
       '2026-11-23T00:00:00',
       '2026-12-07T00:00:00',
     );

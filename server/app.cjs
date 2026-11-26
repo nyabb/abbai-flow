@@ -9,7 +9,6 @@
  * Responsibilities:
  *  - serve the built SPA from ABBAI_FLOW_DIST
  *  - proxy `/api/*` (REST) and `/api/websocket` (upgrade) to Home Assistant
- *  - bridge HA's WebSocket-only calendar commands
  *  - persist JSON documents under ABBAI_FLOW_DATA
  *
  * Everything is created by `createApp(options)` so tests can drive the real
@@ -22,7 +21,6 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const { randomBytes } = require('crypto');
-const WebSocket = require('ws');
 const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
 const { handleEncoreMusicRequest } = require('./build/encore-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
@@ -38,8 +36,6 @@ const MAX_BODY_SIZE = 1024 * 1024;
 const PROXY_TIMEOUT_MS = 30000;
 /** A WebSocket upgrade must be established within this window. */
 const UPGRADE_TIMEOUT_MS = 15000;
-/** HA WebSocket commands (calendar bridges) time out after this long. */
-const WS_COMMAND_TIMEOUT_MS = 10000;
 
 /**
  * Origins that the native shells (Capacitor iOS/Android) send. They are
@@ -361,86 +357,6 @@ async function proxyToHA(req, res, config) {
   proxyReq.end();
 }
 
-/**
- * Send one command over HA's WebSocket API and resolve with its result.
- *
- * HA moved calendar event update/delete to WS-only commands. A short-lived
- * connection per call keeps this simple; volume is user-triggered.
- */
-function haWsCommand(config, command, timeoutMs = WS_COMMAND_TIMEOUT_MS) {
-  return new Promise((resolve, reject) => {
-    if (!config.haToken) {
-      reject(new Error('No Home Assistant token available'));
-      return;
-    }
-
-    let ws;
-    try {
-      ws = new WebSocket(config.haWsUrl, config.ca ? { ca: config.ca } : undefined);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    let settled = false;
-    const timer = setTimeout(() => {
-      finish(reject, new Error('Home Assistant WebSocket command timed out'), true);
-    }, timeoutMs);
-
-    function finish(fn, arg, terminate = false) {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      try {
-        if (terminate) ws.terminate();
-        else ws.close();
-      } catch {
-        /* ignore */
-      }
-      fn(arg);
-    }
-
-    ws.on('message', (raw) => {
-      let msg;
-      try {
-        msg = JSON.parse(raw.toString('utf8'));
-      } catch {
-        return;
-      }
-
-      if (msg.type === 'auth_required') {
-        ws.send(JSON.stringify({ type: 'auth', access_token: config.haToken }));
-        return;
-      }
-      if (msg.type === 'auth_invalid') {
-        finish(reject, new Error('Home Assistant WebSocket auth failed'));
-        return;
-      }
-      if (msg.type === 'auth_ok') {
-        ws.send(JSON.stringify({ id: 1, ...command }));
-        return;
-      }
-      if (msg.type === 'result' && msg.id === 1) {
-        if (msg.success) {
-          finish(resolve, msg.result);
-        } else {
-          finish(
-            reject,
-            Object.assign(new Error(msg.error?.message || 'Home Assistant command failed'), {
-              code: msg.error?.code,
-            }),
-          );
-        }
-      }
-    });
-
-    ws.on('error', (err) => finish(reject, err, true));
-    ws.on('close', () => {
-      if (!settled) finish(reject, new Error('Home Assistant WebSocket closed unexpectedly'));
-    });
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /*  Voice / natural-language intent parser (keyword-based, no LLM)    */
 /* ------------------------------------------------------------------ */
@@ -601,64 +517,6 @@ async function handleServiceCall(req, res, config) {
     sendJson(res, result.status, result.data ?? {});
   } catch (err) {
     sendJson(res, 502, { error: err.message });
-  }
-}
-
-/**
- * POST /beacon-action/calendar-event
- * Body: { op: 'create'|'update'|'delete', entity_id, uid?, event? }
- */
-async function handleCalendarEventAction(req, res, config) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'Method not allowed' });
-    return;
-  }
-  if (!hasJsonContentType(req)) {
-    sendJson(res, 415, { error: 'Expected application/json' });
-    return;
-  }
-
-  const { value, error } = await readJsonObject(req);
-  if (error) {
-    sendJson(res, error.status, { error: error.message });
-    return;
-  }
-
-  const { op, entity_id, uid, event } = value;
-  if (!op || !entity_id) {
-    sendJson(res, 400, { error: 'Missing op or entity_id' });
-    return;
-  }
-  if (op !== 'create' && op !== 'update' && op !== 'delete') {
-    sendJson(res, 400, { error: 'op must be "create", "update", or "delete"' });
-    return;
-  }
-  if ((op === 'update' || op === 'delete') && !uid) {
-    sendJson(res, 400, { error: 'Missing uid for update/delete' });
-    return;
-  }
-  if ((op === 'create' || op === 'update') && (!event || typeof event !== 'object')) {
-    sendJson(res, 400, { error: `Missing event payload for ${op}` });
-    return;
-  }
-
-  const command =
-    op === 'create'
-      ? { type: 'calendar/event/create', entity_id, event }
-      : op === 'update'
-        ? { type: 'calendar/event/update', entity_id, uid, event }
-        : { type: 'calendar/event/delete', entity_id, uid };
-
-  try {
-    const result = await haWsCommand(config, command);
-    sendJson(res, 200, { ok: true, result });
-  } catch (err) {
-    // HA's ERR_NOT_SUPPORTED is expected for calendars without create/update/
-    // delete support; surface it as 501 with the code intact.
-    sendJson(res, err.code === 'not_supported' ? 501 : 502, {
-      error: err.message,
-      code: err.code || null,
-    });
   }
 }
 
@@ -942,7 +800,7 @@ function loadPlannerRules() {
  * POST /beacon-action/voice
  * Body: { "text": "add milk to the grocery list" }
  */
-async function handleVoiceAction(req, res, config) {
+async function handleVoiceAction(req, res, config, caldavCalendars) {
   if (req.method !== 'POST') {
     sendJson(res, 405, { error: 'Method not allowed' });
     return;
@@ -995,11 +853,7 @@ async function handleVoiceAction(req, res, config) {
 
   if (intent.fetch === 'calendar') {
     try {
-      const states = await getStates();
-      const calendars = states.filter(
-        (e) => typeof e.entity_id === 'string' && e.entity_id.startsWith('calendar.'),
-      );
-
+      const calendars = await caldavCalendars.listCalendars();
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
@@ -1007,21 +861,18 @@ async function handleVoiceAction(req, res, config) {
       const calResults = await Promise.all(
         calendars.map(async (cal) => {
           try {
-            const evResp = await haRequest(
-              config,
-              'GET',
-              `/api/calendars/${cal.entity_id}?start=${encodeURIComponent(startOfDay)}&end=${encodeURIComponent(endOfDay)}`,
-            );
-            if (Array.isArray(evResp.data)) {
-              return evResp.data.map((ev) => ({
-                calendar: cal.attributes?.friendly_name || cal.entity_id,
-                ...ev,
-              }));
-            }
+            const events = await caldavCalendars.fetchEvents(cal.id, startOfDay, endOfDay);
+            return events.map((event) => ({
+              calendar: cal.name,
+              summary: event.title,
+              start: event.start,
+              end: event.end,
+              description: event.description,
+              location: event.location,
+            }));
           } catch {
-            /* skip unavailable calendars */
+            return [];
           }
-          return [];
         }),
       );
       const allEvents = calResults.flat();
@@ -1908,7 +1759,6 @@ async function route(req, res, config, services, bluetooth) {
     {
       '/abbai-flow/action/voice': '/beacon-action/voice',
       '/abbai-flow/action/service': '/beacon-action/service',
-      '/abbai-flow/action/calendar-event': '/beacon-action/calendar-event',
     }[pathname] || pathname;
 
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
@@ -1918,7 +1768,6 @@ async function route(req, res, config, services, bluetooth) {
   const guarded =
     actionPath === '/beacon-action/voice' ||
     actionPath === '/beacon-action/service' ||
-    actionPath === '/beacon-action/calendar-event' ||
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname === '/abbai-flow/settings/integrations' ||
@@ -2247,15 +2096,11 @@ async function route(req, res, config, services, bluetooth) {
       return;
     }
     if (actionPath === '/beacon-action/voice') {
-      await handleVoiceAction(req, res, config);
+      await handleVoiceAction(req, res, config, services.caldavCalendars);
       return;
     }
     if (actionPath === '/beacon-action/service') {
       await handleServiceCall(req, res, config);
-      return;
-    }
-    if (actionPath === '/beacon-action/calendar-event') {
-      await handleCalendarEventAction(req, res, config);
       return;
     }
     if (pathname.startsWith('/beacon-data/') || pathname.startsWith('/abbai-flow/data/')) {

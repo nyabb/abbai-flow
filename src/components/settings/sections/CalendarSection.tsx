@@ -4,7 +4,6 @@
  */
 import { useState } from 'react';
 import { CALENDAR_COLOR_PRESETS, resolveCalendarColor } from '../../../types';
-import type { FamilyMember } from '../../../types/family';
 import { CollapsibleRegion } from '../../CollapsibleRegion';
 import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
@@ -18,7 +17,6 @@ export interface CalendarInfoSummary {
 
 export interface CalendarSectionProps extends SettingsSectionContext {
   calendars: CalendarInfoSummary[];
-  members: FamilyMember[];
 }
 
 export function CalendarSection({
@@ -26,7 +24,6 @@ export function CalendarSection({
   onUpdateSettings,
   t,
   calendars,
-  members,
 }: CalendarSectionProps) {
   const [colorEditId, setColorEditId] = useState<string | null>(null);
 
@@ -49,7 +46,6 @@ export function CalendarSection({
             const customColor = settings.calendarColors[cal.id] || '';
             const resolvedColor = resolveCalendarColor(cal.id, index, {
               calendarColors: settings.calendarColors,
-              members,
               defaultColor: cal.color,
             });
             const open = colorEditId === cal.id;
@@ -162,11 +158,13 @@ export function CalendarSection({
             onChange={(e) => onUpdateSettings({ defaultCalendar: e.target.value })}
           >
             <option value="">{t('common.selectEllipsis')}</option>
-            {calendars.filter((cal) => !cal.readOnly).map((cal) => (
-              <option key={cal.id} value={cal.id}>
-                {cal.name}
-              </option>
-            ))}
+            {calendars
+              .filter((cal) => !cal.readOnly)
+              .map((cal) => (
+                <option key={cal.id} value={cal.id}>
+                  {cal.name}
+                </option>
+              ))}
           </select>
         </div>
         <div className="settings-row">

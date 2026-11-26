@@ -51,7 +51,6 @@ export const ja: Record<TranslationKey, string> = {
   'debugConsole.clear': 'ログを消去',
   'debugConsole.empty': 'リクエストやエラーはまだ記録されていません。',
 
-
   // ---- meal planner ----
   'meals.today': '今日',
   'meals.thisWeek': '今週',
@@ -63,20 +62,23 @@ export const ja: Record<TranslationKey, string> = {
   'meals.noDinnerPlanned': 'この日の夕食はまだ予定されていません。',
   'meals.noDinnerPlannedHelp': '夕食を選ぶと、家族の食事プランがここに表示されます。',
   'meals.noRecipes': 'レシピはまだありません。',
-  'meals.noRecipesHelp': '食事プランに追加されたレシピや、外部から取り込んだレシピがここに表示されます。',
+  'meals.noRecipesHelp':
+    '食事プランに追加されたレシピや、外部から取り込んだレシピがここに表示されます。',
   'meals.catalogFromPlans': '家族の食事プランにあるレシピ。',
   'meals.searchRecipes': 'レシピを検索',
   'meals.recipeDetailsUnavailable': 'この食事の作り方はありません。',
   'meals.unplanned': '夕食の予定なし',
   'meals.sourceSettings': '食事データソースの設定',
-  'meals.sourceSettingsHelp': '設定 → 連携から、フィードURL、任意のBearerトークン、JSONフィールドの対応付けを設定してください。',
+  'meals.sourceSettingsHelp':
+    '設定 → 連携から、フィードURL、任意のBearerトークン、JSONフィールドの対応付けを設定してください。',
   'meals.sourceConfigured': '食事データソースを設定済み',
   'meals.sourceNotConfigured': '食事データソースはまだ設定されていません。',
   'meals.bearerConfigured': 'Bearerトークンはサーバーに安全に保存されています。',
   'meals.bearerNotConfigured': 'このデータソースにはBearerトークンがありません。',
   'meals.sourceRequiresServer': 'サーバー版の設定 → 連携から食事データソースを設定してください。',
   'meals.openSettings': '連携設定を開く',
-  'settings.integrations.mealSourceBackendRequired': 'Bearerトークンを安全に保存するには、サーバー版のAbbai Flowが必要です。',
+  'settings.integrations.mealSourceBackendRequired':
+    'Bearerトークンを安全に保存するには、サーバー版のAbbai Flowが必要です。',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': '快晴の夜',
@@ -224,7 +226,7 @@ export const ja: Record<TranslationKey, string> = {
   'settings.family.child': '子供',
   'settings.family.avatarLabel': 'アバター',
   'settings.family.photoLabel': '写真',
-  'settings.family.photoHint': "家族メンバーのアバターで絵文字の代わりに表示されます。",
+  'settings.family.photoHint': '家族メンバーのアバターで絵文字の代わりに表示されます。',
   'settings.family.photoUpload': '写真をアップロード',
   'settings.family.photoRemove': '写真を削除',
   'settings.family.photoFromHa': 'Home Assistant の写真を使う',
@@ -244,12 +246,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.family.colorLabel': '色',
   'settings.family.pinLabel': 'PIN',
   'settings.family.pinSublabel': '任意、4〜6桁',
-  'settings.family.calendarLabel': 'カレンダー',
-  'settings.family.calendarSublabel': 'HAのカレンダーと連携します',
-  'settings.family.additionalCalendarsLabel': '追加のカレンダー',
-  'settings.family.additionalCalendarsSublabel':
-    '他のカレンダー(例: スポーツチーム)もこのメンバーにまとめて表示できます',
-  'settings.family.addAnotherCalendar': '+ 別のカレンダーを追加…',
   'settings.family.namePlaceholder': '家族メンバーの名前',
   'settings.family.saveChanges': '変更を保存',
   'settings.family.addMemberBtn': 'メンバーを追加',
@@ -289,7 +285,8 @@ export const ja: Record<TranslationKey, string> = {
   'settings.calendar.title': 'カレンダー',
   'settings.calendar.desc': 'カレンダーの表示とデフォルト設定を行います。',
   'settings.calendar.connectedCalendarsTitle': '連携済みのカレンダー',
-  'settings.calendar.noCalendars': 'カレンダーが見つかりません。Home Assistantに接続してください。',
+  'settings.calendar.noCalendars':
+    'カレンダーがありません。設定 → インテグレーションでCalDAVソースを追加してください。',
   'settings.calendar.editColor': 'カレンダーの色を編集',
   'settings.calendar.editColorFor': '{name}の色を編集',
   'settings.calendar.setColorTo': '{name}を{color}に設定',
@@ -324,8 +321,7 @@ export const ja: Record<TranslationKey, string> = {
   'settings.integrations.groceryListsLabel': '買い物リスト',
   'settings.integrations.groceryListsSublabel':
     '買い物に表示するiCloudリマインダーリストを選択します',
-  'settings.integrations.taskListsSublabel':
-    'タスクに表示するiCloudリマインダーリストを選択します',
+  'settings.integrations.taskListsSublabel': 'タスクに表示するiCloudリマインダーリストを選択します',
   'settings.integrations.noICloudListsFound':
     'iCloudリマインダーリストが見つかりません。上のiCloudリマインダー欄でサインインしてください。',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
@@ -376,7 +372,8 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: chores ----
   'settings.chores.title': '家事',
-  'settings.chores.desc': 'ChoresMan は Abbai Flow の家族プロフィール向けに家事、ポイント、報酬を管理します。',
+  'settings.chores.desc':
+    'ChoresMan は Abbai Flow の家族プロフィール向けに家事、ポイント、報酬を管理します。',
   'settings.chores.dailyResetTimeLabel': '毎日のリセット時刻',
   'settings.chores.dailyResetTimeSublabel': '毎日の家事がリセットされる時刻',
   'settings.chores.streakDurationLabel': '連続記録の日数',
@@ -480,8 +477,7 @@ export const ja: Record<TranslationKey, string> = {
   'chores.missionsHint': 'タスクを進める',
   'chores.noChoresToday': '今はやることがありません。',
   'chores.wellDone': 'よくできました！',
-  'chores.missing':
-    'ChoresMan に家事はまだありません。',
+  'chores.missing': 'ChoresMan に家事はまだありません。',
   'chores.stat.due': '今日の期限',
   'chores.stat.claimed': '引き受け済み',
   'chores.stat.approved': '承認済み',
@@ -742,8 +738,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.assigned': '割り当て済み · 確認待ち',
   'planner.undoShort': '戻す',
   'planner.locked': 'まだ足りません',
-  'planner.assignToClaim':
-    '家事を割り当てる前に家族を選択してください。',
+  'planner.assignToClaim': '家事を割り当てる前に家族を選択してください。',
   'planner.pinTitle': '保護者の承認',
   'planner.pinHint': '保護者の PIN を入力してください。',
   'planner.pinWrong': 'PIN が正しくありません。',

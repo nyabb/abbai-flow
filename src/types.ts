@@ -22,7 +22,7 @@ export interface CalendarEvent {
    * `undefined` means "not applicable" (e.g. locally-stored Abbai Flow events,
    * which always have a real, stable id). Only ever explicitly `false` for
    * HA-backed events without a usable uid — edit/delete should be blocked
-   * against HA's calendar services in that case, since the fallback id
+   * against the calendar provider in that case, since the fallback id
    * isn't a real event uid the service will recognize.
    */
   hasStableId?: boolean;
@@ -84,40 +84,19 @@ export function getCalendarColor(index: number): string {
 }
 
 /**
- * Minimal shape needed from a FamilyMember to resolve a calendar's color.
- * Kept structural (not imported from types/family.ts) to avoid a circular
- * import between types.ts and types/family.ts.
- */
-export interface CalendarColorMember {
-  color: string;
-  calendar_entity?: string;
-  additional_calendar_entities?: string[];
-}
-
-/**
- * Picks a calendar's display color: user override > linked family member >
- * defaultColor > positional preset. Single source of truth so Calendar and
- * Settings use the same color.
+ * Picks a calendar's display color: user override > defaultColor > positional
+ * preset. Single source of truth so Calendar and Settings use the same color.
  */
 export function resolveCalendarColor(
   calendarId: string,
   index: number,
   options?: {
     calendarColors?: Record<string, string>;
-    members?: CalendarColorMember[];
     defaultColor?: string;
   },
 ): string {
   const userColor = options?.calendarColors?.[calendarId];
   if (userColor) return userColor;
-
-  const members = options?.members || [];
-  const linkedMember = members.find(
-    (m) =>
-      m.calendar_entity === calendarId ||
-      m.additional_calendar_entities?.includes(calendarId),
-  );
-  if (linkedMember?.color) return linkedMember.color;
 
   return options?.defaultColor ?? getCalendarColor(index);
 }

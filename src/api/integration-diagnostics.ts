@@ -277,21 +277,17 @@ async function checkHomeAssistant(
       typeof value.entity_id === 'string' &&
       typeof value.state === 'string',
   );
-  const calendars = availableCount(states, 'calendar');
   const mediaPlayers = availableCount(states, 'media_player');
   const todoLists = states.filter(
     (entity) => entity.entity_id.startsWith('todo.') && entity.state !== 'unavailable',
   ).length;
 
   logger.info(
-    `[Integration] Home Assistant entities: ${states.length} total; calendars=${calendars}, media_players=${mediaPlayers}, todo_lists=${todoLists}.`,
+    `[Integration] Home Assistant entities: ${states.length} total; media_players=${mediaPlayers}, todo_lists=${todoLists}.`,
   );
 
   logger.info(
     `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
-  );
-  logger.info(
-    `[Integration] Home Assistant calendars: ${calendars} available; local Abbai Flow calendar is always available.`,
   );
   logger.info(`[Integration] Home Assistant media players: ${mediaPlayers} available.`);
 

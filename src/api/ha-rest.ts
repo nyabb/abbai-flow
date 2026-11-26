@@ -266,9 +266,7 @@ export class AbbaiActionError extends Error {
  * POST to one of the add-on server's /abbai-flow/action/* endpoints and return
  * the parsed JSON body — including on error responses, since those bridge
  * endpoints return `{ error, code }` bodies that callers need to inspect
- * (e.g. to detect HA's "not_supported" for calendars lacking event
- * update/delete). Only used in add-on/proxy mode; standalone mode talks to
- * HA directly over WebSocket via HomeAssistantClient instead.
+ * Bridge app-specific operations through the add-on server in proxy mode.
  */
 export async function callAbbaiAction(
   path: string,

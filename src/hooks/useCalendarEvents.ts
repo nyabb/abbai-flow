@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { CalendarEvent, CalendarInfo, CalendarColorMember, resolveCalendarColor } from '../types';
-import { haFetch, hasToken, callAbbaiAction, AbbaiActionError } from '../api/ha-rest';
-import { HomeAssistantClient, toWsEventPayload } from '../api/homeassistant';
+import { resolveCalendarColor } from '../types';
+import type { CalendarEvent, CalendarInfo } from '../types';
 import { mapWithConcurrency, isAbortError } from '../utils/bounded-map';
 import {
   createCaldavEvent,
@@ -14,201 +13,93 @@ import {
 /** How many calendars are queried at the same time. */
 const CALENDAR_CONCURRENCY = 6;
 
-function isLegacyChoreOpsCalendar(calendar: { entity_id: string; name: string }): boolean {
-  return /chore[\s_-]*ops/i.test(`${calendar.entity_id} ${calendar.name}`);
+function assertCaldavCalendar(calendarId: string): void {
+  if (!calendarId.startsWith('caldav/')) {
+    throw new Error('This calendar does not support event changes.');
+  }
 }
 
-/** Shape of a raw HA calendar event, before normalisation. */
-interface RawCalendarEvent {
-  uid?: string;
-  summary: string;
-  start: string | { dateTime?: string; date?: string };
-  end: string | { dateTime?: string; date?: string };
-  description?: string;
-  location?: string;
-  recurrence_id?: string;
-}
-
-/**
- * Load one calendar's events and normalise them.
- *
- * A failing (or aborted) calendar yields `[]` so the other calendars still
- * populate the view — one unreadable provider must not blank the calendar.
- */
 async function loadCalendarEvents(
-  cal: CalendarInfo,
+  calendar: CalendarInfo,
   start: string,
   end: string,
-  signal: AbortSignal,
 ): Promise<CalendarEvent[]> {
-  const params = new URLSearchParams({ start, end });
   try {
-    if (cal.id.startsWith('caldav/')) {
-      const caldavEvents = await fetchCaldavEvents(cal.id, start, end);
-      return caldavEvents.map((event) => ({
-        ...event,
-        calendarId: cal.id,
-        calendarName: cal.name,
-        color: cal.color,
-      }));
+    const events = await fetchCaldavEvents(calendar.id, start, end);
+    return events.map((event) => ({
+      ...event,
+      calendarId: calendar.id,
+      calendarName: calendar.name,
+      color: calendar.color,
+    }));
+  } catch (error) {
+    if (!isAbortError(error)) {
+      console.error(`Failed to fetch events for ${calendar.name}:`, error);
     }
-    const result = (await haFetch(`/api/calendars/${cal.id}?${params}`, { signal })) as
-      | RawCalendarEvent[]
-      | null;
-
-    return (result || []).map((ev, index) => {
-      const startStr =
-        typeof ev.start === 'string' ? ev.start : ev.start.dateTime || ev.start.date || '';
-      const endStr = typeof ev.end === 'string' ? ev.end : ev.end.dateTime || ev.end.date || '';
-      const allDay =
-        typeof ev.start === 'string'
-          ? ev.start.length === 10
-          : Boolean(ev.start.date) && !ev.start.dateTime;
-
-      // Prefer a real provider uid. Some calendar integrations don't return
-      // one — fall back to a composite id for keys, but flag it as unstable so
-      // edit/delete (which need a real uid) can be blocked with a clear error.
-      const realUid = ev.uid || ev.recurrence_id;
-
-      return {
-        id: realUid || `${cal.id}-${index}`,
-        title: ev.summary,
-        start: startStr,
-        end: endStr,
-        allDay,
-        description: ev.description,
-        location: ev.location,
-        calendarId: cal.id,
-        calendarName: cal.name,
-        color: cal.color,
-        hasStableId: Boolean(realUid),
-      };
-    });
-  } catch (err) {
-    if (!isAbortError(err)) console.error(`Failed to fetch events for ${cal.name}:`, err);
     return [];
   }
 }
 
-/**
- * Re-thrown by createEvent/updateEvent/deleteEvent when HA reports the calendar
- * doesn't support that operation (CalendarEntityFeature.CREATE_EVENT /
- * UPDATE_EVENT / DELETE_EVENT unset — common for many read-only or limited
- * providers). Callers can catch this specifically to offer a fallback (e.g.
- * delete + recreate for updates) instead of showing a raw error.
- */
-export class CalendarNotSupportedError extends Error {
-  constructor(op: 'create' | 'update' | 'delete') {
-    super(
-      `This calendar does not support event ${op === 'create' ? 'creation' : op === 'update' ? 'editing' : 'deletion'}.`,
-    );
-    this.name = 'CalendarNotSupportedError';
-  }
-}
-
-function isNotSupported(err: unknown): boolean {
-  if (err instanceof AbbaiActionError) return err.code === 'not_supported';
-  if (err && typeof err === 'object' && 'code' in err)
-    return (err as { code?: string }).code === 'not_supported';
-  return false;
-}
-
-/**
- * Calendar events hook — merges Home Assistant calendars with server-configured
- * CalDAV calendars. HA requests use haFetch; CalDAV credentials stay server-side.
- *
- * `colorOptions` lets callers pass user-customized calendar colors and
- * family members so calendar/event colors resolve consistently (user override >
- * family-member-linked color > positional
- * palette fallback) — see resolveCalendarColor in ../types.
- */
-export function useCalendarEvents(
-  connected: boolean,
-  colorOptions?: {
-    calendarColors?: Record<string, string>;
-    members?: CalendarColorMember[];
-  },
-  getClient?: () => HomeAssistantClient | null,
-) {
+/** Calendar events from server-configured CalDAV sources. */
+export function useCalendarEvents(colorOptions?: { calendarColors?: Record<string, string> }) {
   const [calendars, setCalendars] = useState<CalendarInfo[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const calendarsRef = useRef<CalendarInfo[]>([]);
   const colorOptionsRef = useRef(colorOptions);
   colorOptionsRef.current = colorOptions;
-  /** Identifies the most recent `fetchEvents` call, so stale responses lose. */
   const requestIdRef = useRef(0);
-  /** Aborts the previous fan-out when a new range is requested. */
-  const abortRef = useRef<AbortController | null>(null);
 
-  // Drop any in-flight fan-out when the consumer unmounts.
-  useEffect(() => () => abortRef.current?.abort(), []);
+  useEffect(
+    () => () => {
+      // Invalidate in-flight responses after unmount.
+      requestIdRef.current += 1;
+    },
+    [],
+  );
 
   const fetchCalendars = useCallback(async () => {
-    let data: Array<{ entity_id: string; name: string }> = [];
+    let sources: Array<{ id: string; name: string }> = [];
     try {
-      if (connected || hasToken()) {
-        data = (await haFetch('/api/calendars')) as Array<{ entity_id: string; name: string }>;
-      }
-    } catch (err) {
-      console.error('Failed to fetch Home Assistant calendars:', err);
+      sources = await listCaldavCalendars();
+    } catch (error) {
+      console.error('Failed to fetch CalDAV calendars:', error);
     }
 
-    let externalCalendars: Array<{ id: string; name: string }> = [];
-    try {
-      externalCalendars = await listCaldavCalendars();
-    } catch (err) {
-      console.error('Failed to fetch CalDAV calendars:', err);
-    }
-
-    const cals = [
-      ...data
-        .filter((cal) => !isLegacyChoreOpsCalendar(cal))
-        .map((cal) => ({ id: cal.entity_id, name: cal.name })),
-      ...externalCalendars,
-    ].map((cal, index) => ({
-      id: cal.id,
-      name: cal.name,
-      color: resolveCalendarColor(cal.id, index, colorOptionsRef.current),
+    const nextCalendars = sources.map((calendar, index) => ({
+      id: calendar.id,
+      name: calendar.name,
+      color: resolveCalendarColor(calendar.id, index, colorOptionsRef.current),
     }));
-    calendarsRef.current = cals;
-    setCalendars(cals);
-    return cals;
-  }, [connected]);
+    calendarsRef.current = nextCalendars;
+    setCalendars(nextCalendars);
+    return nextCalendars;
+  }, []);
 
   const fetchEvents = useCallback(
     async (start: string, end: string) => {
-      // A new range supersedes the previous fan-out: abort it and tag the results
-      // so a slow calendar can never overwrite a newer fetch.
-      abortRef.current?.abort();
-      const controller = new AbortController();
-      abortRef.current = controller;
       const requestId = requestIdRef.current + 1;
       requestIdRef.current = requestId;
-
       setLoading(true);
       try {
-        let cals = calendarsRef.current;
-        if (cals.length === 0) {
-          cals = (await fetchCalendars()) || [];
+        const currentCalendars =
+          calendarsRef.current.length > 0 ? calendarsRef.current : await fetchCalendars();
+        if (requestIdRef.current !== requestId) return;
+        if (currentCalendars.length === 0) {
+          setEvents([]);
+          return;
         }
-        if (cals.length === 0) return;
 
-        // Fetch every calendar with bounded concurrency: a household with many
-        // calendars should not serialise N round-trips, and should not flood HA
-        // with N parallel ones either. One failing calendar keeps the rest.
         const perCalendar = await mapWithConcurrency(
-          cals,
+          currentCalendars,
           CALENDAR_CONCURRENCY,
-          (cal) => loadCalendarEvents(cal, start, end, controller.signal),
+          (calendar) => loadCalendarEvents(calendar, start, end),
           () => [] as CalendarEvent[],
         );
-
         if (requestIdRef.current !== requestId) return;
 
-        const allEvents = perCalendar.flat();
-        allEvents.sort((a, b) => a.start.localeCompare(b.start));
-        setEvents(allEvents);
+        const nextEvents = perCalendar.flat().sort((a, b) => a.start.localeCompare(b.start));
+        setEvents(nextEvents);
       } finally {
         if (requestIdRef.current === requestId) setLoading(false);
       }
@@ -216,22 +107,6 @@ export function useCalendarEvents(
     [fetchCalendars],
   );
 
-  /**
-   * Create a new calendar event. HA requires the calendar/event/create WS
-   * command (not calendar.create_event REST service) to support recurring
-   * events (rrule) — the service silently ignores/rejects rrule. When a live
-   * HomeAssistantClient is available (standalone mode, direct browser WS
-   * connection), this calls its createEvent method directly. Otherwise
-   * (add-on/proxy mode, no browser-side token) it routes through the add-on
-   * server's /abbai-flow/action/calendar-event bridge, which opens the WS
-   * connection server-side using the saved Home Assistant credentials.
-   *
-   * Many calendar providers don't support event creation at all
-   * (CalendarEntityFeature.CREATE_EVENT unset) — HA reports that as error
-   * code "not_supported", which is normalized here into
-   * CalendarNotSupportedError so callers can detect it and show a clear
-   * message instead of a raw error.
-   */
   const createEvent = useCallback(
     async (
       calendarId: string,
@@ -246,47 +121,12 @@ export function useCalendarEvents(
         rrule?: string;
       },
     ) => {
-      if (calendarId.startsWith('caldav/')) {
-        await createCaldavEvent(calendarId, event);
-        return;
-      }
-      try {
-        const client = getClient?.();
-        if (client?.isConnected) {
-          await client.createEvent(calendarId, event);
-        } else {
-          await callAbbaiAction('/abbai-flow/action/calendar-event', {
-            op: 'create',
-            entity_id: calendarId,
-            event: toWsEventPayload(event),
-          });
-        }
-      } catch (err) {
-        if (isNotSupported(err)) throw new CalendarNotSupportedError('create');
-        throw err;
-      }
+      assertCaldavCalendar(calendarId);
+      await createCaldavEvent(calendarId, event);
     },
-    [getClient],
+    [],
   );
 
-  /**
-   * Update an existing event. HA moved this off the `calendar.update_event`
-   * REST service to a WS-only command in current core (see
-   * homeassistant/components/calendar/__init__.py) — POSTing to
-   * /api/services/calendar/update_event now 400s because the service no
-   * longer exists. When a live HomeAssistantClient is available
-   * (standalone mode, direct browser WS connection), this calls its
-   * updateEvent method directly. Otherwise (add-on/proxy mode, no
-   * browser-side token) it routes through the add-on server's
-   * /abbai-flow/action/calendar-event bridge, which opens the WS connection
-   * server-side using the saved Home Assistant credentials.
-   *
-   * Many calendar providers don't support event updates at all
-   * (CalendarEntityFeature.UPDATE_EVENT unset) — HA reports that as error
-   * code "not_supported", which is normalized here into
-   * CalendarNotSupportedError so callers can detect it and offer a
-   * delete+recreate fallback instead of showing a raw error.
-   */
   const updateEvent = useCallback(
     async (
       calendarId: string,
@@ -300,58 +140,16 @@ export function useCalendarEvents(
         description?: string;
       },
     ) => {
-      if (calendarId.startsWith('caldav/')) {
-        await updateCaldavEvent(calendarId, uid, event);
-        return;
-      }
-      try {
-        const client = getClient?.();
-        if (client?.isConnected) {
-          await client.updateEvent(calendarId, uid, event);
-        } else {
-          await callAbbaiAction('/abbai-flow/action/calendar-event', {
-            op: 'update',
-            entity_id: calendarId,
-            uid,
-            event: toWsEventPayload(event),
-          });
-        }
-      } catch (err) {
-        if (isNotSupported(err)) throw new CalendarNotSupportedError('update');
-        throw err;
-      }
+      assertCaldavCalendar(calendarId);
+      await updateCaldavEvent(calendarId, uid, event);
     },
-    [getClient],
+    [],
   );
 
-  /**
-   * Delete an event. Same WS-only migration and not-supported handling as
-   * updateEvent above — see that doc comment for the full explanation.
-   */
-  const deleteEvent = useCallback(
-    async (calendarId: string, uid: string) => {
-      if (calendarId.startsWith('caldav/')) {
-        await deleteCaldavEvent(calendarId, uid);
-        return;
-      }
-      try {
-        const client = getClient?.();
-        if (client?.isConnected) {
-          await client.deleteEvent(calendarId, uid);
-        } else {
-          await callAbbaiAction('/abbai-flow/action/calendar-event', {
-            op: 'delete',
-            entity_id: calendarId,
-            uid,
-          });
-        }
-      } catch (err) {
-        if (isNotSupported(err)) throw new CalendarNotSupportedError('delete');
-        throw err;
-      }
-    },
-    [getClient],
-  );
+  const deleteEvent = useCallback(async (calendarId: string, uid: string) => {
+    assertCaldavCalendar(calendarId);
+    await deleteCaldavEvent(calendarId, uid);
+  }, []);
 
   return {
     calendars,

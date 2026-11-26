@@ -15,6 +15,8 @@ describe('FamilyStore legacy profile cleanup', () => {
       pin: '0123',
       choreops_user: 'Maya',
       choreops_state: { points: 24, dueToday: 3, claimed: 1, approved: 2, completedToday: 4 },
+      calendar_entity: 'calendar.maya_external',
+      additional_calendar_entities: ['calendar.maya_sports'],
     };
     localStorage.setItem('abbai_flow_family_members', JSON.stringify([legacyMember]));
 
@@ -28,9 +30,11 @@ describe('FamilyStore legacy profile cleanup', () => {
     });
     expect(members[0]).not.toHaveProperty('choreops_user');
     expect(members[0]).not.toHaveProperty('choreops_state');
-    expect(JSON.parse(localStorage.getItem('abbai_flow_family_members') ?? '[]')[0]).not.toHaveProperty(
-      'choreops_user',
-    );
+    expect(members[0]).not.toHaveProperty('calendar_entity');
+    expect(members[0]).not.toHaveProperty('additional_calendar_entities');
+    expect(
+      JSON.parse(localStorage.getItem('abbai_flow_family_members') ?? '[]')[0],
+    ).not.toHaveProperty('choreops_user');
   });
 });
 
