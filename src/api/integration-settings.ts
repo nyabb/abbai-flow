@@ -142,6 +142,8 @@ export interface ICloudRemindersActionResult {
   decodedAppleSample?: unknown;
 }
 
+export type ICloudRemindersList = NonNullable<ICloudRemindersActionResult['lists']>[number];
+
 export interface ICloudReminderSection {
   id: string;
   name: string | null;
@@ -167,12 +169,111 @@ export interface ICloudReminder {
   [key: string]: unknown;
 }
 
+function copyICloudValue<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+let cachedICloudLists: ICloudRemindersList[] | null = null;
+const cachedICloudSnapshots = new Map<string, ICloudRemindersList>();
+
+export function getCachedICloudRemindersLists(): ICloudRemindersList[] | null {
+  return cachedICloudLists ? copyICloudValue(cachedICloudLists) : null;
+}
+
+export function clearICloudRemindersCache(): void {
+  cachedICloudLists = null;
+  cachedICloudSnapshots.clear();
+}
+
+export function getCachedICloudRemindersList(listKey: string): ICloudRemindersList | null {
+  const list = cachedICloudSnapshots.get(listKey);
+  return list ? copyICloudValue(list) : null;
+}
+
+export function getCachedICloudRemindersTaskLists(
+  listKeys: string[],
+): { lists: ICloudRemindersList[]; revisions: Record<string, number> } {
+  const lists: ICloudRemindersList[] = [];
+  const revisions: Record<string, number> = {};
+  for (const key of listKeys) {
+    const list = cachedICloudSnapshots.get(key);
+    if (!list) continue;
+    lists.push(copyICloudValue(list));
+    if (typeof list.revision === 'number') revisions[key] = list.revision;
+  }
+  return { lists, revisions };
+}
+
+function rememberICloudList(list: ICloudRemindersList, revision?: number): void {
+  const existing = cachedICloudSnapshots.get(list.key);
+  const snapshot = {
+    ...(existing || {}),
+    ...copyICloudValue(list),
+  } as ICloudRemindersList;
+  if (!Array.isArray(list.reminders) && Array.isArray(existing?.reminders)) {
+    snapshot.reminders = existing.reminders;
+  }
+  if (!Array.isArray(list.sections) && Array.isArray(existing?.sections)) {
+    snapshot.sections = existing.sections;
+  }
+  if (typeof revision === 'number') snapshot.revision = revision;
+  if (cachedICloudSnapshots.has(list.key) || Array.isArray(snapshot.reminders)) {
+    cachedICloudSnapshots.set(list.key, snapshot);
+  }
+  if (cachedICloudLists) {
+    const index = cachedICloudLists.findIndex((item) => item.key === list.key);
+    if (index >= 0) cachedICloudLists[index] = { ...cachedICloudLists[index], ...snapshot };
+  }
+}
+
+function rememberICloudResult(result: ICloudRemindersActionResult): ICloudRemindersActionResult {
+  for (const list of result.lists || []) {
+    rememberICloudList(list, list.revision ?? result.revisions?.[list.key]);
+  }
+  return result;
+}
+
+function updateCachedICloudReminder(
+  listKey: string,
+  reminderId: string,
+  reminder: ICloudReminder | null,
+  revision?: number,
+): void {
+  const snapshot = cachedICloudSnapshots.get(listKey);
+  if (!snapshot) return;
+  const reminders = [...(snapshot.reminders || [])];
+  const index = reminders.findIndex((item) => item.id === reminderId);
+  if (reminder) {
+    if (index >= 0) reminders[index] = {
+      ...reminders[index],
+      ...copyICloudValue(reminder),
+    };
+    else reminders.push(copyICloudValue(reminder));
+  } else if (index >= 0) {
+    reminders.splice(index, 1);
+  }
+  snapshot.reminders = reminders;
+  snapshot.reminderCountReturned = reminders.length;
+  if (typeof revision === 'number') snapshot.revision = revision;
+  cachedICloudSnapshots.set(listKey, snapshot);
+}
+
 function iCloudAction<T>(action: string, body: unknown = {}): Promise<T> {
-  return request<T>('POST', body, `/abbai-flow/settings/icloud-reminders/${action}`);
+  return request<T & { ok?: boolean; error?: string }>(
+    'POST',
+    body,
+    `/abbai-flow/settings/icloud-reminders/${action}`,
+  ).then((result) => {
+    if (result.ok === false) throw new Error(result.error || 'The iCloud Reminders request failed.');
+    return result;
+  });
 }
 
 export function authenticateICloudReminders(): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('authenticate');
+  return iCloudAction<ICloudRemindersActionResult>('authenticate').then((result) => {
+    if (result.state === 'authenticated') clearICloudRemindersCache();
+    return result;
+  });
 }
 
 export function requestICloudRemindersVerificationCode(
@@ -186,7 +287,13 @@ export function verifyICloudRemindersCode(code: string): Promise<ICloudReminders
 }
 
 export function loadICloudRemindersLists(): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('lists');
+  return iCloudAction<ICloudRemindersActionResult>('lists').then((result) => {
+    if (Array.isArray(result.lists)) {
+      cachedICloudLists = copyICloudValue(result.lists);
+      rememberICloudResult(result);
+    }
+    return result;
+  });
 }
 
 export function fetchICloudRemindersPreview(listKey: string): Promise<ICloudRemindersActionResult> {
@@ -197,14 +304,28 @@ export function fetchICloudRemindersList(
   listKey: string,
   revision?: number,
 ): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('fetch-list', { listKey, revision });
+  const known = cachedICloudSnapshots.get(listKey);
+  const effectiveRevision = revision ?? known?.revision;
+  return iCloudAction<ICloudRemindersActionResult>('fetch-list', {
+    listKey,
+    revision: effectiveRevision,
+  }).then((result) => {
+    if (result.lists?.[0] && typeof result.revision === 'number') {
+      result.lists[0].revision = result.revision;
+    }
+    return rememberICloudResult(result);
+  });
 }
 
 export function fetchICloudRemindersTaskLists(
   listKeys: string[],
   revisions: Record<string, number> = {},
 ): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('task-lists', { listKeys, revisions });
+  const known = getCachedICloudRemindersTaskLists(listKeys).revisions;
+  return iCloudAction<ICloudRemindersActionResult>('task-lists', {
+    listKeys,
+    revisions: { ...known, ...revisions },
+  }).then((result) => rememberICloudResult(result));
 }
 
 export interface ICloudReminderPatch {
@@ -222,7 +343,10 @@ export function createICloudReminder(
   listKey: string,
   values: ICloudReminderPatch & { title: string; sectionID?: string | null },
 ): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('create-reminder', { listKey, ...values });
+  return iCloudAction<ICloudRemindersActionResult>('create-reminder', { listKey, ...values }).then((result) => {
+    if (result.reminder) updateCachedICloudReminder(listKey, result.reminder.id, result.reminder, result.revision);
+    return result;
+  });
 }
 
 export function updateICloudReminder(
@@ -230,14 +354,20 @@ export function updateICloudReminder(
   reminderId: string,
   patch: ICloudReminderPatch,
 ): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('update-reminder', { listKey, reminderId, patch });
+  return iCloudAction<ICloudRemindersActionResult>('update-reminder', { listKey, reminderId, patch }).then((result) => {
+    if (result.reminder) updateCachedICloudReminder(listKey, reminderId, result.reminder, result.revision);
+    return result;
+  });
 }
 
 export function deleteICloudReminder(
   listKey: string,
   reminderId: string,
 ): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('delete-reminder', { listKey, reminderId });
+  return iCloudAction<ICloudRemindersActionResult>('delete-reminder', { listKey, reminderId }).then((result) => {
+    updateCachedICloudReminder(listKey, reminderId, null, result.revision);
+    return result;
+  });
 }
 
 export function moveICloudReminderSection(
@@ -249,5 +379,20 @@ export function moveICloudReminderSection(
     listKey,
     reminderId,
     sectionID,
+  }).then((result) => {
+    const snapshot = cachedICloudSnapshots.get(listKey);
+    const reminder = snapshot?.reminders?.find((item) => item.id === reminderId);
+    if (reminder && snapshot) {
+      const section = sectionID == null
+        ? undefined
+        : snapshot.sections?.find((item) => item.id === sectionID);
+      updateCachedICloudReminder(listKey, reminderId, {
+        ...reminder,
+        sectionID,
+        sectionName: section?.name ?? null,
+        sectionOrder: section?.order ?? null,
+      }, result.revision);
+    }
+    return result;
   });
 }

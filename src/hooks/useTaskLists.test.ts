@@ -11,6 +11,8 @@ const iCloudMocks = vi.hoisted(() => ({
 vi.mock('../api/integration-settings', () => ({
   loadICloudRemindersLists: iCloudMocks.loadLists,
   fetchICloudRemindersTaskLists: iCloudMocks.fetchTaskLists,
+  getCachedICloudRemindersLists: () => null,
+  getCachedICloudRemindersTaskLists: () => ({ lists: [], revisions: {} }),
   updateICloudReminder: iCloudMocks.updateReminder,
 }));
 

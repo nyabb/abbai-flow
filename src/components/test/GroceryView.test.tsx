@@ -17,6 +17,8 @@ vi.mock('../../api/integration-settings', () => ({
   createICloudReminder: vi.fn(),
   deleteICloudReminder: vi.fn(),
   fetchICloudRemindersList: mocks.fetchList,
+  getCachedICloudRemindersList: () => null,
+  getCachedICloudRemindersLists: () => null,
   loadICloudRemindersLists: mocks.loadLists,
   moveICloudReminderSection: vi.fn(),
   updateICloudReminder: vi.fn(),
