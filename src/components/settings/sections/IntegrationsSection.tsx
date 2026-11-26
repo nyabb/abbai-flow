@@ -44,8 +44,17 @@ const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
 type ICloudRemindersListOption = NonNullable<ICloudRemindersActionResult['lists']>[number];
 
 const GROCERY_LIST_HINTS = [
-  'grocer', 'shopping', 'costco', 'walmart', 'target', 'store', 'pantry', 'fridge', 'freezer',
-  'inventory', 'meal',
+  'grocer',
+  'shopping',
+  'costco',
+  'walmart',
+  'target',
+  'store',
+  'pantry',
+  'fridge',
+  'freezer',
+  'inventory',
+  'meal',
 ];
 
 function isProbablyGroceryList(title: string): boolean {
@@ -222,6 +231,8 @@ export function IntegrationsSection({
   const [icloudPreview, setIcloudPreview] = useState('');
   const [icloudPreviewCopied, setIcloudPreviewCopied] = useState(false);
   const [calendarSources, setCalendarSources] = useState<CalendarSourceSetting[]>([]);
+  const [expandedCalendarSourceIds, setExpandedCalendarSourceIds] = useState<string[]>([]);
+  const [calendarTestResults, setCalendarTestResults] = useState<Record<string, string[]>>({});
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [calendarSaving, setCalendarSaving] = useState(false);
   const [calendarTestingSourceId, setCalendarTestingSourceId] = useState<string | null>(null);
@@ -458,6 +469,7 @@ export function IntegrationsSection({
       });
       setIntegrationStatus(status);
       setCalendarSources(status.calendarSources);
+      if (context === 'calendar') setExpandedCalendarSourceIds([]);
       setIcloudRemindersListKey(status.icloudRemindersListKey);
       setIcloudAuthState(status.icloudAuthState);
       setIcloudDevices(status.icloudDevices);
@@ -582,10 +594,11 @@ export function IntegrationsSection({
   };
 
   const addCalendarSource = () => {
+    const id = `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setCalendarSources((sources) => [
       ...sources,
       {
-        id: `calendar-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id,
         name: '',
         provider: 'caldav',
         url: '',
@@ -593,26 +606,51 @@ export function IntegrationsSection({
         clientId: '',
       },
     ]);
+    setExpandedCalendarSourceIds((ids) => [...ids, id]);
   };
 
   const updateCalendarSource = (id: string, patch: Partial<CalendarSourceSetting>) => {
     setCalendarSources((sources) =>
       sources.map((source) => (source.id === id ? { ...source, ...patch } : source)),
     );
+    setCalendarTestResults((results) => {
+      if (!(id in results)) return results;
+      const next = { ...results };
+      delete next[id];
+      return next;
+    });
+  };
+
+  const removeCalendarSource = (id: string) => {
+    setCalendarSources((sources) => sources.filter((source) => source.id !== id));
+    setExpandedCalendarSourceIds((ids) => ids.filter((sourceId) => sourceId !== id));
+    setCalendarTestResults((results) => {
+      if (!(id in results)) return results;
+      const next = { ...results };
+      delete next[id];
+      return next;
+    });
   };
 
   const testCalendarSource = async (source: CalendarSourceSetting) => {
     setCalendarTestingSourceId(source.id);
     setIntegrationError('');
     setIntegrationNotice('');
+    setCalendarTestResults((results) => {
+      if (!(source.id in results)) return results;
+      const next = { ...results };
+      delete next[source.id];
+      return next;
+    });
     try {
       const result = await testCaldavSource(source);
+      setCalendarTestResults((results) => ({
+        ...results,
+        [source.id]: result.calendars.map((calendar) => calendar.name),
+      }));
       setIntegrationNotice(
         t('settings.integrations.calendarTestSuccess', { count: result.calendarCount }),
       );
-      if (integrationStatus?.calendarSources.some((item) => item.id === source.id)) {
-        onIntegrationSettingsSaved?.();
-      }
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
@@ -676,19 +714,23 @@ export function IntegrationsSection({
     : (haTokenConfigured ?? connected);
   const activeIcloudLists = icloudLists.filter((list) => !list.deleted && !list.isGroup);
   const activeIcloudListIds = new Set(activeIcloudLists.map((list) => list.key));
-  const configuredGroceryListIds = settings.groceryListIds.filter((id) => activeIcloudListIds.has(id));
-  const configuredTaskListIds = (settings.taskListIds ?? []).filter((id) => activeIcloudListIds.has(id));
+  const configuredGroceryListIds = settings.groceryListIds.filter((id) =>
+    activeIcloudListIds.has(id),
+  );
+  const configuredTaskListIds = (settings.taskListIds ?? []).filter((id) =>
+    activeIcloudListIds.has(id),
+  );
   const inferredGroceryListIds = activeIcloudLists
     .filter((list) => isProbablyGroceryList(list.title))
     .map((list) => list.key);
-  const effectiveGroceryListIds = configuredGroceryListIds.length > 0
-    ? configuredGroceryListIds
-    : inferredGroceryListIds;
-  const effectiveTaskListIds = configuredTaskListIds.length > 0
-    ? configuredTaskListIds
-    : activeIcloudLists
-        .filter((list) => !effectiveGroceryListIds.includes(list.key))
-        .map((list) => list.key);
+  const effectiveGroceryListIds =
+    configuredGroceryListIds.length > 0 ? configuredGroceryListIds : inferredGroceryListIds;
+  const effectiveTaskListIds =
+    configuredTaskListIds.length > 0
+      ? configuredTaskListIds
+      : activeIcloudLists
+          .filter((list) => !effectiveGroceryListIds.includes(list.key))
+          .map((list) => list.key);
   const selectedIcloudListAvailable = activeIcloudLists.some(
     (list) => list.key === icloudRemindersListKey,
   );
@@ -784,9 +826,7 @@ export function IntegrationsSection({
               onClick={() => void saveServerIntegrations()}
               disabled={integrationBusy || integrationStatusLoading}
             >
-              {settingsSaving
-                ? t('settings.integrations.saving')
-                : t('settings.integrations.save')}
+              {settingsSaving ? t('settings.integrations.saving') : t('settings.integrations.save')}
             </button>
           </div>
         ) : (
@@ -977,7 +1017,6 @@ export function IntegrationsSection({
               </button>
             </div>
           </div>
-
         </>
       )}
 
@@ -1036,9 +1075,7 @@ export function IntegrationsSection({
                 onClick={() => void saveServerIntegrations('icloud')}
                 disabled={integrationBusy || integrationStatusLoading}
               >
-                {icloudSaving
-                  ? t('settings.integrations.saving')
-                  : t('settings.integrations.save')}
+                {icloudSaving ? t('settings.integrations.saving') : t('settings.integrations.save')}
               </button>
               <button
                 type="button"
@@ -1115,7 +1152,9 @@ export function IntegrationsSection({
                     type="button"
                     className="settings-btn settings-btn--primary"
                     onClick={() =>
-                      void runIcloudAction('verify_code', () => verifyICloudRemindersCode(icloudCode))
+                      void runIcloudAction('verify_code', () =>
+                        verifyICloudRemindersCode(icloudCode),
+                      )
                     }
                     disabled={integrationBusy || !icloudCode.trim()}
                   >
@@ -1271,180 +1310,218 @@ export function IntegrationsSection({
           {t('settings.integrations.calendarSourcesHelp')}
         </p>
         {serverBacked &&
-          calendarSources.map((source) => (
-            <div
-              key={source.id}
-              style={{
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                padding: 12,
-                marginBottom: 12,
-              }}
-            >
-              <div className="settings-row settings-integration-field">
-                <div className="settings-row-label">
-                  {t('settings.integrations.calendarNameLabel')}
-                </div>
-                <input
-                  className="settings-input settings-input--wide"
-                  value={source.name}
-                  onChange={(event) =>
-                    updateCalendarSource(source.id, { name: event.target.value })
-                  }
-                />
-              </div>
-              <div className="settings-row settings-integration-field">
-                <div className="settings-row-label">
-                  {t('settings.integrations.calendarProviderLabel')}
-                </div>
-                <select
-                  className="settings-input"
-                  value={source.provider}
-                  onChange={(event) =>
-                    updateCalendarSource(source.id, {
-                      provider: event.target.value as CalendarSourceSetting['provider'],
-                    })
-                  }
-                >
-                  <option value="caldav">
-                    {t('settings.integrations.calendarProviderCaldav')}
-                  </option>
-                  <option value="ics">{t('settings.integrations.calendarProviderIcs')}</option>
-                  <option value="google">
-                    {t('settings.integrations.calendarProviderGoogle')}
-                  </option>
-                </select>
-              </div>
-              <div className="settings-row settings-integration-field">
-                <div className="settings-row-label">
-                  {source.provider === 'ics'
-                    ? t('settings.integrations.calendarFeedUrlLabel')
-                    : t('settings.integrations.calendarServerUrlLabel')}
-                </div>
-                <input
-                  type="url"
-                  className="settings-input settings-input--wide"
-                  value={source.url}
-                  onChange={(event) => updateCalendarSource(source.id, { url: event.target.value })}
-                  placeholder={
-                    source.provider === 'ics'
-                      ? 'https://school.example/calendar.ics'
-                      : source.provider === 'caldav'
-                        ? 'https://caldav.icloud.com/'
-                        : 'https://caldav.example.com/'
-                  }
-                />
-              </div>
-              {source.provider === 'caldav' && (
-                <>
+          calendarSources.map((source) => {
+            const expanded = expandedCalendarSourceIds.includes(source.id);
+            const testedCalendars = calendarTestResults[source.id];
+            return (
+              <details
+                key={source.id}
+                className="settings-calendar-source"
+                open={expanded}
+                onToggle={(event) => {
+                  const isOpen = event.currentTarget.open;
+                  setExpandedCalendarSourceIds((ids) =>
+                    isOpen
+                      ? ids.includes(source.id)
+                        ? ids
+                        : [...ids, source.id]
+                      : ids.filter((id) => id !== source.id),
+                  );
+                }}
+              >
+                <summary className="settings-calendar-source__summary">
+                  {source.name.trim() || t('settings.integrations.calendarAddSource')}
+                </summary>
+                <div className="settings-calendar-source__content">
                   <div className="settings-row settings-integration-field">
                     <div className="settings-row-label">
-                      {t('settings.integrations.calendarUsernameLabel')}
+                      {t('settings.integrations.calendarNameLabel')}
                     </div>
                     <input
                       className="settings-input settings-input--wide"
-                      value={source.username}
+                      value={source.name}
                       onChange={(event) =>
-                        updateCalendarSource(source.id, { username: event.target.value })
+                        updateCalendarSource(source.id, { name: event.target.value })
                       }
-                      autoComplete="username"
                     />
                   </div>
                   <div className="settings-row settings-integration-field">
                     <div className="settings-row-label">
-                      {t('settings.integrations.calendarPasswordLabel')}
+                      {t('settings.integrations.calendarProviderLabel')}
                     </div>
-                    <SavedSecretControl
-                      label={t('settings.integrations.calendarPasswordLabel')}
-                      value={source.password || ''}
-                      onChange={(password) =>
-                        updateCalendarSource(source.id, { password, clearPassword: false })
-                      }
-                      configured={Boolean(source.passwordConfigured)}
-                      disabled={integrationStatusLoading}
-                      busy={integrationBusy}
-                      removeLabel={t('settings.integrations.clearSecret')}
-                      onRemove={() =>
+                    <select
+                      className="settings-input"
+                      value={source.provider}
+                      onChange={(event) =>
                         updateCalendarSource(source.id, {
-                          password: '',
-                          passwordConfigured: false,
-                          clearPassword: true,
+                          provider: event.target.value as CalendarSourceSetting['provider'],
                         })
                       }
-                    />
+                    >
+                      <option value="caldav">
+                        {t('settings.integrations.calendarProviderCaldav')}
+                      </option>
+                      <option value="ics">{t('settings.integrations.calendarProviderIcs')}</option>
+                      <option value="google">
+                        {t('settings.integrations.calendarProviderGoogle')}
+                      </option>
+                    </select>
                   </div>
-                </>
-              )}
-              {source.provider === 'google' && (
-                <>
                   <div className="settings-row settings-integration-field">
                     <div className="settings-row-label">
-                      {t('settings.integrations.calendarClientIdLabel')}
+                      {source.provider === 'ics'
+                        ? t('settings.integrations.calendarFeedUrlLabel')
+                        : t('settings.integrations.calendarServerUrlLabel')}
                     </div>
                     <input
+                      type="url"
                       className="settings-input settings-input--wide"
-                      value={source.clientId}
+                      value={source.url}
                       onChange={(event) =>
-                        updateCalendarSource(source.id, { clientId: event.target.value })
+                        updateCalendarSource(source.id, { url: event.target.value })
                       }
-                      autoComplete="off"
+                      placeholder={
+                        source.provider === 'ics'
+                          ? 'https://school.example/calendar.ics'
+                          : source.provider === 'caldav'
+                            ? 'https://caldav.icloud.com/'
+                            : 'https://caldav.example.com/'
+                      }
                     />
                   </div>
-                  <div className="settings-row settings-integration-field">
-                    <div className="settings-row-label">
-                      {t('settings.integrations.calendarClientSecretLabel')}
+                  {source.provider === 'caldav' && (
+                    <>
+                      <div className="settings-row settings-integration-field">
+                        <div className="settings-row-label">
+                          {t('settings.integrations.calendarUsernameLabel')}
+                        </div>
+                        <input
+                          className="settings-input settings-input--wide"
+                          value={source.username}
+                          onChange={(event) =>
+                            updateCalendarSource(source.id, { username: event.target.value })
+                          }
+                          autoComplete="username"
+                        />
+                      </div>
+                      <div className="settings-row settings-integration-field">
+                        <div className="settings-row-label">
+                          {t('settings.integrations.calendarPasswordLabel')}
+                        </div>
+                        <SavedSecretControl
+                          label={t('settings.integrations.calendarPasswordLabel')}
+                          value={source.password || ''}
+                          onChange={(password) =>
+                            updateCalendarSource(source.id, { password, clearPassword: false })
+                          }
+                          configured={Boolean(source.passwordConfigured)}
+                          disabled={integrationStatusLoading}
+                          busy={integrationBusy}
+                          removeLabel={t('settings.integrations.clearSecret')}
+                          onRemove={() =>
+                            updateCalendarSource(source.id, {
+                              password: '',
+                              passwordConfigured: false,
+                              clearPassword: true,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                  {source.provider === 'google' && (
+                    <>
+                      <div className="settings-row settings-integration-field">
+                        <div className="settings-row-label">
+                          {t('settings.integrations.calendarClientIdLabel')}
+                        </div>
+                        <input
+                          className="settings-input settings-input--wide"
+                          value={source.clientId}
+                          onChange={(event) =>
+                            updateCalendarSource(source.id, { clientId: event.target.value })
+                          }
+                          autoComplete="off"
+                        />
+                      </div>
+                      <div className="settings-row settings-integration-field">
+                        <div className="settings-row-label">
+                          {t('settings.integrations.calendarClientSecretLabel')}
+                        </div>
+                        <SavedSecretControl
+                          label={t('settings.integrations.calendarClientSecretLabel')}
+                          value={source.clientSecret || ''}
+                          onChange={(clientSecret) =>
+                            updateCalendarSource(source.id, {
+                              clientSecret,
+                              clearClientSecret: false,
+                            })
+                          }
+                          configured={Boolean(source.clientSecretConfigured)}
+                          disabled={integrationStatusLoading}
+                          busy={integrationBusy}
+                          removeLabel={t('settings.integrations.clearSecret')}
+                          onRemove={() =>
+                            updateCalendarSource(source.id, {
+                              clientSecret: '',
+                              clientSecretConfigured: false,
+                              clearClientSecret: true,
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                  <div className="settings-row-sublabel">
+                    {source.provider === 'caldav'
+                      ? t('settings.integrations.calendarCaldavHelp')
+                      : t('settings.integrations.calendarCredentialsOnly')}
+                  </div>
+                  {testedCalendars && (
+                    <div
+                      className="settings-calendar-test-results"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      <div>
+                        {t('settings.integrations.calendarTestSuccess', {
+                          count: testedCalendars.length,
+                        })}
+                      </div>
+                      {testedCalendars.length > 0 && (
+                        <ul>
+                          {testedCalendars.map((name, index) => (
+                            <li key={`${name}-${index}`}>{name}</li>
+                          ))}
+                        </ul>
+                      )}
                     </div>
-                    <SavedSecretControl
-                      label={t('settings.integrations.calendarClientSecretLabel')}
-                      value={source.clientSecret || ''}
-                      onChange={(clientSecret) =>
-                        updateCalendarSource(source.id, { clientSecret, clearClientSecret: false })
-                      }
-                      configured={Boolean(source.clientSecretConfigured)}
-                      disabled={integrationStatusLoading}
-                      busy={integrationBusy}
-                      removeLabel={t('settings.integrations.clearSecret')}
-                      onRemove={() =>
-                        updateCalendarSource(source.id, {
-                          clientSecret: '',
-                          clientSecretConfigured: false,
-                          clearClientSecret: true,
-                        })
-                      }
-                    />
+                  )}
+                  <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+                    {source.provider === 'caldav' && (
+                      <button
+                        type="button"
+                        className="settings-btn"
+                        onClick={() => void testCalendarSource(source)}
+                        disabled={integrationBusy || integrationStatusLoading}
+                      >
+                        {calendarTestingSourceId === source.id
+                          ? t('settings.integrations.calendarTesting')
+                          : t('settings.integrations.calendarTestConnection')}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="settings-btn settings-btn--danger"
+                      onClick={() => removeCalendarSource(source.id)}
+                    >
+                      {t('settings.integrations.calendarRemoveSource')}
+                    </button>
                   </div>
-                </>
-              )}
-              <div className="settings-row-sublabel">
-                {source.provider === 'caldav'
-                  ? t('settings.integrations.calendarCaldavHelp')
-                  : t('settings.integrations.calendarCredentialsOnly')}
-              </div>
-              <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-                {source.provider === 'caldav' && (
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() => void testCalendarSource(source)}
-                    disabled={integrationBusy || integrationStatusLoading}
-                  >
-                    {calendarTestingSourceId === source.id
-                      ? t('settings.integrations.calendarTesting')
-                      : t('settings.integrations.calendarTestConnection')}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="settings-btn settings-btn--danger"
-                  onClick={() =>
-                    setCalendarSources((sources) => sources.filter((item) => item.id !== source.id))
-                  }
-                >
-                  {t('settings.integrations.calendarRemoveSource')}
-                </button>
-              </div>
-            </div>
-          ))}
+                </div>
+              </details>
+            );
+          })}
         {serverBacked && (
           <div className="settings-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
             <button
@@ -1487,7 +1564,9 @@ export function IntegrationsSection({
             </div>
           </div>
           {icloudListsLoading ? (
-            <div className="settings-row-sublabel">{t('settings.integrations.icloudListsLoading')}</div>
+            <div className="settings-row-sublabel">
+              {t('settings.integrations.icloudListsLoading')}
+            </div>
           ) : activeIcloudLists.length === 0 ? (
             <div className="settings-row-sublabel">
               {t('settings.integrations.noICloudListsFound')}
@@ -1546,7 +1625,9 @@ export function IntegrationsSection({
             </div>
           </div>
           {icloudListsLoading ? (
-            <div className="settings-row-sublabel">{t('settings.integrations.icloudListsLoading')}</div>
+            <div className="settings-row-sublabel">
+              {t('settings.integrations.icloudListsLoading')}
+            </div>
           ) : activeIcloudLists.length === 0 ? (
             <div className="settings-row-sublabel">
               {t('settings.integrations.noICloudListsFound')}
@@ -1607,11 +1688,12 @@ export function IntegrationsSection({
             onChange={(e) => onUpdateSettings({ defaultGroceryList: e.target.value })}
           >
             <option value="">{t('settings.integrations.autoFirstAvailable')}</option>
-            {settings.defaultGroceryList && !activeIcloudListIds.has(settings.defaultGroceryList) && (
-              <option value={settings.defaultGroceryList} disabled>
-                {t('settings.integrations.icloudSelectedListUnavailable')}
-              </option>
-            )}
+            {settings.defaultGroceryList &&
+              !activeIcloudListIds.has(settings.defaultGroceryList) && (
+                <option value={settings.defaultGroceryList} disabled>
+                  {t('settings.integrations.icloudSelectedListUnavailable')}
+                </option>
+              )}
             {activeIcloudLists.map((list) => (
               <option key={list.key} value={list.key}>
                 {list.title}
@@ -1774,9 +1856,7 @@ export function IntegrationsSection({
                 onClick={() => void saveServerIntegrations('meal')}
                 disabled={integrationBusy || integrationStatusLoading}
               >
-                {mealSaving
-                  ? t('settings.integrations.saving')
-                  : t('settings.integrations.save')}
+                {mealSaving ? t('settings.integrations.saving') : t('settings.integrations.save')}
               </button>
             </div>
           </>

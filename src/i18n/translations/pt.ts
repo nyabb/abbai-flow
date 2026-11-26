@@ -51,7 +51,6 @@ export const pt: Record<TranslationKey, string> = {
   'debugConsole.clear': 'Limpar registro',
   'debugConsole.empty': 'Nenhuma solicitação ou erro registrado ainda.',
 
-
   // ---- meal planner ----
   'meals.today': 'Hoje',
   'meals.thisWeek': 'Esta semana',
@@ -61,22 +60,27 @@ export const pt: Record<TranslationKey, string> = {
   'meals.ingredients': 'Ingredientes',
   'meals.steps': 'Preparação',
   'meals.noDinnerPlanned': 'Não há jantar planeado para este dia.',
-  'meals.noDinnerPlannedHelp': 'O plano de refeições da família aparecerá aqui quando for escolhido um jantar.',
+  'meals.noDinnerPlannedHelp':
+    'O plano de refeições da família aparecerá aqui quando for escolhido um jantar.',
   'meals.noRecipes': 'Ainda não há receitas disponíveis.',
-  'meals.noRecipesHelp': 'As receitas aparecerão aqui quando forem incluídas num plano de refeições ou importadas de uma fonte.',
+  'meals.noRecipesHelp':
+    'As receitas aparecerão aqui quando forem incluídas num plano de refeições ou importadas de uma fonte.',
   'meals.catalogFromPlans': 'Receitas do plano de refeições da família.',
   'meals.searchRecipes': 'Pesquisar receitas',
   'meals.recipeDetailsUnavailable': 'A preparação desta receita não está disponível.',
   'meals.unplanned': 'Sem jantar planeado',
   'meals.sourceSettings': 'Definições da fonte de refeições',
-  'meals.sourceSettingsHelp': 'Defina o URL do feed, o token bearer opcional e o mapeamento dos campos JSON em Definições → Integrações.',
+  'meals.sourceSettingsHelp':
+    'Defina o URL do feed, o token bearer opcional e o mapeamento dos campos JSON em Definições → Integrações.',
   'meals.sourceConfigured': 'Fonte de refeições configurada',
   'meals.sourceNotConfigured': 'Ainda não está configurada uma fonte de refeições.',
   'meals.bearerConfigured': 'Um token bearer está guardado de forma segura no servidor.',
   'meals.bearerNotConfigured': 'Esta fonte não tem um token bearer.',
-  'meals.sourceRequiresServer': 'Configure as fontes de refeições em Definições → Integrações numa instalação com servidor.',
+  'meals.sourceRequiresServer':
+    'Configure as fontes de refeições em Definições → Integrações numa instalação com servidor.',
   'meals.openSettings': 'Abrir definições de integrações',
-  'settings.integrations.mealSourceBackendRequired': 'É necessária uma instalação do Abbai Flow com servidor para guardar tokens bearer de forma segura.',
+  'settings.integrations.mealSourceBackendRequired':
+    'É necessária uma instalação do Abbai Flow com servidor para guardar tokens bearer de forma segura.',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': 'Noite limpa',
@@ -226,7 +230,7 @@ export const pt: Record<TranslationKey, string> = {
   'settings.family.child': 'Criança',
   'settings.family.avatarLabel': 'Avatar',
   'settings.family.photoLabel': 'Foto',
-  'settings.family.photoHint': "É apresentada em vez do emoji nos avatares dos membros da família.",
+  'settings.family.photoHint': 'É apresentada em vez do emoji nos avatares dos membros da família.',
   'settings.family.photoUpload': 'Carregar foto',
   'settings.family.photoRemove': 'Remover foto',
   'settings.family.photoFromHa': 'Usar foto do Home Assistant',
@@ -246,12 +250,6 @@ export const pt: Record<TranslationKey, string> = {
   'settings.family.colorLabel': 'Cor',
   'settings.family.pinLabel': 'PIN',
   'settings.family.pinSublabel': 'Opcional, 4-6 dígitos',
-  'settings.family.calendarLabel': 'Calendário',
-  'settings.family.calendarSublabel': 'Associar ao calendário HA',
-  'settings.family.additionalCalendarsLabel': 'Calendários adicionais',
-  'settings.family.additionalCalendarsSublabel':
-    'Agrupe também outros calendários (p. ex. uma equipa desportiva) sob este membro',
-  'settings.family.addAnotherCalendar': '+ Adicionar outro calendário…',
   'settings.family.namePlaceholder': 'Nome do membro da família',
   'settings.family.saveChanges': 'Guardar alterações',
   'settings.family.addMemberBtn': 'Adicionar membro',
@@ -291,7 +289,7 @@ export const pt: Record<TranslationKey, string> = {
   'settings.calendar.desc': 'Configure a visualização e os valores predefinidos do calendário.',
   'settings.calendar.connectedCalendarsTitle': 'Calendários ligados',
   'settings.calendar.noCalendars':
-    'Nenhum calendário encontrado. Ligue o Home Assistant para ver calendários.',
+    'Nenhum calendário encontrado. Adicione uma fonte CalDAV em Definições → Integrações.',
   'settings.calendar.editColor': 'Editar cor do calendário',
   'settings.calendar.editColorFor': 'Editar cor de {name}',
   'settings.calendar.setColorTo': 'Definir {name} para {color}',
@@ -347,11 +345,13 @@ export const pt: Record<TranslationKey, string> = {
   'settings.display.desc': 'Configure a proteção de ecrã e o Ecrã infantil.',
   'settings.display.screenSaverLabel': 'Proteção de ecrã',
   'settings.display.screenSaverModeLabel': 'Conteúdo da proteção de ecrã',
-  'settings.display.screenSaverModeSublabel': 'Escolha o que aparece quando a proteção de ecrã começa',
+  'settings.display.screenSaverModeSublabel':
+    'Escolha o que aparece quando a proteção de ecrã começa',
   'settings.display.screenSaverClock': 'Só relógio',
   'settings.display.screenSaverPhotos': 'Só fotografias',
   'settings.display.screenSaverMixed': 'Relógio e fotografias',
-  'settings.display.screenSaverSublabel': 'Mostra o relógio e/ou as fotografias escolhidas após inatividade',
+  'settings.display.screenSaverSublabel':
+    'Mostra o relógio e/ou as fotografias escolhidas após inatividade',
   'settings.display.dimAfterLabel': 'Escurecer após',
   'settings.display.dimAfterSublabel': 'Minutos de inatividade antes de escurecer',
   'settings.display.screenSaverAfterLabel': 'Proteção de ecrã após',
@@ -484,8 +484,7 @@ export const pt: Record<TranslationKey, string> = {
   'chores.missionsHint': 'Conclui as tuas tarefas',
   'chores.noChoresToday': 'Nada para fazer agora.',
   'chores.wellDone': 'Muito bem!',
-  'chores.missing':
-    'Ainda não existem tarefas no ChoresMan.',
+  'chores.missing': 'Ainda não existem tarefas no ChoresMan.',
   'chores.stat.due': 'Para hoje',
   'chores.stat.claimed': 'Reivindicadas',
   'chores.stat.approved': 'Aprovadas',
@@ -748,8 +747,7 @@ export const pt: Record<TranslationKey, string> = {
   'planner.assigned': 'Atribuída · a aguardar confirmação',
   'planner.undoShort': 'Anular',
   'planner.locked': 'ainda não chega',
-  'planner.assignToClaim':
-    'Escolha um familiar antes de atribuir esta tarefa.',
+  'planner.assignToClaim': 'Escolha um familiar antes de atribuir esta tarefa.',
   'planner.pinTitle': 'Aprovação de adulto',
   'planner.pinHint': 'Introduz o PIN de um adulto.',
   'planner.pinWrong': 'Esse PIN não está correto.',

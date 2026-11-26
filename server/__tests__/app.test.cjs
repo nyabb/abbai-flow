@@ -81,6 +81,7 @@ async function startBeacon(overrides = {}) {
     ca: overrides.ca,
     spotifyPlaylists: overrides.spotifyPlaylists,
     icloudReminders: overrides.icloudReminders,
+    caldavCalendars: overrides.caldavCalendars,
     bluetooth: overrides.bluetooth,
     bluetoothDbusAddress: overrides.bluetoothDbusAddress,
   });
@@ -193,11 +194,6 @@ async function startFakeHa({ secure = false, basePath = '' } = {}) {
         );
         return;
       }
-      if (msg.type === 'calendar/event/create') {
-        socket.send(
-          JSON.stringify({ id: msg.id, type: 'result', success: true, result: msg.event }),
-        );
-      }
     });
   });
 
@@ -268,8 +264,8 @@ test('URL helpers keep the configured base path', () => {
     'http://ha.local:8123/api/states?x=1',
   );
   assert.equal(
-    resolveHaUrl('https://ha.example.com/', '/api/calendars/calendar.home').toString(),
-    'https://ha.example.com/api/calendars/calendar.home',
+    resolveHaUrl('https://ha.example.com/', '/api/services/light/turn_on').toString(),
+    'https://ha.example.com/api/services/light/turn_on',
   );
 });
 
@@ -883,34 +879,20 @@ test('websocket upgrade is refused without a token', async (t) => {
   await assert.rejects(() => openSocket(`ws://127.0.0.1:${beacon.port}/api/websocket`));
 });
 
-test('calendar bridge maps results and not-supported errors', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl });
+test('calendar catalog returns calendars discovered by the CalDAV service', async (t) => {
+  const calendars = [{ id: 'caldav/source/family', name: 'Family', sourceId: 'source' }];
+  let listCallCount = 0;
+  const listCalendars = async () => {
+    listCallCount += 1;
+    return calendars;
+  };
+  const beacon = await startBeacon({ caldavCalendars: { listCalendars } });
   t.after(() => beacon.close());
 
-  const created = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/calendar-event',
-    body: { op: 'create', entity_id: 'calendar.home', event: { summary: 'Dentist' } },
-  });
-  assert.equal(created.status, 200);
-  assert.equal(created.json.ok, true);
-  assert.deepEqual(created.json.result, { summary: 'Dentist' });
-
-  const missingUid = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/calendar-event',
-    body: { op: 'delete', entity_id: 'calendar.home' },
-  });
-  assert.equal(missingUid.status, 400);
-
-  const badOp = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/calendar-event',
-    body: { op: 'explode', entity_id: 'calendar.home' },
-  });
-  assert.equal(badOp.status, 400);
+  const response = await request(beacon.port, { path: '/abbai-flow/calendars' });
+  assert.equal(response.status, 200);
+  assert.deepEqual(response.json.calendars, calendars);
+  assert.equal(listCallCount, 1);
 });
 
 /* ------------------------------------------------------------------ */

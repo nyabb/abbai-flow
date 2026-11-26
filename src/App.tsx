@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } fro
 import { flushSync } from 'react-dom';
 import { startOfWeek, addDays, format } from 'date-fns';
 import { useHomeAssistant } from './hooks/useHomeAssistant';
-import { CalendarNotSupportedError } from './hooks/useCalendarEvents';
 import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
 import { useChoresMan } from './hooks/useChoresMan';
@@ -93,8 +92,6 @@ export function App() {
   const { data: choresManData, runActionId: runChoresManAction } = useChoresMan(members);
 
   const mergedCalendars = useMergedCalendars({
-    connected,
-    getClient: client,
     calendarColors: settings.calendarColors,
     members,
     chores: choresManData?.chores ?? EMPTY_CHORESMAN_CHORES,
@@ -230,8 +227,8 @@ export function App() {
   // Event notifications (browser + HA mobile_app)
   useNotifications(events, client, !focusMemberId, settings.notificationMinutes);
 
-  // Fetch both HA and server-configured CalDAV data when the app starts, or
-  // when the user navigates to a different week or changes integrations.
+  // Fetch CalDAV calendar data when the app starts, or when the user navigates
+  // to a different week or changes integration settings.
   useEffect(() => {
     const loadData = async () => {
       await fetchCalendars();
@@ -249,17 +246,16 @@ export function App() {
     );
 
     return () => clearInterval(interval);
-  }, [connected, fetchCalendars, haIntegrationRevision, refetchEventsForWeek, visibleWeekStart]);
+  }, [fetchCalendars, haIntegrationRevision, refetchEventsForWeek, visibleWeekStart]);
 
   // Re-fetch when calendar colors or family members change so colors update
   // immediately, without recreating the 5-minute polling interval above.
   const colorRefreshRef = useRef({
-    connected,
     fetchCalendars,
     refetchEventsForWeek,
     visibleWeekStart,
   });
-  colorRefreshRef.current = { connected, fetchCalendars, refetchEventsForWeek, visibleWeekStart };
+  colorRefreshRef.current = { fetchCalendars, refetchEventsForWeek, visibleWeekStart };
   const didColorRefreshMount = useRef(false);
   useEffect(() => {
     if (!didColorRefreshMount.current) {
@@ -307,11 +303,8 @@ export function App() {
         ? {
             summary: data.summary,
             start_date: data.startDate,
-            // HA's calendar API treats dtend as exclusive (the day AFTER the
-            // last day of the event) and rejects dtstart === dtend with a
-            // "minimum event duration" error. When the user picks the same
-            // start/end date for a single-day all-day event, bump end_date to
-            // the day after start_date so HA sees a valid >=1-day duration.
+            // CalDAV uses an exclusive end date for all-day events. When the
+            // user picks the same start/end date, bump it by one day.
             end_date:
               data.endDate <= data.startDate
                 ? format(addDays(new Date(`${data.startDate}T00:00:00`), 1), 'yyyy-MM-dd')
@@ -338,8 +331,7 @@ export function App() {
           // Editing an existing event — update in place rather than creating
           // a duplicate. `selectedEvent.calendarId` is the event's original
           // calendar; if the user changed the calendar in the form, move it
-          // by deleting from the old calendar and creating on the new one
-          // (HA's update_event can't move an event across entities).
+          // by deleting from the old calendar and creating on the new one.
           if (selectedEvent.hasStableId === false) {
             throw new Error(
               "This event can't be edited — it has no stable ID from its calendar provider.",
@@ -349,21 +341,7 @@ export function App() {
             await deleteEvent(selectedEvent.calendarId, selectedEvent.id);
             await createEvent(calendarId, eventData);
           } else {
-            try {
-              await updateEvent(calendarId, selectedEvent.id, eventData);
-            } catch (err) {
-              // Many calendar providers (Google Calendar via HA, several
-              // CalDAV backends, etc.) don't support in-place event updates
-              // at all. Fall back to delete + recreate so editing still
-              // works — the event gets a new id, but that's invisible to
-              // the user since we refetch right after.
-              if (err instanceof CalendarNotSupportedError) {
-                await deleteEvent(calendarId, selectedEvent.id);
-                await createEvent(calendarId, eventData);
-              } else {
-                throw err;
-              }
-            }
+            await updateEvent(calendarId, selectedEvent.id, eventData);
           }
         } else {
           await createEvent(calendarId, eventData);
@@ -405,9 +383,7 @@ export function App() {
         handleCloseModal();
       } catch (err) {
         console.error('Failed to delete event:', err);
-        throw err instanceof CalendarNotSupportedError
-          ? new Error('This calendar does not support deleting events.')
-          : err;
+        throw err;
       }
     },
     [selectedEvent, deleteEvent, refetchEventsForWeek, visibleWeekStart, handleCloseModal],
@@ -434,29 +410,14 @@ export function App() {
               return { start_date_time: newStartDt, end_date_time: newEndDt };
             })();
 
-        try {
-          await updateEvent(event.calendarId, event.id, patch);
-        } catch (err) {
-          // Same fallback as handleSaveEvent: calendars without update
-          // support need delete + recreate to move an event via drag.
-          if (err instanceof CalendarNotSupportedError) {
-            await deleteEvent(event.calendarId, event.id);
-            await createEvent(event.calendarId, {
-              ...patch,
-              summary: event.title,
-              description: event.description,
-            });
-          } else {
-            throw err;
-          }
-        }
+        await updateEvent(event.calendarId, event.id, patch);
 
         await refetchEventsForWeek(visibleWeekStart);
       } catch (err) {
         console.error('Failed to reschedule event:', err);
       }
     },
-    [updateEvent, deleteEvent, createEvent, refetchEventsForWeek, visibleWeekStart],
+    [updateEvent, refetchEventsForWeek, visibleWeekStart],
   );
 
   const handleAddEvent = useCallback(() => {
@@ -551,7 +512,9 @@ export function App() {
             id: chore.id,
             name: chore.name,
             assigned_to: member ? [member.id] : [],
-            frequency: /^daily/.test(chore.frequency ?? '') ? ('daily' as const) : ('once' as const),
+            frequency: /^daily/.test(chore.frequency ?? '')
+              ? ('daily' as const)
+              : ('once' as const),
             value_cents: 0,
             icon: choreIconForDisplay(chore.icon),
           };
@@ -570,9 +533,12 @@ export function App() {
   }, [choresManData]);
 
   const calendarWaitingChoreIds = useMemo(
-    () => new Set((choresManData?.chores ?? [])
-      .filter((chore) => ['in_progress', 'claimed'].includes(chore.status))
-      .map((chore) => chore.id)),
+    () =>
+      new Set(
+        (choresManData?.chores ?? [])
+          .filter((chore) => ['in_progress', 'claimed'].includes(chore.status))
+          .map((chore) => chore.id),
+      ),
     [choresManData],
   );
 
@@ -931,16 +897,16 @@ export function App() {
 
         {/* Now Playing Bar — shows when music is playing outside the music view. */}
         {activeView !== 'music' && music.activePlayer?.state === 'playing' && (
-            <NowPlayingBar
-              player={music.activePlayer}
-              onPlay={() => music.play(music.activePlayer!.entity_id)}
-              onPause={() => music.pause(music.activePlayer!.entity_id)}
-              onNext={() => music.next(music.activePlayer!.entity_id)}
-              onPrevious={() => music.previous(music.activePlayer!.entity_id)}
-              onSetVolume={(v) => music.setVolume(v, music.activePlayer!.entity_id)}
-              onExpand={() => handleChangeView('music')}
-            />
-          )}
+          <NowPlayingBar
+            player={music.activePlayer}
+            onPlay={() => music.play(music.activePlayer!.entity_id)}
+            onPause={() => music.pause(music.activePlayer!.entity_id)}
+            onNext={() => music.next(music.activePlayer!.entity_id)}
+            onPrevious={() => music.previous(music.activePlayer!.entity_id)}
+            onSetVolume={(v) => music.setVolume(v, music.activePlayer!.entity_id)}
+            onExpand={() => handleChangeView('music')}
+          />
+        )}
 
         {/* Screen saver / dim mode */}
         <ScreenSaver

@@ -127,7 +127,6 @@ describe('integration startup diagnostics', () => {
       },
     };
     const states = [
-      { entity_id: 'calendar.home', state: 'on' },
       { entity_id: 'todo.groceries', state: '1' },
       { entity_id: 'media_player.abbai', state: 'idle' },
       { entity_id: 'weather.home', state: 'sunny' },
@@ -159,9 +158,8 @@ describe('integration startup diagnostics', () => {
     });
     expect(verifySpotifyCatalog).toHaveBeenCalledOnce();
     expect(entries.join('\n')).toContain('Home Assistant API: connected and authenticated.');
-    expect(entries.join('\n')).toContain(
-      'calendars=1, media_players=1, todo_lists=1',
-    );
+    expect(entries.join('\n')).toContain('media_players=1, todo_lists=1');
+    expect(entries.join('\n')).not.toContain('Home Assistant calendars');
     expect(entries.join('\n')).toContain('Weather entity weather.home: available.');
     expect(entries.join('\n')).toContain(
       'Home Assistant media source: available (2 root item(s)).',

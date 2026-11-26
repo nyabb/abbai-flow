@@ -1,12 +1,9 @@
 /**
  * Calendar orchestration for the app shell.
  *
- * Abbai Flow shows two kinds of calendars side by side: the device-local calendar
- * (stored in Abbai Flow's own persistence) and the calendars Home Assistant
- * publishes. Both are merged into one list so the week view and
- * event modal never need to know where an event lives — they just call
- * `createEvent`/`updateEvent`/`deleteEvent` and this hook routes to the right
- * store.
+ * Combines the local Abbai Flow calendar, configured CalDAV calendars, and
+ * read-only ChoresMan calendars into one view. Event operations are routed to
+ * the owning provider so the UI does not need provider-specific logic.
  *
  * Extracted from App.tsx so the shell renders rather than orchestrates, and so
  * the routing rules are testable in isolation.
@@ -16,7 +13,6 @@ import { useCalendarEvents } from './useCalendarEvents';
 import { useLocalCalendar } from './useLocalCalendar';
 import { resolveCalendarColor } from '../types';
 import type { CalendarEvent, CalendarInfo } from '../types';
-import type { HomeAssistantClient } from '../api/homeassistant';
 import type { ChoresManChore } from '../types/choresman';
 import type { FamilyMember } from '../types/family';
 import {
@@ -31,19 +27,15 @@ export type CalendarEventInput = Parameters<CalendarApi['createEvent']>[1];
 export type CalendarEventUpdate = Parameters<CalendarApi['updateEvent']>[2];
 
 export interface UseMergedCalendarsOptions {
-  /** True when the HA API is reachable (live client or proxy token). */
-  connected: boolean;
-  /** Client factory for direct WS calls in standalone mode. */
-  getClient?: () => HomeAssistantClient | null;
   calendarColors?: Record<string, string>;
   members?: FamilyMember[];
   chores?: ChoresManChore[];
 }
 
 export interface UseMergedCalendarsResult {
-  /** Local calendar first, then every HA calendar. */
+  /** Local calendar, configured CalDAV calendars, then ChoresMan calendars. */
   calendars: CalendarInfo[];
-  /** Local events + HA events, sorted by start. */
+  /** Local events, CalDAV events, and ChoresMan events, sorted by start. */
   events: CalendarEvent[];
   loading: boolean;
   fetchCalendars: CalendarApi['fetchCalendars'];
@@ -57,14 +49,12 @@ export interface UseMergedCalendarsResult {
 }
 
 export function useMergedCalendars({
-  connected,
-  getClient,
   calendarColors,
   members,
   chores = EMPTY_CHORES,
-}: UseMergedCalendarsOptions): UseMergedCalendarsResult {
-  const ha = useCalendarEvents(connected, { calendarColors, members }, getClient);
-  const { fetchEvents: fetchHaEvents } = ha;
+}: UseMergedCalendarsOptions = {}): UseMergedCalendarsResult {
+  const caldav = useCalendarEvents({ calendarColors });
+  const { fetchEvents: fetchCaldavEvents } = caldav;
   const local = useLocalCalendar();
   const [choresManEvents, setChoresManEvents] = useState<CalendarEvent[]>([]);
   const lastRange = useRef<{ start: string; end: string } | null>(null);
@@ -95,9 +85,9 @@ export function useMergedCalendars({
     async (start: string, end: string) => {
       lastRange.current = { start, end };
       refreshChoresManEvents(start, end);
-      await fetchHaEvents(start, end);
+      await fetchCaldavEvents(start, end);
     },
-    [fetchHaEvents, refreshChoresManEvents],
+    [fetchCaldavEvents, refreshChoresManEvents],
   );
 
   useEffect(() => {
@@ -114,21 +104,29 @@ export function useMergedCalendars({
   });
 
   const calendars = useMemo(
-    () => [{ ...local.calendar, color: localCalendarColor }, ...ha.calendars, ...choreCalendars],
-    [local.calendar, localCalendarColor, ha.calendars, choreCalendars],
+    () => [
+      { ...local.calendar, color: localCalendarColor },
+      ...caldav.calendars,
+      ...choreCalendars,
+    ],
+    [local.calendar, localCalendarColor, caldav.calendars, choreCalendars],
   );
 
   const events = useMemo(
     () =>
       [
         ...local.events.map((event) => ({ ...event, color: localCalendarColor })),
-        ...ha.events,
+        ...caldav.events,
         ...choresManEvents,
       ].sort((a, b) => a.start.localeCompare(b.start)),
-    [local.events, localCalendarColor, ha.events, choresManEvents],
+    [local.events, localCalendarColor, caldav.events, choresManEvents],
   );
 
-  const { createEvent: createHaEvent, updateEvent: updateHaEvent, deleteEvent: deleteHaEvent } = ha;
+  const {
+    createEvent: createCaldavEvent,
+    updateEvent: updateCaldavEvent,
+    deleteEvent: deleteCaldavEvent,
+  } = caldav;
   const {
     calendar: localCalendar,
     createEvent: createLocalEvent,
@@ -145,9 +143,9 @@ export function useMergedCalendars({
         createLocalEvent(event);
         return;
       }
-      await createHaEvent(calendarId, event);
+      await createCaldavEvent(calendarId, event);
     },
-    [localCalendar.id, createLocalEvent, createHaEvent],
+    [localCalendar.id, createLocalEvent, createCaldavEvent],
   );
 
   const updateEvent = useCallback(
@@ -159,9 +157,9 @@ export function useMergedCalendars({
         updateLocalEvent(uid, event);
         return;
       }
-      await updateHaEvent(calendarId, uid, event);
+      await updateCaldavEvent(calendarId, uid, event);
     },
-    [localCalendar.id, updateLocalEvent, updateHaEvent],
+    [localCalendar.id, updateLocalEvent, updateCaldavEvent],
   );
 
   const deleteEvent = useCallback(
@@ -173,16 +171,16 @@ export function useMergedCalendars({
         deleteLocalEvent(uid);
         return;
       }
-      await deleteHaEvent(calendarId, uid);
+      await deleteCaldavEvent(calendarId, uid);
     },
-    [localCalendar.id, deleteLocalEvent, deleteHaEvent],
+    [localCalendar.id, deleteLocalEvent, deleteCaldavEvent],
   );
 
   return {
     calendars,
     events,
-    loading: ha.loading,
-    fetchCalendars: ha.fetchCalendars,
+    loading: caldav.loading,
+    fetchCalendars: caldav.fetchCalendars,
     fetchEvents,
     createEvent,
     updateEvent,

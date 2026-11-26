@@ -31,11 +31,13 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function cleanLegacyChoreLinks(members: FamilyMember[]): FamilyMember[] {
+function cleanLegacyFamilyLinks(members: FamilyMember[]): FamilyMember[] {
   return members.map((member) => {
     const clean = { ...(member as FamilyMember & Record<string, unknown>) };
     delete clean.choreops_user;
     delete clean.choreops_state;
+    delete clean.calendar_entity;
+    delete clean.additional_calendar_entities;
     return clean as FamilyMember;
   });
 }
@@ -56,7 +58,7 @@ export class FamilyStore {
 
   async getMembers(): Promise<FamilyMember[]> {
     const stored = await loadData<FamilyMember[]>(STORAGE_KEYS.members, []);
-    const members = cleanLegacyChoreLinks(stored);
+    const members = cleanLegacyFamilyLinks(stored);
     if (JSON.stringify(stored) !== JSON.stringify(members)) {
       await saveData(STORAGE_KEYS.members, members);
     }
@@ -64,7 +66,7 @@ export class FamilyStore {
   }
 
   getMembersSync(): FamilyMember[] {
-    return cleanLegacyChoreLinks(loadDataSync<FamilyMember[]>(STORAGE_KEYS.members, []));
+    return cleanLegacyFamilyLinks(loadDataSync<FamilyMember[]>(STORAGE_KEYS.members, []));
   }
 
   async addMember(member: Omit<FamilyMember, 'id'>): Promise<FamilyMember> {

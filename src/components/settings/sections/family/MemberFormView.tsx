@@ -1,5 +1,5 @@
 /**
- * The member add/edit form: name, role, avatar, photo, colour, PIN and calendars.
+ * The member add/edit form: name, role, avatar, photo, colour and PIN.
  *
  * Pure presentation â€” the form value and every mutation live in
  * `FamilySection`, which owns the state.
@@ -10,14 +10,12 @@ import type { I18nValue } from '../../../../i18n';
 import { AVATAR_CATEGORIES, MEMBER_COLORS, normalizePin } from '../../../../types/family';
 import { resolveMemberPhoto } from '../../../../utils/member-photo';
 import { Segment } from '../../controls';
-import type { FamilyCalendarSummary } from '../FamilySection';
 import type { MemberForm, MemberFormMode } from './types';
 
 export interface MemberFormViewProps {
   form: MemberForm;
   mode: Exclude<MemberFormMode, 'list'>;
   photoError: string | null;
-  calendars: FamilyCalendarSummary[];
   t: I18nValue['t'];
   onChange: Dispatch<SetStateAction<MemberForm>>;
   onPhotoUpload: (event: ChangeEvent<HTMLInputElement>) => void;
@@ -29,7 +27,6 @@ export function MemberFormView({
   form,
   mode,
   photoError,
-  calendars,
   t,
   onChange,
   onPhotoUpload,
@@ -173,7 +170,9 @@ export function MemberFormView({
       <div className="settings-row">
         <div>
           <div className="settings-row-label">{t('settings.family.localChoresManMember')}</div>
-          <div className="settings-row-sublabel">{t('settings.family.localChoresManMemberHelp')}</div>
+          <div className="settings-row-sublabel">
+            {t('settings.family.localChoresManMemberHelp')}
+          </div>
         </div>
       </div>
       <div className="settings-row" style={{ alignItems: 'flex-start' }}>
@@ -211,98 +210,6 @@ export function MemberFormView({
           inputMode="numeric"
           maxLength={6}
         />
-      </div>
-      <div className="settings-row">
-        <div>
-          <div className="settings-row-label">{t('settings.family.calendarLabel')}</div>
-          <div className="settings-row-sublabel">{t('settings.family.calendarSublabel')}</div>
-        </div>
-        <select
-          className="settings-select"
-          value={form.calendar_entity}
-          onChange={(e) => onChange((f) => ({ ...f, calendar_entity: e.target.value }))}
-        >
-          <option value="">{t('common.none')}</option>
-          {calendars.map((cal) => (
-            <option key={cal.id} value={cal.id}>
-              {cal.name}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div
-        className="settings-row"
-        style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}
-      >
-        <div>
-          <div className="settings-row-label">{t('settings.family.additionalCalendarsLabel')}</div>
-          <div className="settings-row-sublabel">
-            {t('settings.family.additionalCalendarsSublabel')}
-          </div>
-        </div>
-        {form.additional_calendar_entities.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {form.additional_calendar_entities.map((entityId) => {
-              const cal = calendars.find((c) => c.id === entityId);
-              return (
-                <div
-                  key={entityId}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 8,
-                  }}
-                >
-                  <span className="settings-row-sublabel">{cal?.name ?? entityId}</span>
-                  <button
-                    type="button"
-                    className="settings-btn"
-                    onClick={() =>
-                      onChange((f) => ({
-                        ...f,
-                        additional_calendar_entities: f.additional_calendar_entities.filter(
-                          (id) => id !== entityId,
-                        ),
-                      }))
-                    }
-                  >
-                    {t('common.remove')}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        <select
-          className="settings-select"
-          value=""
-          onChange={(e) => {
-            const id = e.target.value;
-            if (!id) return;
-            onChange((f) =>
-              f.additional_calendar_entities.includes(id)
-                ? f
-                : {
-                    ...f,
-                    additional_calendar_entities: [...f.additional_calendar_entities, id],
-                  },
-            );
-          }}
-        >
-          <option value="">{t('settings.family.addAnotherCalendar')}</option>
-          {calendars
-            .filter(
-              (cal) =>
-                cal.id !== form.calendar_entity &&
-                !form.additional_calendar_entities.includes(cal.id),
-            )
-            .map((cal) => (
-              <option key={cal.id} value={cal.id}>
-                {cal.name}
-              </option>
-            ))}
-        </select>
       </div>
       <div
         style={{

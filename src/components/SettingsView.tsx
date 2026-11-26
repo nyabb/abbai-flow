@@ -186,7 +186,6 @@ export function SettingsView({
       onAddMember={onAddMember}
       onUpdateMember={onUpdateMember}
       onRemoveMember={onRemoveMember}
-      calendars={calendars.filter((calendar) => !calendar.readOnly)}
     />
   );
   // ==== CALENDAR ====
@@ -196,7 +195,6 @@ export function SettingsView({
       onUpdateSettings={onUpdateSettings}
       t={t}
       calendars={calendars}
-      members={members}
     />
   );
   // ==== INTEGRATIONS ====

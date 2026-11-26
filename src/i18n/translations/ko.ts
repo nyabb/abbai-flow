@@ -50,7 +50,6 @@ export const ko: Record<TranslationKey, string> = {
   'debugConsole.clear': '로그 지우기',
   'debugConsole.empty': '아직 기록된 요청이나 오류가 없습니다.',
 
-
   // ---- meal planner ----
   'meals.today': '오늘',
   'meals.thisWeek': '이번 주',
@@ -68,14 +67,16 @@ export const ko: Record<TranslationKey, string> = {
   'meals.recipeDetailsUnavailable': '이 식사의 조리 방법을 확인할 수 없습니다.',
   'meals.unplanned': '예정된 저녁 식사 없음',
   'meals.sourceSettings': '식사 데이터 소스 설정',
-  'meals.sourceSettingsHelp': '설정 → 통합에서 피드 URL, 선택 사항인 Bearer 토큰, JSON 필드 매핑을 설정하세요.',
+  'meals.sourceSettingsHelp':
+    '설정 → 통합에서 피드 URL, 선택 사항인 Bearer 토큰, JSON 필드 매핑을 설정하세요.',
   'meals.sourceConfigured': '식사 데이터 소스가 설정되었습니다',
   'meals.sourceNotConfigured': '식사 데이터 소스가 아직 설정되지 않았습니다.',
   'meals.bearerConfigured': 'Bearer 토큰이 서버에 안전하게 저장되어 있습니다.',
   'meals.bearerNotConfigured': '이 소스에는 Bearer 토큰이 없습니다.',
   'meals.sourceRequiresServer': '서버 기반 설치의 설정 → 통합에서 식사 데이터 소스를 설정하세요.',
   'meals.openSettings': '통합 설정 열기',
-  'settings.integrations.mealSourceBackendRequired': 'Bearer 토큰을 안전하게 저장하려면 서버 기반 Abbai Flow 설치가 필요합니다.',
+  'settings.integrations.mealSourceBackendRequired':
+    'Bearer 토큰을 안전하게 저장하려면 서버 기반 Abbai Flow 설치가 필요합니다.',
 
   // ---- weather conditions ----
   'weather.condition.clearNight': '맑은 밤',
@@ -223,7 +224,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.family.child': '자녀',
   'settings.family.avatarLabel': '아바타',
   'settings.family.photoLabel': '사진',
-  'settings.family.photoHint': "가족 구성원 아바타에서 이모지 대신 표시됩니다.",
+  'settings.family.photoHint': '가족 구성원 아바타에서 이모지 대신 표시됩니다.',
   'settings.family.photoUpload': '사진 업로드',
   'settings.family.photoRemove': '사진 삭제',
   'settings.family.photoFromHa': 'Home Assistant 사진 사용',
@@ -243,12 +244,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.family.colorLabel': '색상',
   'settings.family.pinLabel': 'PIN',
   'settings.family.pinSublabel': '선택 사항, 4~6자리',
-  'settings.family.calendarLabel': '캘린더',
-  'settings.family.calendarSublabel': 'HA 캘린더와 연결합니다',
-  'settings.family.additionalCalendarsLabel': '추가 캘린더',
-  'settings.family.additionalCalendarsSublabel':
-    '다른 캘린더(예: 스포츠 팀)도 이 구성원 아래로 함께 묶을 수 있습니다',
-  'settings.family.addAnotherCalendar': '+ 다른 캘린더 추가…',
   'settings.family.namePlaceholder': '가족 구성원 이름',
   'settings.family.saveChanges': '변경사항 저장',
   'settings.family.addMemberBtn': '구성원 추가',
@@ -287,8 +282,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.calendar.title': '캘린더',
   'settings.calendar.desc': '캘린더 표시 방식과 기본값을 설정합니다.',
   'settings.calendar.connectedCalendarsTitle': '연결된 캘린더',
-  'settings.calendar.noCalendars':
-    '캘린더를 찾을 수 없습니다. Home Assistant에 연결해 캘린더를 확인하세요.',
+  'settings.calendar.noCalendars': '캘린더가 없습니다. 설정 → 통합에서 CalDAV 소스를 추가하세요.',
   'settings.calendar.editColor': '캘린더 색상 편집',
   'settings.calendar.editColorFor': '{name}의 색상 편집',
   'settings.calendar.setColorTo': '{name}을(를) {color}(으)로 설정',
@@ -323,8 +317,7 @@ export const ko: Record<TranslationKey, string> = {
   'settings.integrations.groceryListsLabel': '장보기 목록',
   'settings.integrations.groceryListsSublabel':
     '장보기에 표시할 iCloud 미리 알림 목록을 선택하세요',
-  'settings.integrations.taskListsSublabel':
-    '작업에 표시할 iCloud 미리 알림 목록을 선택하세요',
+  'settings.integrations.taskListsSublabel': '작업에 표시할 iCloud 미리 알림 목록을 선택하세요',
   'settings.integrations.noICloudListsFound':
     'iCloud 미리 알림 목록이 없습니다. 위의 iCloud 미리 알림 섹션에서 로그인하세요.',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
@@ -479,8 +472,7 @@ export const ko: Record<TranslationKey, string> = {
   'chores.missionsHint': '할 일을 마무리하기',
   'chores.noChoresToday': '지금 할 일이 없습니다.',
   'chores.wellDone': '잘했어요!',
-  'chores.missing':
-    'ChoresMan에 아직 집안일이 없습니다.',
+  'chores.missing': 'ChoresMan에 아직 집안일이 없습니다.',
   'chores.stat.due': '오늘 마감',
   'chores.stat.claimed': '맡은 일',
   'chores.stat.approved': '승인됨',
@@ -739,8 +731,7 @@ export const ko: Record<TranslationKey, string> = {
   'planner.assigned': '배정됨 · 확인 대기',
   'planner.undoShort': '되돌리기',
   'planner.locked': '아직 부족',
-  'planner.assignToClaim':
-    '집안일을 배정하기 전에 가족 구성원을 선택하세요.',
+  'planner.assignToClaim': '집안일을 배정하기 전에 가족 구성원을 선택하세요.',
   'planner.pinTitle': '부모 승인',
   'planner.pinHint': '부모의 PIN을 입력하세요.',
   'planner.pinWrong': 'PIN이 올바르지 않습니다.',

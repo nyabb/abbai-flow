@@ -14,25 +14,14 @@ import { MemberList } from './family/MemberList';
 import { RoutineEditor } from './family/RoutineEditor';
 import { RoutineEditorDialog } from '../../routines/RoutineEditorDialog';
 import type { RoutineEditorRequest } from '../../routines/RoutineEditorDialog';
-import {
-  EMPTY_FORM,
-  type MemberForm,
-  type MemberFormMode,
-} from './family/types';
+import { EMPTY_FORM, type MemberForm, type MemberFormMode } from './family/types';
 import type { SettingsSectionContext } from './context';
-
-export interface FamilyCalendarSummary {
-  id: string;
-  name: string;
-  color?: string;
-}
 
 export interface FamilySectionProps extends SettingsSectionContext {
   members: FamilyMember[];
   onAddMember: (member: Omit<FamilyMember, 'id'>) => void;
   onUpdateMember: (id: string, data: Partial<Omit<FamilyMember, 'id'>>) => void;
   onRemoveMember: (id: string) => void;
-  calendars: FamilyCalendarSummary[];
 }
 
 export function FamilySection({
@@ -42,7 +31,6 @@ export function FamilySection({
   onAddMember,
   onUpdateMember,
   onRemoveMember,
-  calendars,
 }: FamilySectionProps) {
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
@@ -94,8 +82,6 @@ export function FamilySection({
       color: member.color,
       role: member.role,
       pin: member.pin ?? '',
-      calendar_entity: member.calendar_entity ?? '',
-      additional_calendar_entities: member.additional_calendar_entities ?? [],
     });
     setPhotoError(null);
     setEditingMember(member.id);
@@ -131,11 +117,6 @@ export function FamilySection({
       color: memberForm.color,
       role: memberForm.role,
       pin: normalizedPin || undefined,
-      calendar_entity: memberForm.calendar_entity || undefined,
-      additional_calendar_entities:
-        memberForm.additional_calendar_entities.length > 0
-          ? memberForm.additional_calendar_entities
-          : undefined,
     };
     if (memberFormMode === 'edit' && editingMember) {
       onUpdateMember(editingMember, data);
@@ -215,7 +196,6 @@ export function FamilySection({
           form={memberForm}
           mode={memberFormMode === 'edit' ? 'edit' : 'add'}
           photoError={photoError}
-          calendars={calendars}
           t={t}
           onChange={setMemberForm}
           onPhotoUpload={handlePhotoUpload}
