@@ -1,3 +1,10 @@
+# [2.32.0](https://github.com/nyabb/abbai-flow/compare/v2.31.4...v2.32.0) (2026-11-26)
+
+
+### Features
+
+* query iCloud reminder sections ([55cfe05](https://github.com/nyabb/abbai-flow/commit/55cfe05f31cd90c00f670df17c345834dc848f55))
+
 ## [2.31.4](https://github.com/nyabb/abbai-flow/compare/v2.31.3...v2.31.4) (2026-11-26)
 
 
