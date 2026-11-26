@@ -1,3 +1,10 @@
+## [2.31.4](https://github.com/nyabb/abbai-flow/compare/v2.31.3...v2.31.4) (2026-11-26)
+
+
+### Bug Fixes
+
+* keep claimed shared chores visible ([6786de3](https://github.com/nyabb/abbai-flow/commit/6786de336f130bb3d249ce552f85c4526a9d9230))
+
 ## [2.31.3](https://github.com/nyabb/abbai-flow/compare/v2.31.2...v2.31.3) (2026-11-25)
 
 
