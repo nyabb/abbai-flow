@@ -130,6 +130,7 @@ export interface ICloudRemindersActionResult {
     isGroup: boolean;
     count: number | null;
     reminderCountReturned?: number;
+    sections?: Array<{ id: string; name: string | null; order: number | null }>;
     reminders?: unknown[];
   }>;
   decodedAppleSample?: unknown;

@@ -296,6 +296,98 @@ def _section_ids_from_summaries(records: list[dict[str, Any]]) -> list[str]:
     return list(dict.fromkeys(current_ids))
 
 
+def _section_memberships_from_summaries(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Map reminder IDs to their most recently recorded section membership."""
+    memberships_by_reminder: dict[str, dict[str, Any]] = {}
+    modified_by_reminder: dict[str, float] = {}
+    for record in records:
+        candidates = record.get("sectionCandidates")
+        if not isinstance(candidates, dict):
+            continue
+        membership_value = candidates.get("fields.MembershipsOfRemindersInSectionsAsData")
+        asset = membership_value.get("downloadedAsset", {}) if isinstance(membership_value, dict) else {}
+        decoded = asset.get("decodedJson", {}) if isinstance(asset, dict) else {}
+        raw_memberships = decoded.get("memberships", []) if isinstance(decoded, dict) else []
+        if not isinstance(raw_memberships, list):
+            continue
+        for membership in raw_memberships:
+            if not isinstance(membership, dict):
+                continue
+            member_id = membership.get("memberID")
+            section_id = membership.get("groupID")
+            if not isinstance(member_id, str) or not isinstance(section_id, str):
+                continue
+            normalized_member_id = _normalized_record_identifier(member_id)
+            if not normalized_member_id:
+                continue
+            modified_on = membership.get("modifiedOn")
+            timestamp = float(modified_on) if isinstance(modified_on, (int, float)) else float("-inf")
+            if timestamp < modified_by_reminder.get(normalized_member_id, float("-inf")):
+                continue
+            modified_by_reminder[normalized_member_id] = timestamp
+            memberships_by_reminder[normalized_member_id] = {
+                "sectionID": section_id,
+                **({"modifiedOn": modified_on} if isinstance(modified_on, (int, float)) else {}),
+            }
+    return memberships_by_reminder
+
+
+def _sections_from_lookup(
+    summaries: list[dict[str, Any]],
+    raw_records: list[dict[str, Any]],
+    section_ids: dict[str, str],
+    section_order: dict[str, int],
+) -> list[dict[str, Any]]:
+    """Pair ordered section IDs with the display names returned by CloudKit."""
+    sections: list[dict[str, Any]] = []
+    for summary, raw_record in zip(summaries, raw_records):
+        normalized_id = _normalized_record_identifier(raw_record.get("recordName"))
+        section_id = section_ids.get(normalized_id)
+        if not section_id:
+            continue
+        candidates = summary.get("sectionCandidates")
+        name = None
+        if isinstance(candidates, dict):
+            for field_name, candidate in candidates.items():
+                if field_name.rsplit(".", 1)[-1].lower() in _SECTION_NAME_FIELDS and isinstance(candidate, str):
+                    name = candidate
+                    break
+        sections.append({
+            "id": section_id,
+            "name": name,
+            "order": section_order.get(normalized_id),
+        })
+    sections.sort(key=lambda section: section["order"] if isinstance(section["order"], int) else 10**9)
+    return sections
+
+
+def _preview_reminders_with_sections(
+    reminders: list[Any],
+    memberships: dict[str, dict[str, Any]],
+    sections: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    section_by_id = {
+        _normalized_record_identifier(section.get("id")): section
+        for section in sections
+        if isinstance(section.get("id"), str)
+    }
+    preview: list[dict[str, Any]] = []
+    for reminder in reminders:
+        item = json_value(reminder)
+        if not isinstance(item, dict):
+            continue
+        reminder_id = _normalized_record_identifier(item.get("id"))
+        membership = memberships.get(reminder_id)
+        if membership:
+            section_id = membership.get("sectionID")
+            section = section_by_id.get(_normalized_record_identifier(section_id))
+            item["sectionID"] = section_id
+            item["sectionName"] = section.get("name") if section else None
+            item["sectionOrder"] = section.get("order") if section else None
+        preview.append(item)
+    return preview
+
+
 def _normalized_record_identifier(value: Any) -> str:
     identifier = str(value or "").rsplit("/", 1)[-1]
     return "".join(character for character in identifier.upper() if character.isalnum())
@@ -405,6 +497,7 @@ def _log_selected_section_assets(
     )
     section_ids = _section_ids_from_summaries(records)
     selected_list_ref["section_ids"] = section_ids
+    selected_list_ref["section_memberships"] = _section_memberships_from_summaries(records)
     selected_list_ref["section_query_context"] = captured
     return section_ids
 
@@ -503,6 +596,13 @@ def inspect_cloudkit_responses(
                             summary["recordType"] = lookup_record_type
                         summary["sectionID"] = section_id[:100]
                         summary["sectionOrder"] = lookup_order.get(normalized_id)
+                if selected_list_ref is not None:
+                    selected_list_ref["sections"] = _sections_from_lookup(
+                        records,
+                        raw_response_records,
+                        lookup_section_ids,
+                        lookup_order,
+                    )
             log_event(
                 "cloudkit_response_inspected",
                 scope=_scope,
@@ -798,8 +898,16 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
             )
         reminders = list(getattr(batch, "reminders", []) or [])
         summary = reminders_list_summary(reminder_list)
+        sections = selected_list_ref.get("sections", [])
+        if not isinstance(sections, list):
+            sections = []
+        section_memberships = selected_list_ref.get("section_memberships", {})
+        if not isinstance(section_memberships, dict):
+            section_memberships = {}
+        preview_reminders = _preview_reminders_with_sections(reminders[:10], section_memberships, sections)
         summary["reminderCountReturned"] = len(reminders)
-        summary["reminders"] = [json_value(reminder) for reminder in reminders[:10]]
+        summary["sections"] = sections
+        summary["reminders"] = preview_reminders
         return {
             "ok": True,
             "state": "fetched",
@@ -814,7 +922,8 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                 "reminderFields": sorted(
                     {field for reminder in reminders for field in object_fields(reminder)}
                 ),
-                "reminders": [json_value(reminder) for reminder in reminders[:10]],
+                "sections": sections,
+                "reminders": preview_reminders,
             },
         }
     except Exception as exc:
