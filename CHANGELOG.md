@@ -1,3 +1,10 @@
+## [2.38.1](https://github.com/nyabb/abbai-flow/compare/v2.38.0...v2.38.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* restrict event calendars and remove HA music player ([af61f28](https://github.com/nyabb/abbai-flow/commit/af61f284678f8c9a2cfad9e2b056ebd108b3902e))
+
 # [2.38.0](https://github.com/nyabb/abbai-flow/compare/v2.37.0...v2.38.0) (2026-11-26)
 
 
