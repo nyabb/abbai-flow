@@ -141,6 +141,8 @@ export const en = {
   'eventModal.titleLabel': 'Title',
   'eventModal.titlePlaceholder': 'Event title',
   'eventModal.calendarLabel': 'Calendar',
+  'eventModal.noWritableCalendars':
+    'No enabled, writable calendars are available. Enable one in Settings → Calendar.',
   'eventModal.startLabel': 'Start',
   'eventModal.endLabel': 'End',
   'eventModal.repeatsLabel': 'Repeats',
@@ -154,6 +156,8 @@ export const en = {
   'eventModal.errorEndDateBeforeStart': 'End date cannot be before the start date.',
   'eventModal.errorEndBeforeStart': 'End time must be after the start time.',
   'eventModal.errorTitleRequired': 'Title is required.',
+  'eventModal.errorNoWritableCalendars':
+    'Choose an enabled, writable calendar before adding or moving an event.',
   'eventModal.errorNoStableIdEdit':
     "This event can't be edited — it has no stable ID from its calendar provider.",
   'eventModal.errorNoStableIdDelete':

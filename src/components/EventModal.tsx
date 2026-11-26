@@ -221,6 +221,10 @@ export function EventModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!calendars.some((calendar) => calendar.id === form.calendarId)) {
+      setError(t('eventModal.errorNoWritableCalendars'));
+      return;
+    }
     if (!form.summary.trim()) {
       setError(t('eventModal.errorTitleRequired'));
       return;
@@ -305,12 +309,22 @@ export function EventModal({
                 id="event-calendar"
                 className="form-select"
                 value={form.calendarId}
+                disabled={calendars.length === 0}
                 onChange={(e) => updateField('calendarId', e.target.value)}
               >
-                {calendars.map((cal) => (
-                  <option key={cal.id} value={cal.id}>{cal.name}</option>
-                ))}
+                {calendars.length === 0 ? (
+                  <option value="">{t('eventModal.noWritableCalendars')}</option>
+                ) : (
+                  calendars.map((cal) => (
+                    <option key={cal.id} value={cal.id}>{cal.name}</option>
+                  ))
+                )}
               </select>
+              {calendars.length === 0 && (
+                <p className="event-calendar-help" role="status">
+                  {t('eventModal.noWritableCalendars')}
+                </p>
+              )}
             </div>
 
             <div className="form-field form-field--toggle">
@@ -437,7 +451,7 @@ export function EventModal({
               <button
                 type="submit"
                 className="btn btn--primary"
-                disabled={submitting}
+                disabled={submitting || (!isEditing && calendars.length === 0)}
                 aria-busy={submitting}
               >
                 {submitting && <ActivitySpinner />}

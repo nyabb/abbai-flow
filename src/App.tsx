@@ -141,6 +141,14 @@ export function App() {
     () => new Set(settings.permanentlyHiddenCalendars),
     [settings.permanentlyHiddenCalendars],
   );
+  const writableEnabledCalendars = useMemo(
+    () =>
+      calendars.filter(
+        (calendar) =>
+          !calendar.readOnly && !permanentlyHiddenCalendars.has(calendar.id),
+      ),
+    [calendars, permanentlyHiddenCalendars],
+  );
   const hiddenCalendars = useMemo(
     () => new Set([...permanentlyHiddenCalendars, ...temporarilyHiddenCalendars]),
     [permanentlyHiddenCalendars, temporarilyHiddenCalendars],
@@ -163,6 +171,16 @@ export function App() {
   );
   const [eventDialog, setEventDialog] = useState<EventDialogState>({ type: 'closed' });
   const selectedEvent = eventDialog.type === 'edit' ? eventDialog.event : null;
+  const eventModalCalendars = useMemo(() => {
+    if (
+      !selectedEvent ||
+      writableEnabledCalendars.some((calendar) => calendar.id === selectedEvent.calendarId)
+    ) {
+      return writableEnabledCalendars;
+    }
+    const currentCalendar = calendars.find((calendar) => calendar.id === selectedEvent.calendarId);
+    return currentCalendar ? [currentCalendar, ...writableEnabledCalendars] : writableEnabledCalendars;
+  }, [calendars, selectedEvent, writableEnabledCalendars]);
   const showModal = eventDialog.type !== 'closed';
   const prefillDate = eventDialog.type === 'create' ? eventDialog.prefillDate : null;
   const prefillTime = eventDialog.type === 'create' ? eventDialog.prefillTime : null;
@@ -302,6 +320,13 @@ export function App() {
 
   const handleSaveEvent = useCallback(
     async (calendarId: string, data: EventFormData) => {
+      const isCreatingOrMoving = !selectedEvent || calendarId !== selectedEvent.calendarId;
+      if (
+        isCreatingOrMoving &&
+        !writableEnabledCalendars.some((calendar) => calendar.id === calendarId)
+      ) {
+        throw new Error(t('eventModal.errorNoWritableCalendars'));
+      }
       const eventData = data.allDay
         ? {
             summary: data.summary,
@@ -368,6 +393,8 @@ export function App() {
       refetchEventsForWeek,
       visibleWeekStart,
       handleCloseModal,
+      writableEnabledCalendars,
+      t,
     ],
   );
 
@@ -739,18 +766,7 @@ export function App() {
             <div className="view-page">
               <PageHeader title={t('nav.music')} />
               <div className="view-page-body">
-                <MusicView
-                  activePlayer={music.activePlayer}
-                  players={music.players}
-                  selectedPlayerId={music.selectedPlayerId}
-                  playersLoading={music.loading}
-                  onPlay={music.play}
-                  onPause={music.pause}
-                  onNext={music.next}
-                  onPrevious={music.previous}
-                  onSetVolume={music.setVolume}
-                  onSelectPlayer={music.selectPlayer}
-                />
+                <MusicView />
               </div>
             </div>
           ) : activeView === 'meals' ? (
@@ -886,7 +902,7 @@ export function App() {
         {showModal && (
           <EventModal
             event={selectedEvent}
-            calendars={calendars.filter((calendar) => !calendar.readOnly)}
+            calendars={eventModalCalendars}
             defaultCalendarId={settings.defaultCalendar}
             onSave={handleSaveEvent}
             onDelete={handleDeleteEvent}
