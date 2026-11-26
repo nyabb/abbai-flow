@@ -367,8 +367,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.icloudVerifying': 'Code controleren…',
   'settings.integrations.icloudFetchingPreview': 'Herinneringen ophalen…',
   'settings.integrations.calendarSaving': 'Agenda opslaan…',
-  'settings.integrations.weatherEntityLabel': 'Weerentiteit',
-  'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
   'settings.integrations.icloudRemindersTitle': 'iCloud-herinneringen',
   'settings.integrations.icloudRemindersSublabel':
     'Maak rechtstreeks verbinding met Apple iCloud om Herinneringenlijsten te beheren. Het wachtwoord wordt alleen op de server bewaard.',
@@ -461,8 +459,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.about.resetToDefaults': 'Terugzetten naar standaardwaarden',
 
   'weatherView.loading': 'Weergegevens laden...',
-  'weatherView.notConnected': 'Niet verbonden met Home Assistant',
-  'weatherView.noEntityFound': 'Geen weer-entiteit gevonden',
   'weatherView.fetchFailed': 'Ophalen van het weer is mislukt',
   'weatherView.retry': 'Opnieuw proberen',
   'weatherView.feelsLike': 'Gevoelstemperatuur',

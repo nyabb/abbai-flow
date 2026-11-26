@@ -1,4 +1,3 @@
-import type { WeatherData } from '../types';
 import { recordDebugLog, sanitizeDebugUrl, stringifyDebugValue, updateDebugLog } from './debug-log';
 
 type MessageHandler = (message: HAMessage) => void;
@@ -237,43 +236,6 @@ export class HomeAssistantClient {
         reject(error);
       }
     });
-  }
-
-  async getWeather(entityId: string): Promise<WeatherData> {
-    const states = (await this.sendMessage({ type: 'get_states' })) as Array<{
-      entity_id: string;
-      state: string;
-      attributes: Record<string, unknown>;
-    }>;
-
-    const weather = states.find((s) => s.entity_id === entityId);
-    if (!weather) {
-      throw new Error(`Weather entity ${entityId} not found`);
-    }
-
-    const attrs = weather.attributes;
-    const forecast = (
-      (attrs.forecast as Array<{
-        datetime: string;
-        condition: string;
-        temperature: number;
-        templow: number;
-      }>) || []
-    ).slice(0, 5);
-
-    return {
-      temperature: attrs.temperature as number,
-      temperatureUnit: (attrs.temperature_unit as string) || '°F',
-      condition: weather.state,
-      humidity: attrs.humidity as number | undefined,
-      windSpeed: attrs.wind_speed as number | undefined,
-      forecast: forecast.map((f) => ({
-        date: f.datetime,
-        condition: f.condition,
-        tempHigh: f.temperature,
-        tempLow: f.templow,
-      })),
-    };
   }
 
   async subscribeEvents(eventType: string, handler: MessageHandler): Promise<number> {

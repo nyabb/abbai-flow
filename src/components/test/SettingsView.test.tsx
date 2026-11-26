@@ -32,7 +32,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     calendarColors: {},
     defaultEventDuration: 60,
     notificationMinutes: 10,
-    weatherEntity: 'weather.home',
     defaultGroceryList: '',
     groceryListIds: [],
     shoppingEntity: '',

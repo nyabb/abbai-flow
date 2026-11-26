@@ -31,7 +31,7 @@
 - **Photo Slideshow** -- Display family photos between interactions
 - **Timer / Countdown** -- On-screen timer for cooking, homework, and more
 - **Screen Saver** -- Automatic screen saver with clock overlay
-- **Weather** -- Real-time weather from your Home Assistant weather entity
+- **Weather** -- Current conditions and forecasts from Open-Meteo or a mapped custom JSON API, with Open-Meteo backup
 - **8+ Themes** -- Light, Midnight, Midnight Light, Nord, Dracula, Monokai, Rose, Forest, and dark mode (automatic or manual)
 - **Family Management** -- Per-member colors, calendar filtering, and PIN-based profiles
 - **Meal Plan Data** -- Existing AnyList sync and MCP meal plan records remain available

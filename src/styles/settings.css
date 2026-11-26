@@ -711,17 +711,28 @@
   line-height: 1.45;
 }
 
-.settings-meal-mapping {
+.settings-json-mapping {
   margin: 8px 0;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
 }
 
-.settings-meal-mapping > summary {
+.settings-json-mapping > summary {
   color: var(--text-primary);
   font-weight: 600;
   cursor: pointer;
+}
+
+.settings-weather-mapping-group {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-weather-mapping-group > .settings-row-label {
+  margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
 .settings-calendar-source {
@@ -729,6 +740,19 @@
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
+}
+
+.settings-calendar-row__labels {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-calendar-id {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-calendar-source__summary {

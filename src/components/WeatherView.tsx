@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { RefreshCw, ChevronDown, Droplets, Wind } from 'lucide-react';
 import { weatherIcon, conditionLabel } from '../types/weather-icons';
-import { haFetch, callHaService, hasToken } from '../api/ha-rest';
-import { getConfig } from '../config';
+import { getWeatherForecast } from '../api/open-meteo';
 import { useTranslation } from '../i18n';
 import { CollapsibleRegion } from './CollapsibleRegion';
 import { LoadingPlaceholder } from './LoadingPlaceholder';
@@ -24,18 +23,20 @@ interface HourlyItem {
   temperature: number;
   humidity?: number;
   wind_speed?: number;
+  wind_speed_unit: string;
   precipitation_probability?: number;
 }
 
 interface CurrentWeather {
-  entityId: string;
   state: string;
   temperature: number;
   temperatureUnit: string;
+  windSpeedUnit: string;
   humidity?: number;
   windSpeed?: number;
   windBearing?: number;
   pressure?: number;
+  pressureUnit: string;
   feelsLike?: number;
 }
 
@@ -44,121 +45,42 @@ export function WeatherView() {
   const [current, setCurrent] = useState<CurrentWeather | null>(null);
   const [forecast, setForecast] = useState<ForecastItem[]>([]);
   const [hourly, setHourly] = useState<HourlyItem[]>([]);
+  const [sourceName, setSourceName] = useState('Open-Meteo');
+  const [sourceUrl, setSourceUrl] = useState('https://open-meteo.com/');
+  const [fallbackUsed, setFallbackUsed] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [displayedDay, setDisplayedDay] = useState<string | null>(null);
-  const [hourlyLoading, setHourlyLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchHourly = useCallback(async (entityId: string) => {
-    try {
-      setHourlyLoading(true);
-      const result = (await callHaService(
-        'weather',
-        'get_forecasts',
-        {
-          entity_id: entityId,
-          type: 'hourly',
-        },
-        true,
-      )) as { service_response?: Record<string, { forecast: HourlyItem[] }> };
-
-      const svcResponse = result?.service_response ?? result;
-      const hourlyData =
-        (svcResponse as Record<string, { forecast: HourlyItem[] }>)?.[entityId]?.forecast ?? [];
-      setHourly(hourlyData);
-    } catch {
-      setHourly([]);
-    } finally {
-      setHourlyLoading(false);
-    }
-  }, []);
-
   const fetchData = useCallback(async () => {
-    if (!hasToken()) {
-      setError(t('weatherView.notConnected'));
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
-
-      // Discover weather entity — try configured, then auto-discover
-      const configEntity = getConfig().weather_entity;
-      let entity: { entity_id: string; state: string; attributes: Record<string, unknown> } | null =
-        null;
-
-      // Try configured entity first
-      if (configEntity) {
-        try {
-          entity = (await haFetch(`/api/states/${configEntity}`)) as typeof entity;
-        } catch {
-          /* entity doesn't exist, fall through to discovery */
-        }
-      }
-
-      // Auto-discover if configured entity doesn't exist
-      if (!entity) {
-        const states = (await haFetch('/api/states')) as Array<{
-          entity_id: string;
-          state: string;
-          attributes: Record<string, unknown>;
-        }>;
-        const found = states.find((s) => s.entity_id.startsWith('weather.'));
-        if (!found) {
-          setError(t('weatherView.noEntityFound'));
-          setLoading(false);
-          return;
-        }
-        entity = found;
-      }
-
-      const entityId = entity!.entity_id;
-
-      const attrs = entity.attributes;
+      const data = await getWeatherForecast();
       setCurrent({
-        entityId,
-        state: entity.state,
-        temperature: (attrs.temperature as number) ?? 0,
-        temperatureUnit: (attrs.temperature_unit as string) ?? '°F',
-        humidity: attrs.humidity as number | undefined,
-        windSpeed: attrs.wind_speed as number | undefined,
-        windBearing: attrs.wind_bearing as number | undefined,
-        pressure: attrs.pressure as number | undefined,
-        feelsLike: attrs.apparent_temperature as number | undefined,
+        state: data.current.condition,
+        temperature: data.current.temperature,
+        temperatureUnit: data.current.temperatureUnit,
+        windSpeedUnit: data.current.windSpeedUnit,
+        humidity: data.current.humidity,
+        windSpeed: data.current.windSpeed,
+        windBearing: data.current.windBearing,
+        pressure: data.current.pressure,
+        pressureUnit: data.current.pressureUnit,
+        feelsLike: data.current.feelsLike,
       });
-
-      // Fetch daily forecast
-      try {
-        const result = (await callHaService(
-          'weather',
-          'get_forecasts',
-          {
-            entity_id: entityId,
-            type: 'daily',
-          },
-          true,
-        )) as { service_response?: Record<string, { forecast: ForecastItem[] }> };
-
-        const svcResponse = result?.service_response ?? result;
-        const forecastData =
-          (svcResponse as Record<string, { forecast: ForecastItem[] }>)?.[entityId]?.forecast ?? [];
-        setForecast(forecastData.slice(0, 7));
-      } catch {
-        // Forecast not available for this entity
-        setForecast([]);
-      }
-
-      // Fetch hourly forecast
-      await fetchHourly(entityId);
+      setForecast(data.forecast);
+      setHourly(data.hourly);
+      setSourceName(data.sourceName);
+      setSourceUrl(data.sourceUrl);
+      setFallbackUsed(data.fallbackUsed);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('weatherView.fetchFailed'));
     } finally {
       setLoading(false);
     }
-  }, [fetchHourly, t]);
+  }, [t]);
 
   useEffect(() => {
     fetchData();
@@ -242,13 +164,17 @@ export function WeatherView() {
           {current.windSpeed != null && (
             <div className="weather-detail">
               <span className="weather-detail-label">{t('weatherView.wind')}</span>
-              <span className="weather-detail-value">{Math.round(current.windSpeed)} mph</span>
+              <span className="weather-detail-value">
+                {Math.round(current.windSpeed)} {current.windSpeedUnit}
+              </span>
             </div>
           )}
           {current.pressure != null && (
             <div className="weather-detail">
               <span className="weather-detail-label">{t('weatherView.pressure')}</span>
-              <span className="weather-detail-value">{Math.round(current.pressure)} hPa</span>
+              <span className="weather-detail-value">
+                {Math.round(current.pressure)} {current.pressureUnit}
+              </span>
             </div>
           )}
         </div>
@@ -289,8 +215,12 @@ export function WeatherView() {
                   <span className="weather-forecast-date">{dateLabel}</span>
                   <span className="weather-forecast-icon">{weatherIcon(day.condition)}</span>
                   <div className="weather-forecast-temps">
-                    <span className="weather-forecast-high">{Math.round(day.temperature)}°</span>
-                    <span className="weather-forecast-low">{Math.round(day.templow)}°</span>
+                    <span className="weather-forecast-high">
+                      {Math.round(day.temperature)}°{unit}
+                    </span>
+                    <span className="weather-forecast-low">
+                      {Math.round(day.templow)}°{unit}
+                    </span>
                   </div>
                   {day.precipitation_probability != null && (
                     <span className="weather-forecast-precip">
@@ -329,15 +259,7 @@ export function WeatherView() {
                     {t('weatherView.collapse')}
                   </button>
                 </div>
-                {hourlyLoading ? (
-                  <div className="weather-hourly-loading">
-                    <LoadingPlaceholder
-                      label={t('weatherView.loadingHourly')}
-                      lines={4}
-                      className="loading-placeholder--compact"
-                    />
-                  </div>
-                ) : hoursForDisplayedDay.length === 0 ? (
+                {hoursForDisplayedDay.length === 0 ? (
                   <div className="weather-hourly-empty">{t('weatherView.noHourlyData')}</div>
                 ) : (
                   <div className="weather-hourly-scroll">
@@ -348,7 +270,7 @@ export function WeatherView() {
                           <span className="weather-hourly-time">{format(time, 'h a')}</span>
                           <span className="weather-hourly-icon">{weatherIcon(hour.condition)}</span>
                           <span className="weather-hourly-temp">
-                            {Math.round(hour.temperature)}°
+                            {Math.round(hour.temperature)}°{unit}
                           </span>
                           {hour.precipitation_probability != null && (
                             <span className="weather-hourly-precip">
@@ -357,7 +279,8 @@ export function WeatherView() {
                           )}
                           {hour.wind_speed != null && (
                             <span className="weather-hourly-wind">
-                              <Wind size={12} /> {Math.round(hour.wind_speed)}
+                              <Wind size={12} /> {Math.round(hour.wind_speed)}{' '}
+                              {hour.wind_speed_unit}
                             </span>
                           )}
                         </div>
@@ -370,6 +293,19 @@ export function WeatherView() {
           </CollapsibleRegion>
         </section>
       )}
+      <div className="weather-attribution">
+        <a
+          href={sourceName === 'Open-Meteo' ? 'https://open-meteo.com/' : sourceUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {sourceName === 'Open-Meteo'
+            ? fallbackUsed
+              ? t('weatherView.backupAttribution')
+              : t('weatherView.attribution')
+            : t('weatherView.customAttribution', { source: sourceName })}
+        </a>
+      </div>
     </div>
   );
 }

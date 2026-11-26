@@ -9,7 +9,6 @@ export interface IntegrationDiagnosticConfig {
   spotifyClientSecret: string;
   spotifyMarket: string;
   spotifyRedirectUri?: string;
-  weatherEntity?: string;
   photoDirectory?: string;
   customHaCaConfigured?: boolean;
 }
@@ -55,14 +54,6 @@ function cleanLabel(value: string | null | undefined): string {
       .trim()
       .slice(0, 100)
   );
-}
-
-function describeEntity(states: HaState[], entityId: string): string {
-  const entity = states.find((candidate) => candidate.entity_id === entityId);
-  if (!entity) return 'not found';
-  if (entity.state === 'unavailable') return 'present but unavailable';
-  if (entity.state === 'unknown') return 'present but has no state yet';
-  return 'available';
 }
 
 function availableCount(states: HaState[], domain: string): number {
@@ -290,11 +281,6 @@ async function checkHomeAssistant(
     `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
   );
   logger.info(`[Integration] Home Assistant media players: ${mediaPlayers} available.`);
-
-  const weatherEntity = cleanLabel(config.weatherEntity || 'weather.home');
-  logger.info(
-    `[Integration] Weather entity ${weatherEntity || 'weather.home'}: ${describeEntity(states, weatherEntity || 'weather.home')}.`,
-  );
 
   const photoDirectoryConfigured = Boolean(config.photoDirectory?.trim());
   logger.info(

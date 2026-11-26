@@ -366,8 +366,60 @@ export const en = {
   'settings.integrations.mealSourceUrlPathLabel': 'Recipe URL path',
   'settings.integrations.mealSourceBackendRequired':
     'A server-backed Abbai Flow deployment is required to store bearer tokens securely.',
-  'settings.integrations.weatherEntityLabel': 'Weather Entity',
-  'settings.integrations.weatherEntitySublabel': 'Entity used for weather display',
+  'settings.integrations.weatherTitle': 'Weather forecast',
+  'settings.integrations.weatherDefaultUrlLabel': 'Open-Meteo URL (default and backup)',
+  'settings.integrations.weatherDefaultUrlHelp':
+    'Paste an Open-Meteo forecast URL with latitude and longitude. Abbai Flow adds the current, daily, and hourly fields it needs.',
+  'settings.integrations.weatherUrlLabel': 'Custom weather API URL (optional)',
+  'settings.integrations.weatherUrlHelp':
+    'This API is used first. Set the Open-Meteo URL above as the default and backup. The endpoint must return JSON.',
+  'settings.integrations.weatherApiKeyLabel': 'Custom API key (optional)',
+  'settings.integrations.weatherApiKeyHelp':
+    'Stored only on the server. It is sent to the custom API using the authentication option below.',
+  'settings.integrations.weatherAuthModeLabel': 'Custom API key method',
+  'settings.integrations.weatherAuthModeHelp': 'Choose how to send the optional API key.',
+  'settings.integrations.weatherAuthQuery': 'Query parameter',
+  'settings.integrations.weatherAuthBearer': 'Bearer token',
+  'settings.integrations.weatherApiKeyParameterLabel': 'API key parameter name',
+  'settings.integrations.weatherApiKeyParameterHelp': 'The query parameter used for the key, such as apikey or key.',
+  'settings.integrations.weatherMappingTitle': 'Custom weather response mapping',
+  'settings.integrations.weatherMappingHelp':
+    'Map JSON paths to the fields Abbai Flow displays using the same syntax as meal mapping. The current object and daily/hourly array paths are relative to the full response (for example, $.data.current and $.data.days). Current detail paths are relative to the current object; daily and hourly field paths are relative to each array item (for example, $.datetime). Required paths are marked with *.',
+  'settings.integrations.weatherCurrentGroup': 'Current conditions',
+  'settings.integrations.weatherForecastGroup': 'Daily forecast',
+  'settings.integrations.weatherHourlyGroup': 'Hourly forecast',
+  'settings.integrations.weatherCurrentPathLabel': 'Current conditions object',
+  'settings.integrations.weatherCurrentTemperaturePathLabel': 'Temperature',
+  'settings.integrations.weatherCurrentConditionPathLabel': 'Condition',
+  'settings.integrations.weatherCurrentTemperatureUnitPathLabel': 'Temperature unit',
+  'settings.integrations.weatherCurrentHumidityPathLabel': 'Humidity',
+  'settings.integrations.weatherCurrentWindSpeedPathLabel': 'Wind speed',
+  'settings.integrations.weatherCurrentWindSpeedUnitPathLabel': 'Wind speed unit',
+  'settings.integrations.weatherCurrentWindBearingPathLabel': 'Wind direction',
+  'settings.integrations.weatherCurrentPressurePathLabel': 'Pressure',
+  'settings.integrations.weatherCurrentPressureUnitPathLabel': 'Pressure unit',
+  'settings.integrations.weatherCurrentFeelsLikePathLabel': 'Feels like',
+  'settings.integrations.weatherForecastPathLabel': 'Daily forecast array',
+  'settings.integrations.weatherForecastDatePathLabel': 'Date',
+  'settings.integrations.weatherForecastConditionPathLabel': 'Condition',
+  'settings.integrations.weatherForecastHighPathLabel': 'High temperature',
+  'settings.integrations.weatherForecastLowPathLabel': 'Low temperature',
+  'settings.integrations.weatherForecastPrecipitationPathLabel': 'Precipitation probability',
+  'settings.integrations.weatherHourlyPathLabel': 'Hourly forecast array',
+  'settings.integrations.weatherHourlyDateTimePathLabel': 'Date and time',
+  'settings.integrations.weatherHourlyConditionPathLabel': 'Condition',
+  'settings.integrations.weatherHourlyTemperaturePathLabel': 'Temperature',
+  'settings.integrations.weatherHourlyHumidityPathLabel': 'Humidity',
+  'settings.integrations.weatherHourlyWindSpeedPathLabel': 'Wind speed',
+  'settings.integrations.weatherHourlyWindSpeedUnitPathLabel': 'Wind speed unit',
+  'settings.integrations.weatherHourlyPrecipitationPathLabel': 'Precipitation probability',
+  'settings.integrations.weatherTestButton': 'Test weather sources',
+  'settings.integrations.weatherTestSuccess':
+    '{source} returned current, daily, and hourly weather data ({days} forecast days).',
+  'settings.integrations.weatherTestFallback':
+    'The custom API failed: {reason} Open-Meteo backup returned {days} forecast days.',
+  'settings.integrations.weatherBackendRequired':
+    'A server-backed Abbai Flow deployment is required to configure weather APIs and store an API key securely.',
   'settings.integrations.icloudRemindersTitle': 'iCloud Reminders',
   'settings.integrations.icloudRemindersSublabel':
     'Connect directly to Apple iCloud to inspect your Reminders lists. The password stays on the server and is never returned to the browser.',
@@ -528,8 +580,6 @@ export const en = {
 
   // ---- weather view (full-screen Weather tab) ----
   'weatherView.loading': 'Loading weather data...',
-  'weatherView.notConnected': 'Not connected to Home Assistant',
-  'weatherView.noEntityFound': 'No weather entity found',
   'weatherView.fetchFailed': 'Failed to fetch weather',
   'weatherView.retry': 'Retry',
   'weatherView.feelsLike': 'Feels like',
@@ -543,6 +593,9 @@ export const en = {
   'weatherView.closeHourlyForecastAria': 'Close hourly forecast',
   'weatherView.loadingHourly': 'Loading hourly data...',
   'weatherView.noHourlyData': 'No hourly data available for this day.',
+  'weatherView.attribution': 'Weather data by Open-Meteo',
+  'weatherView.backupAttribution': 'Weather data by Open-Meteo (backup active)',
+  'weatherView.customAttribution': 'Weather data by {source}',
 
   // ---- timer widget (Timer tab) ----
   'timer.modeTimers': 'Timers',

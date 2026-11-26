@@ -83,9 +83,11 @@ export function CalendarSection({
                       aria-expanded={open}
                       aria-controls={`calendar-color-editor-${cal.id}`}
                     />
-                    <div style={{ minWidth: 0 }}>
+                    <div className="settings-calendar-row__labels">
                       <div className="settings-row-label">{cal.name}</div>
-                      <div className="settings-row-sublabel">{cal.id}</div>
+                      <div className="settings-row-sublabel settings-calendar-id" title={cal.id}>
+                        {cal.id}
+                      </div>
                     </div>
                   </div>
                   <Toggle

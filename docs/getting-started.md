@@ -146,14 +146,18 @@ Music is accessible directly from the mobile bottom tab bar (no need to open the
 
 ## Weather
 
-Real-time weather data from your Home Assistant weather entity.
+Current conditions and forecasts from Open-Meteo or an optional custom JSON API.
+Configure the Open-Meteo URL with latitude and longitude in
+**Settings → Integrations**. It remains the default and backup when a custom
+API is configured. Custom APIs can use an optional query or Bearer key and a
+JSON path mapping for the current, daily, and hourly fields.
 
 **Key features:**
 
 - **Current conditions** -- large temperature display with condition icon and description.
 - **Detail cards** -- humidity, wind speed, and barometric pressure.
 - **7-day forecast** -- each day shows the condition icon, high, and low temperatures.
-- **Refresh button** -- manually re-fetch weather data from HA.
+- **Refresh button** -- manually re-fetch weather data from the configured source.
 
 ### Desktop
 
@@ -177,7 +181,8 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
 - **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
 - **iCloud Reminders** -- authenticate with Apple, select grocery and task lists, and choose the default grocery list.
-- **Weather Entity** -- set which `weather.*` entity powers the Weather view.
+- **Weather APIs** -- set Open-Meteo as the default and backup, then optionally
+  add a custom API with a key and JSON field mapping.
 - **Display** -- screen saver timeout, photo slideshow interval, auto-refresh settings.
 
 ### Desktop

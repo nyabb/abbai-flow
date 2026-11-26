@@ -18,10 +18,13 @@ import {
   type IntegrationSettingsPatch,
   type ICloudRemindersActionResult,
   type MealDataMapping,
+  type WeatherApiKeyMode,
+  type WeatherDataMapping,
   type IntegrationSettingsStatus,
   type CalendarSourceSetting,
 } from '../../../api/integration-settings';
 import { testCalendarSource as testCalendarSourceApi } from '../../../api/caldav-calendars';
+import { testWeatherConfiguration } from '../../../api/open-meteo';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
@@ -39,6 +42,34 @@ const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
   tagsPath: '',
   datePath: '',
   sourceUrlPath: '',
+};
+
+const DEFAULT_WEATHER_DATA_MAPPING: WeatherDataMapping = {
+  currentPath: '$.current',
+  currentTemperaturePath: '$.temperature',
+  currentConditionPath: '$.condition',
+  currentTemperatureUnitPath: '$.temperatureUnit',
+  currentHumidityPath: '$.humidity',
+  currentWindSpeedPath: '$.windSpeed',
+  currentWindSpeedUnitPath: '$.windSpeedUnit',
+  currentWindBearingPath: '$.windBearing',
+  currentPressurePath: '$.pressure',
+  currentPressureUnitPath: '$.pressureUnit',
+  currentFeelsLikePath: '$.feelsLike',
+  forecastPath: '$.forecast',
+  forecastDatePath: '$.datetime',
+  forecastConditionPath: '$.condition',
+  forecastHighPath: '$.temperature',
+  forecastLowPath: '$.templow',
+  forecastPrecipitationProbabilityPath: '$.precipitation_probability',
+  hourlyPath: '$.hourly',
+  hourlyDateTimePath: '$.datetime',
+  hourlyConditionPath: '$.condition',
+  hourlyTemperaturePath: '$.temperature',
+  hourlyHumidityPath: '$.humidity',
+  hourlyWindSpeedPath: '$.wind_speed',
+  hourlyWindSpeedUnitPath: '$.wind_speed_unit',
+  hourlyPrecipitationProbabilityPath: '$.precipitation_probability',
 };
 
 type ICloudRemindersListOption = NonNullable<ICloudRemindersActionResult['lists']>[number];
@@ -127,6 +158,45 @@ const MEAL_MAPPING_FIELDS: {
   },
 ];
 
+const WEATHER_MAPPING_FIELDS: {
+  key: keyof WeatherDataMapping;
+  labelKey: TranslationKey;
+  placeholder: string;
+  group: 'current' | 'forecast' | 'hourly';
+}[] = [
+  { key: 'currentPath', labelKey: 'settings.integrations.weatherCurrentPathLabel', placeholder: '$.current', group: 'current' },
+  { key: 'currentTemperaturePath', labelKey: 'settings.integrations.weatherCurrentTemperaturePathLabel', placeholder: '$.temperature', group: 'current' },
+  { key: 'currentConditionPath', labelKey: 'settings.integrations.weatherCurrentConditionPathLabel', placeholder: '$.condition', group: 'current' },
+  { key: 'currentTemperatureUnitPath', labelKey: 'settings.integrations.weatherCurrentTemperatureUnitPathLabel', placeholder: '$.temperatureUnit', group: 'current' },
+  { key: 'currentHumidityPath', labelKey: 'settings.integrations.weatherCurrentHumidityPathLabel', placeholder: '$.humidity', group: 'current' },
+  { key: 'currentWindSpeedPath', labelKey: 'settings.integrations.weatherCurrentWindSpeedPathLabel', placeholder: '$.windSpeed', group: 'current' },
+  { key: 'currentWindSpeedUnitPath', labelKey: 'settings.integrations.weatherCurrentWindSpeedUnitPathLabel', placeholder: '$.windSpeedUnit', group: 'current' },
+  { key: 'currentWindBearingPath', labelKey: 'settings.integrations.weatherCurrentWindBearingPathLabel', placeholder: '$.windBearing', group: 'current' },
+  { key: 'currentPressurePath', labelKey: 'settings.integrations.weatherCurrentPressurePathLabel', placeholder: '$.pressure', group: 'current' },
+  { key: 'currentPressureUnitPath', labelKey: 'settings.integrations.weatherCurrentPressureUnitPathLabel', placeholder: '$.pressureUnit', group: 'current' },
+  { key: 'currentFeelsLikePath', labelKey: 'settings.integrations.weatherCurrentFeelsLikePathLabel', placeholder: '$.feelsLike', group: 'current' },
+  { key: 'forecastPath', labelKey: 'settings.integrations.weatherForecastPathLabel', placeholder: '$.forecast', group: 'forecast' },
+  { key: 'forecastDatePath', labelKey: 'settings.integrations.weatherForecastDatePathLabel', placeholder: '$.datetime', group: 'forecast' },
+  { key: 'forecastConditionPath', labelKey: 'settings.integrations.weatherForecastConditionPathLabel', placeholder: '$.condition', group: 'forecast' },
+  { key: 'forecastHighPath', labelKey: 'settings.integrations.weatherForecastHighPathLabel', placeholder: '$.temperature', group: 'forecast' },
+  { key: 'forecastLowPath', labelKey: 'settings.integrations.weatherForecastLowPathLabel', placeholder: '$.templow', group: 'forecast' },
+  { key: 'forecastPrecipitationProbabilityPath', labelKey: 'settings.integrations.weatherForecastPrecipitationPathLabel', placeholder: '$.precipitation_probability', group: 'forecast' },
+  { key: 'hourlyPath', labelKey: 'settings.integrations.weatherHourlyPathLabel', placeholder: '$.hourly', group: 'hourly' },
+  { key: 'hourlyDateTimePath', labelKey: 'settings.integrations.weatherHourlyDateTimePathLabel', placeholder: '$.datetime', group: 'hourly' },
+  { key: 'hourlyConditionPath', labelKey: 'settings.integrations.weatherHourlyConditionPathLabel', placeholder: '$.condition', group: 'hourly' },
+  { key: 'hourlyTemperaturePath', labelKey: 'settings.integrations.weatherHourlyTemperaturePathLabel', placeholder: '$.temperature', group: 'hourly' },
+  { key: 'hourlyHumidityPath', labelKey: 'settings.integrations.weatherHourlyHumidityPathLabel', placeholder: '$.humidity', group: 'hourly' },
+  { key: 'hourlyWindSpeedPath', labelKey: 'settings.integrations.weatherHourlyWindSpeedPathLabel', placeholder: '$.wind_speed', group: 'hourly' },
+  { key: 'hourlyWindSpeedUnitPath', labelKey: 'settings.integrations.weatherHourlyWindSpeedUnitPathLabel', placeholder: '$.wind_speed_unit', group: 'hourly' },
+  { key: 'hourlyPrecipitationProbabilityPath', labelKey: 'settings.integrations.weatherHourlyPrecipitationPathLabel', placeholder: '$.precipitation_probability', group: 'hourly' },
+];
+
+const WEATHER_MAPPING_GROUPS = [
+  { id: 'current', labelKey: 'settings.integrations.weatherCurrentGroup' },
+  { id: 'forecast', labelKey: 'settings.integrations.weatherForecastGroup' },
+  { id: 'hourly', labelKey: 'settings.integrations.weatherHourlyGroup' },
+] as const;
+
 interface SavedSecretControlProps {
   label: string;
   value: string;
@@ -175,6 +245,7 @@ function SavedSecretControl({
 
 type ClearSecretField =
   | 'clearHaToken'
+  | 'clearWeatherApiKey'
   | 'clearEncoreToken'
   | 'clearSpotifyClientSecret'
   | 'clearMealSourceToken'
@@ -207,6 +278,14 @@ export function IntegrationsSection({
   const [integrationStatusLoading, setIntegrationStatusLoading] = useState(serverBacked);
   const [haUrl, setHaUrl] = useState(initialHaUrl);
   const [haToken, setHaToken] = useState('');
+  const [openMeteoUrl, setOpenMeteoUrl] = useState('');
+  const [weatherApiUrl, setWeatherApiUrl] = useState('');
+  const [weatherApiKey, setWeatherApiKey] = useState('');
+  const [weatherApiKeyMode, setWeatherApiKeyMode] = useState<WeatherApiKeyMode>('query');
+  const [weatherApiKeyParameter, setWeatherApiKeyParameter] = useState('apikey');
+  const [weatherDataMapping, setWeatherDataMapping] = useState<WeatherDataMapping>(
+    DEFAULT_WEATHER_DATA_MAPPING,
+  );
   const [encoreUrl, setEncoreUrl] = useState('ws://host.docker.internal:8095/');
   const [encoreToken, setEncoreToken] = useState('');
   const [spotifyClientId, setSpotifyClientId] = useState('');
@@ -242,6 +321,7 @@ export function IntegrationsSection({
     'authenticate' | 'request_code' | 'verify_code' | 'fetch_preview' | null
   >(null);
   const [haTesting, setHaTesting] = useState(false);
+  const [weatherTesting, setWeatherTesting] = useState(false);
   const integrationBusy =
     settingsSaving ||
     calendarSaving ||
@@ -249,9 +329,12 @@ export function IntegrationsSection({
     mealSaving ||
     icloudSaving ||
     icloudBusyAction !== null ||
-    haTesting;
+    haTesting ||
+    weatherTesting;
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
+  const [weatherTestError, setWeatherTestError] = useState('');
+  const [weatherTestNotice, setWeatherTestNotice] = useState('');
 
   const loadIcloudLists = useCallback(async () => {
     setIcloudListsAttempted(true);
@@ -281,6 +364,11 @@ export function IntegrationsSection({
         if (cancelled) return;
         setIntegrationStatus(status);
         setHaUrl(status.haUrl);
+        setOpenMeteoUrl(status.openMeteoUrl);
+        setWeatherApiUrl(status.weatherApiUrl);
+        setWeatherApiKeyMode(status.weatherApiKeyMode);
+        setWeatherApiKeyParameter(status.weatherApiKeyParameter);
+        setWeatherDataMapping({ ...DEFAULT_WEATHER_DATA_MAPPING, ...status.weatherDataMapping });
         setEncoreUrl(status.encoreUrl);
         setSpotifyClientId(status.spotifyClientId);
         setSpotifyMarket(status.spotifyMarket);
@@ -434,6 +522,38 @@ export function IntegrationsSection({
     }
   };
 
+  const testWeather = async () => {
+    setWeatherTesting(true);
+    setWeatherTestError('');
+    setWeatherTestNotice('');
+    try {
+      const result = await testWeatherConfiguration({
+        openMeteoUrl,
+        weatherApiUrl,
+        apiKey: weatherApiKey.trim(),
+        weatherApiKeyMode,
+        weatherApiKeyParameter,
+        weatherDataMapping,
+      });
+      setWeatherTestNotice(result.fallbackUsed
+        ? t('settings.integrations.weatherTestFallback', {
+            source: result.sourceName,
+            days: result.forecastDays,
+            reason: result.primaryError || '',
+          })
+        : t('settings.integrations.weatherTestSuccess', {
+            source: result.sourceName,
+            days: result.forecastDays,
+          }));
+    } catch (error) {
+      setWeatherTestError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
+    } finally {
+      setWeatherTesting(false);
+    }
+  };
+
   const saveServerIntegrations = async (
     context: 'settings' | 'calendar' | 'meal' | 'icloud' = 'settings',
   ): Promise<boolean> => {
@@ -453,6 +573,12 @@ export function IntegrationsSection({
       const status = await saveIntegrationSettings({
         haUrl,
         ...(haToken.trim() ? { haToken: haToken.trim() } : {}),
+        openMeteoUrl,
+        weatherApiUrl,
+        ...(weatherApiKey.trim() ? { weatherApiKey: weatherApiKey.trim() } : {}),
+        weatherApiKeyMode,
+        weatherApiKeyParameter,
+        weatherDataMapping,
         encoreUrl,
         ...(encoreToken.trim() ? { encoreToken: encoreToken.trim() } : {}),
         spotifyClientId,
@@ -468,6 +594,11 @@ export function IntegrationsSection({
         calendarSources,
       });
       setIntegrationStatus(status);
+      setOpenMeteoUrl(status.openMeteoUrl);
+      setWeatherApiUrl(status.weatherApiUrl);
+      setWeatherApiKeyMode(status.weatherApiKeyMode);
+      setWeatherApiKeyParameter(status.weatherApiKeyParameter);
+      setWeatherDataMapping({ ...DEFAULT_WEATHER_DATA_MAPPING, ...status.weatherDataMapping });
       setCalendarSources(status.calendarSources);
       if (context === 'calendar') setExpandedCalendarSourceIds([]);
       setIcloudRemindersListKey(status.icloudRemindersListKey);
@@ -475,6 +606,7 @@ export function IntegrationsSection({
       setIcloudDevices(status.icloudDevices);
       setIcloudSecurityKeys(status.icloudSecurityKeyNames);
       setHaToken('');
+      setWeatherApiKey('');
       setEncoreToken('');
       setSpotifyClientSecret('');
       setMealSourceToken('');
@@ -687,6 +819,7 @@ export function IntegrationsSection({
       const patch = { [clearField]: true } as IntegrationSettingsPatch;
       const status = await saveIntegrationSettings(patch);
       setIntegrationStatus(status);
+      if (clearField === 'clearWeatherApiKey') setWeatherApiKey('');
       if (clearField === 'clearIcloudPassword') {
         setIcloudPassword('');
         setIcloudAuthState(status.icloudAuthState);
@@ -856,23 +989,182 @@ export function IntegrationsSection({
             {integrationNotice}
           </div>
         )}
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.weatherEntityLabel')}
+      </div>
+
+      <div className="settings-group">
+        <div className="settings-group-title">{t('settings.integrations.weatherTitle')}</div>
+        {serverBacked ? (
+          <>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.weatherDefaultUrlLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {t('settings.integrations.weatherDefaultUrlHelp')}
+                </div>
+              </div>
+              <input
+                type="url"
+                className="settings-input settings-input--wide"
+                value={openMeteoUrl}
+                onChange={(event) => {
+                  setOpenMeteoUrl(event.target.value);
+                  setWeatherTestError('');
+                  setWeatherTestNotice('');
+                }}
+                placeholder="https://api.open-meteo.com/v1/forecast?latitude=52.37&longitude=4.90"
+                autoComplete="url"
+              />
             </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.weatherEntitySublabel')}
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">{t('settings.integrations.weatherUrlLabel')}</div>
+                <div className="settings-row-sublabel">{t('settings.integrations.weatherUrlHelp')}</div>
+              </div>
+              <input
+                type="url"
+                className="settings-input settings-input--wide"
+                value={weatherApiUrl}
+                onChange={(event) => {
+                  setWeatherApiUrl(event.target.value);
+                  setWeatherTestError('');
+                  setWeatherTestNotice('');
+                }}
+                placeholder="https://api.example.com/weather"
+                autoComplete="url"
+              />
             </div>
+            {(weatherApiUrl.trim() || integrationStatus?.weatherApiKeyConfigured) && (
+              <>
+                <div className="settings-row settings-integration-field">
+                  <div>
+                    <div className="settings-row-label">{t('settings.integrations.weatherApiKeyLabel')}</div>
+                    <div className="settings-row-sublabel">
+                      {integrationStatus?.weatherApiKeyConfigured
+                        ? t('settings.integrations.secretSaved')
+                        : t('settings.integrations.weatherApiKeyHelp')}
+                    </div>
+                  </div>
+                  <SavedSecretControl
+                    label={t('settings.integrations.weatherApiKeyLabel')}
+                    value={weatherApiKey}
+                    onChange={(value) => {
+                      setWeatherApiKey(value);
+                      setWeatherTestError('');
+                      setWeatherTestNotice('');
+                    }}
+                    configured={Boolean(integrationStatus?.weatherApiKeyConfigured)}
+                    disabled={integrationStatusLoading}
+                    busy={integrationBusy}
+                    removeLabel={t('settings.integrations.clearSecret')}
+                    onRemove={
+                      integrationStatus?.weatherApiKeyConfigured
+                        ? () => void removeSavedSecret('clearWeatherApiKey')
+                        : undefined
+                    }
+                  />
+                </div>
+                <div className="settings-row settings-integration-field">
+                  <div>
+                    <div className="settings-row-label">{t('settings.integrations.weatherAuthModeLabel')}</div>
+                    <div className="settings-row-sublabel">{t('settings.integrations.weatherAuthModeHelp')}</div>
+                  </div>
+                  <select
+                    className="settings-input"
+                    value={weatherApiKeyMode}
+                    onChange={(event) => setWeatherApiKeyMode(event.target.value as WeatherApiKeyMode)}
+                  >
+                    <option value="query">{t('settings.integrations.weatherAuthQuery')}</option>
+                    <option value="bearer">{t('settings.integrations.weatherAuthBearer')}</option>
+                  </select>
+                </div>
+                {weatherApiKeyMode === 'query' && (
+                  <div className="settings-row settings-integration-field">
+                    <div>
+                      <div className="settings-row-label">{t('settings.integrations.weatherApiKeyParameterLabel')}</div>
+                      <div className="settings-row-sublabel">{t('settings.integrations.weatherApiKeyParameterHelp')}</div>
+                    </div>
+                    <input
+                      className="settings-input"
+                      value={weatherApiKeyParameter}
+                      onChange={(event) => setWeatherApiKeyParameter(event.target.value)}
+                      placeholder="apikey"
+                      autoComplete="off"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            <details className="settings-json-mapping">
+              <summary>{t('settings.integrations.weatherMappingTitle')}</summary>
+              <p className="settings-row-sublabel settings-integration-help">
+                {t('settings.integrations.weatherMappingHelp')}
+              </p>
+              {WEATHER_MAPPING_GROUPS.map((group) => (
+                <section className="settings-weather-mapping-group" key={group.id}>
+                  <div className="settings-row-label">{t(group.labelKey)}</div>
+                  {WEATHER_MAPPING_FIELDS.filter((field) => field.group === group.id).map((field) => (
+                    <div className="settings-row settings-integration-field" key={field.key}>
+                      <div className="settings-row-label">
+                        {t(field.labelKey)}
+                        {[
+                          'currentPath', 'currentTemperaturePath', 'currentConditionPath',
+                          'forecastPath', 'forecastDatePath', 'forecastConditionPath',
+                          'forecastHighPath', 'forecastLowPath', 'hourlyPath',
+                          'hourlyDateTimePath', 'hourlyTemperaturePath',
+                        ].includes(field.key) ? ' *' : ''}
+                      </div>
+                      <input
+                        className="settings-input settings-input--wide"
+                        value={weatherDataMapping[field.key]}
+                        onChange={(event) => {
+                          setWeatherDataMapping((current) => ({ ...current, [field.key]: event.target.value }));
+                          setWeatherTestError('');
+                          setWeatherTestNotice('');
+                        }}
+                        placeholder={field.placeholder}
+                        autoComplete="off"
+                      />
+                    </div>
+                  ))}
+                </section>
+              ))}
+            </details>
+            <div className="settings-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => void testWeather()}
+                disabled={integrationBusy || integrationStatusLoading || !openMeteoUrl.trim()}
+              >
+                {t('settings.integrations.weatherTestButton')}
+              </button>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => void saveServerIntegrations()}
+                disabled={integrationBusy || integrationStatusLoading}
+              >
+                {settingsSaving ? t('settings.integrations.saving') : t('settings.integrations.save')}
+              </button>
+            </div>
+            {weatherTestError && (
+              <div className="settings-row-sublabel" role="alert">
+                {weatherTestError}
+              </div>
+            )}
+            {weatherTestNotice && (
+              <div className="settings-row-sublabel" role="status">
+                {weatherTestNotice}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="settings-row-sublabel" role="status">
+            {t('settings.integrations.weatherBackendRequired')}
           </div>
-          <input
-            type="text"
-            className="settings-input"
-            value={settings.weatherEntity}
-            onChange={(e) => onUpdateSettings({ weatherEntity: e.target.value })}
-            placeholder="weather.home"
-          />
-        </div>
+        )}
       </div>
 
       {serverBacked && (
@@ -1832,7 +2124,7 @@ export function IntegrationsSection({
                 onRemove={() => void removeSavedSecret('clearMealSourceToken')}
               />
             </div>
-            <details className="settings-meal-mapping">
+            <details className="settings-json-mapping">
               <summary>{t('settings.integrations.mealMappingTitle')}</summary>
               <p className="settings-row-sublabel settings-integration-help">
                 {t('settings.integrations.mealSourceMappingHelp')}

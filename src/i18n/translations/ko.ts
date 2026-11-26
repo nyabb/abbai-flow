@@ -305,8 +305,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.integrations.connectionStatusLabel': '연결 상태',
   'settings.integrations.connected': '연결됨',
   'settings.integrations.disconnected': '연결 안 됨',
-  'settings.integrations.weatherEntityLabel': '날씨 엔티티',
-  'settings.integrations.weatherEntitySublabel': '날씨 표시에 사용되는 엔티티',
   'settings.integrations.icloudRemindersTitle': 'iCloud 미리 알림',
   'settings.integrations.icloudRemindersSublabel':
     'Apple iCloud에 직접 연결해 미리 알림 목록을 관리합니다. 암호는 서버에만 저장됩니다.',
@@ -395,8 +393,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.about.resetToDefaults': '기본값으로 재설정',
 
   'weatherView.loading': '날씨 데이터를 불러오는 중...',
-  'weatherView.notConnected': 'Home Assistant에 연결되지 않음',
-  'weatherView.noEntityFound': '날씨 엔티티를 찾을 수 없습니다',
   'weatherView.fetchFailed': '날씨를 가져오지 못했습니다',
   'weatherView.retry': '다시 시도',
   'weatherView.feelsLike': '체감 온도',
