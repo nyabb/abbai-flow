@@ -261,8 +261,8 @@ export function FocusView({ memberId, settings, onExit }: FocusViewProps) {
                 aria-busy={pendingChoreId === confirmChore.id}
                 onClick={() => {
                   const chore = choresMan.data?.chores.find((c) => c.id === confirmChore.id);
-                  // ChoresMan has no un-complete action: ticking claims or approves.
-                  const actionId = chore?.actions.claim ?? chore?.actions.approve;
+                  // Take shared chores first; ticking an assigned chore marks it done.
+                  const actionId = chore?.actions.take ?? chore?.actions.claim ?? chore?.actions.approve;
                   if (!actionId) {
                     setConfirmChoreId(null);
                     return;

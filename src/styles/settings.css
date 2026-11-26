@@ -711,6 +711,19 @@
   line-height: 1.45;
 }
 
+.settings-meal-mapping {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.settings-meal-mapping > summary {
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .settings-integrations .settings-group {
     min-width: 0;

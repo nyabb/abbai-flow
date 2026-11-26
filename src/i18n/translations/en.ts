@@ -359,6 +359,7 @@ export const en = {
     'Sent as Authorization: Bearer token and stored only on the server.',
   'settings.integrations.mealSourceMappingHelp':
     'Map JSON paths to recipe fields. Items path points to the array; other paths are relative to each item. Examples: $.recipes, $.instructions[].text. Items, title and steps are required when a URL is set.',
+  'settings.integrations.mealMappingTitle': 'Meal field mapping',
   'settings.integrations.mealItemsPathLabel': 'Items array path',
   'settings.integrations.mealIdPathLabel': 'Recipe ID path',
   'settings.integrations.mealTitlePathLabel': 'Recipe title path',
@@ -390,9 +391,12 @@ export const en = {
     'Apple requires a security key for this account. Security key verification is not available here yet.',
   'settings.integrations.icloudAuthenticated': 'Apple authentication succeeded.',
   'settings.integrations.icloudAuthenticating': 'Authenticating with Apple iCloud…',
+  'settings.integrations.icloudSendingCode': 'Sending code…',
+  'settings.integrations.icloudVerifying': 'Verifying code…',
   'settings.integrations.icloudVerifiedUntrusted':
     'The code was accepted. Apple did not mark this session as trusted; try fetching the lists.',
   'settings.integrations.icloudFetchPreview': 'Fetch reminders preview',
+  'settings.integrations.icloudFetchingPreview': 'Fetching reminders…',
   'settings.integrations.icloudListLabel': 'iCloud Reminders list',
   'settings.integrations.icloudListHelp':
     'Choose a list to inspect. This selection is saved with the integration settings for reuse later.',
@@ -428,6 +432,7 @@ export const en = {
   'settings.integrations.calendarCredentialsOnly':
     'This source configuration is stored only. Calendar data is not connected or syncing yet.',
   'settings.integrations.calendarAddSource': 'Add calendar source',
+  'settings.integrations.calendarSaving': 'Saving calendar…',
   'settings.integrations.calendarRemoveSource': 'Remove source',
   'settings.integrations.calendarBackendRequired':
     'A server-backed Abbai Flow deployment is required to store calendar credentials.',

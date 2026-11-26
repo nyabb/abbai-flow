@@ -1,6 +1,6 @@
 /** ChoresMan records mapped into the planner's member and action model. */
 
-export type ChoresManActionKind = 'claim' | 'approve' | 'disapprove';
+export type ChoresManActionKind = 'take' | 'claim' | 'approve' | 'disapprove';
 
 export type ChoresManActions = Partial<Record<ChoresManActionKind, string>>;
 

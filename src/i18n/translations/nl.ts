@@ -355,6 +355,7 @@ export const nl: Record<TranslationKey, string> = {
     'Verzonden als Authorization: Bearer-token en alleen op de server opgeslagen.',
   'settings.integrations.mealSourceMappingHelp':
     'Koppel JSON-paden aan receptvelden. Het itemspad verwijst naar de lijst; andere paden zijn relatief aan één item. Voorbeelden: $.recipes, $.instructions[].text. Items, titel en stappen zijn verplicht als een URL is ingesteld.',
+  'settings.integrations.mealMappingTitle': 'Maaltijdvelden koppelen',
   'settings.integrations.mealItemsPathLabel': 'Pad naar itemlijst',
   'settings.integrations.mealIdPathLabel': 'Pad naar recept-ID',
   'settings.integrations.mealTitlePathLabel': 'Pad naar recepttitel',
@@ -366,6 +367,10 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.mealSourceUrlPathLabel': 'Pad naar recept-URL',
   'settings.integrations.mealSourceBackendRequired':
     'Voor veilige opslag van bearer-tokens is een serverinstallatie van Abbai Flow nodig.',
+  'settings.integrations.icloudSendingCode': 'Code verzenden…',
+  'settings.integrations.icloudVerifying': 'Code controleren…',
+  'settings.integrations.icloudFetchingPreview': 'Herinneringen ophalen…',
+  'settings.integrations.calendarSaving': 'Agenda opslaan…',
   'settings.integrations.weatherEntityLabel': 'Weerentiteit',
   'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
   'settings.integrations.icloudRemindersTitle': 'iCloud-herinneringen',

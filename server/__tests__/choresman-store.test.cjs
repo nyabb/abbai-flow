@@ -37,6 +37,7 @@ function byName(items, name) {
 
 test('exports ChoresMan-compatible action names under the ChoresMan domain prefix', async (t) => {
   const { store } = await fixture(t);
+  assert.ok(SERVICE_NAMES.includes('take_chore'));
   assert.ok(SERVICE_NAMES.includes('claim_chore'));
   assert.ok(SERVICE_NAMES.includes('manual_adjust_points'));
   assert.ok(FAMILY_SERVICE_NAMES.includes('create_member'));
@@ -194,7 +195,37 @@ test('claims, approvals and disapprovals update workflow history and points ledg
   assert.equal(chore.name, 'Make bed');
 });
 
-test('shared-first chores lock to the first claimant and automatic approval credits points', async (t) => {
+test('taking a shared-first chore reserves it, and completion then waits for approval', async (t) => {
+  const { store } = await fixture(t);
+  await addHousehold(store);
+  await store.call('create_chore', {
+    name: 'Set the table',
+    assigned_user_names: ['*'],
+    points: 3,
+    completion_criteria: 'shared_first',
+  });
+
+  const take = await store.call('take_chore', { user_name: 'Riley', chore_name: 'Set the table' });
+  let snapshot = await store.getSnapshot();
+  assert.equal(take.status, 'in_progress');
+  assert.equal(snapshot.chores[0].status_by_member.Riley.status, 'in_progress');
+  assert.equal(snapshot.chores[0].status_by_member.Riley.last_completed, null);
+  assert.equal(snapshot.pending_approvals.chores, 0);
+  assert.equal(snapshot.members.find((member) => member.name === 'Riley').points, 0);
+  await assert.rejects(
+    store.call('take_chore', { user_name: 'Jamie', chore_name: 'Set the table' }),
+    (error) => error.code === 'chore_already_claimed',
+  );
+
+  const completion = await store.call('claim_chore', { user_name: 'Riley', chore_name: 'Set the table' });
+  snapshot = await store.getSnapshot();
+  assert.equal(completion.status, 'claimed');
+  assert.equal(snapshot.chores[0].status_by_member.Riley.status, 'claimed');
+  assert.equal(snapshot.pending_approvals.chores, 1);
+  assert.equal(snapshot.members.find((member) => member.name === 'Riley').points, 0);
+});
+
+test('automatic approval runs after a shared-first chore is completed, not when it is taken', async (t) => {
   const { store } = await fixture(t);
   await addHousehold(store);
   await store.call('create_chore', {
@@ -204,11 +235,19 @@ test('shared-first chores lock to the first claimant and automatic approval cred
     completion_criteria: 'shared_first',
     auto_approve: true,
   });
+  const take = await store.call('take_chore', { user_name: 'Riley', chore_name: 'Set the table' });
+  assert.equal(take.status, 'in_progress');
+  assert.equal((await store.getSnapshot()).members.find((member) => member.name === 'Riley').points, 0);
+  assert.equal((await store.getSnapshot()).pending_approvals.chores, 0);
+
   const claim = await store.call('claim_chore', { user_name: 'Riley', chore_name: 'Set the table' });
   assert.equal(claim.status, 'approved');
-  assert.equal((await store.getSnapshot()).members.find((member) => member.name === 'Riley').points, 3);
+  const snapshot = await store.getSnapshot();
+  assert.equal(snapshot.chores[0].status_by_member.Riley.status, 'approved');
+  assert.equal(typeof snapshot.chores[0].status_by_member.Riley.last_completed, 'string');
+  assert.equal(snapshot.members.find((member) => member.name === 'Riley').points, 3);
   await assert.rejects(
-    store.call('claim_chore', { user_name: 'Jamie', chore_name: 'Set the table' }),
+    store.call('take_chore', { user_name: 'Jamie', chore_name: 'Set the table' }),
     (error) => error.code === 'chore_already_claimed',
   );
 });

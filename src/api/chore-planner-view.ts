@@ -34,8 +34,10 @@ export interface ChorePlannerView {
  * ChoresMan statuses that mean the child finished and a parent must sign off.
  * `pending` is deliberately excluded: ChoresMan means "not done yet" by it.
  */
-const AWAITING_REVIEW = /(claim|review|progress|submit)/i;
-const COMPLETED = /^(approved|completed|done)/i;
+const AWAITING_REVIEW = /^(claimed|awaiting_review|pending_review)$/i;
+// Match terminal statuses exactly. ChoresMan also uses `completed_by_other`
+// for another child's shared_first chore; it is unavailable, not completed.
+const COMPLETED = /^(approved|completed|done)$/i;
 const LATE = /(overdue|late|missed)/i;
 
 /** Map a ChoresMan status string onto the planner's status vocabulary. */

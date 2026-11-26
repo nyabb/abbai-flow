@@ -618,7 +618,7 @@ export function ChorePlanner({
       (other) =>
         other.name === task.name &&
         other.audience === 'anyone' &&
-        other.actions?.claim &&
+        other.actions?.take &&
         Boolean(other.memberId && isChildMember(other.memberId)),
     );
 
@@ -817,8 +817,8 @@ export function ChorePlanner({
       return;
     }
 
-    // Otherwise this is the child's own action: claim a free chore, or mark an
-    // assigned one as done so it enters the approval queue.
+    // Otherwise this is the child's own action: mark an assigned or taken
+    // chore as done so it enters the approval queue.
     const actionId = task.actions?.claim ?? task.actions?.approve;
     if (!actionId) {
       showToast(c.assignToClaim);
@@ -826,8 +826,8 @@ export function ChorePlanner({
     }
 
     // Ask first: a mis-tap would claim the chore and hand out points.
-    // Only a chore nobody owns yet is "claimed"; one that was already assigned
-    // to this child is just finished, so it gets the "are you done?" wording.
+    // An unowned chore is taken from the selection sheet. A chore already
+    // assigned to this child is being marked done, so confirm that action.
     const claiming = task.audience === 'anyone';
     setConfirmAction({
       taskId: task.id,
@@ -1463,7 +1463,7 @@ export function ChorePlanner({
                   dispatchOverlay({ type: 'close' });
                   void runLiveAction(
                     option.id,
-                    option.actions!.claim!,
+                    option.actions!.take!,
                     option.name,
                     c.claimedToast,
                   ).then((succeeded) => {

@@ -50,8 +50,8 @@ export interface PlannerTask {
    * the chore to the child who took it.
    */
   freeForAll?: boolean;
-  /** ChoresMan action IDs for claim/approve/decline. */
-  actions?: { claim?: string; approve?: string; disapprove?: string };
+  /** ChoresMan actions for taking a shared chore, completing it, or reviewing it. */
+  actions?: { take?: string; claim?: string; approve?: string; disapprove?: string };
   /** Live ChoresMan task: the child finished it and a parent must sign off. */
   awaitingReview?: boolean;
   /**
