@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Plug,
   Monitor,
+  Images,
   ListChecks,
   Info,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { AboutSection } from './settings/sections/AboutSection';
 import { AppearanceSection } from './settings/sections/AppearanceSection';
 import { FamilySection } from './settings/sections/FamilySection';
 import { DisplaySection } from './settings/sections/DisplaySection';
+import { PhotosSection } from './settings/sections/PhotosSection';
 import { CalendarSection } from './settings/sections/CalendarSection';
 import { IntegrationsSection } from './settings/sections/IntegrationsSection';
 import { useTranslation, type TranslationKey } from '../i18n';
@@ -33,6 +35,7 @@ type SettingsSection =
   | 'calendar'
   | 'integrations'
   | 'display'
+  | 'photos'
   | 'chores'
   | 'about';
 
@@ -74,6 +77,7 @@ const NAV_ITEMS: Array<{ id: SettingsSection; labelKey: TranslationKey; icon: Re
   { id: 'calendar', labelKey: 'settings.nav.calendar', icon: <CalendarDays size={18} /> },
   { id: 'integrations', labelKey: 'settings.nav.integrations', icon: <Plug size={18} /> },
   { id: 'display', labelKey: 'settings.nav.display', icon: <Monitor size={18} /> },
+  { id: 'photos', labelKey: 'settings.nav.photos', icon: <Images size={18} /> },
   { id: 'chores', labelKey: 'settings.nav.chores', icon: <ListChecks size={18} /> },
   { id: 'about', labelKey: 'settings.nav.about', icon: <Info size={18} /> },
 ];
@@ -162,6 +166,8 @@ export function SettingsView({
         return renderIntegrations();
       case 'display':
         return renderDisplay();
+      case 'photos':
+        return renderPhotos();
       case 'chores':
         return renderChores();
       case 'about':
@@ -220,6 +226,9 @@ export function SettingsView({
       members={members}
       onEnterFocusMode={onEnterFocusMode}
     />
+  );
+  const renderPhotos = () => (
+    <PhotosSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />
   );
   // ==== CHORES ====
   // Chores and rewards are stored in the local ChoresMan service.

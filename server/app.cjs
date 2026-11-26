@@ -29,6 +29,7 @@ const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-
 const { ChoresManStore, ChoresManStoreError } = require('./choresman-store.cjs');
 const { ICloudRemindersWorker } = require('./icloud-reminders-worker.cjs');
 const { prepareForecastUrl } = require('./open-meteo.cjs');
+const { createScreenSaverPhotoLibrary } = require('./screensaver-photo-library.cjs');
 const {
   WEATHER_MAPPING_KEYS,
   DEFAULT_WEATHER_MAPPING,
@@ -40,6 +41,7 @@ const { createCaldavCalendarService } = require('./build/caldav-calendar-bundle.
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
+const PHOTO_UPLOAD_BODY_SIZE = 9 * 1024 * 1024;
 /** Proxied REST requests are abandoned after this long. */
 const PROXY_TIMEOUT_MS = 30000;
 /** A WebSocket upgrade must be established within this window. */
@@ -1708,6 +1710,8 @@ function createApp(options) {
       options.caldavCalendars ||
       createCaldavCalendarService({ getSources: () => config.calendarSources }),
     weather: options.weather || createWeatherService(),
+    screensaverPhotos:
+      options.screensaverPhotos || createScreenSaverPhotoLibrary({ dataDir: options.dataDir }),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1867,6 +1871,7 @@ async function route(req, res, config, services, bluetooth) {
     actionPath === '/beacon-action/service' ||
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
+    pathname.startsWith('/abbai-flow/photos') ||
     pathname === '/abbai-flow/settings/integrations' ||
     pathname.startsWith('/abbai-flow/weather/') ||
     pathname === '/abbai-flow/calendars/test' ||
@@ -1884,6 +1889,89 @@ async function route(req, res, config, services, bluetooth) {
   }
 
   try {
+    if (pathname === '/abbai-flow/photos') {
+      if (req.method === 'GET') {
+        sendJson(res, 200, { photos: await services.screensaverPhotos.list() }, {
+          'Cache-Control': 'no-store',
+        });
+        return;
+      }
+      if (req.method === 'POST') {
+        const { value, error } = await readJsonObject(req, PHOTO_UPLOAD_BODY_SIZE);
+        if (error) {
+          sendJson(res, error.status, { error: error.message });
+          return;
+        }
+        try {
+          const photo = await services.screensaverPhotos.add(value);
+          sendJson(res, 201, { photo });
+        } catch (err) {
+          const status = err.status || 500;
+          sendJson(res, status, {
+            error: status >= 500 ? 'Could not save the uploaded photo.' : err.message,
+          });
+        }
+        return;
+      }
+      sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST' });
+      return;
+    }
+    if (pathname === '/abbai-flow/photos/delete') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      try {
+        const deletedCount = await services.screensaverPhotos.remove(value.ids);
+        sendJson(res, 200, { deletedCount });
+      } catch (err) {
+        const status = err.status || 500;
+        sendJson(res, status, {
+          error: status >= 500 ? 'Could not delete the selected photos.' : err.message,
+        });
+      }
+      return;
+    }
+    if (pathname.startsWith('/abbai-flow/photos/')) {
+      const id = pathname.slice('/abbai-flow/photos/'.length);
+      if (req.method === 'GET') {
+        try {
+          const bytes = await services.screensaverPhotos.read(id);
+          res.writeHead(200, {
+            'Content-Type': 'image/jpeg',
+            'Content-Length': bytes.length,
+            'Cache-Control': 'private, max-age=3600',
+            'X-Content-Type-Options': 'nosniff',
+          });
+          res.end(bytes);
+        } catch (err) {
+          const status = err.status || 500;
+          sendJson(res, status, {
+            error: status >= 500 ? 'Could not read the saved photo.' : err.message,
+          });
+        }
+        return;
+      }
+      if (req.method === 'DELETE') {
+        try {
+          const deletedCount = await services.screensaverPhotos.remove([id]);
+          sendJson(res, 200, { deletedCount });
+        } catch (err) {
+          const status = err.status || 500;
+          sendJson(res, status, {
+            error: status >= 500 ? 'Could not delete the photo.' : err.message,
+          });
+        }
+        return;
+      }
+      sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, DELETE' });
+      return;
+    }
     if (pathname === '/abbai-flow/calendars') {
       if (req.method !== 'GET') {
         sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET' });

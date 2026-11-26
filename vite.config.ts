@@ -32,6 +32,10 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: true,
       proxy: {
+        '/abbai-flow/photos': {
+          target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
+          changeOrigin: false,
+        },
         '/abbai-flow/music': {
           target: env.VITE_ABBAI_FLOW_BACKEND_URL?.trim() || 'http://localhost:3001',
           changeOrigin: false,
