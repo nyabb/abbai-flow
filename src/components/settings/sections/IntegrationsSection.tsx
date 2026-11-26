@@ -215,7 +215,21 @@ export function IntegrationsSection({
   const [icloudPreview, setIcloudPreview] = useState('');
   const [icloudPreviewCopied, setIcloudPreviewCopied] = useState(false);
   const [calendarSources, setCalendarSources] = useState<CalendarSourceSetting[]>([]);
-  const [integrationBusy, setIntegrationBusy] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [calendarSaving, setCalendarSaving] = useState(false);
+  const [mealSaving, setMealSaving] = useState(false);
+  const [icloudSaving, setIcloudSaving] = useState(false);
+  const [icloudBusyAction, setIcloudBusyAction] = useState<
+    'authenticate' | 'request_code' | 'verify_code' | 'fetch_preview' | null
+  >(null);
+  const [haTesting, setHaTesting] = useState(false);
+  const integrationBusy =
+    settingsSaving ||
+    calendarSaving ||
+    mealSaving ||
+    icloudSaving ||
+    icloudBusyAction !== null ||
+    haTesting;
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
 
@@ -382,7 +396,7 @@ export function IntegrationsSection({
   ]);
 
   const testHa = async () => {
-    setIntegrationBusy(true);
+    setHaTesting(true);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -396,15 +410,23 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
     } finally {
-      setIntegrationBusy(false);
+      setHaTesting(false);
     }
   };
 
-  const saveServerIntegrations = async (): Promise<boolean> => {
+  const saveServerIntegrations = async (
+    context: 'settings' | 'calendar' | 'meal' | 'icloud' = 'settings',
+  ): Promise<boolean> => {
     const resetIcloudSession =
       Boolean(icloudPassword) ||
       (integrationStatus && integrationStatus.icloudAppleId !== icloudAppleId.trim());
-    setIntegrationBusy(true);
+    const setSaving = {
+      settings: setSettingsSaving,
+      calendar: setCalendarSaving,
+      meal: setMealSaving,
+      icloud: setIcloudSaving,
+    }[context];
+    setSaving(true);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -452,7 +474,7 @@ export function IntegrationsSection({
       );
       return false;
     } finally {
-      setIntegrationBusy(false);
+      setSaving(false);
     }
   };
 
@@ -460,7 +482,7 @@ export function IntegrationsSection({
     setIcloudRemindersListKey(listKey);
     setIcloudPreview('');
     setIcloudPreviewCopied(false);
-    setIntegrationBusy(true);
+    setIcloudSaving(true);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -474,7 +496,7 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
     } finally {
-      setIntegrationBusy(false);
+      setIcloudSaving(false);
     }
   };
 
@@ -508,6 +530,7 @@ export function IntegrationsSection({
   };
 
   const runIcloudAction = async (
+    actionType: 'authenticate' | 'request_code' | 'verify_code' | 'fetch_preview',
     action: () => Promise<{
       state: string;
       devices?: Array<{ index: number; name: string }>;
@@ -515,7 +538,7 @@ export function IntegrationsSection({
       decodedAppleSample?: unknown;
     }>,
   ) => {
-    setIntegrationBusy(true);
+    setIcloudBusyAction(actionType);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -525,7 +548,7 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
     } finally {
-      setIntegrationBusy(false);
+      setIcloudBusyAction(null);
     }
   };
 
@@ -543,10 +566,10 @@ export function IntegrationsSection({
   };
 
   const authenticateIcloud = async () => {
-    if (!(await saveServerIntegrations())) return;
+    if (!(await saveServerIntegrations('icloud'))) return;
     setIcloudPreview('');
     setIcloudCode('');
-    await runIcloudAction(authenticateICloudReminders);
+    await runIcloudAction('authenticate', authenticateICloudReminders);
   };
 
   const addCalendarSource = () => {
@@ -571,7 +594,7 @@ export function IntegrationsSection({
 
   const saveBrowserHomeAssistant = async () => {
     if (!onSaveHomeAssistant) return;
-    setIntegrationBusy(true);
+    setSettingsSaving(true);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -583,12 +606,13 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
     } finally {
-      setIntegrationBusy(false);
+      setSettingsSaving(false);
     }
   };
 
   const removeSavedSecret = async (clearField: ClearSecretField) => {
-    setIntegrationBusy(true);
+    const setSaving = clearField === 'clearIcloudPassword' ? setIcloudSaving : setSettingsSaving;
+    setSaving(true);
     setIntegrationError('');
     setIntegrationNotice('');
     try {
@@ -612,7 +636,7 @@ export function IntegrationsSection({
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
     } finally {
-      setIntegrationBusy(false);
+      setSaving(false);
     }
   };
 
@@ -734,7 +758,7 @@ export function IntegrationsSection({
               onClick={() => void saveServerIntegrations()}
               disabled={integrationBusy || integrationStatusLoading}
             >
-              {integrationBusy
+              {settingsSaving
                 ? t('settings.integrations.saving')
                 : t('settings.integrations.save')}
             </button>
@@ -834,7 +858,7 @@ export function IntegrationsSection({
                 onClick={() => void saveServerIntegrations()}
                 disabled={integrationBusy || integrationStatusLoading}
               >
-                {integrationBusy
+                {settingsSaving
                   ? t('settings.integrations.saving')
                   : t('settings.integrations.save')}
               </button>
@@ -921,104 +945,14 @@ export function IntegrationsSection({
                 onClick={() => void saveServerIntegrations()}
                 disabled={integrationBusy || integrationStatusLoading}
               >
-                {integrationBusy
+                {settingsSaving
                   ? t('settings.integrations.saving')
                   : t('settings.integrations.save')}
               </button>
             </div>
           </div>
 
-          <div className="settings-group">
-            <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
-            <p className="settings-row-sublabel settings-integration-help">
-              {t('settings.integrations.mealSourceDescription')}
-            </p>
-            <div className="settings-row settings-integration-field">
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.integrations.mealSourceUrlLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {t('settings.integrations.mealSourceUrlHelp')}
-                </div>
-              </div>
-              <input
-                type="url"
-                className="settings-input settings-input--wide"
-                value={mealSourceUrl}
-                onChange={(event) => setMealSourceUrl(event.target.value)}
-                placeholder="https://api.example.com/recipes"
-                autoComplete="url"
-              />
-            </div>
-            <div className="settings-row settings-integration-field">
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.integrations.mealSourceTokenLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {integrationStatus?.mealSourceTokenConfigured
-                    ? t('settings.integrations.secretSaved')
-                    : t('settings.integrations.mealSourceTokenHelp')}
-                </div>
-              </div>
-              <SavedSecretControl
-                label={t('settings.integrations.mealSourceTokenLabel')}
-                value={mealSourceToken}
-                onChange={setMealSourceToken}
-                configured={Boolean(integrationStatus?.mealSourceTokenConfigured)}
-                disabled={integrationStatusLoading}
-                busy={integrationBusy}
-                removeLabel={t('settings.integrations.clearSecret')}
-                onRemove={() => void removeSavedSecret('clearMealSourceToken')}
-              />
-            </div>
-            <div className="settings-row-sublabel settings-integration-help">
-              {t('settings.integrations.mealSourceMappingHelp')}
-            </div>
-            {MEAL_MAPPING_FIELDS.map((field) => (
-              <div className="settings-row settings-integration-field" key={field.key}>
-                <div className="settings-row-label">
-                  {t(field.labelKey)}
-                  {['itemsPath', 'titlePath', 'stepsPath'].includes(field.key) ? ' *' : ''}
-                </div>
-                <input
-                  className="settings-input settings-input--wide"
-                  value={mealDataMapping[field.key]}
-                  onChange={(event) =>
-                    setMealDataMapping((current) => ({
-                      ...current,
-                      [field.key]: event.target.value,
-                    }))
-                  }
-                  placeholder={field.placeholder}
-                  autoComplete="off"
-                />
-              </div>
-            ))}
-            <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={() => void saveServerIntegrations()}
-                disabled={integrationBusy || integrationStatusLoading}
-              >
-                {integrationBusy
-                  ? t('settings.integrations.saving')
-                  : t('settings.integrations.save')}
-              </button>
-            </div>
-          </div>
         </>
-      )}
-
-      {!serverBacked && (
-        <div className="settings-group">
-          <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
-          <p className="settings-row-sublabel settings-integration-help">
-            {t('settings.integrations.mealSourceBackendRequired')}
-          </p>
-        </div>
       )}
 
       <div className="settings-group">
@@ -1073,10 +1007,12 @@ export function IntegrationsSection({
               <button
                 type="button"
                 className="settings-btn"
-                onClick={() => void saveServerIntegrations()}
+                onClick={() => void saveServerIntegrations('icloud')}
                 disabled={integrationBusy || integrationStatusLoading}
               >
-                {t('settings.integrations.save')}
+                {icloudSaving
+                  ? t('settings.integrations.saving')
+                  : t('settings.integrations.save')}
               </button>
               <button
                 type="button"
@@ -1090,9 +1026,9 @@ export function IntegrationsSection({
                   (!icloudPassword && !integrationStatus?.icloudPasswordConfigured)
                 }
               >
-                {integrationBusy
+                {icloudSaving
                   ? t('settings.integrations.saving')
-                  : icloudAuthState === 'authenticating'
+                  : icloudBusyAction === 'authenticate' || icloudAuthState === 'authenticating'
                     ? t('settings.integrations.icloudAuthenticating')
                     : t('settings.integrations.icloudAuthenticate')}
               </button>
@@ -1118,13 +1054,15 @@ export function IntegrationsSection({
                     type="button"
                     className="settings-btn"
                     onClick={() =>
-                      void runIcloudAction(() =>
+                      void runIcloudAction('request_code', () =>
                         requestICloudRemindersVerificationCode(icloudDeviceIndex),
                       )
                     }
                     disabled={integrationBusy || icloudDevices.length === 0}
                   >
-                    {t('settings.integrations.icloudSendCode')}
+                    {icloudBusyAction === 'request_code'
+                      ? t('settings.integrations.icloudSendingCode')
+                      : t('settings.integrations.icloudSendCode')}
                   </button>
                 </div>
               </div>
@@ -1151,11 +1089,13 @@ export function IntegrationsSection({
                     type="button"
                     className="settings-btn settings-btn--primary"
                     onClick={() =>
-                      void runIcloudAction(() => verifyICloudRemindersCode(icloudCode))
+                      void runIcloudAction('verify_code', () => verifyICloudRemindersCode(icloudCode))
                     }
                     disabled={integrationBusy || !icloudCode.trim()}
                   >
-                    {t('settings.integrations.icloudVerifyCode')}
+                    {icloudBusyAction === 'verify_code'
+                      ? t('settings.integrations.icloudVerifying')
+                      : t('settings.integrations.icloudVerifyCode')}
                   </button>
                 </div>
               </div>
@@ -1225,7 +1165,7 @@ export function IntegrationsSection({
                     type="button"
                     className="settings-btn"
                     onClick={() =>
-                      void runIcloudAction(() =>
+                      void runIcloudAction('fetch_preview', () =>
                         fetchICloudRemindersPreview(icloudRemindersListKey),
                       )
                     }
@@ -1236,8 +1176,8 @@ export function IntegrationsSection({
                       !selectedIcloudListAvailable
                     }
                   >
-                    {integrationBusy
-                      ? t('settings.integrations.saving')
+                    {icloudBusyAction === 'fetch_preview'
+                      ? t('settings.integrations.icloudFetchingPreview')
                       : t('settings.integrations.icloudFetchPreview')}
                   </button>
                 </div>
@@ -1476,11 +1416,11 @@ export function IntegrationsSection({
             <button
               type="button"
               className="settings-btn settings-btn--primary"
-              onClick={() => void saveServerIntegrations()}
+              onClick={() => void saveServerIntegrations('calendar')}
               disabled={integrationBusy || integrationStatusLoading}
             >
-              {integrationBusy
-                ? t('settings.integrations.saving')
+              {calendarSaving
+                ? t('settings.integrations.calendarSaving')
                 : t('settings.integrations.save')}
             </button>
           </div>
@@ -1723,6 +1663,99 @@ export function IntegrationsSection({
             onChange={(v) => onUpdateSettings({ photoTransition: v })}
           />
         </div>
+      </div>
+
+      <div className="settings-group">
+        <div className="settings-group-title">{t('settings.integrations.mealSourceTitle')}</div>
+        {serverBacked ? (
+          <>
+            <p className="settings-row-sublabel settings-integration-help">
+              {t('settings.integrations.mealSourceDescription')}
+            </p>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.mealSourceUrlLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {t('settings.integrations.mealSourceUrlHelp')}
+                </div>
+              </div>
+              <input
+                type="url"
+                className="settings-input settings-input--wide"
+                value={mealSourceUrl}
+                onChange={(event) => setMealSourceUrl(event.target.value)}
+                placeholder="https://api.example.com/recipes"
+                autoComplete="url"
+              />
+            </div>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.mealSourceTokenLabel')}
+                </div>
+                <div className="settings-row-sublabel">
+                  {integrationStatus?.mealSourceTokenConfigured
+                    ? t('settings.integrations.secretSaved')
+                    : t('settings.integrations.mealSourceTokenHelp')}
+                </div>
+              </div>
+              <SavedSecretControl
+                label={t('settings.integrations.mealSourceTokenLabel')}
+                value={mealSourceToken}
+                onChange={setMealSourceToken}
+                configured={Boolean(integrationStatus?.mealSourceTokenConfigured)}
+                disabled={integrationStatusLoading}
+                busy={integrationBusy}
+                removeLabel={t('settings.integrations.clearSecret')}
+                onRemove={() => void removeSavedSecret('clearMealSourceToken')}
+              />
+            </div>
+            <details className="settings-meal-mapping">
+              <summary>{t('settings.integrations.mealMappingTitle')}</summary>
+              <p className="settings-row-sublabel settings-integration-help">
+                {t('settings.integrations.mealSourceMappingHelp')}
+              </p>
+              {MEAL_MAPPING_FIELDS.map((field) => (
+                <div className="settings-row settings-integration-field" key={field.key}>
+                  <div className="settings-row-label">
+                    {t(field.labelKey)}
+                    {['itemsPath', 'titlePath', 'stepsPath'].includes(field.key) ? ' *' : ''}
+                  </div>
+                  <input
+                    className="settings-input settings-input--wide"
+                    value={mealDataMapping[field.key]}
+                    onChange={(event) =>
+                      setMealDataMapping((current) => ({
+                        ...current,
+                        [field.key]: event.target.value,
+                      }))
+                    }
+                    placeholder={field.placeholder}
+                    autoComplete="off"
+                  />
+                </div>
+              ))}
+            </details>
+            <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="settings-btn settings-btn--primary"
+                onClick={() => void saveServerIntegrations('meal')}
+                disabled={integrationBusy || integrationStatusLoading}
+              >
+                {mealSaving
+                  ? t('settings.integrations.saving')
+                  : t('settings.integrations.save')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <p className="settings-row-sublabel settings-integration-help">
+            {t('settings.integrations.mealSourceBackendRequired')}
+          </p>
+        )}
       </div>
     </div>
   );
