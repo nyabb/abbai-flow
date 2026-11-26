@@ -202,6 +202,17 @@
   margin-bottom: 8px;
 }
 
+.grocery-view-section-group + .grocery-view-section-group {
+  margin-top: 8px;
+}
+
+.grocery-view-section-name {
+  padding: 8px 4px 2px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .grocery-view-section-header {
   font-size: 0.8rem;
   font-weight: 700;
@@ -305,6 +316,7 @@
 .grocery-view-item-row {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 .grocery-view-item-row .grocery-view-item {
@@ -343,6 +355,108 @@
 
 .grocery-view-delete:hover {
   color: #e55;
+}
+
+.grocery-view-section-select,
+.grocery-view-add-section {
+  min-width: 0;
+  max-width: 210px;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.78rem;
+}
+
+.grocery-view-section-select {
+  flex: 0 1 150px;
+}
+
+.grocery-view-add-section {
+  flex: 0 1 190px;
+  align-self: center;
+}
+
+.grocery-view-edit-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 2px 8px 12px 54px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+.grocery-view-edit-panel > .grocery-view-input,
+.grocery-view-edit-notes {
+  grid-column: 1 / -1;
+}
+
+.grocery-view-edit-notes {
+  width: 100%;
+  min-height: 58px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+  resize: vertical;
+}
+
+.grocery-view-edit-field {
+  display: grid;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+
+.grocery-view-edit-field input,
+.grocery-view-edit-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.grocery-view-edit-flag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.grocery-view-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .grocery-view-section-select {
+    flex-basis: 96px;
+    max-width: 112px;
+  }
+
+  .grocery-view-add-section {
+    flex-basis: 120px;
+  }
+
+  .grocery-view-edit-panel {
+    margin-left: 8px;
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Empty state */

@@ -2,11 +2,10 @@
  * Integrations settings: Home Assistant connection status, iCloud Reminders,
  * grocery lists, Music Assistant and the photo slideshow options.
  *
- * The todo-list lookup only feeds these controls, so the fetch lives here.
+ * The iCloud list lookup feeds the grocery and task list selectors below.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Copy, Trash2 } from 'lucide-react';
-import { HomeAssistantTodoClient } from '../../../api/home-assistant-todo';
 import {
   loadIntegrationSettings,
   saveIntegrationSettings,
@@ -22,10 +21,8 @@ import {
   type IntegrationSettingsStatus,
   type CalendarSourceSetting,
 } from '../../../api/integration-settings';
-import { hasToken } from '../../../api/ha-rest';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
-import type { GroceryList } from '../../../types/grocery';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
 import { SecretInput } from '../SecretInput';
 import { Segment, Slider } from '../controls';
@@ -44,6 +41,16 @@ const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
 };
 
 type ICloudRemindersListOption = NonNullable<ICloudRemindersActionResult['lists']>[number];
+
+const GROCERY_LIST_HINTS = [
+  'grocer', 'shopping', 'costco', 'walmart', 'target', 'store', 'pantry', 'fridge', 'freezer',
+  'inventory', 'meal',
+];
+
+function isProbablyGroceryList(title: string): boolean {
+  const normalized = title.toLowerCase();
+  return GROCERY_LIST_HINTS.some((hint) => normalized.includes(hint));
+}
 
 async function copyText(value: string): Promise<boolean> {
   try {
@@ -183,7 +190,6 @@ export function IntegrationsSection({
   onRemoveHomeAssistantToken,
   onIntegrationSettingsSaved,
 }: IntegrationsSectionProps) {
-  const [todoLists, setTodoLists] = useState<GroceryList[]>([]);
   const serverBacked = Boolean(getRuntimeConfig());
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationSettingsStatus | null>(
     null,
@@ -645,27 +651,23 @@ export function IntegrationsSection({
     ? Boolean(integrationStatus?.haConfigured)
     : (haTokenConfigured ?? connected);
   const activeIcloudLists = icloudLists.filter((list) => !list.deleted && !list.isGroup);
+  const activeIcloudListIds = new Set(activeIcloudLists.map((list) => list.key));
+  const configuredGroceryListIds = settings.groceryListIds.filter((id) => activeIcloudListIds.has(id));
+  const configuredTaskListIds = (settings.taskListIds ?? []).filter((id) => activeIcloudListIds.has(id));
+  const inferredGroceryListIds = activeIcloudLists
+    .filter((list) => isProbablyGroceryList(list.title))
+    .map((list) => list.key);
+  const effectiveGroceryListIds = configuredGroceryListIds.length > 0
+    ? configuredGroceryListIds
+    : inferredGroceryListIds;
+  const effectiveTaskListIds = configuredTaskListIds.length > 0
+    ? configuredTaskListIds
+    : activeIcloudLists
+        .filter((list) => !effectiveGroceryListIds.includes(list.key))
+        .map((list) => list.key);
   const selectedIcloudListAvailable = activeIcloudLists.some(
     (list) => list.key === icloudRemindersListKey,
   );
-
-  useEffect(() => {
-    if (!hasToken()) {
-      setTodoLists([]);
-      return;
-    }
-    let cancelled = false;
-    const client = new HomeAssistantTodoClient();
-    client
-      .getLists()
-      .then((lists) => {
-        if (!cancelled) setTodoLists(lists);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [connected, integrationStatus?.haConfigured]);
 
   return (
     <div className="settings-integrations">
@@ -1444,17 +1446,19 @@ export function IntegrationsSection({
               {t('settings.integrations.groceryListsSublabel')}
             </div>
           </div>
-          {todoLists.length === 0 ? (
+          {icloudListsLoading ? (
+            <div className="settings-row-sublabel">{t('settings.integrations.icloudListsLoading')}</div>
+          ) : activeIcloudLists.length === 0 ? (
             <div className="settings-row-sublabel">
-              {t('settings.integrations.noTodoListsFound')}
+              {t('settings.integrations.noICloudListsFound')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {todoLists.map((list) => {
-                const isChecked = settings.groceryListIds.includes(list.id);
+              {activeIcloudLists.map((list) => {
+                const isChecked = effectiveGroceryListIds.includes(list.key);
                 return (
                   <label
-                    key={list.id}
+                    key={list.key}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -1472,14 +1476,14 @@ export function IntegrationsSection({
                       checked={isChecked}
                       onChange={(e) => {
                         const newIds = e.target.checked
-                          ? [...settings.groceryListIds, list.id]
-                          : settings.groceryListIds.filter((id) => id !== list.id);
+                          ? [...new Set([...effectiveGroceryListIds, list.key])]
+                          : effectiveGroceryListIds.filter((id) => id !== list.key);
                         onUpdateSettings({ groceryListIds: newIds });
                       }}
                       style={{ width: 16, height: 16 }}
                     />
                     <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      {list.name}
+                      {list.title}
                     </span>
                   </label>
                 );
@@ -1489,8 +1493,7 @@ export function IntegrationsSection({
         </div>
         {/*
           Task lists are chosen explicitly, the same way grocery lists are.
-          Leaving this empty keeps the old "everything that is not grocery"
-          behaviour, but a selection means exactly those entities are read.
+          Leaving this empty includes every iCloud list not selected as a grocery list.
         */}
         <div
           className="settings-row"
@@ -1502,18 +1505,20 @@ export function IntegrationsSection({
               {t('settings.integrations.taskListsSublabel')}
             </div>
           </div>
-          {todoLists.length === 0 ? (
+          {icloudListsLoading ? (
+            <div className="settings-row-sublabel">{t('settings.integrations.icloudListsLoading')}</div>
+          ) : activeIcloudLists.length === 0 ? (
             <div className="settings-row-sublabel">
-              {t('settings.integrations.noTodoListsFound')}
+              {t('settings.integrations.noICloudListsFound')}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {todoLists.map((list) => {
-                const selected = settings.taskListIds ?? [];
-                const isChecked = selected.includes(list.id);
+              {activeIcloudLists.map((list) => {
+                const isGrocery = effectiveGroceryListIds.includes(list.key);
+                const isChecked = !isGrocery && effectiveTaskListIds.includes(list.key);
                 return (
                   <label
-                    key={list.id}
+                    key={list.key}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -1529,16 +1534,17 @@ export function IntegrationsSection({
                     <input
                       type="checkbox"
                       checked={isChecked}
+                      disabled={isGrocery}
                       onChange={(e) => {
                         const newIds = e.target.checked
-                          ? [...selected, list.id]
-                          : selected.filter((id) => id !== list.id);
+                          ? [...new Set([...effectiveTaskListIds, list.key])]
+                          : effectiveTaskListIds.filter((id) => id !== list.key);
                         onUpdateSettings({ taskListIds: newIds });
                       }}
                       style={{ width: 16, height: 16 }}
                     />
                     <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      {list.name}
+                      {list.title}
                     </span>
                   </label>
                 );
@@ -1561,31 +1567,14 @@ export function IntegrationsSection({
             onChange={(e) => onUpdateSettings({ defaultGroceryList: e.target.value })}
           >
             <option value="">{t('settings.integrations.autoFirstAvailable')}</option>
-            {todoLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
+            {settings.defaultGroceryList && !activeIcloudListIds.has(settings.defaultGroceryList) && (
+              <option value={settings.defaultGroceryList} disabled>
+                {t('settings.integrations.icloudSelectedListUnavailable')}
               </option>
-            ))}
-          </select>
-        </div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.shoppingEntityLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.shoppingEntitySublabel')}
-            </div>
-          </div>
-          <select
-            className="settings-input"
-            value={settings.shoppingEntity}
-            onChange={(e) => onUpdateSettings({ shoppingEntity: e.target.value })}
-          >
-            <option value="">{t('common.none')}</option>
-            {todoLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.name}
+            )}
+            {activeIcloudLists.map((list) => (
+              <option key={list.key} value={list.key}>
+                {list.title}
               </option>
             ))}
           </select>

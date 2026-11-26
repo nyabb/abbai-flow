@@ -321,22 +321,19 @@ export const fr: Record<TranslationKey, string> = {
   'settings.integrations.weatherEntitySublabel': "Entité utilisée pour l'affichage météo",
   'settings.integrations.icloudRemindersTitle': 'Rappels iCloud',
   'settings.integrations.icloudRemindersSublabel':
-    'Configurez Apple iCloud dans Home Assistant. Chaque liste de Rappels apparaîtra ci-dessous comme une liste de tâches Home Assistant.',
-  'settings.integrations.groceryTitle': 'Listes Home Assistant',
+    'Connectez-vous directement à Apple iCloud pour gérer vos listes de rappels. Le mot de passe reste sur le serveur.',
+  'settings.integrations.groceryTitle': 'Listes Rappels iCloud',
   'settings.integrations.defaultGroceryListLabel': 'Liste de courses par défaut',
   'settings.integrations.defaultGroceryListSublabel':
     "Liste affichée à l'ouverture de la vue courses",
   'settings.integrations.autoFirstAvailable': 'Auto (première disponible)',
   'settings.integrations.groceryListsLabel': 'Listes de courses',
   'settings.integrations.groceryListsSublabel':
-    'Sélectionnez les listes de tâches Home Assistant à afficher dans Courses',
+    'Sélectionnez les listes Rappels iCloud à afficher dans Courses',
   'settings.integrations.taskListsSublabel':
-    'Sélectionnez les listes de tâches Home Assistant à afficher dans Tâches',
-  'settings.integrations.noTodoListsFound':
-    'Aucune liste de tâches Home Assistant trouvée. Configurez Rappels iCloud dans Home Assistant pour synchroniser vos listes.',
-  'settings.integrations.shoppingEntityLabel': 'Entité de la carte Courses',
-  'settings.integrations.shoppingEntitySublabel':
-    'Liste de tâches HA pour la carte Courses de la barre latérale',
+    'Sélectionnez les listes Rappels iCloud à afficher dans Tâches',
+  'settings.integrations.noICloudListsFound':
+    'Aucune liste Rappels iCloud trouvée. Connectez-vous dans la section Rappels iCloud ci-dessus.',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
   'settings.integrations.defaultPlayerLabel': 'Lecteur par défaut',
   'settings.integrations.defaultPlayerSublabel': 'Lecteur multimédia utilisé par défaut',
@@ -588,12 +585,26 @@ export const fr: Record<TranslationKey, string> = {
   'grocery.items': 'Articles ({count})',
   'grocery.completed': 'Terminés ({count})',
   'grocery.deleteItem': "Supprimer l'article",
-  'grocery.haList': '{name} (HA)',
-  'grocery.loadFailed': 'Impossible de charger cette liste depuis Home Assistant',
+  'grocery.loadFailed': 'Impossible de charger cette liste depuis Rappels iCloud',
   'grocery.retry': 'Réessayer',
   'grocery.tabsLabel': 'Type de liste',
   'grocery.tab.grocery': 'Courses',
   'grocery.tab.tasks': 'Tâches',
+  'grocery.moveSection': 'Déplacer vers une section',
+  'grocery.noSection': 'Aucune section',
+  'grocery.otherSection': 'Autres',
+  'grocery.editReminder': 'Modifier le rappel',
+  'grocery.itemTitle': 'Titre du rappel',
+  'grocery.notes': 'Notes',
+  'grocery.dueDate': 'Échéance',
+  'grocery.priority': 'Priorité',
+  'grocery.priorityNone': 'Aucune',
+  'grocery.priorityHigh': 'Haute',
+  'grocery.priorityMedium': 'Moyenne',
+  'grocery.priorityLow': 'Basse',
+  'grocery.flagged': 'Marqué',
+  'grocery.allDay': 'Toute la journée',
+  'grocery.saveReminder': 'Enregistrer le rappel',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Ajouter une carte',

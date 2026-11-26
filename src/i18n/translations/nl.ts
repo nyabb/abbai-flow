@@ -375,22 +375,19 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.weatherEntitySublabel': 'Entiteit gebruikt voor de weergave van het weer',
   'settings.integrations.icloudRemindersTitle': 'iCloud-herinneringen',
   'settings.integrations.icloudRemindersSublabel':
-    'Stel Apple iCloud in via Home Assistant. Elke Herinneringenlijst verschijnt hieronder als Home Assistant-takenlijst.',
-  'settings.integrations.groceryTitle': 'Home Assistant-lijsten',
+    'Maak rechtstreeks verbinding met Apple iCloud om Herinneringenlijsten te beheren. Het wachtwoord wordt alleen op de server bewaard.',
+  'settings.integrations.groceryTitle': 'iCloud-herinneringenlijsten',
   'settings.integrations.defaultGroceryListLabel': 'Standaard boodschappenlijst',
   'settings.integrations.defaultGroceryListSublabel':
     'Lijst die wordt getoond bij het openen van de boodschappenweergave',
   'settings.integrations.autoFirstAvailable': 'Automatisch (eerste beschikbare)',
   'settings.integrations.groceryListsLabel': 'Boodschappenlijsten',
   'settings.integrations.groceryListsSublabel':
-    'Kies welke Home Assistant-takenlijsten bij Boodschappen worden getoond',
+    'Kies welke iCloud-herinneringenlijsten bij Boodschappen worden getoond',
   'settings.integrations.taskListsSublabel':
-    'Kies welke Home Assistant-takenlijsten bij Taken worden getoond',
-  'settings.integrations.noTodoListsFound':
-    'Geen Home Assistant-takenlijsten gevonden. Stel iCloud-herinneringen in via Home Assistant om je lijsten te synchroniseren.',
-  'settings.integrations.shoppingEntityLabel': 'Entiteit voor boodschappenkaart',
-  'settings.integrations.shoppingEntitySublabel':
-    'HA-takenlijst voor de boodschappenkaart in de zijbalk',
+    'Kies welke iCloud-herinneringenlijsten bij Taken worden getoond',
+  'settings.integrations.noICloudListsFound':
+    'Geen iCloud-herinneringenlijsten gevonden. Meld je hierboven aan in het onderdeel iCloud-herinneringen.',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
   'settings.integrations.defaultPlayerLabel': 'Standaardspeler',
   'settings.integrations.defaultPlayerSublabel': 'Standaard gebruikte mediaspeler',
@@ -717,12 +714,26 @@ export const nl: Record<TranslationKey, string> = {
   'grocery.items': 'Items ({count})',
   'grocery.completed': 'Voltooid ({count})',
   'grocery.deleteItem': 'Item verwijderen',
-  'grocery.haList': '{name} (HA)',
-  'grocery.loadFailed': 'Kon deze lijst niet laden uit Home Assistant',
+  'grocery.loadFailed': 'Kon deze lijst niet laden uit iCloud-herinneringen',
   'grocery.retry': 'Opnieuw',
   'grocery.tabsLabel': 'Soort lijst',
   'grocery.tab.grocery': 'Boodschappen',
   'grocery.tab.tasks': 'Taken',
+  'grocery.moveSection': 'Verplaatsen naar onderdeel',
+  'grocery.noSection': 'Geen onderdeel',
+  'grocery.otherSection': 'Overig',
+  'grocery.editReminder': 'Herinnering bewerken',
+  'grocery.itemTitle': 'Titel van herinnering',
+  'grocery.notes': 'Notities',
+  'grocery.dueDate': 'Vervaldatum',
+  'grocery.priority': 'Prioriteit',
+  'grocery.priorityNone': 'Geen',
+  'grocery.priorityHigh': 'Hoog',
+  'grocery.priorityMedium': 'Gemiddeld',
+  'grocery.priorityLow': 'Laag',
+  'grocery.flagged': 'Gemarkeerd',
+  'grocery.allDay': 'Hele dag',
+  'grocery.saveReminder': 'Herinnering opslaan',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Kaart toevoegen',

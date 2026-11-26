@@ -1,8 +1,15 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
-import { GroceryList } from '../types/grocery';
-import { HomeAssistantTodoClient } from '../api/home-assistant-todo';
-import { callHaService, hasToken } from '../api/ha-rest';
+import { ChevronDown, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react';
+import {
+  createICloudReminder,
+  deleteICloudReminder,
+  fetchICloudRemindersList,
+  loadICloudRemindersLists,
+  moveICloudReminderSection,
+  updateICloudReminder,
+  type ICloudReminder,
+  type ICloudReminderSection,
+} from '../api/integration-settings';
 import { useLocalTasks } from '../hooks/useLocalTasks';
 import { useTranslation } from '../i18n';
 import { CollapsibleRegion } from './CollapsibleRegion';
@@ -14,13 +21,20 @@ interface TodoItem {
   uid: string;
   summary: string;
   status: 'needs_action' | 'completed';
+  desc?: string;
+  dueDate?: string | null;
+  priority?: number;
+  flagged?: boolean;
+  allDay?: boolean;
+  sectionID?: string | null;
+  sectionName?: string | null;
+  source: 'icloud' | 'local';
 }
 
-/** Unified list entry (HA or local) */
 interface UnifiedList {
   id: string;
   name: string;
-  source: 'ha' | 'local';
+  source: 'icloud' | 'local';
 }
 
 type GroceryTab = 'grocery' | 'tasks';
@@ -36,7 +50,6 @@ function isGroceryListSelections(value: unknown): value is GroceryListSelections
   return typeof selections.grocery === 'string' && typeof selections.tasks === 'string';
 }
 
-/** Keywords that identify a list as grocery/shopping (vs tasks) */
 const GROCERY_KEYWORDS = [
   'grocer',
   'shopping',
@@ -53,23 +66,49 @@ const GROCERY_KEYWORDS = [
 
 function isGroceryList(name: string): boolean {
   const lower = name.toLowerCase();
-  return GROCERY_KEYWORDS.some((kw) => lower.includes(kw));
+  return GROCERY_KEYWORDS.some((keyword) => lower.includes(keyword));
+}
+
+function localDateTimeValue(value?: string | null): string {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
+
+function reminderItems(reminders: ICloudReminder[]): TodoItem[] {
+  return reminders.filter((reminder) => !reminder.deleted).map((reminder) => ({
+    uid: reminder.id,
+    summary: reminder.title,
+    status: reminder.completed ? 'completed' : 'needs_action',
+    desc: reminder.desc,
+    dueDate: reminder.due_date,
+    priority: reminder.priority,
+    flagged: reminder.flagged,
+    allDay: reminder.all_day,
+    sectionID: reminder.sectionID,
+    sectionName: reminder.sectionName,
+    source: 'icloud',
+  }));
 }
 
 interface GroceryViewProps {
   defaultListId?: string;
-  connected?: boolean;
-  /** Explicit list of HA todo entity IDs that are grocery/shopping lists */
   groceryListIds?: string[];
+  taskListIds?: string[];
 }
 
 export function GroceryView({
   defaultListId,
-  connected = false,
   groceryListIds = [],
+  taskListIds = [],
 }: GroceryViewProps) {
   const { t } = useTranslation();
-  const [haLists, setHaLists] = useState<GroceryList[]>([]);
+  const [icloudLists, setIcloudLists] = useState<UnifiedList[]>([]);
+  const [sections, setSections] = useState<ICloudReminderSection[]>([]);
+  const [icloudItems, setIcloudItems] = useState<TodoItem[]>([]);
+  const [localItems, setLocalItems] = useState<TodoItem[]>([]);
   const [tab, setTab] = usePersistentState<GroceryTab>(
     'abbai-flow-filter-grocery-tab',
     'grocery',
@@ -85,119 +124,155 @@ export function GroceryView({
     (listId: string) => setSelectedListIds((current) => ({ ...current, [tab]: listId })),
     [setSelectedListIds, tab],
   );
-  const [haItems, setHaItems] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState(true);
-  /**
-   * A failed Home Assistant call used to look like an empty list: the catch
-   * cleared the items and the page said "no items yet". That reads as "my tasks
-   * disappeared", so the failure is now shown, with a retry.
-   */
+  const [listsLoaded, setListsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState('');
+  const [newItemSectionID, setNewItemSectionID] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingItem, setEditingItem] = useState<TodoItem | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editPriority, setEditPriority] = useState(0);
+  const [editFlagged, setEditFlagged] = useState(false);
+  const [editAllDay, setEditAllDay] = useState(false);
   const [completedCollapsed, setCompletedCollapsed] = usePersistentState(
     'abbai-flow-filter-grocery-completed-collapsed',
     false,
     (value): value is boolean => typeof value === 'boolean',
   );
-  /** One page, two tabs: the shopping list on top, the adult to-do list below. */
   const inputRef = useRef<HTMLInputElement>(null);
-  const homeAssistantTodoRef = useRef(new HomeAssistantTodoClient());
+  const {
+    lists: localLists,
+    getTasksForList,
+    addTask,
+    toggleTask,
+    removeTask,
+  } = useLocalTasks();
 
-  const localTasks = useLocalTasks();
+  const groceryKey = groceryListIds.join('|');
+  const taskKey = taskListIds.join('|');
 
-  // Split every known list into the two tabs. Shopping lists (HA todo entities
-  // marked as grocery, plus the built-in one) live under "Boodschappen";
-  // everything else — the adult to-dos, nobody assigned, no due date — under
-  // "Taken".
-  const { groceryLists, taskLists } = useMemo<{
-    groceryLists: UnifiedList[];
-    taskLists: UnifiedList[];
-  }>(() => {
-    const ha: UnifiedList[] = haLists.map((l) => ({ id: l.id, name: l.name, source: 'ha' }));
-    /*
-     * The built-in "To-Do" and "Shopping List" are a first-run fallback, not
-     * permanent fixtures. They used to be merged in unconditionally, so a
-     * configured setup still showed a phantom Shopping List and To-Do beside the
-     * real lists -- and since the first entry is auto-selected on open, one of
-     * them was often the list you landed on.
-     *
-     * Once any list has been configured, the built-ins are dropped. With nothing
-     * configured the page still works out of the box.
-     */
-    const local: UnifiedList[] =
-      groceryListIds.length > 0
-        ? []
-        : localTasks.lists.map((l) => ({ id: l.id, name: l.name, source: 'local' }));
-    const merged = [...local, ...ha];
-
-    // Determine if an HA list is a grocery list:
-    // - If groceryListIds is configured (non-empty), use it as source of truth
-    // - Otherwise fall back to keyword classification (for backward compatibility / new installs)
-    const isGroceryHA = (id: string, name: string): boolean => {
-      if (groceryListIds.length > 0) {
-        return groceryListIds.includes(id);
-      }
-      return isGroceryList(name);
-    };
-
-    const grocery = merged.filter(
-      (l) => l.id === 'abbai-flow-shopping' || (l.source === 'ha' && isGroceryHA(l.id, l.name)),
-    );
-    const tasks = merged.filter((l) => !grocery.includes(l));
-    return { groceryLists: grocery, taskLists: tasks };
-  }, [haLists, localTasks.lists, groceryListIds]);
-
-  const allLists = tab === 'grocery' ? groceryLists : taskLists;
-
-  const selectedList = allLists.find((l) => l.id === selectedListId);
-  const isLocal = selectedList?.source === 'local';
-
-  // Items for current list
-  const items = useMemo<TodoItem[]>(() => {
-    if (isLocal) {
-      return localTasks.getTasksForList(selectedListId).map((t) => ({
-        uid: t.id,
-        summary: t.summary,
-        status: t.status,
-      }));
-    }
-    return haItems;
-  }, [isLocal, selectedListId, localTasks, haItems]);
-
-  // Discover HA todo lists (only if HA token is available)
   useEffect(() => {
     let cancelled = false;
-
-    async function discover() {
-      if (!connected && !hasToken()) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        const foundLists = await homeAssistantTodoRef.current.getLists();
+    setLoading(true);
+    loadICloudRemindersLists()
+      .then((result) => {
         if (cancelled) return;
-        setHaLists(foundLists);
-      } catch (err) {
-        console.warn('GroceryView: Failed to discover HA lists', err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    discover();
+        const available = (result.lists || [])
+          .filter((list) => !list.deleted && !list.isGroup)
+          .map((list) => ({ id: list.key, name: list.title, source: 'icloud' as const }));
+        setIcloudLists(available);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setIcloudLists([]);
+        setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setListsLoaded(true);
+          setLoading(false);
+        }
+      });
     return () => {
       cancelled = true;
     };
-  }, [connected]);
+  }, [groceryKey, taskKey, t]);
 
-  // Auto-select first list when lists are available. The selection follows the
-  // tab: switching to Taken must not leave a shopping list selected.
+  const { groceryLists, taskLists } = useMemo(() => {
+    const availableIds = new Set(icloudLists.map((list) => list.id));
+    const configuredGroceries = groceryKey
+      ? groceryKey.split('|').filter((id) => availableIds.has(id))
+      : [];
+    const configuredTasks = taskKey
+      ? taskKey.split('|').filter((id) => availableIds.has(id))
+      : [];
+    if (icloudLists.length > 0) {
+      const grocery = icloudLists.filter((list) =>
+        configuredGroceries.length > 0
+          ? configuredGroceries.includes(list.id)
+          : isGroceryList(list.name),
+      );
+      const tasks = icloudLists.filter((list) => {
+        if (grocery.some((groceryList) => groceryList.id === list.id)) return false;
+        return configuredTasks.length > 0 ? configuredTasks.includes(list.id) : true;
+      });
+      return { groceryLists: grocery, taskLists: tasks };
+    }
+
+    const local = localLists.map((list) => ({ id: list.id, name: list.name, source: 'local' as const }));
+    const groceries = local.filter((list) => list.id === 'abbai-flow-shopping' || isGroceryList(list.name));
+    return { groceryLists: groceries, taskLists: local.filter((list) => !groceries.includes(list)) };
+  }, [icloudLists, groceryKey, taskKey, localLists]);
+
+  const allLists = tab === 'grocery' ? groceryLists : taskLists;
+  const selectedList = allLists.find((list) => list.id === selectedListId);
+  const isLocal = selectedList?.source === 'local';
+  const items = isLocal ? localItems : icloudItems;
+  const uncheckedItems = useMemo(() => items.filter((item) => item.status === 'needs_action'), [items]);
+  const checkedItems = useMemo(() => items.filter((item) => item.status === 'completed'), [items]);
+
+  const loadList = useCallback(async (listId: string) => {
+    if (!listId) return;
+    setLoading(true);
+    try {
+      const result = await fetchICloudRemindersList(listId);
+      const list = result.lists?.[0];
+      if (!list) throw new Error(t('grocery.loadFailed'));
+      setIcloudItems(reminderItems(list.reminders || []));
+      setSections(list.sections || []);
+      setLoadError(null);
+    } catch (error) {
+      console.warn('GroceryView: Failed to load iCloud reminders', error);
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
-    if (selectedListId && allLists.some((l) => l.id === selectedListId)) return;
-    if (defaultListId && allLists.some((l) => l.id === defaultListId)) {
+    if (!selectedListId || !selectedList) {
+      setIcloudItems([]);
+      setLocalItems([]);
+      setSections([]);
+      setLoading(!listsLoaded);
+      return;
+    }
+    if (selectedList.source === 'local') {
+      setLocalItems(getTasksForList(selectedListId).map((task) => ({
+        uid: task.id,
+        summary: task.summary,
+        status: task.status,
+        source: 'local',
+      })));
+      setSections([]);
+      setLoading(false);
+      return;
+    }
+    void loadList(selectedListId);
+  }, [selectedListId, selectedList, getTasksForList, listsLoaded, loadList]);
+
+  useEffect(() => {
+    if (!selectedListId || isLocal) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'hidden') void loadList(selectedListId);
+    }, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState !== 'hidden') void loadList(selectedListId);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [selectedListId, isLocal, loadList]);
+
+  useEffect(() => {
+    if (selectedListId && allLists.some((list) => list.id === selectedListId)) return;
+    if (defaultListId && allLists.some((list) => list.id === defaultListId)) {
       setSelectedListId(defaultListId);
     } else if (allLists.length > 0) {
       setSelectedListId(allLists[0].id);
@@ -206,237 +281,310 @@ export function GroceryView({
     }
   }, [allLists, selectedListId, defaultListId, setSelectedListId]);
 
-  // Load HA items via todo.get_items
-  const loadHaItems = useCallback(
-    async (entityId: string) => {
-      if (!entityId) return;
-      setLoading(true);
+  useEffect(() => setNewItemSectionID(''), [selectedListId]);
 
-      try {
-        const result = (await callHaService(
-          'todo',
-          'get_items',
-          {
-            entity_id: entityId,
-          },
-          true,
-        )) as {
-          service_response?: Record<string, { items?: TodoItem[] }>;
-        };
-
-        const entityResponse = result?.service_response?.[entityId];
-        setHaItems(entityResponse?.items ?? []);
-        setLoadError(null);
-      } catch (err) {
-        console.warn('GroceryView: Failed to load items', err);
-        // Keep whatever was on screen: emptying the list made a connection
-        // problem look like a household with nothing to do.
-        setLoadError(err instanceof Error ? err.message : t('grocery.loadFailed'));
-      } finally {
-        setLoading(false);
+  const handleAdd = useCallback(async (event: React.FormEvent) => {
+    event.preventDefault();
+    const title = inputValue.trim();
+    if (!title || submitting || !selectedListId) return;
+    setSubmitting(true);
+    try {
+      if (isLocal) {
+        addTask(selectedListId, title);
+        setLocalItems(getTasksForList(selectedListId).map((task) => ({
+          uid: task.id,
+          summary: task.summary,
+          status: task.status,
+          source: 'local',
+        })));
+      } else {
+        await createICloudReminder(selectedListId, {
+          title,
+          sectionID: newItemSectionID || null,
+        });
+        await loadList(selectedListId);
       }
-    },
-    [t],
-  );
+      setInputValue('');
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    } finally {
+      setSubmitting(false);
+      inputRef.current?.focus();
+    }
+  }, [inputValue, submitting, selectedListId, isLocal, addTask, getTasksForList, newItemSectionID, loadList, t]);
 
-  // Reload when selected list changes (HA lists only)
-  useEffect(() => {
-    if (!selectedListId || isLocal) {
-      setLoading(false);
+  const handleToggle = useCallback(async (item: TodoItem) => {
+    if (isLocal) {
+      toggleTask(item.uid);
+      setLocalItems((current) => current.map((candidate) => candidate.uid === item.uid
+        ? { ...candidate, status: candidate.status === 'needs_action' ? 'completed' : 'needs_action' }
+        : candidate));
       return;
     }
-    loadHaItems(selectedListId);
-  }, [selectedListId, isLocal, loadHaItems]);
+    if (!selectedListId) return;
+    const completed = item.status === 'needs_action';
+    setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
+      ? { ...candidate, status: completed ? 'completed' : 'needs_action' }
+      : candidate));
+    try {
+      await updateICloudReminder(selectedListId, item.uid, { completed });
+      await loadList(selectedListId);
+    } catch (error) {
+      setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
+        ? { ...candidate, status: item.status }
+        : candidate));
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    }
+  }, [isLocal, toggleTask, selectedListId, loadList, t]);
 
-  // Refresh HA lists every 30 seconds
-  useEffect(() => {
-    if (!selectedListId || isLocal) return;
-    const interval = setInterval(() => loadHaItems(selectedListId), 30_000);
-    return () => clearInterval(interval);
-  }, [selectedListId, isLocal, loadHaItems]);
+  const startEditing = (item: TodoItem) => {
+    if (item.source !== 'icloud') return;
+    setEditingItem(item);
+    setEditTitle(item.summary);
+    setEditNotes(item.desc || '');
+    setEditDueDate(localDateTimeValue(item.dueDate));
+    setEditPriority(item.priority || 0);
+    setEditFlagged(Boolean(item.flagged));
+    setEditAllDay(Boolean(item.allDay));
+  };
 
-  // Split items
-  const uncheckedItems = useMemo(() => items.filter((i) => i.status === 'needs_action'), [items]);
-  const checkedItems = useMemo(() => items.filter((i) => i.status === 'completed'), [items]);
+  const handleEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingItem || !selectedListId || !editTitle.trim()) return;
+    setSubmitting(true);
+    try {
+      await updateICloudReminder(selectedListId, editingItem.uid, {
+        title: editTitle.trim(),
+        desc: editNotes,
+        dueDate: editDueDate ? new Date(editDueDate).toISOString() : null,
+        priority: editPriority,
+        flagged: editFlagged,
+        allDay: editAllDay,
+      });
+      setEditingItem(null);
+      await loadList(selectedListId);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-  // Add item
-  const handleAdd = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      const trimmed = inputValue.trim();
-      if (!trimmed || submitting || !selectedListId) return;
-
-      setSubmitting(true);
-      try {
-        if (isLocal) {
-          localTasks.addTask(selectedListId, trimmed);
-        } else {
-          await homeAssistantTodoRef.current.addItem(selectedListId, trimmed);
-          setHaItems((prev) => [
-            ...prev,
-            { uid: `temp-${Date.now()}`, summary: trimmed, status: 'needs_action' },
-          ]);
-          setTimeout(() => loadHaItems(selectedListId), 500);
+  const handleSectionMove = async (item: TodoItem, sectionID: string) => {
+    if (!selectedListId || item.source !== 'icloud') return;
+    const previous = item.sectionID || '';
+    setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
+      ? {
+          ...candidate,
+          sectionID: sectionID || null,
+          sectionName: sections.find((section) => section.id === sectionID)?.name || null,
         }
-        setInputValue('');
-      } catch (err) {
-        console.warn('GroceryView: Failed to add item', err);
-      } finally {
-        setSubmitting(false);
-        inputRef.current?.focus();
-      }
-    },
-    [inputValue, submitting, selectedListId, isLocal, localTasks, loadHaItems],
+      : candidate));
+    try {
+      await moveICloudReminderSection(selectedListId, item.uid, sectionID || null);
+      await loadList(selectedListId);
+    } catch (error) {
+      setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
+        ? {
+            ...candidate,
+            sectionID: previous || null,
+            sectionName: sections.find((section) => section.id === previous)?.name || null,
+          }
+        : candidate));
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    }
+  };
+
+  const handleDelete = async (item: TodoItem) => {
+    if (item.source === 'local') {
+      removeTask(item.uid);
+      setLocalItems((current) => current.filter((candidate) => candidate.uid !== item.uid));
+      return;
+    }
+    if (!selectedListId) return;
+    try {
+      await deleteICloudReminder(selectedListId, item.uid);
+      await loadList(selectedListId);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
+    }
+  };
+
+  const groupedUnchecked = useMemo(
+    () => groupBySection(uncheckedItems, sections, t('grocery.otherSection')),
+    [uncheckedItems, sections, t],
+  );
+  const groupedChecked = useMemo(
+    () => groupBySection(checkedItems, sections, t('grocery.otherSection')),
+    [checkedItems, sections, t],
   );
 
-  // Toggle item
-  const handleToggle = useCallback(
-    async (item: TodoItem) => {
-      if (isLocal) {
-        localTasks.toggleTask(item.uid);
-        return;
-      }
-
-      const newStatus = item.status === 'needs_action' ? 'completed' : 'needs_action';
-      setHaItems((prev) => prev.map((i) => (i.uid === item.uid ? { ...i, status: newStatus } : i)));
-
-      try {
-        if (newStatus === 'completed') {
-          await homeAssistantTodoRef.current.checkItem(selectedListId, item.summary);
-        } else {
-          await homeAssistantTodoRef.current.uncheckItem(selectedListId, item.summary);
-        }
-        setTimeout(() => loadHaItems(selectedListId), 500);
-      } catch (err) {
-        console.warn('GroceryView: Failed to toggle item', err);
-        setHaItems((prev) =>
-          prev.map((i) => (i.uid === item.uid ? { ...i, status: item.status } : i)),
-        );
-      }
-    },
-    [isLocal, selectedListId, localTasks, loadHaItems],
-  );
-
-  // Delete local item (long-press or swipe equivalent)
-  const handleDelete = useCallback(
-    (item: TodoItem) => {
-      if (isLocal) {
-        localTasks.removeTask(item.uid);
-      }
-    },
-    [isLocal, localTasks],
+  const renderItem = (item: TodoItem, checked = false) => (
+    <div key={item.uid} className="grocery-view-item-row-wrap">
+      <div className="grocery-view-item-row">
+        <button
+          type="button"
+          className={`grocery-view-item${checked ? ' grocery-view-item--checked' : ''}`}
+          onClick={() => void handleToggle(item)}
+        >
+          <span className={`grocery-view-checkbox${checked ? ' grocery-view-checkbox--checked' : ''}`}>
+            {checked && (
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M2.5 7L5.5 10L11.5 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            )}
+          </span>
+          <span className="grocery-view-item-name">{item.summary}</span>
+        </button>
+        {item.source === 'icloud' && sections.length > 0 && (
+          <select
+            className="grocery-view-section-select"
+            value={item.sectionID || ''}
+            onChange={(event) => void handleSectionMove(item, event.target.value)}
+            aria-label={t('grocery.moveSection')}
+          >
+            <option value="">{t('grocery.noSection')}</option>
+            {sections.map((section) => (
+              <option key={section.id} value={section.id}>{section.name || section.id}</option>
+            ))}
+          </select>
+        )}
+        {item.source === 'icloud' && (
+          <button
+            type="button"
+            className="grocery-view-delete grocery-view-edit"
+            onClick={() => startEditing(item)}
+            aria-label={t('grocery.editReminder')}
+            title={t('grocery.editReminder')}
+          >
+            <Edit2 size={14} />
+          </button>
+        )}
+        <button
+          type="button"
+          className="grocery-view-delete"
+          onClick={() => void handleDelete(item)}
+          aria-label={t('grocery.deleteItem')}
+          title={t('grocery.deleteItem')}
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
+      {editingItem?.uid === item.uid && (
+        <form className="grocery-view-edit-panel" onSubmit={handleEdit}>
+          <input
+            className="grocery-view-input"
+            value={editTitle}
+            onChange={(event) => setEditTitle(event.target.value)}
+            aria-label={t('grocery.itemTitle')}
+            required
+          />
+          <textarea
+            className="grocery-view-edit-notes"
+            value={editNotes}
+            onChange={(event) => setEditNotes(event.target.value)}
+            placeholder={t('grocery.notes')}
+            aria-label={t('grocery.notes')}
+            rows={2}
+          />
+          <label className="grocery-view-edit-field">
+            <span>{t('grocery.dueDate')}</span>
+            <input type="datetime-local" value={editDueDate} onChange={(event) => setEditDueDate(event.target.value)} />
+          </label>
+          <label className="grocery-view-edit-field">
+            <span>{t('grocery.priority')}</span>
+            <select value={editPriority} onChange={(event) => setEditPriority(Number(event.target.value))}>
+              <option value={0}>{t('grocery.priorityNone')}</option>
+              <option value={1}>{t('grocery.priorityHigh')}</option>
+              <option value={5}>{t('grocery.priorityMedium')}</option>
+              <option value={9}>{t('grocery.priorityLow')}</option>
+            </select>
+          </label>
+          <label className="grocery-view-edit-flag">
+            <input type="checkbox" checked={editFlagged} onChange={(event) => setEditFlagged(event.target.checked)} />
+            <span>{t('grocery.flagged')}</span>
+          </label>
+          <label className="grocery-view-edit-flag">
+            <input type="checkbox" checked={editAllDay} onChange={(event) => setEditAllDay(event.target.checked)} />
+            <span>{t('grocery.allDay')}</span>
+          </label>
+          <div className="grocery-view-edit-actions">
+            <button type="button" className="settings-btn" onClick={() => setEditingItem(null)}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="settings-btn settings-btn--primary" disabled={submitting || !editTitle.trim()}>
+              {submitting ? <ActivitySpinner /> : t('grocery.saveReminder')}
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 
   return (
     <div className="grocery-view" data-grocery-view>
-      {/* Tabs + list selector */}
       <div className="grocery-view-header">
-        {/* Same date treatment as every other page band. */}
         <div className="grocery-view-hero">
           <HeaderDate />
           <h1 className="page-header-title">{t('nav.grocery')}</h1>
           <PageHeaderActions />
         </div>
         <div className="grocery-view-tabs" role="tablist" aria-label={t('grocery.tabsLabel')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'grocery'}
-            className={`grocery-view-tab ${tab === 'grocery' ? 'is-active' : ''}`}
-            onClick={() => setTab('grocery')}
-          >
+          <button type="button" role="tab" aria-selected={tab === 'grocery'} className={`grocery-view-tab ${tab === 'grocery' ? 'is-active' : ''}`} onClick={() => setTab('grocery')}>
             {t('grocery.tab.grocery')}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'tasks'}
-            className={`grocery-view-tab ${tab === 'tasks' ? 'is-active' : ''}`}
-            onClick={() => setTab('tasks')}
-          >
+          <button type="button" role="tab" aria-selected={tab === 'tasks'} className={`grocery-view-tab ${tab === 'tasks' ? 'is-active' : ''}`} onClick={() => setTab('tasks')}>
             {t('grocery.tab.tasks')}
           </button>
         </div>
         <div className="grocery-view-selector">
-          <select
-            className="grocery-view-select"
-            value={selectedListId}
-            onChange={(e) => setSelectedListId(e.target.value)}
-          >
+          <select className="grocery-view-select" value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)}>
             {allLists.length === 0 && <option value="">{t('grocery.noListsAvailable')}</option>}
-            {allLists.map((list) => (
-              <option key={list.id} value={list.id}>
-                {list.source === 'ha' ? t('grocery.haList', { name: list.name }) : list.name}
-              </option>
-            ))}
+            {allLists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}
           </select>
           <ChevronDown size={16} className="grocery-view-select-icon" />
         </div>
       </div>
 
-      {/* Quick-add input */}
-      <form className="grocery-view-add" onSubmit={handleAdd}>
+      <form className="grocery-view-add" onSubmit={(event) => void handleAdd(event)}>
         <input
           ref={inputRef}
           type="text"
           className="grocery-view-input"
           placeholder={t('grocery.addItemPlaceholder')}
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(event) => setInputValue(event.target.value)}
           disabled={submitting || !selectedListId}
         />
-        <button
-          type="submit"
-          className={`grocery-view-add-btn${submitting ? ' grocery-view-add-btn--loading' : ''}`}
-          disabled={!inputValue.trim() || submitting}
-          aria-label={t('grocery.addItem')}
-          aria-busy={submitting}
-        >
+        {sections.length > 0 && !isLocal && (
+          <select className="grocery-view-add-section" value={newItemSectionID} onChange={(event) => setNewItemSectionID(event.target.value)} aria-label={t('grocery.moveSection')}>
+            <option value="">{t('grocery.noSection')}</option>
+            {sections.map((section) => <option key={section.id} value={section.id}>{section.name || section.id}</option>)}
+          </select>
+        )}
+        <button type="submit" className={`grocery-view-add-btn${submitting ? ' grocery-view-add-btn--loading' : ''}`} disabled={!inputValue.trim() || submitting || !selectedListId} aria-label={t('grocery.addItem')} aria-busy={submitting}>
           {submitting ? <ActivitySpinner /> : <Plus size={20} />}
         </button>
       </form>
 
       {loadError && !isLocal && (
         <div className="grocery-view-error" role="status">
-          <span>{t('grocery.loadFailed')}</span>
-          <button
-            type="button"
-            className="grocery-view-retry"
-            onClick={() => loadHaItems(selectedListId)}
-          >
+          <span>{loadError || t('grocery.loadFailed')}</span>
+          <button type="button" className="grocery-view-retry" onClick={() => selectedListId ? void loadList(selectedListId) : void loadICloudRemindersLists().then((result) => setIcloudLists((result.lists || []).filter((list) => !list.deleted && !list.isGroup).map((list) => ({ id: list.key, name: list.title, source: 'icloud' as const }))))}>
             {t('grocery.retry')}
           </button>
         </div>
       )}
 
-      {/* Items list */}
       <div className="grocery-view-list">
         {loading && items.length === 0 ? (
-          <LoadingPlaceholder
-            label={t('grocery.loadingItems')}
-            lines={4}
-            className="loading-placeholder--list grocery-view-loading"
-          />
+          <LoadingPlaceholder label={t('grocery.loadingItems')} lines={4} className="loading-placeholder--list grocery-view-loading" />
         ) : items.length === 0 && !loading ? (
           <div className="grocery-view-empty">
             <div className="grocery-view-empty-icon">
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <rect
-                  x="12"
-                  y="16"
-                  width="40"
-                  height="40"
-                  rx="8"
-                  stroke="var(--border)"
-                  strokeWidth="2"
-                  fill="none"
-                />
-                <path
-                  d="M24 32h16M24 40h10"
-                  stroke="var(--border)"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+                <rect x="12" y="16" width="40" height="40" rx="8" stroke="var(--border)" strokeWidth="2" fill="none" />
+                <path d="M24 32h16M24 40h10" stroke="var(--border)" strokeWidth="2" strokeLinecap="round" />
                 <circle cx="20" cy="32" r="2" fill="var(--border)" />
                 <circle cx="20" cy="40" r="2" fill="var(--border)" />
               </svg>
@@ -445,82 +593,28 @@ export function GroceryView({
           </div>
         ) : (
           <>
-            {/* Unchecked items */}
             {uncheckedItems.length > 0 && (
               <div className="grocery-view-section">
-                <div className="grocery-view-section-header">
-                  {t('grocery.items', { count: uncheckedItems.length })}
-                </div>
-                {uncheckedItems.map((item) => (
-                  <div key={item.uid} className="grocery-view-item-row">
-                    <button
-                      type="button"
-                      className="grocery-view-item"
-                      onClick={() => handleToggle(item)}
-                    >
-                      <span className="grocery-view-checkbox" />
-                      <span className="grocery-view-item-name">{item.summary}</span>
-                    </button>
-                    {isLocal && (
-                      <button
-                        type="button"
-                        className="grocery-view-delete"
-                        onClick={() => handleDelete(item)}
-                        aria-label={t('grocery.deleteItem')}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                <div className="grocery-view-section-header">{t('grocery.items', { count: uncheckedItems.length })}</div>
+                {groupedUnchecked.map((group) => (
+                  <div key={group.id} className="grocery-view-section-group">
+                    {group.name && <div className="grocery-view-section-name">{group.name}</div>}
+                    {group.items.map((item) => renderItem(item))}
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Completed items */}
             {checkedItems.length > 0 && (
               <div className="grocery-view-section">
-                <button
-                  type="button"
-                  className="grocery-view-section-header grocery-view-section-header--toggle"
-                  onClick={() => setCompletedCollapsed((prev) => !prev)}
-                >
+                <button type="button" className="grocery-view-section-header grocery-view-section-header--toggle" onClick={() => setCompletedCollapsed((previous) => !previous)}>
                   {completedCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   {t('grocery.completed', { count: checkedItems.length })}
                 </button>
-                <CollapsibleRegion
-                  open={!completedCollapsed}
-                  className="grocery-view-completed-items"
-                >
-                  {checkedItems.map((item) => (
-                    <div key={item.uid} className="grocery-view-item-row">
-                      <button
-                        type="button"
-                        className="grocery-view-item grocery-view-item--checked"
-                        onClick={() => handleToggle(item)}
-                      >
-                        <span className="grocery-view-checkbox grocery-view-checkbox--checked">
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path
-                              d="M2.5 7L5.5 10L11.5 4"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </span>
-                        <span className="grocery-view-item-name">{item.summary}</span>
-                      </button>
-                      {isLocal && (
-                        <button
-                          type="button"
-                          className="grocery-view-delete"
-                          onClick={() => handleDelete(item)}
-                          aria-label={t('grocery.deleteItem')}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                <CollapsibleRegion open={!completedCollapsed} className="grocery-view-completed-items">
+                  {groupedChecked.map((group) => (
+                    <div key={group.id} className="grocery-view-section-group">
+                      {group.name && <div className="grocery-view-section-name">{group.name}</div>}
+                      {group.items.map((item) => renderItem(item, true))}
                     </div>
                   ))}
                 </CollapsibleRegion>
@@ -531,4 +625,27 @@ export function GroceryView({
       </div>
     </div>
   );
+}
+
+function groupBySection(items: TodoItem[], sections: ICloudReminderSection[], otherSectionName: string) {
+  const groups = new Map<string, { id: string; name: string; order: number | null; items: TodoItem[] }>();
+  for (const item of items) {
+    const section = sections.find((candidate) => candidate.id === item.sectionID);
+    const id = item.sectionID || '__none__';
+    const name = section?.name || item.sectionName || '';
+    const group = groups.get(id) || {
+      id,
+      name: name || (id === '__none__' ? '' : otherSectionName),
+      order: section?.order ?? null,
+      items: [],
+    };
+    group.items.push(item);
+    groups.set(id, group);
+  }
+  return [...groups.values()].sort((a, b) => {
+    if (a.order == null && b.order == null) return a.name.localeCompare(b.name);
+    if (a.order == null) return 1;
+    if (b.order == null) return -1;
+    return a.order - b.order;
+  });
 }

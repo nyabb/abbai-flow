@@ -7,6 +7,14 @@ const CLOUDKIT_DIAGNOSTIC_OPERATIONS = new Set([
   'records/lookup',
   'changes/zone',
 ]);
+const AUTH_STATE_ACTIONS = new Set([
+  'authenticate',
+  'list_lists',
+  'request_2sa_code',
+  'verify_code',
+  'fetch_preview',
+  'fetch_list',
+]);
 
 function safeDiagnosticValue(value, depth = 0) {
   if (depth > 3) return '<nested>';
@@ -192,7 +200,7 @@ class ICloudRemindersWorker {
     if (!pending) return;
     this.pending.delete(response.requestId);
     clearTimeout(pending.timeout);
-    if (response.ok && typeof response.state === 'string') {
+    if (response.ok && typeof response.state === 'string' && AUTH_STATE_ACTIONS.has(pending.action)) {
       this.setAuthState(response.state, response);
     } else if (
       response.errorCode === 'authentication_required' ||
@@ -356,6 +364,26 @@ class ICloudRemindersWorker {
 
   fetchPreview(listKey) {
     return this.request('fetch_preview', { listKey });
+  }
+
+  fetchList(listKey) {
+    return this.request('fetch_list', { listKey });
+  }
+
+  createReminder(values) {
+    return this.request('create_reminder', values);
+  }
+
+  updateReminder(values) {
+    return this.request('update_reminder', values);
+  }
+
+  deleteReminder(values) {
+    return this.request('delete_reminder', values);
+  }
+
+  moveReminderSection(values) {
+    return this.request('move_reminder_section', values);
   }
 
   stop() {

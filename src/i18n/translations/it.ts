@@ -320,21 +320,18 @@ export const it: Record<TranslationKey, string> = {
   'settings.integrations.weatherEntitySublabel': 'Entità usata per mostrare il meteo',
   'settings.integrations.icloudRemindersTitle': 'Promemoria iCloud',
   'settings.integrations.icloudRemindersSublabel':
-    'Configura Apple iCloud in Home Assistant. Ogni lista di Promemoria apparirà qui sotto come lista di cose da fare di Home Assistant.',
-  'settings.integrations.groceryTitle': 'Liste Home Assistant',
+    'Collegati direttamente ad Apple iCloud per gestire le liste dei promemoria. La password resta sul server.',
+  'settings.integrations.groceryTitle': 'Liste Promemoria iCloud',
   'settings.integrations.defaultGroceryListLabel': 'Lista della spesa predefinita',
   'settings.integrations.defaultGroceryListSublabel': 'Lista mostrata aprendo la vista spesa',
   'settings.integrations.autoFirstAvailable': 'Automatico (prima disponibile)',
   'settings.integrations.groceryListsLabel': 'Liste della spesa',
   'settings.integrations.groceryListsSublabel':
-    'Seleziona quali liste di Home Assistant mostrare in Spesa',
+    'Seleziona quali liste Promemoria iCloud mostrare in Spesa',
   'settings.integrations.taskListsSublabel':
-    'Seleziona quali liste di Home Assistant mostrare in Attività',
-  'settings.integrations.noTodoListsFound':
-    'Nessuna lista di Home Assistant trovata. Configura Promemoria iCloud in Home Assistant per sincronizzare le liste.',
-  'settings.integrations.shoppingEntityLabel': 'Entità della scheda Spesa',
-  'settings.integrations.shoppingEntitySublabel':
-    'Lista di attività HA per la scheda Spesa nella barra laterale',
+    'Seleziona quali liste Promemoria iCloud mostrare in Attività',
+  'settings.integrations.noICloudListsFound':
+    'Nessuna lista Promemoria iCloud trovata. Accedi nella sezione Promemoria iCloud qui sopra.',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
   'settings.integrations.defaultPlayerLabel': 'Player predefinito',
   'settings.integrations.defaultPlayerSublabel':
@@ -586,12 +583,26 @@ export const it: Record<TranslationKey, string> = {
   'grocery.items': 'Articoli ({count})',
   'grocery.completed': 'Completati ({count})',
   'grocery.deleteItem': 'Elimina articolo',
-  'grocery.haList': '{name} (HA)',
-  'grocery.loadFailed': 'Impossibile caricare questa lista da Home Assistant',
+  'grocery.loadFailed': 'Impossibile caricare questa lista da Promemoria iCloud',
   'grocery.retry': 'Riprova',
   'grocery.tabsLabel': 'Tipo di lista',
   'grocery.tab.grocery': 'Spesa',
   'grocery.tab.tasks': 'Attività',
+  'grocery.moveSection': 'Sposta nella sezione',
+  'grocery.noSection': 'Nessuna sezione',
+  'grocery.otherSection': 'Altro',
+  'grocery.editReminder': 'Modifica promemoria',
+  'grocery.itemTitle': 'Titolo del promemoria',
+  'grocery.notes': 'Note',
+  'grocery.dueDate': 'Scadenza',
+  'grocery.priority': 'Priorità',
+  'grocery.priorityNone': 'Nessuna',
+  'grocery.priorityHigh': 'Alta',
+  'grocery.priorityMedium': 'Media',
+  'grocery.priorityLow': 'Bassa',
+  'grocery.flagged': 'Contrassegnato',
+  'grocery.allDay': 'Tutto il giorno',
+  'grocery.saveReminder': 'Salva promemoria',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Aggiungi scheda',

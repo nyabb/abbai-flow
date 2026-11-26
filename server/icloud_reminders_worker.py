@@ -178,6 +178,38 @@ def _download_section_asset(raw_client: Any, asset: Any) -> dict[str, Any]:
     return summary
 
 
+def _download_section_asset_bytes(raw_client: Any, asset: Any) -> bytes:
+    """Fetch a section asset for a read/modify/write operation."""
+    if not isinstance(asset, dict):
+        raise ValueError("The section membership asset is missing.")
+    url = asset.get("downloadURL")
+    if not isinstance(url, str):
+        raise ValueError("The section membership asset URL is missing.")
+    parsed_url = urlsplit(url)
+    hostname = (parsed_url.hostname or "").lower()
+    if parsed_url.scheme != "https" or not (
+        hostname == "icloud-content.com" or hostname.endswith(".icloud-content.com")
+    ):
+        raise ValueError("Apple returned an unsupported section asset URL.")
+    declared_size = asset.get("size")
+    if isinstance(declared_size, int) and declared_size > _MAX_SECTION_ASSET_BYTES:
+        raise ValueError("The section membership asset is too large.")
+    cloudkit_client = getattr(raw_client, "_client", None)
+    downloader = getattr(cloudkit_client, "download_asset_stream", None)
+    if not callable(downloader):
+        raise RuntimeError("This PyICloud version cannot download section assets.")
+    chunks: list[bytes] = []
+    total_bytes = 0
+    for chunk in downloader(url, chunk_size=65_536):
+        if not isinstance(chunk, bytes):
+            continue
+        total_bytes += len(chunk)
+        if total_bytes > _MAX_SECTION_ASSET_BYTES:
+            raise ValueError("The section membership asset is too large.")
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _full_section_value(
     value: Any,
     depth: int = 0,
@@ -342,6 +374,11 @@ def _sections_from_lookup(
     """Pair ordered section IDs with the display names returned by CloudKit."""
     sections: list[dict[str, Any]] = []
     for summary, raw_record in zip(summaries, raw_records):
+        raw_fields = raw_record.get("fields") if isinstance(raw_record.get("fields"), dict) else {}
+        deleted_value = raw_fields.get("Deleted") or raw_fields.get("deleted")
+        deleted = deleted_value.get("value") if isinstance(deleted_value, dict) else deleted_value
+        if deleted is True:
+            continue
         normalized_id = _normalized_record_identifier(raw_record.get("recordName"))
         section_id = section_ids.get(normalized_id)
         if not section_id:
@@ -392,6 +429,174 @@ def _preview_reminders_with_sections(
 def _normalized_record_identifier(value: Any) -> str:
     identifier = str(value or "").rsplit("/", 1)[-1]
     return "".join(character for character in identifier.upper() if character.isalnum())
+
+
+def _selected_reminders_list(reminders_service: Any, list_key: str) -> tuple[list[Any], Any]:
+    lists = list(reminders_service.lists())
+    reminder_list = next(
+        (
+            item
+            for item in lists
+            if not getattr(item, "deleted", False)
+            and not getattr(item, "is_group", False)
+            and reminders_list_key(item) == list_key
+        ),
+        None,
+    )
+    if reminder_list is None:
+        raise LookupError("Choose an active iCloud Reminders list, then try again.")
+    return lists, reminder_list
+
+
+def _parse_due_date(value: Any) -> dt.datetime | None:
+    if value in (None, ""):
+        return None
+    if not isinstance(value, str):
+        raise ValueError("The due date must be an ISO date string or null.")
+    try:
+        parsed = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise ValueError("The due date must be a valid ISO date string.") from exc
+    return parsed
+
+
+def _validate_priority(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value not in {0, 1, 5, 9}:
+        raise ValueError("Priority must be one of 0, 1, 5, or 9.")
+    return value
+
+
+def _move_reminder_section(
+    reminders_service: Any,
+    reminder_list: Any,
+    selected_list_ref: dict[str, Any],
+    list_key: str,
+    reminder_id: str,
+    section_id: str | None,
+) -> None:
+    """Update Apple's list-level membership asset using CloudKit change tags."""
+    record_id = str(getattr(reminder_list, "id", ""))
+    _log_selected_section_assets(selected_list_ref, list_key, "", record_id)
+    context = selected_list_ref.get("section_query_context")
+    captured = context if isinstance(context, dict) else {}
+    raw_client = captured.get("raw_client")
+    record = captured.get("record")
+    if raw_client is None or not isinstance(record, dict):
+        raise RuntimeError("Apple did not return the list record needed to move this reminder.")
+    if not record.get("recordChangeTag"):
+        raise RuntimeError("Apple did not return a list change tag; the section move was not saved.")
+
+    normalized_reminder_id = _normalized_record_identifier(reminder_id)
+    membership_value = (record.get("fields") or {}).get("MembershipsOfRemindersInSectionsAsData")
+    asset = membership_value.get("value") if isinstance(membership_value, dict) else None
+    if not isinstance(asset, dict):
+        raise RuntimeError("This list has no writable section membership asset.")
+
+    if section_id is not None:
+        valid_sections = {
+            _normalized_record_identifier(section.get("id"))
+            for section in selected_list_ref.get("sections", [])
+            if isinstance(section, dict) and isinstance(section.get("id"), str)
+        }
+        if _normalized_record_identifier(section_id) not in valid_sections:
+            raise ValueError("Choose an existing section in this iCloud Reminders list.")
+
+    payload = _download_section_asset_bytes(raw_client, asset)
+    try:
+        document = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("Apple's section membership asset could not be decoded safely.") from exc
+    if not isinstance(document, dict) or not isinstance(document.get("memberships"), list):
+        raise RuntimeError("Apple's section membership asset has an unsupported format.")
+
+    memberships = [
+        membership
+        for membership in document["memberships"]
+        if not (
+            isinstance(membership, dict)
+            and _normalized_record_identifier(membership.get("memberID")) == normalized_reminder_id
+        )
+    ]
+    if section_id is not None:
+        memberships.append({
+            "memberID": reminder_id.rsplit("/", 1)[-1],
+            "groupID": section_id,
+            "modifiedOn": dt.datetime.now(dt.timezone.utc).timestamp() - 978307200,
+        })
+    document["memberships"] = memberships
+    document.setdefault("minimumSupportedVersion", 20230430)
+    updated_payload = json.dumps(document, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+
+    cloudkit_client = getattr(raw_client, "_client", None)
+    http = getattr(cloudkit_client, "_http", None)
+    post = getattr(http, "post", None)
+    if not callable(post):
+        raise RuntimeError("This PyICloud version cannot update section assets.")
+    record_name = record.get("recordName")
+    zone_id = record.get("zoneID")
+    if not isinstance(record_name, str) or not isinstance(zone_id, dict):
+        raise RuntimeError("Apple's list record is missing its CloudKit routing metadata.")
+
+    token_response = post("/assets/upload", {
+        "tokens": [{
+            "recordType": "List",
+            "recordName": record_name,
+            "fieldName": "MembershipsOfRemindersInSectionsAsData",
+        }],
+    })
+    tokens = token_response.get("tokens") if isinstance(token_response, dict) else None
+    upload_url = tokens[0].get("url") if isinstance(tokens, list) and tokens and isinstance(tokens[0], dict) else None
+    if not isinstance(upload_url, str):
+        raise RuntimeError("Apple did not return a section asset upload URL.")
+    upload_parts = urlsplit(upload_url)
+    if upload_parts.scheme != "https" or not upload_parts.hostname:
+        raise RuntimeError("Apple returned an invalid section asset upload URL.")
+    session = getattr(api, "session", None)
+    upload = getattr(session, "post", None)
+    if not callable(upload):
+        raise RuntimeError("This PyICloud version cannot upload section assets.")
+    upload_response = upload(
+        upload_url,
+        data=updated_payload,
+        headers={"Content-Type": "application/octet-stream"},
+        timeout=30,
+    )
+    if not getattr(upload_response, "ok", False):
+        raise RuntimeError("Apple rejected the section membership asset upload.")
+    try:
+        asset_response = upload_response.json()
+    except Exception as exc:
+        raise RuntimeError("Apple returned an invalid section asset upload response.") from exc
+    uploaded_asset = asset_response.get("singleFile") if isinstance(asset_response, dict) else None
+    required_asset_fields = {"fileChecksum", "size", "wrappingKey", "referenceChecksum", "receipt"}
+    if not isinstance(uploaded_asset, dict) or not required_asset_fields.issubset(uploaded_asset):
+        raise RuntimeError("Apple's section asset upload response is incomplete.")
+
+    updated_record = post("/records/modify", {
+        "zoneID": zone_id,
+        "operations": [{
+            "operationType": "update",
+            "record": {
+                "recordType": "List",
+                "recordName": record_name,
+                "recordChangeTag": record.get("recordChangeTag"),
+                "fields": {
+                    "MembershipsOfRemindersInSectionsAsData": {"value": uploaded_asset},
+                    "MembershipsOfRemindersInSectionsChecksum": {
+                        "value": hashlib.sha512(updated_payload).hexdigest(),
+                    },
+                },
+            },
+        }],
+    })
+    results = updated_record.get("records") if isinstance(updated_record, dict) else None
+    if not isinstance(results, list) or not results or not isinstance(results[0], dict):
+        raise RuntimeError("Apple did not confirm the section membership update.")
+    if results[0].get("serverErrorCode"):
+        code = str(results[0].get("serverErrorCode"))
+        if code in {"ZONE_WIDE_WILDCARD", "CONFLICT", "SERVER_RECORD_CHANGED"}:
+            raise RuntimeError("The list changed while the reminder was moving. Refresh and try again.")
+        raise RuntimeError("Apple rejected the section membership update.")
 
 
 def _cloudkit_record_summaries(
@@ -827,81 +1032,86 @@ def fetch_lists() -> dict[str, Any]:
         return {"ok": False, **safe_error(exc)}
 
 
+def _query_section_records(
+    reminders_service: Any,
+    selected_list_ref: dict[str, Any],
+    list_key: str,
+    request_id: str,
+) -> None:
+    section_ids = _log_selected_section_assets(
+        selected_list_ref,
+        list_key,
+        request_id,
+        str(selected_list_ref.get("id") or ""),
+    )
+    if not section_ids:
+        return
+    context = selected_list_ref.get("section_query_context", {})
+    raw_client = context.get("raw_client") if isinstance(context, dict) else None
+    cloudkit_client = getattr(raw_client, "_client", None)
+    http = getattr(cloudkit_client, "_http", None)
+    post = getattr(http, "post", None)
+    if not callable(post):
+        return
+    selected_record = context.get("record") if isinstance(context, dict) else None
+    zone_id = selected_record.get("zoneID") if isinstance(selected_record, dict) else None
+    if not isinstance(zone_id, dict) or not isinstance(zone_id.get("zoneName"), str):
+        zone_id = {"zoneName": "Reminders", "ownerRecordName": "_defaultOwner"}
+    lookup_payload = {
+        "zoneID": zone_id,
+        "records": [{"recordName": f"ListSection/{section_id}"} for section_id in section_ids],
+    }
+    try:
+        # PyICloud appends operation paths to the base URL; keep the slash.
+        post("/records/lookup", lookup_payload)
+    except Exception as section_lookup_exc:
+        error_code = getattr(section_lookup_exc, "code", None)
+        response = getattr(section_lookup_exc, "response", None)
+        status_code = getattr(response, "status_code", None)
+        log_event(
+            "cloudkit_section_lookup_failed",
+            scope=context.get("scope", "private"),
+            list_key=list_key,
+            request_id=request_id,
+            error_type=type(section_lookup_exc).__name__,
+            **({"error_code": str(error_code)[:100]} if isinstance(error_code, (str, int)) else {}),
+            **({"http_status": status_code} if isinstance(status_code, int) else {}),
+        )
+
+
+def _load_list_snapshot(
+    reminders_service: Any,
+    list_key: str,
+    request_id: str,
+    results_limit: int,
+) -> tuple[list[Any], Any, Any, dict[str, Any]]:
+    selected_list_ref: dict[str, Any] = {}
+    with inspect_cloudkit_responses(reminders_service, list_key, request_id, selected_list_ref):
+        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
+        _query_section_records(reminders_service, selected_list_ref, list_key, request_id)
+        batch = reminders_service.list_reminders(
+            reminder_list,
+            include_completed=True,
+            results_limit=results_limit,
+        )
+    return lists, reminder_list, batch, selected_list_ref
+
+
 def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
     if api is None:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
     try:
         reminders_service = api.reminders
         selected_key = str(request.get("listKey") or "")
-        selected_list_ref: dict[str, Any] = {}
-        with inspect_cloudkit_responses(
+        request_id = str(request.get("requestId") or "")[:100]
+        results_limit = 200 if request.get("fullList") is True else 10
+        lists, reminder_list, batch, selected_list_ref = _load_list_snapshot(
             reminders_service,
             selected_key,
-            str(request.get("requestId") or "")[:100],
-            selected_list_ref,
-        ):
-            lists = list(reminders_service.lists())
-            reminder_list = next(
-                (
-                    item
-                    for item in lists
-                    if not getattr(item, "deleted", False)
-                    and reminders_list_key(item) == selected_key
-                ),
-                None,
-            )
-            if reminder_list is None:
-                return {
-                    "ok": False,
-                    "errorCode": "selected_list_not_found",
-                    "error": "Choose an active iCloud Reminders list, then load its preview again.",
-                }
-            selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
-            section_ids = _log_selected_section_assets(
-                selected_list_ref,
-                selected_key,
-                str(request.get("requestId") or "")[:100],
-                selected_list_ref["id"],
-            )
-            if section_ids:
-                context = selected_list_ref.get("section_query_context", {})
-                raw_client = context.get("raw_client") if isinstance(context, dict) else None
-                cloudkit_client = getattr(raw_client, "_client", None)
-                http = getattr(cloudkit_client, "_http", None)
-                post = getattr(http, "post", None)
-                if callable(post):
-                    selected_record = context.get("record") if isinstance(context, dict) else None
-                    zone_id = selected_record.get("zoneID") if isinstance(selected_record, dict) else None
-                    if not isinstance(zone_id, dict) or not isinstance(zone_id.get("zoneName"), str):
-                        zone_id = {"zoneName": "Reminders", "ownerRecordName": "_defaultOwner"}
-                    lookup_payload: dict[str, Any] = {
-                        "zoneID": zone_id,
-                        "records": [
-                            {"recordName": f"ListSection/{section_id}"}
-                            for section_id in section_ids
-                        ],
-                    }
-                    try:
-                        # PyICloud appends operation paths to the base URL; keep the slash.
-                        post("/records/lookup", lookup_payload)
-                    except Exception as section_lookup_exc:
-                        error_code = getattr(section_lookup_exc, "code", None)
-                        response = getattr(section_lookup_exc, "response", None)
-                        status_code = getattr(response, "status_code", None)
-                        log_event(
-                            "cloudkit_section_lookup_failed",
-                            scope=context.get("scope", "private"),
-                            list_key=selected_key,
-                            request_id=str(request.get("requestId") or "")[:100],
-                            error_type=type(section_lookup_exc).__name__,
-                            **({"error_code": str(error_code)[:100]} if isinstance(error_code, (str, int)) else {}),
-                            **({"http_status": status_code} if isinstance(status_code, int) else {}),
-                        )
-            batch = reminders_service.list_reminders(
-                reminder_list,
-                include_completed=True,
-                results_limit=10,
-            )
+            request_id,
+            results_limit,
+        )
         reminders = list(getattr(batch, "reminders", []) or [])
         summary = reminders_list_summary(reminder_list)
         sections = selected_list_ref.get("sections", [])
@@ -910,17 +1120,23 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
         section_memberships = selected_list_ref.get("section_memberships", {})
         if not isinstance(section_memberships, dict):
             section_memberships = {}
-        preview_reminders = _preview_reminders_with_sections(reminders[:10], section_memberships, sections)
+        preview_reminders = _preview_reminders_with_sections(
+            reminders if results_limit > 10 else reminders[:10],
+            section_memberships,
+            sections,
+        )
         summary["reminderCountReturned"] = len(reminders)
         summary["sections"] = sections
         summary["reminders"] = preview_reminders
-        return {
+        result = {
             "ok": True,
             "state": "fetched",
             "pyicloudVersion": importlib.metadata.version("pyicloud"),
             "listCount": len(lists),
             "lists": [summary],
-            "decodedAppleSample": {
+        }
+        if request.get("includeDiagnostic") is not False:
+            result["decodedAppleSample"] = {
                 "listFields": object_fields(reminder_list),
                 "list": json_value(reminder_list),
                 "snapshotFields": object_fields(batch),
@@ -930,8 +1146,157 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                 ),
                 "sections": sections,
                 "reminders": preview_reminders,
-            },
+            }
+        return result
+    except LookupError as exc:
+        return {"ok": False, "errorCode": "selected_list_not_found", "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
+
+
+def fetch_list(request: dict[str, Any]) -> dict[str, Any]:
+    return fetch_preview({**request, "fullList": True, "includeDiagnostic": False})
+
+
+def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        title = str(request.get("title") or "").strip()
+        if not title:
+            raise ValueError("A reminder title is required.")
+        if len(title) > 1000:
+            raise ValueError("Reminder titles must be 1,000 characters or fewer.")
+        reminders_service = api.reminders
+        lists, reminder_list = _selected_reminders_list(reminders_service, str(request.get("listKey") or ""))
+        created = reminders_service.create(
+            list_id=reminder_list,
+            title=title,
+            desc=str(request.get("desc") or ""),
+            due_date=_parse_due_date(request.get("dueDate")),
+            priority=_validate_priority(request.get("priority", 0)),
+            flagged=bool(request.get("flagged", False)),
+            all_day=bool(request.get("allDay", False)),
+        )
+        section_id = request.get("sectionID")
+        if section_id is not None:
+            snapshot = _load_list_snapshot(reminders_service, reminders_list_key(reminder_list), "", 200)
+            selected_ref = snapshot[3]
+            _move_reminder_section(
+                reminders_service,
+                reminder_list,
+                selected_ref,
+                reminders_list_key(reminder_list),
+                str(getattr(created, "id", "")),
+                str(section_id),
+            )
+        return {
+            "ok": True,
+            "state": "created",
+            "listCount": len(lists),
+            "reminder": json_value(created),
         }
+    except (ValueError, LookupError) as exc:
+        return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
+
+
+def update_reminder(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        reminders_service = api.reminders
+        _, reminder_list = _selected_reminders_list(reminders_service, str(request.get("listKey") or ""))
+        reminder_id = str(request.get("reminderId") or "").strip()
+        if not reminder_id:
+            raise ValueError("A reminder ID is required.")
+        reminder = reminders_service.get(reminder_id, list_context=reminder_list)
+        if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
+            raise ValueError("That reminder does not belong to the selected list.")
+        patch = request.get("patch")
+        if not isinstance(patch, dict) or not patch:
+            raise ValueError("Provide at least one reminder field to update.")
+        if "title" in patch:
+            title = str(patch.get("title") or "").strip()
+            if not title:
+                raise ValueError("A reminder title is required.")
+            if len(title) > 1000:
+                raise ValueError("Reminder titles must be 1,000 characters or fewer.")
+            reminder.title = title
+        if "desc" in patch:
+            reminder.desc = str(patch.get("desc") or "")
+        if "dueDate" in patch:
+            reminder.due_date = _parse_due_date(patch.get("dueDate"))
+            if "timeZone" in patch:
+                reminder.time_zone = patch.get("timeZone") or None
+        if "priority" in patch:
+            reminder.priority = _validate_priority(patch["priority"])
+        if "flagged" in patch:
+            reminder.flagged = bool(patch["flagged"])
+        if "completed" in patch:
+            reminder.completed = bool(patch["completed"])
+            reminder.completed_date = (
+                dt.datetime.now(dt.timezone.utc) if reminder.completed else None
+            )
+        if "allDay" in patch:
+            reminder.all_day = bool(patch["allDay"])
+        reminders_service.update(reminder)
+        return {"ok": True, "state": "updated", "reminder": json_value(reminder)}
+    except (ValueError, LookupError) as exc:
+        return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
+
+
+def delete_reminder(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        reminders_service = api.reminders
+        _, reminder_list = _selected_reminders_list(reminders_service, str(request.get("listKey") or ""))
+        reminder_id = str(request.get("reminderId") or "").strip()
+        if not reminder_id:
+            raise ValueError("A reminder ID is required.")
+        reminder = reminders_service.get(reminder_id, list_context=reminder_list)
+        if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
+            raise ValueError("That reminder does not belong to the selected list.")
+        reminders_service.delete(reminder)
+        return {"ok": True, "state": "deleted", "reminderId": reminder_id}
+    except (ValueError, LookupError) as exc:
+        return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
+
+
+def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        reminders_service = api.reminders
+        list_key = str(request.get("listKey") or "")
+        reminder_id = str(request.get("reminderId") or "").strip()
+        if not reminder_id:
+            raise ValueError("A reminder ID is required.")
+        section_id = request.get("sectionID")
+        if section_id is not None:
+            section_id = str(section_id)
+        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        reminder = reminders_service.get(reminder_id, list_context=reminder_list)
+        if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
+            raise ValueError("That reminder does not belong to the selected list.")
+        _, _, _, selected_ref = _load_list_snapshot(reminders_service, list_key, "", 200)
+        _move_reminder_section(
+            reminders_service,
+            reminder_list,
+            selected_ref,
+            list_key,
+            reminder_id,
+            section_id,
+        )
+        return {"ok": True, "state": "updated", "listCount": len(lists), "reminderId": reminder_id}
+    except (ValueError, LookupError) as exc:
+        return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
     except Exception as exc:
         return {"ok": False, **safe_error(exc)}
 
@@ -961,6 +1326,16 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
         return verify_code(request)
     if action == "fetch_preview":
         return fetch_preview(request)
+    if action == "fetch_list":
+        return fetch_list(request)
+    if action == "create_reminder":
+        return create_reminder(request)
+    if action == "update_reminder":
+        return update_reminder(request)
+    if action == "delete_reminder":
+        return delete_reminder(request)
+    if action == "move_reminder_section":
+        return move_reminder_section(request)
     return {"ok": False, "errorCode": "unknown_action", "error": "Unknown PyICloud action."}
 
 
