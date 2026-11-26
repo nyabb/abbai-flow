@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { ChorePlanner } from '../ChorePlanner';
 import { I18nContext, createI18n } from '../../i18n';
@@ -120,6 +120,24 @@ function choresManState(overrides: Partial<ChoresManState> = {}): ChoresManState
  * real `useTranslation` path.
  */
 const NL = createI18n('nl');
+const originalMatchMedia = window.matchMedia;
+
+function phoneViewport() {
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes('max-width'),
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
+
+afterEach(() => {
+  window.matchMedia = originalMatchMedia;
+});
 
 function renderPlanner(
   members: FamilyMember[],
@@ -296,12 +314,50 @@ describe('ChorePlanner anyone chores', () => {
       (button) => button.getAttribute('aria-label') ?? '',
     );
 
-    // Zara claimed it, so her row says a parent still has to sign off; the free
-    // column still shows it for Maya. Nobody may claim it is finished, and the
-    // child is never offered the approval itself.
+    // Zara claimed it, so her row says a parent still has to sign off. The
+    // pending copy for Maya is no longer offered because ChoresMan locks the
+    // shared chore to its first claimant.
     expect(labels.some((text) => text.startsWith('Wacht op goedkeuring'))).toBe(true);
     expect(labels.some((text) => text.startsWith('Afgerond'))).toBe(false);
     expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(false);
+    expect(freeColumn(container).querySelectorAll('.planner-row')).toHaveLength(0);
+    expect(column(container, 'Zara').textContent).toContain('Tafel dekken');
+  });
+
+  it('opens the claimer’s chores tab after claiming on a phone', async () => {
+    phoneViewport();
+    localStorage.setItem('abbai-flow-filter-chore-board-member', JSON.stringify('c1'));
+    localStorage.setItem('abbai-flow-filter-chore-board-tab', JSON.stringify('free'));
+    mocks.state.current = anyoneState('pending', 'pending');
+    mocks.runActionId.mockImplementationOnce(async () => {
+      mocks.state.current = anyoneState('claimed', 'pending');
+    });
+
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+    const claimSheet = () => container.querySelector<HTMLElement>('.planner-sheet');
+    fireEvent.click(container.querySelector('.planner-row-check')!);
+    fireEvent.click(
+      within(claimSheet()!).getByRole('button', {
+        name: 'Zara',
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        container.querySelector('.planner-mobile-member.is-active .planner-mobile-name')?.textContent,
+      ).toBe('Zara');
+      expect(container.querySelector('.planner-mobile-tab.is-active')?.textContent).toContain(
+        'Taakjes',
+      );
+      expect(container.querySelector('.planner-row')?.textContent).toContain('Tafel dekken');
+    });
+
+    fireEvent.click(
+      within(container.querySelector('.planner-mobile-tabs')!).getByRole('tab', {
+        name: /Vrij te pakken/,
+      }),
+    );
+    expect(container.querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
   it('moves the chore into the claimer’s column, out of the free column', () => {

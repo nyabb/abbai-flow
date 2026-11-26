@@ -152,6 +152,11 @@ export function ChorePlanner({
   const modal = overlay.type === 'closed' ? null : overlay.type;
   const [form, setForm] = useState<FormValue>(() => emptyForm(new Date()));
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+  const [claimNavigation, setClaimNavigation] = useState<{
+    memberId: string;
+    request: number;
+  } | null>(null);
+  const claimNavigationRequest = useRef(0);
   /**
    * Chore the child tapped, waiting for "are you sure?".
    *
@@ -586,13 +591,23 @@ export function ChorePlanner({
    * first-come-first-served chore, so the board shows the chore once and asks
    * which child is taking it when somebody taps it.
    */
+  const claimedSharedChoreNames = new Set(
+    data.tasks
+      .filter(
+        (task) =>
+          task.freeForAll &&
+          (task.awaitingReview || taskStatus(task) === 'completed'),
+      )
+      .map((task) => task.name.trim().toLocaleLowerCase()),
+  );
   const freeTasks = [...data.tasks]
     .filter(
       (task) =>
         task.audience === 'anyone' &&
         task.memberId !== null &&
         isChildMember(task.memberId) &&
-        taskStatus(task) !== 'completed',
+        taskStatus(task) !== 'completed' &&
+        !claimedSharedChoreNames.has(task.name.trim().toLocaleLowerCase()),
     )
     .filter((task, index, all) => all.findIndex((other) => other.name === task.name) === index)
     .sort(byDeadline);
@@ -831,7 +846,7 @@ export function ChorePlanner({
     action: string,
     celebrate?: 'chore' | 'goal',
   ) => {
-    if (pendingTaskId) return;
+    if (pendingTaskId) return false;
     setPendingTaskId(taskId);
     try {
       // The action payload carries exact chore and member IDs for shared chores.
@@ -839,8 +854,10 @@ export function ChorePlanner({
       if (celebrate) setCelebration(celebrate);
       playCompletionSound();
       showToast(toastWith(action, label));
+      return true;
     } catch (err) {
       showError(err);
+      return false;
     } finally {
       /* Must clear on success too: leaving it set made `completeTask` bail out
          for every later card, so a second chore only worked after a reload. */
@@ -1248,6 +1265,7 @@ export function ChorePlanner({
           columnTasks={columnTasks}
           columnRoutines={columnRoutines}
           freeTasks={freeTasks}
+          claimNavigation={claimNavigation}
           spendableFor={spendableFor}
           renderRow={renderRow}
           routineRow={routineRow}
@@ -1448,7 +1466,13 @@ export function ChorePlanner({
                     option.actions!.claim!,
                     option.name,
                     c.claimedToast,
-                  );
+                  ).then((succeeded) => {
+                    if (!succeeded || !option.memberId) return;
+                    setClaimNavigation({
+                      memberId: option.memberId,
+                      request: ++claimNavigationRequest.current,
+                    });
+                  });
                 }}
                 onClose={() => dispatchOverlay({ type: 'close' })}
               />
