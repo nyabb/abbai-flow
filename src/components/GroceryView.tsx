@@ -143,6 +143,7 @@ export function GroceryView({
     (value): value is boolean => typeof value === 'boolean',
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const listRevisions = useRef<Record<string, number>>({});
   const {
     lists: localLists,
     getTasksForList,
@@ -217,9 +218,12 @@ export function GroceryView({
 
   const loadList = useCallback(async (listId: string) => {
     if (!listId) return;
-    setLoading(true);
+    const revision = listRevisions.current[listId];
+    if (revision == null) setLoading(true);
     try {
-      const result = await fetchICloudRemindersList(listId);
+      const result = await fetchICloudRemindersList(listId, revision);
+      if (typeof result.revision === 'number') listRevisions.current[listId] = result.revision;
+      if (result.changed === false || result.state === 'unchanged') return;
       const list = result.lists?.[0];
       if (!list) throw new Error(t('grocery.loadFailed'));
       setIcloudItems(reminderItems(list.reminders || []));
@@ -298,11 +302,17 @@ export function GroceryView({
           source: 'local',
         })));
       } else {
-        await createICloudReminder(selectedListId, {
+        const result = await createICloudReminder(selectedListId, {
           title,
           sectionID: newItemSectionID || null,
         });
-        await loadList(selectedListId);
+        if (result.reminder) {
+          if (typeof result.revision === 'number') listRevisions.current[selectedListId] = result.revision;
+          setIcloudItems((current) => [...current, ...reminderItems([result.reminder!])]);
+        } else {
+          delete listRevisions.current[selectedListId];
+          await loadList(selectedListId);
+        }
       }
       setInputValue('');
     } catch (error) {
@@ -327,15 +337,15 @@ export function GroceryView({
       ? { ...candidate, status: completed ? 'completed' : 'needs_action' }
       : candidate));
     try {
-      await updateICloudReminder(selectedListId, item.uid, { completed });
-      await loadList(selectedListId);
+      const result = await updateICloudReminder(selectedListId, item.uid, { completed });
+      if (typeof result.revision === 'number') listRevisions.current[selectedListId] = result.revision;
     } catch (error) {
       setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
         ? { ...candidate, status: item.status }
         : candidate));
       setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
     }
-  }, [isLocal, toggleTask, selectedListId, loadList, t]);
+  }, [isLocal, toggleTask, selectedListId, t]);
 
   const startEditing = (item: TodoItem) => {
     if (item.source !== 'icloud') return;
@@ -353,16 +363,28 @@ export function GroceryView({
     if (!editingItem || !selectedListId || !editTitle.trim()) return;
     setSubmitting(true);
     try {
-      await updateICloudReminder(selectedListId, editingItem.uid, {
+      const patch = {
         title: editTitle.trim(),
         desc: editNotes,
         dueDate: editDueDate ? new Date(editDueDate).toISOString() : null,
         priority: editPriority,
         flagged: editFlagged,
         allDay: editAllDay,
-      });
+      };
+      const result = await updateICloudReminder(selectedListId, editingItem.uid, patch);
+      if (typeof result.revision === 'number') listRevisions.current[selectedListId] = result.revision;
+      setIcloudItems((current) => current.map((item) => item.uid === editingItem.uid
+        ? {
+            ...item,
+            summary: patch.title,
+            desc: patch.desc,
+            dueDate: patch.dueDate,
+            priority: patch.priority,
+            flagged: patch.flagged,
+            allDay: patch.allDay,
+          }
+        : item));
       setEditingItem(null);
-      await loadList(selectedListId);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
     } finally {
@@ -381,8 +403,8 @@ export function GroceryView({
         }
       : candidate));
     try {
-      await moveICloudReminderSection(selectedListId, item.uid, sectionID || null);
-      await loadList(selectedListId);
+      const result = await moveICloudReminderSection(selectedListId, item.uid, sectionID || null);
+      if (typeof result.revision === 'number') listRevisions.current[selectedListId] = result.revision;
     } catch (error) {
       setIcloudItems((current) => current.map((candidate) => candidate.uid === item.uid
         ? {
@@ -403,8 +425,9 @@ export function GroceryView({
     }
     if (!selectedListId) return;
     try {
-      await deleteICloudReminder(selectedListId, item.uid);
-      await loadList(selectedListId);
+      const result = await deleteICloudReminder(selectedListId, item.uid);
+      if (typeof result.revision === 'number') listRevisions.current[selectedListId] = result.revision;
+      setIcloudItems((current) => current.filter((candidate) => candidate.uid !== item.uid));
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : t('grocery.loadFailed'));
     }

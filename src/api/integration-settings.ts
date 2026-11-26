@@ -130,11 +130,15 @@ export interface ICloudRemindersActionResult {
     isGroup: boolean;
     count: number | null;
     reminderCountReturned?: number;
+    revision?: number;
     sections?: ICloudReminderSection[];
     reminders?: ICloudReminder[];
   }>;
   reminder?: ICloudReminder;
   reminderId?: string;
+  changed?: boolean;
+  revision?: number;
+  revisions?: Record<string, number>;
   decodedAppleSample?: unknown;
 }
 
@@ -189,8 +193,18 @@ export function fetchICloudRemindersPreview(listKey: string): Promise<ICloudRemi
   return iCloudAction<ICloudRemindersActionResult>('fetch-preview', { listKey });
 }
 
-export function fetchICloudRemindersList(listKey: string): Promise<ICloudRemindersActionResult> {
-  return iCloudAction<ICloudRemindersActionResult>('fetch-list', { listKey });
+export function fetchICloudRemindersList(
+  listKey: string,
+  revision?: number,
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('fetch-list', { listKey, revision });
+}
+
+export function fetchICloudRemindersTaskLists(
+  listKeys: string[],
+  revisions: Record<string, number> = {},
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('task-lists', { listKeys, revisions });
 }
 
 export interface ICloudReminderPatch {

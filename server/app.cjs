@@ -2049,7 +2049,15 @@ async function route(req, res, config, services, bluetooth) {
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-preview') {
         result = await services.icloudReminders.fetchPreview(String(value.listKey || ''));
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-list') {
-        result = await services.icloudReminders.fetchList(String(value.listKey || ''));
+        result = await services.icloudReminders.fetchList(
+          String(value.listKey || ''),
+          Number.isInteger(value.revision) ? value.revision : undefined,
+        );
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/task-lists') {
+        result = await services.icloudReminders.fetchTaskLists(
+          Array.isArray(value.listKeys) ? value.listKeys : [],
+          value.revisions && typeof value.revisions === 'object' ? value.revisions : {},
+        );
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/create-reminder') {
         result = await services.icloudReminders.createReminder(value);
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/update-reminder') {

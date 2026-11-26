@@ -449,8 +449,31 @@
     max-width: 112px;
   }
 
+  .grocery-view-add {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    align-items: center;
+  }
+
+  .grocery-view-add .grocery-view-input {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .grocery-view-add-btn {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
   .grocery-view-add-section {
-    flex-basis: 120px;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    min-height: 44px;
+    font-size: 1rem;
   }
 
   .grocery-view-edit-panel {
