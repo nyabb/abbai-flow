@@ -1,3 +1,38 @@
+## [2.33.1](https://github.com/nyabb/abbai-flow/compare/v2.33.0...v2.33.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* clarify integration action progress ([d52cf3a](https://github.com/nyabb/abbai-flow/commit/d52cf3a9be83d0c3a08a3599152dbf09d3ae84b8))
+
+# [2.33.0](https://github.com/nyabb/abbai-flow/compare/v2.32.2...v2.33.0) (2026-11-26)
+
+
+### Features
+
+* include iCloud reminder sections in preview ([67c1110](https://github.com/nyabb/abbai-flow/commit/67c1110adc18e03f17290a9008e1f24a19ff50ec))
+
+## [2.32.2](https://github.com/nyabb/abbai-flow/compare/v2.32.1...v2.32.2) (2026-11-26)
+
+
+### Bug Fixes
+
+* preserve slash in CloudKit lookup path ([c710234](https://github.com/nyabb/abbai-flow/commit/c710234fbdddd218b37e4516a94a509495009831))
+
+## [2.32.1](https://github.com/nyabb/abbai-flow/compare/v2.32.0...v2.32.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* look up iCloud reminder sections by ID ([d5213a0](https://github.com/nyabb/abbai-flow/commit/d5213a0e8350b18781f0642cd252dd240776085e))
+
+# [2.32.0](https://github.com/nyabb/abbai-flow/compare/v2.31.4...v2.32.0) (2026-11-26)
+
+
+### Features
+
+* query iCloud reminder sections ([55cfe05](https://github.com/nyabb/abbai-flow/commit/55cfe05f31cd90c00f670df17c345834dc848f55))
+
 ## [2.31.4](https://github.com/nyabb/abbai-flow/compare/v2.31.3...v2.31.4) (2026-11-26)
 
 
