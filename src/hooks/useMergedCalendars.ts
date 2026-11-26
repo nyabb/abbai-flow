@@ -11,14 +11,22 @@
  * Extracted from App.tsx so the shell renders rather than orchestrates, and so
  * the routing rules are testable in isolation.
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useCalendarEvents } from './useCalendarEvents';
 import { useLocalCalendar } from './useLocalCalendar';
 import { resolveCalendarColor } from '../types';
-import type { CalendarColorMember, CalendarEvent, CalendarInfo } from '../types';
+import type { CalendarEvent, CalendarInfo } from '../types';
 import type { HomeAssistantClient } from '../api/homeassistant';
+import type { ChoresManChore } from '../types/choresman';
+import type { FamilyMember } from '../types/family';
+import {
+  CHORESMAN_CALENDAR_PREFIX,
+  createChoresManCalendarEvents,
+  createChoresManCalendars,
+} from '../api/choresman-calendar';
 
 type CalendarApi = ReturnType<typeof useCalendarEvents>;
+const EMPTY_CHORES: ChoresManChore[] = [];
 export type CalendarEventInput = Parameters<CalendarApi['createEvent']>[1];
 export type CalendarEventUpdate = Parameters<CalendarApi['updateEvent']>[2];
 
@@ -28,7 +36,8 @@ export interface UseMergedCalendarsOptions {
   /** Client factory for direct WS calls in standalone mode. */
   getClient?: () => HomeAssistantClient | null;
   calendarColors?: Record<string, string>;
-  members?: CalendarColorMember[];
+  members?: FamilyMember[];
+  chores?: ChoresManChore[];
 }
 
 export interface UseMergedCalendarsResult {
@@ -52,9 +61,50 @@ export function useMergedCalendars({
   getClient,
   calendarColors,
   members,
+  chores = EMPTY_CHORES,
 }: UseMergedCalendarsOptions): UseMergedCalendarsResult {
   const ha = useCalendarEvents(connected, { calendarColors, members }, getClient);
+  const { fetchEvents: fetchHaEvents } = ha;
   const local = useLocalCalendar();
+  const [choresManEvents, setChoresManEvents] = useState<CalendarEvent[]>([]);
+  const lastRange = useRef<{ start: string; end: string } | null>(null);
+  const choreCalendars = useMemo(
+    () => createChoresManCalendars(members ?? [], calendarColors),
+    [members, calendarColors],
+  );
+  const choreCalendarsRef = useRef(choreCalendars);
+  const choresRef = useRef(chores);
+  const membersRef = useRef(members ?? []);
+  choreCalendarsRef.current = choreCalendars;
+  choresRef.current = chores;
+  membersRef.current = members ?? [];
+
+  const refreshChoresManEvents = useCallback((start: string, end: string) => {
+    setChoresManEvents(
+      createChoresManCalendarEvents(
+        choresRef.current,
+        membersRef.current,
+        choreCalendarsRef.current,
+        start,
+        end,
+      ),
+    );
+  }, []);
+
+  const fetchEvents = useCallback(
+    async (start: string, end: string) => {
+      lastRange.current = { start, end };
+      refreshChoresManEvents(start, end);
+      await fetchHaEvents(start, end);
+    },
+    [fetchHaEvents, refreshChoresManEvents],
+  );
+
+  useEffect(() => {
+    if (lastRange.current) {
+      refreshChoresManEvents(lastRange.current.start, lastRange.current.end);
+    }
+  }, [chores, members, choreCalendars, refreshChoresManEvents]);
 
   // Resolve the local calendar's colour the same way everywhere
   // (user override wins, otherwise its own default).
@@ -64,8 +114,8 @@ export function useMergedCalendars({
   });
 
   const calendars = useMemo(
-    () => [{ ...local.calendar, color: localCalendarColor }, ...ha.calendars],
-    [local.calendar, localCalendarColor, ha.calendars],
+    () => [{ ...local.calendar, color: localCalendarColor }, ...ha.calendars, ...choreCalendars],
+    [local.calendar, localCalendarColor, ha.calendars, choreCalendars],
   );
 
   const events = useMemo(
@@ -73,8 +123,9 @@ export function useMergedCalendars({
       [
         ...local.events.map((event) => ({ ...event, color: localCalendarColor })),
         ...ha.events,
+        ...choresManEvents,
       ].sort((a, b) => a.start.localeCompare(b.start)),
-    [local.events, localCalendarColor, ha.events],
+    [local.events, localCalendarColor, ha.events, choresManEvents],
   );
 
   const { createEvent: createHaEvent, updateEvent: updateHaEvent, deleteEvent: deleteHaEvent } = ha;
@@ -87,6 +138,9 @@ export function useMergedCalendars({
 
   const createEvent = useCallback(
     async (calendarId: string, event: CalendarEventInput) => {
+      if (calendarId.startsWith(CHORESMAN_CALENDAR_PREFIX)) {
+        throw new Error('ChoresMan calendar events are managed from the chores view.');
+      }
       if (calendarId === localCalendar.id) {
         createLocalEvent(event);
         return;
@@ -98,6 +152,9 @@ export function useMergedCalendars({
 
   const updateEvent = useCallback(
     async (calendarId: string, uid: string, event: CalendarEventUpdate) => {
+      if (calendarId.startsWith(CHORESMAN_CALENDAR_PREFIX)) {
+        throw new Error('ChoresMan calendar events are managed from the chores view.');
+      }
       if (calendarId === localCalendar.id) {
         updateLocalEvent(uid, event);
         return;
@@ -109,6 +166,9 @@ export function useMergedCalendars({
 
   const deleteEvent = useCallback(
     async (calendarId: string, uid: string) => {
+      if (calendarId.startsWith(CHORESMAN_CALENDAR_PREFIX)) {
+        throw new Error('ChoresMan calendar events are managed from the chores view.');
+      }
       if (calendarId === localCalendar.id) {
         deleteLocalEvent(uid);
         return;
@@ -123,7 +183,7 @@ export function useMergedCalendars({
     events,
     loading: ha.loading,
     fetchCalendars: ha.fetchCalendars,
-    fetchEvents: ha.fetchEvents,
+    fetchEvents,
     createEvent,
     updateEvent,
     deleteEvent,

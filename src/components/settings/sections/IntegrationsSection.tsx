@@ -21,6 +21,7 @@ import {
   type IntegrationSettingsStatus,
   type CalendarSourceSetting,
 } from '../../../api/integration-settings';
+import { testCaldavSource } from '../../../api/caldav-calendars';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
@@ -223,6 +224,7 @@ export function IntegrationsSection({
   const [calendarSources, setCalendarSources] = useState<CalendarSourceSetting[]>([]);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [calendarSaving, setCalendarSaving] = useState(false);
+  const [calendarTestingSourceId, setCalendarTestingSourceId] = useState<string | null>(null);
   const [mealSaving, setMealSaving] = useState(false);
   const [icloudSaving, setIcloudSaving] = useState(false);
   const [icloudBusyAction, setIcloudBusyAction] = useState<
@@ -232,6 +234,7 @@ export function IntegrationsSection({
   const integrationBusy =
     settingsSaving ||
     calendarSaving ||
+    calendarTestingSourceId !== null ||
     mealSaving ||
     icloudSaving ||
     icloudBusyAction !== null ||
@@ -596,6 +599,27 @@ export function IntegrationsSection({
     setCalendarSources((sources) =>
       sources.map((source) => (source.id === id ? { ...source, ...patch } : source)),
     );
+  };
+
+  const testCalendarSource = async (source: CalendarSourceSetting) => {
+    setCalendarTestingSourceId(source.id);
+    setIntegrationError('');
+    setIntegrationNotice('');
+    try {
+      const result = await testCaldavSource(source);
+      setIntegrationNotice(
+        t('settings.integrations.calendarTestSuccess', { count: result.calendarCount }),
+      );
+      if (integrationStatus?.calendarSources.some((item) => item.id === source.id)) {
+        onIntegrationSettingsSaved?.();
+      }
+    } catch (error) {
+      setIntegrationError(
+        error instanceof Error ? error.message : t('settings.integrations.saveError'),
+      );
+    } finally {
+      setCalendarTestingSourceId(null);
+    }
   };
 
   const saveBrowserHomeAssistant = async () => {
@@ -1305,7 +1329,9 @@ export function IntegrationsSection({
                   placeholder={
                     source.provider === 'ics'
                       ? 'https://school.example/calendar.ics'
-                      : 'https://caldav.example.com/'
+                      : source.provider === 'caldav'
+                        ? 'https://caldav.icloud.com/'
+                        : 'https://caldav.example.com/'
                   }
                 />
               </div>
@@ -1390,9 +1416,23 @@ export function IntegrationsSection({
                 </>
               )}
               <div className="settings-row-sublabel">
-                {t('settings.integrations.calendarCredentialsOnly')}
+                {source.provider === 'caldav'
+                  ? t('settings.integrations.calendarCaldavHelp')
+                  : t('settings.integrations.calendarCredentialsOnly')}
               </div>
               <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
+                {source.provider === 'caldav' && (
+                  <button
+                    type="button"
+                    className="settings-btn"
+                    onClick={() => void testCalendarSource(source)}
+                    disabled={integrationBusy || integrationStatusLoading}
+                  >
+                    {calendarTestingSourceId === source.id
+                      ? t('settings.integrations.calendarTesting')
+                      : t('settings.integrations.calendarTestConnection')}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="settings-btn settings-btn--danger"

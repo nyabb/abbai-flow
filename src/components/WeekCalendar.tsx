@@ -679,7 +679,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
                     event={event}
                     onClick={handleEventBlockClick}
                     style={getEventStyle(event, overlapLayout.get(event.id))}
-                    draggable
+                    draggable={!event.readOnly}
                     expanded={expandedEventId === event.id}
                     onDragStart={(e) => handleDragStart(event, e)}
                     onDragEnd={handleDragEnd}

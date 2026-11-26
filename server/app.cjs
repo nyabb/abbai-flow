@@ -30,6 +30,7 @@ const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
 const { ChoresManStore, ChoresManStoreError } = require('./choresman-store.cjs');
 const { ICloudRemindersWorker } = require('./icloud-reminders-worker.cjs');
+const { createCaldavCalendarService } = require('./build/caldav-calendar-bundle.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
@@ -1756,6 +1757,9 @@ function createApp(options) {
         python: options.icloudPython,
         scriptPath: options.icloudWorkerPath,
       }),
+    caldavCalendars:
+      options.caldavCalendars ||
+      createCaldavCalendarService({ getSources: () => config.calendarSources }),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1918,6 +1922,8 @@ async function route(req, res, config, services, bluetooth) {
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname === '/abbai-flow/settings/integrations' ||
+    pathname === '/abbai-flow/calendars/test' ||
+    pathname === '/abbai-flow/calendars/event' ||
     pathname.startsWith('/abbai-flow/settings/icloud-reminders') ||
     pathname.startsWith('/abbai-flow/music/control') ||
     pathname.startsWith('/abbai-flow/music/library/') ||
@@ -1931,6 +1937,106 @@ async function route(req, res, config, services, bluetooth) {
   }
 
   try {
+    if (pathname === '/abbai-flow/calendars') {
+      if (req.method !== 'GET') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
+        return;
+      }
+      sendJson(res, 200, { calendars: await services.caldavCalendars.listCalendars() }, {
+        'Cache-Control': 'no-store',
+      });
+      return;
+    }
+    if (pathname === '/abbai-flow/calendars/events') {
+      if (req.method !== 'GET') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
+        return;
+      }
+      const parameters = new URL(url, 'http://abbai-flow.local').searchParams;
+      const calendarId = parameters.get('calendarId') || '';
+      const start = parameters.get('start') || '';
+      const end = parameters.get('end') || '';
+      if (!calendarId || !Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(start) >= Date.parse(end)) {
+        sendJson(res, 400, { error: 'Choose a calendar and a valid event date range.' });
+        return;
+      }
+      try {
+        const events = await services.caldavCalendars.fetchEvents(calendarId, start, end);
+        sendJson(res, 200, { events }, { 'Cache-Control': 'no-store' });
+      } catch {
+        sendJson(res, 502, { error: 'Could not retrieve events from the CalDAV calendar.' }, {
+          'Cache-Control': 'no-store',
+        });
+      }
+      return;
+    }
+    if (pathname === '/abbai-flow/calendars/test') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      const submitted = normalizeCalendarSources([value.source])[0];
+      if (!submitted) {
+        sendJson(res, 400, { error: 'Choose a CalDAV calendar source.' });
+        return;
+      }
+      const saved = config.calendarSources.find((item) => item.id === submitted.id);
+      if (!submitted.password && !value.source?.clearPassword) {
+        submitted.password = saved?.password || '';
+      }
+      if (!submitted.url || !submitted.username || !submitted.password) {
+        sendJson(res, 400, { error: 'Enter the CalDAV server URL, username, and password.' });
+        return;
+      }
+      try {
+        sendJson(res, 200, await services.caldavCalendars.testSource(submitted), {
+          'Cache-Control': 'no-store',
+        });
+      } catch {
+        sendJson(res, 502, { error: 'Could not connect to that CalDAV account. Check the URL and credentials.' }, {
+          'Cache-Control': 'no-store',
+        });
+      }
+      return;
+    }
+    if (pathname === '/abbai-flow/calendars/event') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      try {
+        let result;
+        if (value.operation === 'create') {
+          result = await services.caldavCalendars.createEvent(value.calendarId, value.event);
+        } else if (value.operation === 'update') {
+          result = await services.caldavCalendars.updateEvent(
+            value.calendarId,
+            value.eventId,
+            value.event,
+          );
+        } else if (value.operation === 'delete') {
+          result = await services.caldavCalendars.deleteEvent(value.calendarId, value.eventId);
+        } else {
+          sendJson(res, 400, { error: 'Choose a supported calendar event operation.' });
+          return;
+        }
+        sendJson(res, 200, result, { 'Cache-Control': 'no-store' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'CalDAV event change failed.';
+        sendJson(res, 502, { error: message }, { 'Cache-Control': 'no-store' });
+      }
+      return;
+    }
     if (pathname === '/abbai-flow/choresman') {
       if (req.method === 'GET') {
         sendJson(

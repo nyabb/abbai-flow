@@ -3,9 +3,20 @@ import { CalendarEvent, CalendarInfo, CalendarColorMember, resolveCalendarColor 
 import { haFetch, hasToken, callAbbaiAction, AbbaiActionError } from '../api/ha-rest';
 import { HomeAssistantClient, toWsEventPayload } from '../api/homeassistant';
 import { mapWithConcurrency, isAbortError } from '../utils/bounded-map';
+import {
+  createCaldavEvent,
+  deleteCaldavEvent,
+  fetchCaldavEvents,
+  listCaldavCalendars,
+  updateCaldavEvent,
+} from '../api/caldav-calendars';
 
 /** How many calendars are queried at the same time. */
 const CALENDAR_CONCURRENCY = 6;
+
+function isLegacyChoreOpsCalendar(calendar: { entity_id: string; name: string }): boolean {
+  return /chore[\s_-]*ops/i.test(`${calendar.entity_id} ${calendar.name}`);
+}
 
 /** Shape of a raw HA calendar event, before normalisation. */
 interface RawCalendarEvent {
@@ -32,6 +43,15 @@ async function loadCalendarEvents(
 ): Promise<CalendarEvent[]> {
   const params = new URLSearchParams({ start, end });
   try {
+    if (cal.id.startsWith('caldav/')) {
+      const caldavEvents = await fetchCaldavEvents(cal.id, start, end);
+      return caldavEvents.map((event) => ({
+        ...event,
+        calendarId: cal.id,
+        calendarName: cal.name,
+        color: cal.color,
+      }));
+    }
     const result = (await haFetch(`/api/calendars/${cal.id}?${params}`, { signal })) as
       | RawCalendarEvent[]
       | null;
@@ -94,9 +114,8 @@ function isNotSupported(err: unknown): boolean {
 }
 
 /**
- * Calendar events hook — uses HA REST API via haFetch.
- * Works with both direct HA connections and the add-on API proxy.
- * The `connected` flag indicates whether the HA API is reachable.
+ * Calendar events hook — merges Home Assistant calendars with server-configured
+ * CalDAV calendars. HA requests use haFetch; CalDAV credentials stay server-side.
  *
  * `colorOptions` lets callers pass user-customized calendar colors and
  * family members so calendar/event colors resolve consistently (user override >
@@ -126,28 +145,39 @@ export function useCalendarEvents(
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const fetchCalendars = useCallback(async () => {
-    if (!connected && !hasToken()) return [];
-
+    let data: Array<{ entity_id: string; name: string }> = [];
     try {
-      const data = (await haFetch('/api/calendars')) as Array<{ entity_id: string; name: string }>;
-      const cals = data.map((cal, index) => ({
-        id: cal.entity_id,
-        name: cal.name,
-        color: resolveCalendarColor(cal.entity_id, index, colorOptionsRef.current),
-      }));
-      calendarsRef.current = cals;
-      setCalendars(cals);
-      return cals;
+      if (connected || hasToken()) {
+        data = (await haFetch('/api/calendars')) as Array<{ entity_id: string; name: string }>;
+      }
     } catch (err) {
-      console.error('Failed to fetch calendars:', err);
-      return [];
+      console.error('Failed to fetch Home Assistant calendars:', err);
     }
+
+    let externalCalendars: Array<{ id: string; name: string }> = [];
+    try {
+      externalCalendars = await listCaldavCalendars();
+    } catch (err) {
+      console.error('Failed to fetch CalDAV calendars:', err);
+    }
+
+    const cals = [
+      ...data
+        .filter((cal) => !isLegacyChoreOpsCalendar(cal))
+        .map((cal) => ({ id: cal.entity_id, name: cal.name })),
+      ...externalCalendars,
+    ].map((cal, index) => ({
+      id: cal.id,
+      name: cal.name,
+      color: resolveCalendarColor(cal.id, index, colorOptionsRef.current),
+    }));
+    calendarsRef.current = cals;
+    setCalendars(cals);
+    return cals;
   }, [connected]);
 
   const fetchEvents = useCallback(
     async (start: string, end: string) => {
-      if (!connected && !hasToken()) return;
-
       // A new range supersedes the previous fan-out: abort it and tag the results
       // so a slow calendar can never overwrite a newer fetch.
       abortRef.current?.abort();
@@ -183,7 +213,7 @@ export function useCalendarEvents(
         if (requestIdRef.current === requestId) setLoading(false);
       }
     },
-    [connected, fetchCalendars],
+    [fetchCalendars],
   );
 
   /**
@@ -216,6 +246,10 @@ export function useCalendarEvents(
         rrule?: string;
       },
     ) => {
+      if (calendarId.startsWith('caldav/')) {
+        await createCaldavEvent(calendarId, event);
+        return;
+      }
       try {
         const client = getClient?.();
         if (client?.isConnected) {
@@ -266,6 +300,10 @@ export function useCalendarEvents(
         description?: string;
       },
     ) => {
+      if (calendarId.startsWith('caldav/')) {
+        await updateCaldavEvent(calendarId, uid, event);
+        return;
+      }
       try {
         const client = getClient?.();
         if (client?.isConnected) {
@@ -292,6 +330,10 @@ export function useCalendarEvents(
    */
   const deleteEvent = useCallback(
     async (calendarId: string, uid: string) => {
+      if (calendarId.startsWith('caldav/')) {
+        await deleteCaldavEvent(calendarId, uid);
+        return;
+      }
       try {
         const client = getClient?.();
         if (client?.isConnected) {

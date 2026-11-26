@@ -45,10 +45,12 @@ import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
 import { getFocusMemberId, clearFocusMode, setDeviceFocusMember } from './focus';
 import { CalendarEvent } from './types';
+import type { ChoresManChore } from './types/choresman';
 import { getConfig, getRuntimeConfig, patchConfig } from './config';
 import { I18nContext, createI18n } from './i18n';
 
 const config = getConfig();
+const EMPTY_CHORESMAN_CHORES: ChoresManChore[] = [];
 
 type ViewTransitionDocument = Document & {
   startViewTransition?: (update: () => void) => { finished: Promise<void> };
@@ -88,12 +90,14 @@ export function App() {
   const { t } = i18n;
 
   const { members, addMember, updateMember, removeMember } = useFamily();
+  const { data: choresManData, runActionId: runChoresManAction } = useChoresMan(members);
 
   const mergedCalendars = useMergedCalendars({
     connected,
     getClient: client,
     calendarColors: settings.calendarColors,
     members,
+    chores: choresManData?.chores ?? EMPTY_CHORESMAN_CHORES,
   });
   const {
     calendars,
@@ -226,10 +230,9 @@ export function App() {
   // Event notifications (browser + HA mobile_app)
   useNotifications(events, client, !focusMemberId, settings.notificationMinutes);
 
-  // Fetch data when connected, or when the user navigates to a different week.
+  // Fetch both HA and server-configured CalDAV data when the app starts, or
+  // when the user navigates to a different week or changes integrations.
   useEffect(() => {
-    if (!connected) return;
-
     const loadData = async () => {
       await fetchCalendars();
       await refetchEventsForWeek(visibleWeekStart);
@@ -246,7 +249,7 @@ export function App() {
     );
 
     return () => clearInterval(interval);
-  }, [connected, fetchCalendars, refetchEventsForWeek, visibleWeekStart]);
+  }, [connected, fetchCalendars, haIntegrationRevision, refetchEventsForWeek, visibleWeekStart]);
 
   // Re-fetch when calendar colors or family members change so colors update
   // immediately, without recreating the 5-minute polling interval above.
@@ -263,7 +266,6 @@ export function App() {
       didColorRefreshMount.current = true;
       return;
     }
-    if (!colorRefreshRef.current.connected) return;
     colorRefreshRef.current.fetchCalendars();
     colorRefreshRef.current.refetchEventsForWeek(colorRefreshRef.current.visibleWeekStart);
   }, [settings.calendarColors, members]);
@@ -280,6 +282,10 @@ export function App() {
   );
 
   const handleEventClick = useCallback((event: CalendarEvent) => {
+    if (event.readOnly) {
+      setActiveView('chores');
+      return;
+    }
     setEventDialog({ type: 'edit', event });
   }, []);
 
@@ -409,6 +415,7 @@ export function App() {
 
   const handleEventReschedule = useCallback(
     async (event: CalendarEvent, newDate: string, newHour: number) => {
+      if (event.readOnly) return;
       try {
         const oldStart = new Date(event.start);
         const oldEnd = new Date(event.end);
@@ -514,8 +521,6 @@ export function App() {
   // ---- Chore data ----
   // ChoresMan owns chores, points and rewards; family profiles stay in sync
   // with its local member records through the shared hook.
-  const { data: choresManData, runActionId: runChoresManAction } = useChoresMan(members);
-
   const { reconnected } = useConnectionStatus({ haConnected: connected });
   useScreenWakeLock(settings.alwaysOnDisplay);
 
@@ -912,7 +917,7 @@ export function App() {
         {showModal && (
           <EventModal
             event={selectedEvent}
-            calendars={calendars}
+            calendars={calendars.filter((calendar) => !calendar.readOnly)}
             defaultCalendarId={settings.defaultCalendar}
             onSave={handleSaveEvent}
             onDelete={handleDeleteEvent}

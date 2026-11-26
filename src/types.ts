@@ -13,6 +13,8 @@ export interface CalendarEvent {
   color: string;
   recurrence?: RecurrenceFrequency;
   recurrenceEnd?: string;
+  /** Synthetic events such as chores are shown for context and cannot be edited. */
+  readOnly?: boolean;
   /**
    * Whether this event has a real, stable UID from its calendar provider
    * (HA's `uid` or `recurrence_id`), as opposed to a synthetic composite
@@ -30,6 +32,8 @@ export interface CalendarInfo {
   id: string;
   name: string;
   color: string;
+  /** Synthetic calendars such as ChoresMan are visible but cannot receive events. */
+  readOnly?: boolean;
 }
 
 export interface WeatherData {
