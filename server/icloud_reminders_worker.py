@@ -776,7 +776,8 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                         ],
                     }
                     try:
-                        post("records/lookup", lookup_payload)
+                        # PyICloud appends operation paths to the base URL; keep the slash.
+                        post("/records/lookup", lookup_payload)
                     except Exception as section_lookup_exc:
                         error_code = getattr(section_lookup_exc, "code", None)
                         response = getattr(section_lookup_exc, "response", None)
