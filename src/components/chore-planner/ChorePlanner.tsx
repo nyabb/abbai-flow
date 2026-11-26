@@ -1193,7 +1193,7 @@ export function ChorePlanner({
           : c.title;
 
   return (
-    <div className="chore-planner">
+    <div className="chore-planner" data-screen={screen}>
       <PageHeader
         className="planner-header"
         actionsClassName="page-header-actions planner-header-actions"
@@ -1297,6 +1297,7 @@ export function ChorePlanner({
           isParent={childMember.role === 'parent'}
           spendableFor={spendableFor}
           columnTasks={columnTasks}
+          freeTasks={freeTasks}
           columnRoutines={columnRoutines}
           completedTasksFor={completedTasksFor}
           completedHistory={childChoreHistory}

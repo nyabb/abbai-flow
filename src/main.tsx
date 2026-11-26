@@ -22,6 +22,8 @@ import './styles/debug-console.css';
 import './styles/surface.css';
 // Responsive/touch additions only - loaded after everything else.
 import './styles/responsive.css';
+// Full-screen portrait display: a wall/tablet layout, distinct from phone UI.
+import './styles/portrait-display.css';
 import { applyStoredTheme } from './hooks/useTheme';
 import { installDebugFetchCapture } from './api/debug-log';
 import { migrateLegacyStorageKeys } from './api/storage-migration';

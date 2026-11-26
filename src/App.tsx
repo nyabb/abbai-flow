@@ -9,6 +9,7 @@ import { useChoresMan } from './hooks/useChoresMan';
 import { resolveMemberForUser } from './api/chore-model';
 import { choreIconForDisplay } from './api/chore-planner-view';
 import { WeekCalendar } from './components/WeekCalendar';
+import { PortraitAgenda } from './components/PortraitAgenda';
 import { EventModal, EventFormData } from './components/EventModal';
 import { FamilyFilter } from './components/FamilyFilter';
 import { SettingsView } from './components/SettingsView';
@@ -863,6 +864,15 @@ export function App() {
                     onEventClick={handleEventClick}
                     onSlotClick={handleSlotClick}
                     onEventReschedule={handleEventReschedule}
+                    onVisibleWeekChange={setVisibleWeekStart}
+                    weekStartsOn={settings.weekStartsOn}
+                  />
+                  <PortraitAgenda
+                    events={events}
+                    eventsLoading={calendarEventsLoading}
+                    hiddenCalendars={hiddenCalendars}
+                    onEventClick={handleEventClick}
+                    onSlotClick={handleSlotClick}
                     onVisibleWeekChange={setVisibleWeekStart}
                     weekStartsOn={settings.weekStartsOn}
                   />
