@@ -1,3 +1,10 @@
+## [2.32.1](https://github.com/nyabb/abbai-flow/compare/v2.32.0...v2.32.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* look up iCloud reminder sections by ID ([d5213a0](https://github.com/nyabb/abbai-flow/commit/d5213a0e8350b18781f0642cd252dd240776085e))
+
 # [2.32.0](https://github.com/nyabb/abbai-flow/compare/v2.31.4...v2.32.0) (2026-11-26)
 
 
