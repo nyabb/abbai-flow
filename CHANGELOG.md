@@ -1,3 +1,11 @@
+## [2.35.1](https://github.com/nyabb/abbai-flow/compare/v2.35.0...v2.35.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* build Docker images from release tags ([e4ab523](https://github.com/nyabb/abbai-flow/commit/e4ab523abb2803586482e82a111735d617d7f971))
+* cache iCloud reminders and decode section assets ([0ebb693](https://github.com/nyabb/abbai-flow/commit/0ebb693f9ba51ac30fc4eaba23d91e3aeecefd2b))
+
 # [2.35.0](https://github.com/nyabb/abbai-flow/compare/v2.34.0...v2.35.0) (2026-11-26)
 
 
