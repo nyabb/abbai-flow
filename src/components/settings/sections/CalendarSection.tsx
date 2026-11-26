@@ -13,6 +13,7 @@ export interface CalendarInfoSummary {
   id: string;
   name: string;
   color?: string;
+  readOnly?: boolean;
 }
 
 export interface CalendarSectionProps extends SettingsSectionContext {
@@ -161,7 +162,7 @@ export function CalendarSection({
             onChange={(e) => onUpdateSettings({ defaultCalendar: e.target.value })}
           >
             <option value="">{t('common.selectEllipsis')}</option>
-            {calendars.map((cal) => (
+            {calendars.filter((cal) => !cal.readOnly).map((cal) => (
               <option key={cal.id} value={cal.id}>
                 {cal.name}
               </option>

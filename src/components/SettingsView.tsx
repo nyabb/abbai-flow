@@ -58,7 +58,7 @@ interface SettingsViewProps {
   onRemoveHomeAssistantToken?: () => Promise<void>;
   onIntegrationSettingsSaved?: () => void;
   // Calendars
-  calendars: Array<{ id: string; name: string; color?: string }>;
+  calendars: Array<{ id: string; name: string; color?: string; readOnly?: boolean }>;
   // Kid Display
   onEnterFocusMode: (memberId: string) => void;
 }
@@ -186,7 +186,7 @@ export function SettingsView({
       onAddMember={onAddMember}
       onUpdateMember={onUpdateMember}
       onRemoveMember={onRemoveMember}
-      calendars={calendars}
+      calendars={calendars.filter((calendar) => !calendar.readOnly)}
     />
   );
   // ==== CALENDAR ====

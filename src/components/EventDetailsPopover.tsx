@@ -117,15 +117,17 @@ export function EventDetailsPopover({ event, anchor, onClose, onEdit }: EventDet
           </div>
         )}
 
-        <div className="event-details-popover-actions">
-          <button
-            type="button"
-            className="event-details-popover-btn event-details-popover-btn--primary"
-            onClick={onEdit}
-          >
-            {t('eventDetails.openEdit')}
-          </button>
-        </div>
+        {!event.readOnly && (
+          <div className="event-details-popover-actions">
+            <button
+              type="button"
+              className="event-details-popover-btn event-details-popover-btn--primary"
+              onClick={onEdit}
+            >
+              {t('eventDetails.openEdit')}
+            </button>
+          </div>
+        )}
       </div>
     </div>,
     document.body,

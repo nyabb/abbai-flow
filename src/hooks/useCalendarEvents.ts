@@ -14,6 +14,10 @@ import {
 /** How many calendars are queried at the same time. */
 const CALENDAR_CONCURRENCY = 6;
 
+function isLegacyChoreOpsCalendar(calendar: { entity_id: string; name: string }): boolean {
+  return /chore[\s_-]*ops/i.test(`${calendar.entity_id} ${calendar.name}`);
+}
+
 /** Shape of a raw HA calendar event, before normalisation. */
 interface RawCalendarEvent {
   uid?: string;
@@ -158,7 +162,9 @@ export function useCalendarEvents(
     }
 
     const cals = [
-      ...data.map((cal) => ({ id: cal.entity_id, name: cal.name })),
+      ...data
+        .filter((cal) => !isLegacyChoreOpsCalendar(cal))
+        .map((cal) => ({ id: cal.entity_id, name: cal.name })),
       ...externalCalendars,
     ].map((cal, index) => ({
       id: cal.id,
