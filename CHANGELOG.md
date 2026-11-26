@@ -1,3 +1,10 @@
+# [2.35.0](https://github.com/nyabb/abbai-flow/compare/v2.34.0...v2.35.0) (2026-11-26)
+
+
+### Features
+
+* add Qudoo-inspired household layouts ([6d3ddf3](https://github.com/nyabb/abbai-flow/commit/6d3ddf392272dc9fa92dec7e62745de0bd0e76a3))
+
 # [2.34.0](https://github.com/nyabb/abbai-flow/compare/v2.33.1...v2.34.0) (2026-11-26)
 
 
