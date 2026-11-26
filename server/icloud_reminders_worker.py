@@ -271,8 +271,8 @@ def _cloudkit_response_records(response: Any) -> list[dict[str, Any]]:
     return records
 
 
-def _section_ids_from_summaries(records: list[dict[str, Any]]) -> list[str]:
-    """Collect ordered section IDs from the selected list's decoded assets."""
+def _section_ids_from_summaries(records: list[dict[str, Any]]) -> tuple[list[str], list[str]]:
+    """Collect section IDs from membership and ordering assets."""
     ordered_ids: list[str] = []
     membership_ids: list[str] = []
     for record in records:
@@ -292,8 +292,9 @@ def _section_ids_from_summaries(records: list[dict[str, Any]]) -> list[str]:
             ordered_ids.extend(
                 identifier for identifier in ordering["orderedIdentifiers"] if isinstance(identifier, str)
             )
-    current_ids = ordered_ids or membership_ids
-    return list(dict.fromkeys(current_ids))
+    ordered_ids = list(dict.fromkeys(ordered_ids))
+    all_ids = list(dict.fromkeys([*ordered_ids, *membership_ids]))
+    return all_ids, ordered_ids
 
 
 def _section_memberships_from_summaries(records: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -495,8 +496,9 @@ def _log_selected_section_assets(
         records=records,
         records_truncated=record_count > len(records),
     )
-    section_ids = _section_ids_from_summaries(records)
+    section_ids, ordered_section_ids = _section_ids_from_summaries(records)
     selected_list_ref["section_ids"] = section_ids
+    selected_list_ref["ordered_section_ids"] = ordered_section_ids
     selected_list_ref["section_memberships"] = _section_memberships_from_summaries(records)
     selected_list_ref["section_query_context"] = captured
     return section_ids
@@ -568,10 +570,14 @@ def inspect_cloudkit_responses(
             if operation == "records/lookup" and isinstance(payload, dict):
                 requested_records = payload.get("records")
                 section_ids = selected_list_ref.get("section_ids", []) if selected_list_ref else []
-                for index, section_id in enumerate(section_ids):
+                ordered_section_ids = selected_list_ref.get("ordered_section_ids", []) if selected_list_ref else []
+                for index, section_id in enumerate(ordered_section_ids):
                     if isinstance(section_id, str):
                         normalized_id = _normalized_record_identifier(section_id)
                         lookup_order[normalized_id] = index
+                for section_id in section_ids:
+                    if isinstance(section_id, str):
+                        normalized_id = _normalized_record_identifier(section_id)
                         lookup_section_ids[normalized_id] = section_id
                 requested_ids = {
                     _normalized_record_identifier(item.get("recordName"))
