@@ -22,7 +22,6 @@
 }
 
 .meals-tab,
-.music-source-tabs button,
 .weather-retry-btn,
 .weather-hourly-close,
 .spotify-search-form button,
@@ -743,15 +742,6 @@
     padding: 4px 0 12px;
   }
 
-  .music-source-tabs {
-    margin-bottom: 12px;
-  }
-
-  .music-source-tabs button {
-    min-height: 40px;
-    padding-inline: 14px;
-  }
-
   .spotify-panel {
     padding: 14px;
     border-radius: 20px;
@@ -1195,10 +1185,6 @@
   .music-view {
     max-width: 1200px;
     border-radius: 26px;
-  }
-
-  .music-source-tabs {
-    margin-bottom: 18px;
   }
 
   .spotify-panel {

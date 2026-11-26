@@ -26,6 +26,15 @@ export function CalendarSection({
   calendars,
 }: CalendarSectionProps) {
   const [colorEditId, setColorEditId] = useState<string | null>(null);
+  const enabledWritableCalendars = calendars.filter(
+    (calendar) =>
+      !calendar.readOnly && !settings.permanentlyHiddenCalendars.includes(calendar.id),
+  );
+  const selectedDefaultCalendar = enabledWritableCalendars.some(
+    (calendar) => calendar.id === settings.defaultCalendar,
+  )
+    ? settings.defaultCalendar
+    : '';
 
   return (
     <>
@@ -156,17 +165,15 @@ export function CalendarSection({
           <div className="settings-row-label">{t('settings.calendar.defaultCalendarLabel')}</div>
           <select
             className="settings-select"
-            value={settings.defaultCalendar}
+            value={selectedDefaultCalendar}
             onChange={(e) => onUpdateSettings({ defaultCalendar: e.target.value })}
           >
             <option value="">{t('common.selectEllipsis')}</option>
-            {calendars
-              .filter((cal) => !cal.readOnly)
-              .map((cal) => (
-                <option key={cal.id} value={cal.id}>
-                  {cal.name}
-                </option>
-              ))}
+            {enabledWritableCalendars.map((cal) => (
+              <option key={cal.id} value={cal.id}>
+                {cal.name}
+              </option>
+            ))}
           </select>
         </div>
         <div className="settings-row">
