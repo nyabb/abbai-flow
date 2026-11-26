@@ -1,6 +1,7 @@
-import { Photo } from '../types/photos';
+import type { Photo, PhotoSource } from '../types/photos';
 import { getConfig } from '../config';
 import { haFetch, hasToken } from './ha-rest';
+import { listScreenSaverPhotos, screenSaverPhotoUrl } from './screensaver-photos';
 
 const { photo_directory: PHOTOS_PATH } = getConfig();
 
@@ -103,11 +104,26 @@ async function fetchLocalPhotos(photoDirectory: string): Promise<Photo[]> {
   return browseAndResolvePhotos(toMediaSourceId(photoDirectory), 'local');
 }
 
+async function fetchUploadedPhotos(): Promise<Photo[]> {
+  try {
+    const photos = await listScreenSaverPhotos();
+    return photos.map((photo) => ({
+      url: screenSaverPhotoUrl(photo.id),
+      caption: photo.name,
+      date: photo.createdAt,
+      source: 'uploaded' as const,
+    }));
+  } catch {
+    console.warn('Abbai Flow: Failed to fetch uploaded screen saver photos');
+    return [];
+  }
+}
+
 /**
  * Gets all photos from configured sources, shuffled.
  */
 export async function getPhotos(
-  sources: Array<'local' | 'google_photos' | 'ha_media'> = ['ha_media', 'local'],
+  sources: PhotoSource[] = ['ha_media', 'local'],
   photoDirectory = PHOTOS_PATH,
 ): Promise<Photo[]> {
   const fetchers: Promise<Photo[]>[] = [];
@@ -117,6 +133,9 @@ export async function getPhotos(
   }
   if (sources.includes('local')) {
     fetchers.push(fetchLocalPhotos(photoDirectory));
+  }
+  if (sources.includes('uploaded')) {
+    fetchers.push(fetchUploadedPhotos());
   }
   // google_photos would require OAuth — not implemented yet
 

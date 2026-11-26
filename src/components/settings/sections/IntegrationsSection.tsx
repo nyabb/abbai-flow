@@ -1,6 +1,6 @@
 /**
  * Integrations settings: Home Assistant connection status, iCloud Reminders,
- * grocery lists, Music Assistant and the photo slideshow options.
+ * grocery lists, Music Assistant and other external services.
  *
  * The iCloud list lookup feeds the grocery and task list selectors below.
  */
@@ -29,7 +29,6 @@ import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
 import { SecretInput } from '../SecretInput';
-import { Segment, Slider } from '../controls';
 import type { SettingsSectionContext } from './context';
 
 const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
@@ -2021,58 +2020,6 @@ export function IntegrationsSection({
             value={settings.musicDefaultPlayer}
             onChange={(e) => onUpdateSettings({ musicDefaultPlayer: e.target.value })}
             placeholder="media_player.living_room"
-          />
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.photosTitle')}</div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.sourceDirectoryLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.sourceDirectorySublabel')}
-            </div>
-          </div>
-          <input
-            type="text"
-            className="settings-input settings-input--wide"
-            value={settings.photoDirectory}
-            onChange={(e) => onUpdateSettings({ photoDirectory: e.target.value })}
-            placeholder="/media/beacon/photos"
-          />
-        </div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.slideshowIntervalLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.slideshowIntervalSublabel')}
-            </div>
-          </div>
-          <Slider
-            value={settings.photoInterval}
-            min={10}
-            max={120}
-            step={5}
-            unit="s"
-            onChange={(v) => onUpdateSettings({ photoInterval: v })}
-          />
-        </div>
-        <div className="settings-row settings-integration-field">
-          <div className="settings-row-label">
-            {t('settings.integrations.transitionStyleLabel')}
-          </div>
-          <Segment
-            value={settings.photoTransition}
-            options={[
-              { value: 'fade', label: t('settings.integrations.fade') },
-              { value: 'slide', label: t('settings.integrations.slide') },
-            ]}
-            onChange={(v) => onUpdateSettings({ photoTransition: v })}
           />
         </div>
       </div>

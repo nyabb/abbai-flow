@@ -936,7 +936,6 @@ export function App() {
           timeFormat={settings.timeFormat}
           showSeconds={settings.showSeconds}
           photoIntervalSeconds={settings.photoInterval}
-          photoDirectory={settings.photoDirectory}
           photoTransition={settings.photoTransition}
         />
 

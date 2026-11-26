@@ -183,6 +183,7 @@ export const en = {
   'settings.nav.calendar': 'Calendar',
   'settings.nav.integrations': 'Integrations',
   'settings.nav.display': 'Display',
+  'settings.nav.photos': 'Photos',
   'settings.nav.chores': 'Chores',
   'settings.nav.about': 'About',
 
@@ -517,6 +518,28 @@ export const en = {
   'settings.integrations.fade': 'Fade',
   'settings.integrations.slide': 'Slide',
 
+  // ---- settings: photos ----
+  'settings.photos.title': 'Photos',
+  'settings.photos.description':
+    'Upload and manage photos saved on this device for the screen saver.',
+  'settings.photos.count': '{count} of 50 photos saved',
+  'settings.photos.limitHint':
+    'You can upload several photos at once. JPEG copies are saved on this device.',
+  'settings.photos.upload': 'Upload photos',
+  'settings.photos.uploading': 'Uploading…',
+  'settings.photos.loading': 'Loading saved photos…',
+  'settings.photos.empty': 'No screen saver photos uploaded yet.',
+  'settings.photos.loadError': 'Could not load saved photos.',
+  'settings.photos.uploadError': 'Could not upload the selected photos.',
+  'settings.photos.deleteError': 'Could not delete the selected photos.',
+  'settings.photos.limitError':
+    'You can add {remaining} more photos. Select fewer files to stay within the 50-photo limit.',
+  'settings.photos.selectAll': 'Select all',
+  'settings.photos.clearSelection': 'Clear selection',
+  'settings.photos.deleteSelected': 'Delete selected ({count})',
+  'settings.photos.selectPhoto': 'Select {name}',
+  'settings.photos.deletePhoto': 'Delete {name}',
+
   // ---- settings: display ----
   'settings.display.title': 'Display',
   'settings.display.desc': 'Configure the screen saver and Kid Display.',
@@ -624,7 +647,7 @@ export const en = {
   // ---- photo frame (screensaver-style slideshow) ----
   'photoFrame.noPhotos': 'No photos available',
   'photoFrame.loading': 'Loading photos…',
-  'photoFrame.addPhotosHint': 'Add photos to your Home Assistant media directory',
+  'photoFrame.addPhotosHint': 'Upload photos in Settings → Photos.',
   'photoFrame.photoAlt': 'Photo',
   // ---- chores view ----
   'chores.title': 'Chores',

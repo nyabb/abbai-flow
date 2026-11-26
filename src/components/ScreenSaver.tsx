@@ -15,7 +15,6 @@ interface ScreenSaverProps {
   timeFormat?: '12h' | '24h';
   showSeconds?: boolean;
   photoIntervalSeconds?: number;
-  photoDirectory?: string;
   photoTransition?: 'fade' | 'slide';
 }
 
@@ -27,7 +26,6 @@ export function ScreenSaver({
   timeFormat = '12h',
   showSeconds = false,
   photoIntervalSeconds = 30,
-  photoDirectory = '',
   photoTransition = 'fade',
 }: ScreenSaverProps) {
   const { dateLocale } = useTranslation();
@@ -107,7 +105,6 @@ export function ScreenSaver({
       {mode !== 'clock' && (
         <ScreenSaverPhotos
           intervalSeconds={photoIntervalSeconds}
-          photoDirectory={photoDirectory}
           transition={photoTransition}
         />
       )}

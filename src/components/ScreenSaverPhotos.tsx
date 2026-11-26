@@ -5,21 +5,15 @@ import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 export interface ScreenSaverPhotosProps {
   intervalSeconds: number;
-  photoDirectory: string;
   transition: 'fade' | 'slide';
 }
 
 export function ScreenSaverPhotos({
   intervalSeconds,
-  photoDirectory,
   transition,
 }: ScreenSaverPhotosProps) {
   const [loadedUrl, setLoadedUrl] = useState<string | null>(null);
-  const { currentPhoto, loading } = usePhotos(
-    ['ha_media', 'local'],
-    intervalSeconds,
-    photoDirectory,
-  );
+  const { currentPhoto, loading } = usePhotos(['uploaded'], intervalSeconds);
   const { t } = useTranslation();
 
   if (loading) {

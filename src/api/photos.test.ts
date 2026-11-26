@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { getPhotos } from './photos';
 import { haFetch, hasToken } from './ha-rest';
+import { listScreenSaverPhotos, screenSaverPhotoUrl } from './screensaver-photos';
 
 vi.mock('./ha-rest', () => ({
   haFetch: vi.fn(),
@@ -11,13 +12,22 @@ vi.mock('../config', () => ({
   getConfig: () => ({ photo_directory: '/media/beacon/photos' }),
 }));
 
+vi.mock('./screensaver-photos', () => ({
+  listScreenSaverPhotos: vi.fn(),
+  screenSaverPhotoUrl: vi.fn(),
+}));
+
 const mockHaFetch = vi.mocked(haFetch);
 const mockHasToken = vi.mocked(hasToken);
+const mockListScreenSaverPhotos = vi.mocked(listScreenSaverPhotos);
+const mockScreenSaverPhotoUrl = vi.mocked(screenSaverPhotoUrl);
 
 describe('getPhotos', () => {
   beforeEach(() => {
     mockHaFetch.mockReset();
     mockHasToken.mockReset();
+    mockListScreenSaverPhotos.mockReset();
+    mockScreenSaverPhotoUrl.mockReset();
   });
 
   it('returns no photos when there is no way to authenticate (not add-on, no token)', async () => {
@@ -117,5 +127,29 @@ describe('getPhotos', () => {
     const photos = await getPhotos(['local']);
 
     expect(photos).toEqual([]);
+  });
+
+  it('includes uploaded screen saver photos with their saved captions and dates', async () => {
+    mockListScreenSaverPhotos.mockResolvedValue([
+      { id: 'photo-1', name: 'Family.jpg', createdAt: '2026-11-26T12:00:00.000Z' },
+    ]);
+    mockScreenSaverPhotoUrl.mockReturnValue('/abbai-flow/photos/photo-1');
+
+    const photos = await getPhotos(['uploaded']);
+
+    expect(photos).toEqual([{
+      url: '/abbai-flow/photos/photo-1',
+      caption: 'Family.jpg',
+      date: '2026-11-26T12:00:00.000Z',
+      source: 'uploaded',
+    }]);
+    expect(mockScreenSaverPhotoUrl).toHaveBeenCalledWith('photo-1');
+  });
+
+  it('keeps screen saver photos optional when the library request fails', async () => {
+    mockListScreenSaverPhotos.mockRejectedValue(new Error('server unavailable'));
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+    await expect(getPhotos(['uploaded'])).resolves.toEqual([]);
   });
 });
