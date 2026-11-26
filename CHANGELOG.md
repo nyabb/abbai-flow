@@ -1,3 +1,10 @@
+# [2.34.0](https://github.com/nyabb/abbai-flow/compare/v2.33.1...v2.34.0) (2026-11-26)
+
+
+### Features
+
+* use iCloud Reminders for grocery and tasks ([38a34ab](https://github.com/nyabb/abbai-flow/commit/38a34abe6be211ecbbe284e0412cabfe71bbac07))
+
 ## [2.33.1](https://github.com/nyabb/abbai-flow/compare/v2.33.0...v2.33.1) (2026-11-26)
 
 
