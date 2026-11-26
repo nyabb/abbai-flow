@@ -271,6 +271,36 @@ def _cloudkit_response_records(response: Any) -> list[dict[str, Any]]:
     return records
 
 
+def _section_ids_from_summaries(records: list[dict[str, Any]]) -> list[str]:
+    """Collect ordered section IDs from the selected list's decoded assets."""
+    ordered_ids: list[str] = []
+    membership_ids: list[str] = []
+    for record in records:
+        candidates = record.get("sectionCandidates")
+        if not isinstance(candidates, dict):
+            continue
+        memberships = candidates.get("fields.MembershipsOfRemindersInSectionsAsData")
+        memberships = memberships.get("downloadedAsset", {}).get("decodedJson", {}) if isinstance(memberships, dict) else {}
+        if isinstance(memberships, dict) and isinstance(memberships.get("memberships"), list):
+            for membership in memberships["memberships"]:
+                if isinstance(membership, dict) and isinstance(membership.get("groupID"), str):
+                    membership_ids.append(membership["groupID"])
+
+        ordering = candidates.get("fields.SectionIDsOrderingAsData")
+        ordering = ordering.get("downloadedAsset", {}).get("decodedJson", {}) if isinstance(ordering, dict) else {}
+        if isinstance(ordering, dict) and isinstance(ordering.get("orderedIdentifiers"), list):
+            ordered_ids.extend(
+                identifier for identifier in ordering["orderedIdentifiers"] if isinstance(identifier, str)
+            )
+    current_ids = ordered_ids or membership_ids
+    return list(dict.fromkeys(current_ids))
+
+
+def _normalized_record_identifier(value: Any) -> str:
+    identifier = str(value or "").rsplit("/", 1)[-1]
+    return "".join(character for character in identifier.upper() if character.isalnum())
+
+
 def _cloudkit_record_summaries(
     response: Any,
     selected_record_id_hash: str | None = None,
@@ -341,15 +371,15 @@ def _log_selected_section_assets(
     list_key: str,
     request_id: str,
     selected_list_id: str,
-) -> None:
+) -> list[str]:
     selected_record_id_hash = _short_hash(selected_list_id)
     captured = selected_list_ref.get("section_records", {}).get(selected_record_id_hash)
     if not isinstance(captured, dict):
-        return
+        return set()
     record = captured.get("record")
     raw_client = captured.get("raw_client")
     if not isinstance(record, dict):
-        return
+        return set()
     record_count, record_type_counts, records = _cloudkit_record_summaries(
         {"records": [record]},
         selected_record_id_hash=selected_record_id_hash,
@@ -368,6 +398,10 @@ def _log_selected_section_assets(
         records=records,
         records_truncated=record_count > len(records),
     )
+    section_ids = _section_ids_from_summaries(records)
+    selected_list_ref["section_ids"] = section_ids
+    selected_list_ref["section_query_context"] = captured
+    return section_ids
 
 
 @contextmanager
@@ -426,17 +460,70 @@ def inspect_cloudkit_responses(
                         }
             selected_list_id = str(selected_list_ref.get("id") or "") if selected_list_ref else ""
             selected_record_id_hash = _short_hash(selected_list_id) if selected_list_id else None
+            response_to_summarize = response
+            raw_response_records = _cloudkit_response_records(response)
+            query_record_type = None
+            candidate_count = None
+            zone_record_count = None
+            query_error_code = None
+            if operation == "records/query" and isinstance(payload, dict):
+                query = payload.get("query")
+                if isinstance(query, dict) and str(query.get("recordType") or "").lower() == "listsection":
+                    query_record_type = str(query.get("recordType"))[:100]
+                    if isinstance(response, dict):
+                        for error_key in ("serverErrorCode", "errorCode", "code"):
+                            error_value = response.get(error_key)
+                            if isinstance(error_value, str):
+                                query_error_code = error_value[:100]
+                                break
+                    section_ids = selected_list_ref.get("section_ids", []) if selected_list_ref else []
+                    normalized_section_ids = {
+                        _normalized_record_identifier(identifier)
+                        for identifier in section_ids
+                        if isinstance(identifier, str)
+                    }
+                    candidate_count = len(normalized_section_ids)
+                    zone_record_count = len(raw_response_records)
+                    section_order = {
+                        _normalized_record_identifier(identifier): index
+                        for index, identifier in enumerate(section_ids)
+                        if isinstance(identifier, str)
+                    }
+                    matching_records = [
+                        record for record in raw_response_records
+                        if _normalized_record_identifier(record.get("recordName")) in normalized_section_ids
+                    ]
+                    matching_records.sort(
+                        key=lambda record: section_order.get(
+                            _normalized_record_identifier(record.get("recordName")),
+                            len(section_order),
+                        )
+                    )
+                    response_to_summarize = {"records": matching_records}
             record_count, record_type_counts, records = _cloudkit_record_summaries(
-                response,
+                response_to_summarize,
                 selected_record_id_hash=selected_record_id_hash,
                 raw_client=_raw_client,
             )
+            if query_record_type:
+                for summary, raw_record in zip(records, matching_records):
+                    section_id = str(raw_record.get("recordName") or "").rsplit("/", 1)[-1]
+                    if section_id:
+                        summary["sectionID"] = section_id[:100]
+                        summary["sectionOrder"] = section_order.get(
+                            _normalized_record_identifier(raw_record.get("recordName"))
+                        )
             log_event(
                 "cloudkit_response_inspected",
                 scope=_scope,
                 operation=operation,
+                **({"diagnostic_phase": "list_section_query"} if query_record_type else {}),
                 list_key=list_key,
                 selected_record_id_hash=selected_record_id_hash,
+                **({"query_record_type": query_record_type} if query_record_type else {}),
+                **({"candidate_count": candidate_count} if candidate_count is not None else {}),
+                **({"zone_record_count": zone_record_count} if zone_record_count is not None else {}),
+                **({"query_error_code": query_error_code} if query_error_code else {}),
                 request_id=request_id,
                 record_count=record_count,
                 record_type_counts=record_type_counts,
@@ -675,12 +762,45 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                     "error": "Choose an active iCloud Reminders list, then load its preview again.",
                 }
             selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
-            _log_selected_section_assets(
+            section_ids = _log_selected_section_assets(
                 selected_list_ref,
                 selected_key,
                 str(request.get("requestId") or "")[:100],
                 selected_list_ref["id"],
             )
+            if section_ids:
+                context = selected_list_ref.get("section_query_context", {})
+                raw_client = context.get("raw_client") if isinstance(context, dict) else None
+                cloudkit_client = getattr(raw_client, "_client", None)
+                http = getattr(cloudkit_client, "_http", None)
+                post = getattr(http, "post", None)
+                if callable(post):
+                    selected_record = context.get("record") if isinstance(context, dict) else None
+                    zone_id = selected_record.get("zoneID") if isinstance(selected_record, dict) else None
+                    if not isinstance(zone_id, dict) or not isinstance(zone_id.get("zoneName"), str):
+                        zone_id = {"zoneName": "Reminders", "ownerRecordName": "_defaultOwner"}
+                    query_payload: dict[str, Any] = {
+                        "zoneID": zone_id,
+                        "resultsLimit": 200,
+                        "query": {"recordType": "ListSection"},
+                    }
+                    try:
+                        for _ in range(10):
+                            query_response = post("records/query", query_payload)
+                            if not isinstance(query_response, dict):
+                                break
+                            continuation = query_response.get("continuationMarker")
+                            if not continuation:
+                                break
+                            query_payload["continuationMarker"] = continuation
+                    except Exception as section_query_exc:
+                        log_event(
+                            "cloudkit_section_query_failed",
+                            scope=context.get("scope", "private"),
+                            list_key=selected_key,
+                            request_id=str(request.get("requestId") or "")[:100],
+                            error_type=type(section_query_exc).__name__,
+                        )
             batch = reminders_service.list_reminders(
                 reminder_list,
                 include_completed=True,

@@ -78,6 +78,12 @@ function safeCloudKitDiagnostic(entry) {
       if (typeof item.matchesSelectedList === 'boolean') {
         record.matchesSelectedList = item.matchesSelectedList;
       }
+      if (typeof item.sectionID === 'string' && /^[a-f0-9-]{16,100}$/iu.test(item.sectionID)) {
+        record.section_id = item.sectionID;
+      }
+      if (Number.isInteger(item.sectionOrder) && item.sectionOrder >= 0) {
+        record.section_order = item.sectionOrder;
+      }
       if (item.sectionCandidates && typeof item.sectionCandidates === 'object' && !Array.isArray(item.sectionCandidates)) {
         record.sectionCandidates = Object.fromEntries(
           Object.entries(item.sectionCandidates)
@@ -100,6 +106,10 @@ function safeCloudKitDiagnostic(entry) {
     operation: entry.operation,
     list_key: entry.list_key,
     ...(typeof entry.diagnostic_phase === 'string' ? { diagnostic_phase: entry.diagnostic_phase.slice(0, 80) } : {}),
+    ...(typeof entry.query_record_type === 'string' ? { query_record_type: entry.query_record_type.slice(0, 100) } : {}),
+    ...(Number.isInteger(entry.candidate_count) ? { candidate_count: entry.candidate_count } : {}),
+    ...(Number.isInteger(entry.zone_record_count) ? { zone_record_count: entry.zone_record_count } : {}),
+    ...(typeof entry.query_error_code === 'string' ? { query_error_code: entry.query_error_code.slice(0, 100) } : {}),
     ...(typeof entry.selected_record_id_hash === 'string' && /^[a-f0-9]{16}$/u.test(entry.selected_record_id_hash)
       ? { selected_record_id_hash: entry.selected_record_id_hash }
       : {}),
@@ -207,6 +217,7 @@ class ICloudRemindersWorker {
         'request_finished',
         'request_failed',
         'cloudkit_response_inspected',
+        'cloudkit_section_query_failed',
         'cloudkit_diagnostic_unavailable',
       ].includes(
         entry.event,
@@ -222,6 +233,12 @@ class ICloudRemindersWorker {
     } else if (entry.event === 'cloudkit_diagnostic_unavailable') {
       if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
       safeEntry.list_key = entry.list_key;
+    } else if (entry.event === 'cloudkit_section_query_failed') {
+      if (!['private', 'shared'].includes(entry.scope)) return;
+      if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
+      safeEntry.scope = entry.scope;
+      safeEntry.list_key = entry.list_key;
+      if (typeof entry.error_type === 'string') safeEntry.error_type = entry.error_type.slice(0, 100);
     }
     for (const key of [
       'pyicloud_available',
