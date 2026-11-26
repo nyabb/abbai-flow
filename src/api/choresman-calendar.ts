@@ -2,6 +2,7 @@ import { addDays, addMonths, differenceInCalendarDays, format, isValid, parseISO
 import type { ChoresManChore } from '../types/choresman';
 import type { FamilyMember } from '../types/family';
 import type { CalendarEvent, CalendarInfo } from '../types';
+import { resolveCalendarColor } from '../types';
 import { resolveMemberForUser } from './chore-model';
 
 export const CHORESMAN_CALENDAR_PREFIX = 'choresman:';

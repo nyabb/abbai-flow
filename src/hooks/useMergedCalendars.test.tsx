@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { useMergedCalendars } from './useMergedCalendars';
 import { useCalendarEvents } from './useCalendarEvents';
 import { useLocalCalendar } from './useLocalCalendar';
+import type { ChoresManChore } from '../types/choresman';
 
 vi.mock('./useCalendarEvents', () => ({ useCalendarEvents: vi.fn() }));
 vi.mock('./useLocalCalendar', () => ({ useLocalCalendar: vi.fn() }));
@@ -79,9 +80,47 @@ describe('useMergedCalendars', () => {
     expect(localApi.createEvent).not.toHaveBeenCalled();
   });
 
-  it('exposes the HA fetch helpers unchanged', () => {
-    const { result } = renderHook(() => useMergedCalendars({ connected: true }));
+  it('keeps calendar listing unchanged and fetches scheduled ChoresMan events with HA events', async () => {
+    const chores: ChoresManChore[] = [
+      {
+        id: 'choresman:chore-1:zara',
+        sourceId: 'chore-1',
+        name: 'Wash dishes',
+        icon: null,
+        status: 'pending',
+        assignee: 'Zara',
+        points: 1,
+        dueDate: '2026-11-26',
+        showOnCalendar: true,
+        frequency: 'weekly',
+        applicableDays: ['thu'],
+        canClaim: true,
+        canApprove: false,
+        actions: {},
+      },
+    ];
+    const members = [
+      { id: 'zara', name: 'Zara', role: 'child' as const, color: '#22c55e', avatar: '🙂' },
+    ];
+    const { result } = renderHook(() =>
+      useMergedCalendars({ connected: true, members, chores }),
+    );
+
     expect(result.current.fetchCalendars).toBe(haApi.fetchCalendars);
-    expect(result.current.fetchEvents).toBe(haApi.fetchEvents);
+    expect(result.current.calendars.map((calendar) => calendar.id)).toContain('choresman:zara');
+
+    await act(async () => {
+      await result.current.fetchEvents('2026-11-23T00:00:00', '2026-12-07T00:00:00');
+    });
+
+    expect(haApi.fetchEvents).toHaveBeenCalledWith(
+      '2026-11-23T00:00:00',
+      '2026-12-07T00:00:00',
+    );
+    expect(
+      result.current.events
+        .filter((event) => event.calendarId === 'choresman:zara')
+        .map((event) => event.start),
+    ).toEqual(['2026-11-26', '2026-12-03']);
   });
 });

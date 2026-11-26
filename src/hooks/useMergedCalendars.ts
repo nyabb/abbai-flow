@@ -64,6 +64,7 @@ export function useMergedCalendars({
   chores = EMPTY_CHORES,
 }: UseMergedCalendarsOptions): UseMergedCalendarsResult {
   const ha = useCalendarEvents(connected, { calendarColors, members }, getClient);
+  const { fetchEvents: fetchHaEvents } = ha;
   const local = useLocalCalendar();
   const [choresManEvents, setChoresManEvents] = useState<CalendarEvent[]>([]);
   const lastRange = useRef<{ start: string; end: string } | null>(null);
@@ -90,18 +91,13 @@ export function useMergedCalendars({
     );
   }, []);
 
-  const fetchCalendars = useCallback(async () => {
-    const loaded = await ha.fetchCalendars();
-    return [...loaded, ...choreCalendarsRef.current];
-  }, [ha.fetchCalendars]);
-
   const fetchEvents = useCallback(
     async (start: string, end: string) => {
       lastRange.current = { start, end };
       refreshChoresManEvents(start, end);
-      await ha.fetchEvents(start, end);
+      await fetchHaEvents(start, end);
     },
-    [ha.fetchEvents, refreshChoresManEvents],
+    [fetchHaEvents, refreshChoresManEvents],
   );
 
   useEffect(() => {
@@ -186,7 +182,7 @@ export function useMergedCalendars({
     calendars,
     events,
     loading: ha.loading,
-    fetchCalendars,
+    fetchCalendars: ha.fetchCalendars,
     fetchEvents,
     createEvent,
     updateEvent,
