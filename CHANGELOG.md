@@ -1,3 +1,10 @@
+# [2.38.0](https://github.com/nyabb/abbai-flow/compare/v2.37.0...v2.38.0) (2026-11-26)
+
+
+### Features
+
+* add mapped weather API with Open-Meteo fallback ([0c258e5](https://github.com/nyabb/abbai-flow/commit/0c258e57caf0888b3beec7771d0992b94b439f4f))
+
 # [2.37.0](https://github.com/nyabb/abbai-flow/compare/v2.36.0...v2.37.0) (2026-11-26)
 
 
