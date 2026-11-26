@@ -53,7 +53,10 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
   } as AbbaiSettings;
 }
 
-function renderSettings(overrides: Partial<AbbaiSettings> = {}) {
+function renderSettings(
+  overrides: Partial<AbbaiSettings> = {},
+  calendars: Array<{ id: string; name: string; color?: string }> = [],
+) {
   const onUpdateSettings = vi.fn();
   const nl = createI18n('nl');
   const utils = render(
@@ -71,7 +74,7 @@ function renderSettings(overrides: Partial<AbbaiSettings> = {}) {
         onRemoveMember={vi.fn()}
         connected={false}
         haUrl=""
-        calendars={[]}
+        calendars={calendars}
         onEnterFocusMode={vi.fn()}
       />
     </I18nContext.Provider>,
@@ -119,5 +122,12 @@ describe('SettingsView', () => {
     fireEvent.change(input, { target: { value: 'Nieuwe naam' } });
 
     expect(onUpdateSettings).toHaveBeenCalled();
+  });
+
+  it('lists discovered CalDAV calendars in the calendar settings selector', () => {
+    renderSettings({}, [{ id: 'caldav/apple/family', name: 'Apple: Family' }]);
+    fireEvent.click(screen.getByRole('button', { name: 'Agenda' }));
+
+    expect(screen.getByRole('option', { name: 'Apple: Family' })).toBeInTheDocument();
   });
 });

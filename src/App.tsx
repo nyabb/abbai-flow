@@ -226,10 +226,9 @@ export function App() {
   // Event notifications (browser + HA mobile_app)
   useNotifications(events, client, !focusMemberId, settings.notificationMinutes);
 
-  // Fetch data when connected, or when the user navigates to a different week.
+  // Fetch both HA and server-configured CalDAV data when the app starts, or
+  // when the user navigates to a different week or changes integrations.
   useEffect(() => {
-    if (!connected) return;
-
     const loadData = async () => {
       await fetchCalendars();
       await refetchEventsForWeek(visibleWeekStart);
@@ -246,7 +245,7 @@ export function App() {
     );
 
     return () => clearInterval(interval);
-  }, [connected, fetchCalendars, refetchEventsForWeek, visibleWeekStart]);
+  }, [connected, fetchCalendars, haIntegrationRevision, refetchEventsForWeek, visibleWeekStart]);
 
   // Re-fetch when calendar colors or family members change so colors update
   // immediately, without recreating the 5-minute polling interval above.
@@ -263,7 +262,6 @@ export function App() {
       didColorRefreshMount.current = true;
       return;
     }
-    if (!colorRefreshRef.current.connected) return;
     colorRefreshRef.current.fetchCalendars();
     colorRefreshRef.current.refetchEventsForWeek(colorRefreshRef.current.visibleWeekStart);
   }, [settings.calendarColors, members]);

@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 
-const { haFetchMock } = vi.hoisted(() => ({ haFetchMock: vi.fn() }));
+const { haFetchMock, listCaldavCalendarsMock, fetchCaldavEventsMock } = vi.hoisted(() => ({
+  haFetchMock: vi.fn(),
+  listCaldavCalendarsMock: vi.fn(),
+  fetchCaldavEventsMock: vi.fn(),
+}));
 
 vi.mock('../api/ha-rest', () => ({
   haFetch: haFetchMock,
@@ -16,6 +20,14 @@ vi.mock('../api/ha-rest', () => ({
 vi.mock('../api/homeassistant', () => ({
   HomeAssistantClient: class {},
   toWsEventPayload: (event: unknown) => event,
+}));
+
+vi.mock('../api/caldav-calendars', () => ({
+  createCaldavEvent: vi.fn(),
+  deleteCaldavEvent: vi.fn(),
+  fetchCaldavEvents: fetchCaldavEventsMock,
+  listCaldavCalendars: listCaldavCalendarsMock,
+  updateCaldavEvent: vi.fn(),
 }));
 
 import { useCalendarEvents } from './useCalendarEvents';
@@ -36,6 +48,10 @@ function calendarResponse(url: string) {
 describe('useCalendarEvents', () => {
   beforeEach(() => {
     haFetchMock.mockReset();
+    listCaldavCalendarsMock.mockReset();
+    listCaldavCalendarsMock.mockResolvedValue([]);
+    fetchCaldavEventsMock.mockReset();
+    fetchCaldavEventsMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -68,6 +84,48 @@ describe('useCalendarEvents', () => {
     await waitFor(() => expect(result.current.events).toHaveLength(2));
     expect(result.current.events.map((event) => event.title)).toEqual(['Earlier', 'Later']);
     expect(result.current.loading).toBe(false);
+  });
+
+  it('makes discovered CalDAV calendars selectable and loads their events without HA', async () => {
+    const caldavCalendar = {
+      id: 'caldav/icloud/aWNs',
+      name: 'Apple: Family',
+      sourceId: 'icloud',
+    };
+    listCaldavCalendarsMock.mockResolvedValue([caldavCalendar]);
+    fetchCaldavEventsMock.mockResolvedValue([
+      {
+        id: 'dav:event-1',
+        title: 'Dinner',
+        start: '2026-01-01T18:00:00.000Z',
+        end: '2026-01-01T19:00:00.000Z',
+        allDay: false,
+        hasStableId: true,
+      },
+    ]);
+    haFetchMock.mockResolvedValue([]);
+
+    const { result } = renderHook(() => useCalendarEvents(false));
+    await act(async () => {
+      await result.current.fetchEvents('2026-01-01T00:00:00.000Z', '2026-01-02T00:00:00.000Z');
+    });
+
+    expect(result.current.calendars).toContainEqual(
+      expect.objectContaining({ id: caldavCalendar.id, name: caldavCalendar.name }),
+    );
+    expect(result.current.events).toEqual([
+      expect.objectContaining({
+        id: 'dav:event-1',
+        title: 'Dinner',
+        calendarId: caldavCalendar.id,
+        calendarName: caldavCalendar.name,
+      }),
+    ]);
+    expect(fetchCaldavEventsMock).toHaveBeenCalledWith(
+      caldavCalendar.id,
+      '2026-01-01T00:00:00.000Z',
+      '2026-01-02T00:00:00.000Z',
+    );
   });
 
   it('keeps the working calendars when one of them fails', async () => {

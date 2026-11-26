@@ -417,7 +417,7 @@ export const en = {
     'A server-backed Abbai Flow deployment is required for PyICloud credentials and authentication.',
   'settings.integrations.calendarSourcesTitle': 'Calendar connection settings',
   'settings.integrations.calendarSourcesHelp':
-    'Save credentials for multiple calendar sources. Calendar data retrieval and sync will be added separately.',
+    'Connect multiple calendars through CalDAV. Apple iCloud and other CalDAV servers use the same setup.',
   'settings.integrations.calendarNameLabel': 'Calendar name',
   'settings.integrations.calendarProviderLabel': 'Source type',
   'settings.integrations.calendarProviderCaldav': 'CalDAV (iCloud or another server)',
@@ -431,6 +431,11 @@ export const en = {
   'settings.integrations.calendarClientSecretLabel': 'Google client secret',
   'settings.integrations.calendarCredentialsOnly':
     'This source configuration is stored only. Calendar data is not connected or syncing yet.',
+  'settings.integrations.calendarCaldavHelp':
+    'For iCloud, use your Apple Account email and an app-specific password. Test to discover calendars, then save to show them in the calendar and enable event changes.',
+  'settings.integrations.calendarTestConnection': 'Test connection',
+  'settings.integrations.calendarTesting': 'Checking…',
+  'settings.integrations.calendarTestSuccess': '{count} CalDAV calendar(s) found.',
   'settings.integrations.calendarAddSource': 'Add calendar source',
   'settings.integrations.calendarSaving': 'Saving calendar…',
   'settings.integrations.calendarRemoveSource': 'Remove source',

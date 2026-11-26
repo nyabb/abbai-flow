@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && tsc -p tsconfig.scripts.json && npm run build:server && vite build",
-    "build:server": "tsc -p tsconfig.server.json && esbuild server/build/bluetooth-runtime.js --bundle --platform=node --format=cjs --external:usocket --external:x11 --outfile=server/build/bluetooth-runtime-bundle.js",
+    "build:server": "tsc -p tsconfig.server.json && esbuild server/build/bluetooth-runtime.js --bundle --platform=node --format=cjs --external:usocket --external:x11 --outfile=server/build/bluetooth-runtime-bundle.js && esbuild server/caldav-calendar.cjs --bundle --platform=node --format=cjs --outfile=server/build/caldav-calendar-bundle.js",
     "typecheck": "tsc && tsc -p tsconfig.scripts.json",
     "changelog:verify": "node scripts/verify-changelog.mjs",
     "preview": "vite preview",
@@ -15,7 +15,7 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "pretest:server": "npm run build:server",
-    "test:server": "node --test server/__tests__/app.test.cjs server/__tests__/choresman-store.test.cjs",
+    "test:server": "node --test server/__tests__/app.test.cjs server/__tests__/choresman-store.test.cjs server/__tests__/caldav-calendar.test.cjs",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:server && npm run test:e2e",
     "test:coverage": "vitest run --coverage",
@@ -32,9 +32,11 @@
     "date-fns": "^4.1.0",
     "dbus-next": "^0.10.2",
     "gridstack": "^13.2.0",
+    "ical.js": "^2.2.1",
     "lucide-react": "^1.7.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tsdav": "^2.5.1",
     "ws": "^8.21.3"
   },
   "devDependencies": {
