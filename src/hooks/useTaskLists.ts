@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  fetchICloudRemindersList,
+  fetchICloudRemindersTaskLists,
   loadICloudRemindersLists,
   updateICloudReminder,
   type ICloudReminder,
@@ -53,6 +53,7 @@ export function useTaskLists(
   const { getTasksForList, toggleTask } = useLocalTasks();
   const [reminders, setReminders] = useState<Array<{ listKey: string; reminder: ICloudReminder }>>([]);
   const [loading, setLoading] = useState(true);
+  const revisions = useRef<Record<string, number>>({});
 
   // Depend on list contents rather than array identity; callers can pass inline defaults.
   const groceryKey = groceryListIds.join('|');
@@ -60,14 +61,43 @@ export function useTaskLists(
 
   useEffect(() => {
     let cancelled = false;
-    let loadedOnce = false;
+    let selectedListKeys: string[] = [];
     const configuredGroceryIds = groceryKey ? groceryKey.split('|') : [];
     const configuredTaskIds = taskKey ? taskKey.split('|') : [];
 
-    async function fetchTasks() {
-      if (!loadedOnce) setLoading(true);
+    async function fetchTasks(initial = false) {
+      if (!selectedListKeys.length) {
+        if (initial && !cancelled) setReminders([]);
+        return;
+      }
+      try {
+        const result = await fetchICloudRemindersTaskLists(selectedListKeys, revisions.current);
+        if (cancelled) return;
+        if (result.revisions) {
+          revisions.current = { ...revisions.current, ...result.revisions };
+        }
+        const changedLists = result.lists || [];
+        if (initial || result.changed) {
+          const changedKeys = new Set(changedLists.map((list) => list.key));
+          setReminders((current) => [
+            ...current.filter((item) => !changedKeys.has(item.listKey)),
+            ...changedLists.flatMap((list) => (list.reminders || [])
+              .filter((reminder) => !reminder.deleted)
+              .map((reminder) => ({ listKey: list.key, reminder }))),
+          ]);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch iCloud task lists:', error);
+      }
+    }
+
+    async function initialize() {
+      setLoading(true);
+      setReminders([]);
+      revisions.current = {};
       try {
         const listResult = await loadICloudRemindersLists();
+        if (cancelled) return;
         const available = (listResult.lists || []).filter(
           (list) => !list.deleted && !list.isGroup,
         );
@@ -80,25 +110,16 @@ export function useTaskLists(
               !groceryIds.has(list.key) &&
               !(groceryIds.size === 0 && isGroceryList(list.title)),
             );
-        const snapshots = await Promise.all(
-          selected.map((list) => fetchICloudRemindersList(list.key).catch(() => null)),
-        );
-        const items: Array<{ listKey: string; reminder: ICloudReminder }> = [];
-        for (const [index, snapshot] of snapshots.entries()) {
-          for (const reminder of snapshot?.lists?.[0]?.reminders || []) {
-            if (!reminder.deleted) items.push({ listKey: selected[index].key, reminder });
-          }
-        }
-        if (!cancelled) setReminders(items);
+        selectedListKeys = selected.map((list) => list.key);
+        await fetchTasks(true);
       } catch (error) {
         console.warn('Failed to fetch iCloud task lists:', error);
       } finally {
-        loadedOnce = true;
         if (!cancelled) setLoading(false);
       }
     }
 
-    void fetchTasks();
+    void initialize();
     const interval = setInterval(() => {
       if (document.visibilityState !== 'hidden') void fetchTasks();
     }, 60_000);

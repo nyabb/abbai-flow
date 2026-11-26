@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authenticateICloudReminders } from './integration-settings';
+import {
+  authenticateICloudReminders,
+  fetchICloudRemindersTaskLists,
+} from './integration-settings';
 
 function jsonResponse(value: unknown, status = 200): Response {
   return new Response(JSON.stringify(value), {
@@ -43,6 +46,24 @@ describe('iCloud Reminders settings requests', () => {
 
     await expect(authenticateICloudReminders()).rejects.toThrow(
       'The integration server returned a non-JSON response.',
+    );
+  });
+
+  it('requests selected task lists with their known revisions', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      jsonResponse({ ok: true, state: 'unchanged', changed: false, revisions: { abc: 4 } }),
+    );
+    vi.stubGlobal('fetch', fetcher);
+
+    const result = await fetchICloudRemindersTaskLists(['abc'], { abc: 4 });
+
+    expect(result.changed).toBe(false);
+    expect(fetcher).toHaveBeenCalledWith(
+      '/abbai-flow/settings/icloud-reminders/task-lists',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ listKeys: ['abc'], revisions: { abc: 4 } }),
+      }),
     );
   });
 });

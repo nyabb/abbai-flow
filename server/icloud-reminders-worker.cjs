@@ -2,135 +2,19 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const { randomBytes } = require('node:crypto');
 
-const CLOUDKIT_DIAGNOSTIC_OPERATIONS = new Set([
-  'records/query',
-  'records/lookup',
-  'changes/zone',
-]);
 const AUTH_STATE_ACTIONS = new Set([
   'reset',
   'authenticate',
   'list_lists',
   'request_2sa_code',
   'verify_code',
-  'fetch_preview',
-  'fetch_list',
 ]);
-
-function safeDiagnosticValue(value, depth = 0) {
-  if (depth > 3) return '<nested>';
-  if (value === null || typeof value === 'boolean') return value;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
-  if (typeof value === 'string') return value.slice(0, 240);
-  if (Array.isArray(value)) {
-    return value.slice(0, 10).map((item) => safeDiagnosticValue(item, depth + 1));
-  }
-  if (!value || typeof value !== 'object') return undefined;
-  return Object.fromEntries(
-    Object.entries(value)
-      .slice(0, 12)
-      .map(([key, item]) => [key.slice(0, 80), safeDiagnosticValue(item, depth + 1)])
-      .filter(([, item]) => item !== undefined),
-  );
-}
-
-function fullSectionDiagnosticValue(value, depth = 0) {
-  if (depth > 10) return '<maximum-depth>';
-  if (value === null || typeof value === 'boolean') return value;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
-  if (typeof value === 'string') {
-    return value.length > 32_000 ? `${value.slice(0, 32_000)}<truncated>` : value;
-  }
-  if (Array.isArray(value)) {
-    const items = value.slice(0, 2_000).map((item) => fullSectionDiagnosticValue(item, depth + 1));
-    if (value.length > 2_000) items.push(`<${value.length - 2_000} more items>`);
-    return items;
-  }
-  if (!value || typeof value !== 'object') return undefined;
-  const entries = Object.entries(value);
-  const result = Object.fromEntries(
-    entries.slice(0, 200).map(([key, item]) => {
-      if (/(url|token|cookie|password|authorization|signature|session|wrappingkey|secret)/iu.test(key)) {
-        return [key.slice(0, 100), '<redacted>'];
-      }
-      return [key.slice(0, 100), fullSectionDiagnosticValue(item, depth + 1)];
-    }).filter(([, item]) => item !== undefined),
-  );
-  if (entries.length > 200) result._truncatedKeys = entries.length - 200;
-  return result;
-}
-
-function safeCloudKitDiagnostic(entry) {
-  if (!CLOUDKIT_DIAGNOSTIC_OPERATIONS.has(entry.operation)) return null;
-  if (!['private', 'shared'].includes(entry.scope)) return null;
-  if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return null;
-
-  const recordTypeCounts = Array.isArray(entry.record_type_counts)
-    ? entry.record_type_counts.slice(0, 30).flatMap((item) => (
-      item && typeof item.recordType === 'string' && Number.isInteger(item.count)
-        ? [{ recordType: item.recordType.slice(0, 100), count: item.count }]
-        : []
-    ))
-    : [];
-  const records = Array.isArray(entry.records)
-    ? entry.records.slice(0, 30).flatMap((item) => {
-      if (!item || typeof item.recordType !== 'string' || typeof item.recordIdHash !== 'string') {
-        return [];
-      }
-      const record = {
-        recordType: item.recordType.slice(0, 100),
-        recordIdHash: item.recordIdHash.slice(0, 32),
-        fieldNames: Array.isArray(item.fieldNames)
-          ? item.fieldNames.filter((field) => typeof field === 'string').slice(0, 80).map((field) => field.slice(0, 100))
-          : [],
-      };
-      if (typeof item.matchesSelectedList === 'boolean') {
-        record.matchesSelectedList = item.matchesSelectedList;
-      }
-      if (typeof item.recordErrorCode === 'string') {
-        record.record_error_code = item.recordErrorCode.slice(0, 100);
-      }
-      if (typeof item.sectionID === 'string' && /^[a-f0-9-]{16,100}$/iu.test(item.sectionID)) {
-        record.section_id = item.sectionID;
-      }
-      if (Number.isInteger(item.sectionOrder) && item.sectionOrder >= 0) {
-        record.section_order = item.sectionOrder;
-      }
-      if (item.sectionCandidates && typeof item.sectionCandidates === 'object' && !Array.isArray(item.sectionCandidates)) {
-        record.sectionCandidates = Object.fromEntries(
-          Object.entries(item.sectionCandidates)
-            .slice(0, 8)
-            .map(([key, value]) => [
-              key.slice(0, 80),
-              /MembershipsOfRemindersInSectionsAsData|SectionIDsOrderingAsData|\.TitleDocument|\.NameDocument/iu.test(key)
-                ? fullSectionDiagnosticValue(value)
-                : safeDiagnosticValue(value),
-            ])
-            .filter(([, value]) => value !== undefined),
-        );
-      }
-      return [record];
-    })
-    : [];
-
-  return {
-    scope: entry.scope,
-    operation: entry.operation,
-    list_key: entry.list_key,
-    ...(typeof entry.diagnostic_phase === 'string' ? { diagnostic_phase: entry.diagnostic_phase.slice(0, 80) } : {}),
-    ...(typeof entry.lookup_record_type === 'string' ? { lookup_record_type: entry.lookup_record_type.slice(0, 100) } : {}),
-    ...(Number.isInteger(entry.candidate_count) ? { candidate_count: entry.candidate_count } : {}),
-    ...(Number.isInteger(entry.lookup_result_count) ? { lookup_result_count: entry.lookup_result_count } : {}),
-    ...(typeof entry.selected_record_id_hash === 'string' && /^[a-f0-9]{16}$/u.test(entry.selected_record_id_hash)
-      ? { selected_record_id_hash: entry.selected_record_id_hash }
-      : {}),
-    ...(typeof entry.request_id === 'string' ? { request_id: entry.request_id.slice(0, 100) } : {}),
-    record_count: Number.isInteger(entry.record_count) ? entry.record_count : 0,
-    record_type_counts: recordTypeCounts,
-    records,
-    records_truncated: Boolean(entry.records_truncated),
-  };
-}
+const LOGGED_MUTATION_ACTIONS = new Set([
+  'create_reminder',
+  'update_reminder',
+  'delete_reminder',
+  'move_reminder_section',
+]);
 
 class ICloudRemindersWorker {
   constructor({ dataDir, python = process.env.ABBAI_FLOW_PYTHON || 'python3', scriptPath } = {}) {
@@ -222,39 +106,13 @@ class ICloudRemindersWorker {
     if (
       !entry ||
       entry.service !== 'pyicloud-reminders' ||
-      ![
-        'worker_started',
-        'request_started',
-        'request_finished',
-        'request_failed',
-        'cloudkit_response_inspected',
-        'cloudkit_section_lookup_failed',
-        'cloudkit_diagnostic_unavailable',
-      ].includes(
-        entry.event,
-      )
+      entry.event !== 'request_finished' ||
+      !LOGGED_MUTATION_ACTIONS.has(entry.action)
     ) {
       return;
     }
     const safeEntry = { service: entry.service, event: entry.event };
-    if (entry.event === 'cloudkit_response_inspected') {
-      const diagnostic = safeCloudKitDiagnostic(entry);
-      if (!diagnostic) return;
-      Object.assign(safeEntry, diagnostic);
-    } else if (entry.event === 'cloudkit_diagnostic_unavailable') {
-      if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
-      safeEntry.list_key = entry.list_key;
-    } else if (entry.event === 'cloudkit_section_lookup_failed') {
-      if (!['private', 'shared'].includes(entry.scope)) return;
-      if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
-      safeEntry.scope = entry.scope;
-      safeEntry.list_key = entry.list_key;
-      if (typeof entry.error_type === 'string') safeEntry.error_type = entry.error_type.slice(0, 100);
-      if (Number.isInteger(entry.http_status)) safeEntry.http_status = entry.http_status;
-    }
     for (const key of [
-      'pyicloud_available',
-      'pyicloud_version',
       'request_id',
       'action',
       'ok',
@@ -367,8 +225,12 @@ class ICloudRemindersWorker {
     return this.request('fetch_preview', { listKey });
   }
 
-  fetchList(listKey) {
-    return this.request('fetch_list', { listKey });
+  fetchList(listKey, revision) {
+    return this.request('fetch_list', { listKey, revision });
+  }
+
+  fetchTaskLists(listKeys, revisions = {}) {
+    return this.request('fetch_task_lists', { listKeys, revisions });
   }
 
   createReminder(values) {

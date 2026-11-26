@@ -42,6 +42,10 @@ api: Any = None
 two_step_devices: list[dict[str, Any]] = []
 two_step_device: dict[str, Any] | None = None
 auth_mode: str | None = None
+_REMINDER_LIST_CACHE: dict[str, dict[str, Any]] = {}
+_REMINDER_AVAILABLE_LISTS: dict[str, Any] = {}
+_REMINDER_SYNC_CURSOR: str | None = None
+_REMINDER_REVISION_SEQUENCE = time.time_ns() // 1_000
 
 
 _SECTION_FIELD_PARTS = ("section", "membership", "group")
@@ -433,6 +437,7 @@ def _normalized_record_identifier(value: Any) -> str:
 
 def _selected_reminders_list(reminders_service: Any, list_key: str) -> tuple[list[Any], Any]:
     lists = list(reminders_service.lists())
+    _remember_reminder_lists(lists)
     reminder_list = next(
         (
             item
@@ -446,6 +451,14 @@ def _selected_reminders_list(reminders_service: Any, list_key: str) -> tuple[lis
     if reminder_list is None:
         raise LookupError("Choose an active iCloud Reminders list, then try again.")
     return lists, reminder_list
+
+
+def _remember_reminder_lists(lists: list[Any]) -> None:
+    _REMINDER_AVAILABLE_LISTS.clear()
+    for reminder_list in lists:
+        key = reminders_list_key(reminder_list)
+        if key:
+            _REMINDER_AVAILABLE_LISTS[key] = reminder_list
 
 
 def _parse_due_date(value: Any) -> dt.datetime | None:
@@ -538,6 +551,7 @@ def _move_reminder_section(
         raise RuntimeError("Apple's list record is missing its CloudKit routing metadata.")
 
     token_response = post("/assets/upload", {
+        "zoneID": zone_id,
         "tokens": [{
             "recordType": "List",
             "recordName": record_name,
@@ -592,11 +606,15 @@ def _move_reminder_section(
     results = updated_record.get("records") if isinstance(updated_record, dict) else None
     if not isinstance(results, list) or not results or not isinstance(results[0], dict):
         raise RuntimeError("Apple did not confirm the section membership update.")
-    if results[0].get("serverErrorCode"):
-        code = str(results[0].get("serverErrorCode"))
+    update_result = results[0]
+    error_code = update_result.get("serverErrorCode") or update_result.get("errorCode")
+    if error_code:
+        code = str(error_code)
         if code in {"ZONE_WIDE_WILDCARD", "CONFLICT", "SERVER_RECORD_CHANGED"}:
             raise RuntimeError("The list changed while the reminder was moving. Refresh and try again.")
-        raise RuntimeError("Apple rejected the section membership update.")
+        raise RuntimeError(f"Apple rejected the section membership update ({code}).")
+    if not isinstance(update_result.get("recordChangeTag"), str):
+        raise RuntimeError("Apple returned no change tag for the section update.")
 
 
 def _cloudkit_record_summaries(
@@ -675,6 +693,9 @@ def _log_selected_section_assets(
     request_id: str,
     selected_list_id: str,
 ) -> list[str]:
+    section_ids = selected_list_ref.get("section_ids")
+    if isinstance(section_ids, list):
+        return section_ids
     selected_record_id_hash = _short_hash(selected_list_id)
     captured = selected_list_ref.get("section_records", {}).get(selected_record_id_hash)
     if not isinstance(captured, dict):
@@ -687,19 +708,6 @@ def _log_selected_section_assets(
         {"records": [record]},
         selected_record_id_hash=selected_record_id_hash,
         raw_client=raw_client,
-    )
-    log_event(
-        "cloudkit_response_inspected",
-        scope=captured.get("scope", "private"),
-        operation=captured.get("operation", "changes/zone"),
-        diagnostic_phase="selected_section_asset_fetch",
-        list_key=list_key,
-        selected_record_id_hash=selected_record_id_hash,
-        request_id=request_id,
-        record_count=record_count,
-        record_type_counts=record_type_counts,
-        records=records,
-        records_truncated=record_count > len(records),
     )
     section_ids, ordered_section_ids = _section_ids_from_summaries(records)
     selected_list_ref["section_ids"] = section_ids
@@ -798,6 +806,22 @@ def inspect_cloudkit_responses(
                 selected_record_id_hash=selected_record_id_hash,
                 raw_client=_raw_client,
             )
+            if selected_list_ref is not None and selected_record_id_hash:
+                selected_summaries = [
+                    summary for summary in records
+                    if summary.get("recordIdHash") == selected_record_id_hash
+                    and summary.get("recordType", "").lower() == "list"
+                ]
+                if selected_summaries:
+                    selected_list_ref["section_ids"], selected_list_ref["ordered_section_ids"] = (
+                        _section_ids_from_summaries(selected_summaries)
+                    )
+                    selected_list_ref["section_memberships"] = _section_memberships_from_summaries(
+                        selected_summaries
+                    )
+                    captured = selected_list_ref.get("section_records", {}).get(selected_record_id_hash)
+                    if isinstance(captured, dict):
+                        selected_list_ref["section_query_context"] = captured
             if lookup_record_type:
                 for summary, raw_record in zip(records, raw_response_records):
                     normalized_id = _normalized_record_identifier(raw_record.get("recordName"))
@@ -814,29 +838,11 @@ def inspect_cloudkit_responses(
                         lookup_section_ids,
                         lookup_order,
                     )
-            log_event(
-                "cloudkit_response_inspected",
-                scope=_scope,
-                operation=operation,
-                **({"diagnostic_phase": "list_section_lookup"} if lookup_record_type else {}),
-                list_key=list_key,
-                selected_record_id_hash=selected_record_id_hash,
-                **({"lookup_record_type": lookup_record_type} if lookup_record_type else {}),
-                **({"candidate_count": candidate_count} if candidate_count is not None else {}),
-                **({"lookup_result_count": lookup_result_count} if lookup_result_count is not None else {}),
-                request_id=request_id,
-                record_count=record_count,
-                record_type_counts=record_type_counts,
-                records=records,
-                records_truncated=record_count > len(records),
-            )
             return response
 
         http.post = inspected_post
         patched.append((http, original_post))
 
-    if not patched:
-        log_event("cloudkit_diagnostic_unavailable", list_key=list_key)
     try:
         yield
     finally:
@@ -899,7 +905,7 @@ def json_value(value: Any, depth: int = 0) -> Any:
 
 
 def authenticate(request: dict[str, Any]) -> dict[str, Any]:
-    global api, auth_mode, two_step_devices, two_step_device
+    global api, auth_mode, two_step_devices, two_step_device, _REMINDER_SYNC_CURSOR
     if not PYICLOUD_AVAILABLE:
         return {"ok": False, "errorCode": "pyicloud_unavailable", "error": "PyICloud is not installed in this server runtime."}
     apple_id = str(request.get("appleId") or "").strip()
@@ -913,6 +919,9 @@ def authenticate(request: dict[str, Any]) -> dict[str, Any]:
     auth_mode = None
     two_step_devices = []
     two_step_device = None
+    _REMINDER_LIST_CACHE.clear()
+    _REMINDER_AVAILABLE_LISTS.clear()
+    _REMINDER_SYNC_CURSOR = None
     try:
         api = PyiCloudService(
             apple_id,
@@ -1021,6 +1030,7 @@ def fetch_lists() -> dict[str, Any]:
     try:
         reminders_service = api.reminders
         lists = list(reminders_service.lists())
+        _remember_reminder_lists(lists)
         return {
             "ok": True,
             "state": "authenticated",
@@ -1068,15 +1078,28 @@ def _query_section_records(
         error_code = getattr(section_lookup_exc, "code", None)
         response = getattr(section_lookup_exc, "response", None)
         status_code = getattr(response, "status_code", None)
-        log_event(
-            "cloudkit_section_lookup_failed",
-            scope=context.get("scope", "private"),
-            list_key=list_key,
-            request_id=request_id,
-            error_type=type(section_lookup_exc).__name__,
-            **({"error_code": str(error_code)[:100]} if isinstance(error_code, (str, int)) else {}),
-            **({"http_status": status_code} if isinstance(status_code, int) else {}),
+        selected_list_ref["section_lookup_error"] = (
+            status_code if isinstance(status_code, int)
+            else error_code if isinstance(error_code, (str, int))
+            else type(section_lookup_exc).__name__
         )
+
+
+def _load_list_section_context(
+    reminders_service: Any,
+    list_key: str,
+    request_id: str,
+) -> tuple[list[Any], Any, dict[str, Any]]:
+    selected_list_ref: dict[str, Any] = {}
+    with inspect_cloudkit_responses(reminders_service, list_key, request_id, selected_list_ref):
+        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
+        _query_section_records(reminders_service, selected_list_ref, list_key, request_id)
+    if selected_list_ref.get("section_lookup_error"):
+        raise RuntimeError(
+            f"Apple could not look up this list's sections (HTTP {selected_list_ref['section_lookup_error']})."
+        )
+    return lists, reminder_list, selected_list_ref
 
 
 def _load_list_snapshot(
@@ -1096,6 +1119,198 @@ def _load_list_snapshot(
             results_limit=results_limit,
         )
     return lists, reminder_list, batch, selected_list_ref
+
+
+def _reminder_sync_supported(reminders_service: Any) -> bool:
+    return callable(getattr(reminders_service, "sync_cursor", None)) and callable(
+        getattr(reminders_service, "iter_changes", None)
+    )
+
+
+def _list_route(reminder_list: Any) -> tuple[str, str, str | None, str]:
+    return (
+        str(getattr(reminder_list, "scope", "private")),
+        str(getattr(reminder_list, "zone_name", "Reminders")),
+        getattr(reminder_list, "zone_owner", None),
+        str(getattr(reminder_list, "id", "")),
+    )
+
+
+def _apply_reminder_change(event: Any) -> None:
+    reminder = getattr(event, "reminder", None)
+    reminder_id = getattr(event, "reminder_id", None) or getattr(reminder, "id", None)
+    normalized_id = _normalized_record_identifier(reminder_id)
+    event_type_value = getattr(event, "type", "")
+    event_type = str(getattr(event_type_value, "value", event_type_value)).lower().rsplit(".", 1)[-1]
+    if reminder is None or event_type == "deleted":
+        if normalized_id:
+            for cache in _REMINDER_LIST_CACHE.values():
+                response = cache.get("response")
+                records = response.get("lists", []) if isinstance(response, dict) else []
+                if records and isinstance(records[0], dict):
+                    previous_count = len(records[0].get("reminders", []))
+                    records[0]["reminders"] = [
+                        row for row in records[0].get("reminders", [])
+                        if _normalized_record_identifier(row.get("id")) != normalized_id
+                    ]
+                    records[0]["reminderCountReturned"] = len(records[0]["reminders"])
+                    if len(records[0]["reminders"]) != previous_count:
+                        _bump_cache_revision(cache)
+        return
+
+    reminder_data = json_value(reminder)
+    if not isinstance(reminder_data, dict):
+        return
+    for key in ("scope", "zone_name", "zone_owner", "id", "list_id"):
+        value = getattr(reminder, key, None)
+        if value is not None:
+            reminder_data.setdefault(key, value)
+    route = (
+        str(getattr(reminder, "scope", "private")),
+        str(getattr(reminder, "zone_name", "Reminders")),
+        getattr(reminder, "zone_owner", None),
+        str(getattr(reminder, "list_id", "")),
+    )
+    for cache in _REMINDER_LIST_CACHE.values():
+        if cache.get("route") != route:
+            continue
+        response = cache.get("response")
+        lists = response.get("lists", []) if isinstance(response, dict) else []
+        if not lists or not isinstance(lists[0], dict):
+            continue
+        rows = lists[0].get("reminders", [])
+        previous = next(
+            (row for row in rows if _normalized_record_identifier(row.get("id")) == normalized_id),
+            None,
+        )
+        if previous:
+            for field in ("sectionID", "sectionName", "sectionOrder"):
+                if field not in reminder_data and field in previous:
+                    reminder_data[field] = previous[field]
+            rows[rows.index(previous)] = reminder_data
+        else:
+            rows.append(reminder_data)
+        lists[0]["reminderCountReturned"] = len(rows)
+        _bump_cache_revision(cache)
+
+
+def _read_reminder_changes(reminders_service: Any, since: str | None) -> bool:
+    """Advance the account-wide cursor and apply only changed reminders to cached lists."""
+    global _REMINDER_SYNC_CURSOR
+    if not _reminder_sync_supported(reminders_service):
+        return False
+    try:
+        next_cursor = reminders_service.sync_cursor()
+        if since and since != next_cursor:
+            for event in reminders_service.iter_changes(since=since):
+                _apply_reminder_change(event)
+        _REMINDER_SYNC_CURSOR = next_cursor
+        return True
+    except Exception:
+        _REMINDER_SYNC_CURSOR = None
+        _REMINDER_LIST_CACHE.clear()
+        return False
+
+
+def _sync_cached_reminder_changes(reminders_service: Any) -> bool:
+    global _REMINDER_SYNC_CURSOR
+    if not _reminder_sync_supported(reminders_service):
+        _REMINDER_LIST_CACHE.clear()
+        _REMINDER_SYNC_CURSOR = None
+        return False
+    if _REMINDER_SYNC_CURSOR is None:
+        try:
+            _REMINDER_SYNC_CURSOR = reminders_service.sync_cursor()
+        except Exception:
+            _REMINDER_LIST_CACHE.clear()
+            return False
+        return True
+    return _read_reminder_changes(reminders_service, _REMINDER_SYNC_CURSOR)
+
+
+def _cache_list_response(
+    list_key: str,
+    response: dict[str, Any],
+    reminder_list: Any,
+    *,
+    sections_loaded: bool,
+) -> None:
+    revision = _next_reminder_revision()
+    cached_response = json.loads(json.dumps(response, ensure_ascii=False))
+    cached_response["revision"] = revision
+    _REMINDER_LIST_CACHE[list_key] = {
+        "response": cached_response,
+        "route": _list_route(reminder_list),
+        "sections_loaded": sections_loaded,
+        "revision": revision,
+    }
+
+
+def _next_reminder_revision() -> int:
+    global _REMINDER_REVISION_SEQUENCE
+    _REMINDER_REVISION_SEQUENCE += 1
+    return _REMINDER_REVISION_SEQUENCE
+
+
+def _bump_cache_revision(cache: dict[str, Any]) -> None:
+    revision = _next_reminder_revision()
+    cache["revision"] = revision
+    response = cache.get("response")
+    if isinstance(response, dict):
+        response["revision"] = revision
+
+
+def _cache_revision(list_key: str) -> int | None:
+    cache = _REMINDER_LIST_CACHE.get(list_key)
+    revision = cache.get("revision") if isinstance(cache, dict) else None
+    return revision if isinstance(revision, int) else None
+
+
+def _cached_list_response(list_key: str) -> dict[str, Any] | None:
+    cache = _REMINDER_LIST_CACHE.get(list_key)
+    response = cache.get("response") if isinstance(cache, dict) else None
+    return json.loads(json.dumps(response, ensure_ascii=False)) if isinstance(response, dict) else None
+
+
+def _cache_mutated_reminder(list_key: str, reminder_data: dict[str, Any]) -> None:
+    cache = _REMINDER_LIST_CACHE.get(list_key)
+    response = cache.get("response") if isinstance(cache, dict) else None
+    lists = response.get("lists", []) if isinstance(response, dict) else []
+    if not lists or not isinstance(lists[0], dict):
+        return
+    reminders = lists[0].setdefault("reminders", [])
+    normalized_id = _normalized_record_identifier(reminder_data.get("id"))
+    previous_index = next(
+        (index for index, row in enumerate(reminders)
+         if _normalized_record_identifier(row.get("id")) == normalized_id),
+        None,
+    )
+    if previous_index is not None:
+        previous = reminders[previous_index]
+        for field in ("sectionID", "sectionName", "sectionOrder"):
+            if field not in reminder_data and field in previous:
+                reminder_data[field] = previous[field]
+        reminders[previous_index] = reminder_data
+    else:
+        reminders.append(reminder_data)
+    lists[0]["reminderCountReturned"] = len(reminders)
+    _bump_cache_revision(cache)
+
+
+def _cache_deleted_reminder(list_key: str, reminder_id: str) -> None:
+    cache = _REMINDER_LIST_CACHE.get(list_key)
+    response = cache.get("response") if isinstance(cache, dict) else None
+    lists = response.get("lists", []) if isinstance(response, dict) else []
+    if not lists or not isinstance(lists[0], dict):
+        return
+    rows = lists[0].get("reminders", [])
+    normalized_id = _normalized_record_identifier(reminder_id)
+    lists[0]["reminders"] = [
+        row for row in rows if _normalized_record_identifier(row.get("id")) != normalized_id
+    ]
+    lists[0]["reminderCountReturned"] = len(lists[0]["reminders"])
+    if len(rows) != len(lists[0]["reminders"]):
+        _bump_cache_revision(cache)
 
 
 def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
@@ -1147,6 +1362,13 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                 "sections": sections,
                 "reminders": preview_reminders,
             }
+        if request.get("_cacheSnapshot") is True:
+            _cache_list_response(
+                selected_key,
+                {key: value for key, value in result.items() if key != "decodedAppleSample"},
+                reminder_list,
+                sections_loaded=True,
+            )
         return result
     except LookupError as exc:
         return {"ok": False, "errorCode": "selected_list_not_found", "error": str(exc)}
@@ -1155,7 +1377,142 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
 
 
 def fetch_list(request: dict[str, Any]) -> dict[str, Any]:
-    return fetch_preview({**request, "fullList": True, "includeDiagnostic": False})
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    list_key = str(request.get("listKey") or "")
+    reminders_service = api.reminders
+    _sync_cached_reminder_changes(reminders_service)
+    cached = _REMINDER_LIST_CACHE.get(list_key)
+    if cached and cached.get("sections_loaded"):
+        revision = cached.get("revision")
+        if request.get("revision") == revision:
+            return {"ok": True, "state": "unchanged", "changed": False, "revision": revision}
+        response = _cached_list_response(list_key)
+        if response is not None:
+            response["state"] = "fetched"
+            response["changed"] = True
+            return response
+
+    cursor_before = _REMINDER_SYNC_CURSOR
+    response = fetch_preview({
+        **request,
+        "fullList": True,
+        "includeDiagnostic": False,
+        "_cacheSnapshot": True,
+    })
+    if response.get("ok"):
+        if _reminder_sync_supported(reminders_service):
+            _read_reminder_changes(reminders_service, cursor_before)
+        cached_response = _cached_list_response(list_key) or response
+        revision = cached_response.get("revision")
+        if request.get("revision") == revision:
+            return {"ok": True, "state": "unchanged", "changed": False, "revision": revision}
+        cached_response["changed"] = True
+        return cached_response
+    return response
+
+
+def fetch_task_lists(request: dict[str, Any]) -> dict[str, Any]:
+    if api is None:
+        return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    try:
+        reminders_service = api.reminders
+        _sync_cached_reminder_changes(reminders_service)
+        requested_keys = request.get("listKeys")
+        keys = {
+            str(value)
+            for value in requested_keys
+            if isinstance(value, str) and len(value) == 64
+        } if isinstance(requested_keys, list) else set()
+        requested_revisions = request.get("revisions")
+        requested_revisions = requested_revisions if isinstance(requested_revisions, dict) else {}
+        missing_keys = keys.difference(_REMINDER_LIST_CACHE)
+        uncached_list_keys = missing_keys.difference(_REMINDER_AVAILABLE_LISTS)
+        if uncached_list_keys:
+            lists = list(reminders_service.lists())
+            _remember_reminder_lists(lists)
+        elif missing_keys:
+            lists = list(_REMINDER_AVAILABLE_LISTS.values())
+        else:
+            lists = []
+        selected = [
+            reminder_list
+            for reminder_list in lists
+            if not getattr(reminder_list, "deleted", False)
+            and not getattr(reminder_list, "is_group", False)
+            and reminders_list_key(reminder_list) in keys
+        ]
+        cursor_before = _REMINDER_SYNC_CURSOR
+        for reminder_list in selected:
+            list_key = reminders_list_key(reminder_list)
+            if list_key in _REMINDER_LIST_CACHE:
+                continue
+            batch = reminders_service.list_reminders(
+                reminder_list,
+                include_completed=True,
+                results_limit=200,
+            )
+            reminders = [
+                json_value(reminder)
+                for reminder in (getattr(batch, "reminders", []) or [])
+                if not getattr(reminder, "deleted", False)
+            ]
+            summary = reminders_list_summary(reminder_list)
+            summary["reminderCountReturned"] = len(reminders)
+            summary["sections"] = []
+            summary["reminders"] = reminders
+            response = {
+                "ok": True,
+                "state": "fetched",
+                "pyicloudVersion": importlib.metadata.version("pyicloud"),
+                "listCount": len(lists),
+                "lists": [summary],
+            }
+            _cache_list_response(
+                list_key,
+                response,
+                reminder_list,
+                sections_loaded=False,
+            )
+        if selected and _reminder_sync_supported(reminders_service):
+            _read_reminder_changes(reminders_service, cursor_before)
+        cache_keys = {reminders_list_key(reminder_list) for reminder_list in selected}
+        cache_keys.update(keys.intersection(_REMINDER_LIST_CACHE))
+        snapshots: list[dict[str, Any]] = []
+        current_revisions: dict[str, int] = {}
+        for list_key in cache_keys:
+            cached = _REMINDER_LIST_CACHE.get(list_key)
+            if not isinstance(cached, dict):
+                continue
+            revision = cached.get("revision")
+            if not isinstance(revision, int):
+                continue
+            current_revisions[list_key] = revision
+            if requested_revisions.get(list_key) == revision:
+                continue
+            response = _cached_list_response(list_key)
+            if response is not None:
+                snapshots.extend(response.get("lists", []))
+        list_count = max(
+            (
+                cache.get("response", {}).get("listCount", 0)
+                for list_key in cache_keys
+                if isinstance((cache := _REMINDER_LIST_CACHE.get(list_key)), dict)
+                and isinstance(cache.get("response"), dict)
+            ),
+            default=0,
+        )
+        return {
+            "ok": True,
+            "state": "fetched" if snapshots else "unchanged",
+            "changed": bool(snapshots),
+            "pyicloudVersion": importlib.metadata.version("pyicloud"),
+            "listCount": list_count,
+            "lists": snapshots,
+            "revisions": current_revisions,
+        }
+    except Exception as exc:
+        return {"ok": False, **safe_error(exc)}
 
 
 def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
@@ -1168,7 +1525,23 @@ def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
         if len(title) > 1000:
             raise ValueError("Reminder titles must be 1,000 characters or fewer.")
         reminders_service = api.reminders
-        lists, reminder_list = _selected_reminders_list(reminders_service, str(request.get("listKey") or ""))
+        list_key = str(request.get("listKey") or "")
+        section_id = request.get("sectionID")
+        if section_id is not None:
+            section_id = str(section_id)
+            lists, reminder_list, selected_ref = _load_list_section_context(
+                reminders_service, list_key, str(request.get("requestId") or "")[:100]
+            )
+            valid_section_ids = {
+                _normalized_record_identifier(section.get("id"))
+                for section in selected_ref.get("sections", [])
+                if isinstance(section, dict) and isinstance(section.get("id"), str)
+            }
+            if _normalized_record_identifier(section_id) not in valid_section_ids:
+                raise ValueError("Choose an existing section in this iCloud Reminders list.")
+        else:
+            lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+            selected_ref = {}
         created = reminders_service.create(
             list_id=reminder_list,
             title=title,
@@ -1178,23 +1551,40 @@ def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
             flagged=bool(request.get("flagged", False)),
             all_day=bool(request.get("allDay", False)),
         )
-        section_id = request.get("sectionID")
         if section_id is not None:
-            snapshot = _load_list_snapshot(reminders_service, reminders_list_key(reminder_list), "", 200)
-            selected_ref = snapshot[3]
             _move_reminder_section(
                 reminders_service,
                 reminder_list,
                 selected_ref,
-                reminders_list_key(reminder_list),
+                list_key,
                 str(getattr(created, "id", "")),
                 str(section_id),
             )
+        created_data = json_value(created)
+        if not isinstance(created_data, dict):
+            created_data = {}
+        if section_id is not None:
+            selected_section = next(
+                (
+                    section for section in selected_ref.get("sections", [])
+                    if isinstance(section, dict)
+                    and _normalized_record_identifier(section.get("id"))
+                    == _normalized_record_identifier(section_id)
+                ),
+                None,
+            )
+            created_data.update({
+                "sectionID": section_id,
+                "sectionName": selected_section.get("name") if selected_section else None,
+                "sectionOrder": selected_section.get("order") if selected_section else None,
+            })
+        _cache_mutated_reminder(reminders_list_key(reminder_list), created_data)
         return {
             "ok": True,
             "state": "created",
             "listCount": len(lists),
-            "reminder": json_value(created),
+            "reminder": created_data,
+            "revision": _cache_revision(reminders_list_key(reminder_list)),
         }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
@@ -1242,7 +1632,15 @@ def update_reminder(request: dict[str, Any]) -> dict[str, Any]:
         if "allDay" in patch:
             reminder.all_day = bool(patch["allDay"])
         reminders_service.update(reminder)
-        return {"ok": True, "state": "updated", "reminder": json_value(reminder)}
+        reminder_data = json_value(reminder)
+        if isinstance(reminder_data, dict):
+            _cache_mutated_reminder(reminders_list_key(reminder_list), reminder_data)
+        return {
+            "ok": True,
+            "state": "updated",
+            "reminder": reminder_data,
+            "revision": _cache_revision(reminders_list_key(reminder_list)),
+        }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
     except Exception as exc:
@@ -1262,7 +1660,13 @@ def delete_reminder(request: dict[str, Any]) -> dict[str, Any]:
         if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
             raise ValueError("That reminder does not belong to the selected list.")
         reminders_service.delete(reminder)
-        return {"ok": True, "state": "deleted", "reminderId": reminder_id}
+        _cache_deleted_reminder(reminders_list_key(reminder_list), reminder_id)
+        return {
+            "ok": True,
+            "state": "deleted",
+            "reminderId": reminder_id,
+            "revision": _cache_revision(reminders_list_key(reminder_list)),
+        }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
     except Exception as exc:
@@ -1281,11 +1685,14 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
         section_id = request.get("sectionID")
         if section_id is not None:
             section_id = str(section_id)
-        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        lists, reminder_list, selected_ref = _load_list_section_context(
+            reminders_service,
+            list_key,
+            str(request.get("requestId") or "")[:100],
+        )
         reminder = reminders_service.get(reminder_id, list_context=reminder_list)
         if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
             raise ValueError("That reminder does not belong to the selected list.")
-        _, _, _, selected_ref = _load_list_snapshot(reminders_service, list_key, "", 200)
         _move_reminder_section(
             reminders_service,
             reminder_list,
@@ -1294,7 +1701,38 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
             reminder_id,
             section_id,
         )
-        return {"ok": True, "state": "updated", "listCount": len(lists), "reminderId": reminder_id}
+        cache = _REMINDER_LIST_CACHE.get(list_key)
+        response = cache.get("response") if isinstance(cache, dict) else None
+        cached_lists = response.get("lists", []) if isinstance(response, dict) else []
+        cached_rows = cached_lists[0].get("reminders", []) if cached_lists and isinstance(cached_lists[0], dict) else []
+        cached_reminder = next(
+            (row for row in cached_rows if _normalized_record_identifier(row.get("id")) == _normalized_record_identifier(reminder_id)),
+            None,
+        )
+        if cached_reminder is not None:
+            section = next(
+                (
+                    item for item in selected_ref.get("sections", [])
+                    if isinstance(item, dict)
+                    and _normalized_record_identifier(item.get("id"))
+                    == _normalized_record_identifier(section_id)
+                ),
+                None,
+            ) if section_id is not None else None
+            updated_cached_reminder = dict(cached_reminder)
+            updated_cached_reminder.update({
+                "sectionID": section_id,
+                "sectionName": section.get("name") if section else None,
+                "sectionOrder": section.get("order") if section else None,
+            })
+            _cache_mutated_reminder(list_key, updated_cached_reminder)
+        return {
+            "ok": True,
+            "state": "updated",
+            "listCount": len(lists),
+            "reminderId": reminder_id,
+            "revision": _cache_revision(list_key),
+        }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
     except Exception as exc:
@@ -1310,11 +1748,14 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
             "pyicloudVersion": importlib.metadata.version("pyicloud") if PYICLOUD_AVAILABLE else None,
         }
     if action == "reset":
-        global api, auth_mode, two_step_devices, two_step_device
+        global api, auth_mode, two_step_devices, two_step_device, _REMINDER_SYNC_CURSOR
         api = None
         auth_mode = None
         two_step_devices = []
         two_step_device = None
+        _REMINDER_LIST_CACHE.clear()
+        _REMINDER_AVAILABLE_LISTS.clear()
+        _REMINDER_SYNC_CURSOR = None
         return {"ok": True, "state": "disconnected"}
     if action == "authenticate":
         return authenticate(request)
@@ -1328,6 +1769,8 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
         return fetch_preview(request)
     if action == "fetch_list":
         return fetch_list(request)
+    if action == "fetch_task_lists":
+        return fetch_task_lists(request)
     if action == "create_reminder":
         return create_reminder(request)
     if action == "update_reminder":

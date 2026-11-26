@@ -4,13 +4,13 @@ import { useTaskLists } from './useTaskLists';
 
 const iCloudMocks = vi.hoisted(() => ({
   loadLists: vi.fn(),
-  fetchList: vi.fn(),
+  fetchTaskLists: vi.fn(),
   updateReminder: vi.fn(),
 }));
 
 vi.mock('../api/integration-settings', () => ({
   loadICloudRemindersLists: iCloudMocks.loadLists,
-  fetchICloudRemindersList: iCloudMocks.fetchList,
+  fetchICloudRemindersTaskLists: iCloudMocks.fetchTaskLists,
   updateICloudReminder: iCloudMocks.updateReminder,
 }));
 
@@ -44,13 +44,15 @@ const reminderFor = (listKey: string) => ({
 
 beforeEach(() => {
   iCloudMocks.loadLists.mockReset();
-  iCloudMocks.fetchList.mockReset();
+  iCloudMocks.fetchTaskLists.mockReset();
   iCloudMocks.updateReminder.mockReset();
   iCloudMocks.loadLists.mockResolvedValue({ ok: true, state: 'authenticated', lists: availableLists });
-  iCloudMocks.fetchList.mockImplementation(async (listKey: string) => ({
+  iCloudMocks.fetchTaskLists.mockImplementation(async (listKeys: string[]) => ({
     ok: true,
     state: 'fetched',
-    lists: [{
+    changed: true,
+    revisions: Object.fromEntries(listKeys.map((key) => [key, 1])),
+    lists: listKeys.map((listKey) => ({
       key: listKey,
       title: listKey,
       scope: 'private',
@@ -58,21 +60,16 @@ beforeEach(() => {
       isGroup: false,
       count: 1,
       reminders: [reminderFor(listKey)],
-    }],
+    })),
   }));
 });
 
 describe('useTaskLists', () => {
-  /*
-   * The hook receives settings arrays that may be recreated inline on each
-   * render. Fetching should depend on their contents, not object identity.
-   */
-  it('fetches once when the caller passes fresh arrays with the same selections', async () => {
+  it('fetches selected lists in one request when the caller rerenders with fresh arrays', async () => {
     const { rerender } = renderHook(() => useTaskLists([], [], 0));
 
-    await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(2));
-    const fetchesAfterFirstLoad = iCloudMocks.fetchList.mock.calls.length;
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(1));
+    const fetchesAfterFirstLoad = iCloudMocks.fetchTaskLists.mock.calls.length;
 
     rerender();
     rerender();
@@ -82,25 +79,26 @@ describe('useTaskLists', () => {
     });
 
     expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1);
-    expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(fetchesAfterFirstLoad);
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(fetchesAfterFirstLoad);
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledWith(
+      ['icloud-tasks-a', 'icloud-tasks-b'],
+      {},
+    );
   });
 
-  it('refetches when the selected iCloud task lists change', async () => {
+  it('refreshes the batch when selected task lists change', async () => {
     const { rerender } = renderHook(
       ({ ids }: { ids: string[] }) => useTaskLists([], ids),
       { initialProps: { ids: ['icloud-tasks-a'] } },
     );
 
-    await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(1));
-
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(1));
     rerender({ ids: ['icloud-tasks-a', 'icloud-tasks-b'] });
 
     await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(2));
-    expect(iCloudMocks.fetchList.mock.calls.map(([key]) => key)).toEqual([
-      'icloud-tasks-a',
-      'icloud-tasks-a',
-      'icloud-tasks-b',
+    expect(iCloudMocks.fetchTaskLists.mock.calls.map(([keys]) => keys)).toEqual([
+      ['icloud-tasks-a'],
+      ['icloud-tasks-a', 'icloud-tasks-b'],
     ]);
   });
 
@@ -110,21 +108,50 @@ describe('useTaskLists', () => {
       ['icloud-tasks-a', 'icloud-grocery'],
     ));
 
-    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(result.current.items).toHaveLength(1));
 
-    expect(iCloudMocks.fetchList).toHaveBeenCalledWith('icloud-tasks-a');
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledWith(['icloud-tasks-a'], {});
     expect(result.current.items.map((item) => item.listId)).toEqual(['icloud-tasks-a']);
   });
 
   it('uses all non-grocery lists when no task lists are selected', async () => {
     renderHook(() => useTaskLists(['icloud-grocery'], []));
 
-    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(1));
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledWith(
+      ['icloud-tasks-a', 'icloud-tasks-b'],
+      {},
+    );
+  });
 
-    expect(iCloudMocks.fetchList.mock.calls.map(([key]) => key)).toEqual([
-      'icloud-tasks-a',
-      'icloud-tasks-b',
-    ]);
+  it('keeps existing task rows when the server reports no changes', async () => {
+    iCloudMocks.fetchTaskLists.mockResolvedValue({
+      ok: true,
+      state: 'fetched',
+      changed: true,
+      revisions: { 'icloud-tasks-a': 1 },
+      lists: [{ key: 'icloud-tasks-a', reminders: [reminderFor('icloud-tasks-a')] }],
+    });
+    const { result } = renderHook(() => useTaskLists([], ['icloud-tasks-a']));
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
+
+    iCloudMocks.fetchTaskLists.mockResolvedValue({
+      ok: true,
+      state: 'unchanged',
+      changed: false,
+      revisions: { 'icloud-tasks-a': 1 },
+      lists: [],
+    });
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await waitFor(() => expect(iCloudMocks.fetchTaskLists).toHaveBeenCalledTimes(2));
+    expect(iCloudMocks.fetchTaskLists).toHaveBeenLastCalledWith(
+      ['icloud-tasks-a'],
+      { 'icloud-tasks-a': 1 },
+    );
+    expect(result.current.items).toHaveLength(1);
   });
 });

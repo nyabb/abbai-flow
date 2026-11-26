@@ -578,6 +578,13 @@ test('integration settings report the current iCloud authentication state', asyn
       requestedListKey = listKey;
       return { ok: true, state: 'fetched', lists: [] };
     },
+    fetchTaskLists: async (listKeys, revisions) => ({
+      ok: true,
+      state: 'unchanged',
+      changed: false,
+      listKeys,
+      revisions,
+    }),
     stop() {},
   };
   const app = await startBeacon({ icloudReminders });
@@ -615,6 +622,14 @@ test('integration settings report the current iCloud authentication state', asyn
   });
   assert.equal(preview.status, 200);
   assert.equal(requestedListKey, 'a'.repeat(64));
+
+  const taskLists = await request(app.port, {
+    method: 'POST',
+    path: '/abbai-flow/settings/icloud-reminders/task-lists',
+    body: { listKeys: ['a'.repeat(64)], revisions: { ['a'.repeat(64)]: 17 } },
+  });
+  assert.equal(taskLists.status, 200);
+  assert.deepEqual(taskLists.json.revisions, { ['a'.repeat(64)]: 17 });
 });
 
 test('saved iCloud credentials are authenticated at server startup', async (t) => {
@@ -679,6 +694,48 @@ test('iCloud worker retains safe authentication status between requests', () => 
 
   sendResponse({ requestId: 'reset', ok: true, state: 'disconnected' }, 'reset');
   assert.equal(worker.status().state, 'disconnected');
+});
+
+test('iCloud worker logs only reminder mutations', () => {
+  const worker = new ICloudRemindersWorker({ dataDir: tmpDir('icloud-logs') });
+  const logged = [];
+  const originalInfo = console.info;
+  console.info = (line) => logged.push(line);
+  try {
+    worker.onWorkerLog(JSON.stringify({
+      service: 'pyicloud-reminders',
+      event: 'worker_started',
+      pyicloud_available: true,
+    }));
+    worker.onWorkerLog(JSON.stringify({
+      service: 'pyicloud-reminders',
+      event: 'request_finished',
+      action: 'fetch_task_lists',
+      ok: true,
+      list_count: 8,
+    }));
+    worker.onWorkerLog(JSON.stringify({
+      service: 'pyicloud-reminders',
+      event: 'cloudkit_response_inspected',
+      operation: 'records/modify',
+      records: [{ title: 'private reminder text' }],
+    }));
+    worker.onWorkerLog(JSON.stringify({
+      service: 'pyicloud-reminders',
+      event: 'request_finished',
+      action: 'move_reminder_section',
+      request_id: 'req-123',
+      ok: true,
+      state: 'updated',
+      duration_ms: 120,
+    }));
+  } finally {
+    console.info = originalInfo;
+  }
+
+  assert.equal(logged.length, 1);
+  assert.match(logged[0], /"action":"move_reminder_section"/);
+  assert.doesNotMatch(logged[0], /private reminder text/);
 });
 
 test('service bridge validates input and forwards to Home Assistant', async (t) => {
