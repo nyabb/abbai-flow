@@ -55,12 +55,14 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
 
 function renderSettings(
   overrides: Partial<AbbaiSettings> = {},
-  calendars: Array<{ id: string; name: string; color?: string }> = [],
+  calendars: Array<{ id: string; name: string; color?: string; readOnly?: boolean }> = [],
 ) {
   const onUpdateSettings = vi.fn();
   const nl = createI18n('nl');
   const settings = makeSettings(overrides);
-  const renderView = (calendarSources: Array<{ id: string; name: string; color?: string }>) => (
+  const renderView = (
+    calendarSources: Array<{ id: string; name: string; color?: string; readOnly?: boolean }>,
+  ) => (
     <I18nContext.Provider value={nl}>
       <SettingsView
         settings={settings}
@@ -84,7 +86,9 @@ function renderSettings(
   return {
     ...utils,
     onUpdateSettings,
-    rerenderWithCalendars: (calendarSources: Array<{ id: string; name: string; color?: string }>) =>
+    rerenderWithCalendars: (
+      calendarSources: Array<{ id: string; name: string; color?: string; readOnly?: boolean }>,
+    ) =>
       utils.rerender(renderView(calendarSources)),
   };
 }
@@ -139,5 +143,23 @@ describe('SettingsView', () => {
     rerenderWithCalendars([{ id: 'caldav/apple/family', name: 'Apple: Family' }]);
 
     expect(screen.getByRole('option', { name: 'Apple: Family' })).toBeInTheDocument();
+  });
+
+  it('lists ICS feeds for visibility but excludes them from the default event destination', () => {
+    const { rerenderWithCalendars, onUpdateSettings } = renderSettings();
+    fireEvent.click(screen.getByRole('button', { name: 'Agenda' }));
+    rerenderWithCalendars([
+      { id: 'ics/school-feed', name: 'School feed', readOnly: true },
+      { id: 'caldav/apple/family', name: 'Apple: Family' },
+    ]);
+
+    expect(screen.getByText('School feed')).toBeInTheDocument();
+    const defaultCalendar = document.querySelector<HTMLSelectElement>('.settings-select');
+    expect(defaultCalendar).not.toBeNull();
+    expect(screen.queryByRole('option', { name: 'School feed' })).not.toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Apple: Family' })).toBeInTheDocument();
+
+    fireEvent.change(defaultCalendar!, { target: { value: 'caldav/apple/family' } });
+    expect(onUpdateSettings).toHaveBeenCalledWith({ defaultCalendar: 'caldav/apple/family' });
   });
 });

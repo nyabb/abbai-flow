@@ -17,6 +17,7 @@ export interface CaldavCalendar {
   id: string;
   name: string;
   sourceId: string;
+  readOnly?: boolean;
 }
 
 function endpoint(path: string): string {
@@ -56,7 +57,7 @@ export async function fetchCaldavEvents(
   return result.events || [];
 }
 
-export async function testCaldavSource(
+export async function testCalendarSource(
   source: CalendarSourceSetting,
 ): Promise<{ calendars: Array<{ id: string; name: string }>; calendarCount: number }> {
   return request('/abbai-flow/calendars/test', {

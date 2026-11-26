@@ -106,3 +106,74 @@ test('CalDAV service discovers calendars and supports event CRUD', async () => {
     options: { calendarObject: { url: objectUrl } },
   });
 });
+
+test('ICS feeds appear as read-only calendars and provide events for the selected range', async () => {
+  const source = {
+    id: 'school-feed',
+    name: 'School',
+    provider: 'ics',
+    url: 'https://calendar.example.test/school.ics',
+  };
+  const feed = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'BEGIN:VEVENT',
+    'UID:school-event',
+    'DTSTART:20261126T100000Z',
+    'DTEND:20261126T110000Z',
+    'SUMMARY:Parent meeting',
+    'DESCRIPTION:Room 2',
+    'LOCATION:School',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'UID:weekly-event',
+    'DTSTART:20261119T120000Z',
+    'DTEND:20261119T130000Z',
+    'RRULE:FREQ=WEEKLY',
+    'SUMMARY:Weekly assembly',
+    'END:VEVENT',
+    'END:VCALENDAR',
+    '',
+  ].join('\r\n');
+  const requestedUrls = [];
+  const service = createCaldavCalendarService({
+    getSources: () => [source],
+    fetch: async (url) => {
+      requestedUrls.push(url);
+      return {
+        ok: true,
+        status: 200,
+        headers: { get: () => null },
+        text: async () => feed,
+      };
+    },
+  });
+
+  const [calendar] = await service.listCalendars();
+  assert.equal(calendar.name, 'School');
+  assert.equal(calendar.provider, 'ics');
+  assert.equal(calendar.readOnly, true);
+
+  const verified = await service.testSource(source);
+  assert.equal(verified.calendarCount, 1);
+  assert.deepEqual(verified.calendars, [{ id: calendar.id, name: 'School' }]);
+
+  const events = await service.fetchEvents(
+    calendar.id,
+    '2026-11-26T00:00:00Z',
+    '2026-11-27T00:00:00Z',
+  );
+  assert.deepEqual(events.map((event) => event.title), ['Parent meeting', 'Weekly assembly']);
+  assert.equal(events[0].description, 'Room 2');
+  assert.equal(events[0].location, 'School');
+  assert.equal(events[0].readOnly, true);
+  assert.equal(events[1].start, '2026-11-26T12:00:00.000Z');
+  assert.equal(requestedUrls.length, 2, 'feed is fetched for both connection test and event retrieval');
+  await assert.rejects(() =>
+    service.createEvent(calendar.id, {
+      summary: 'Unsupported write',
+      start_date_time: '2026-11-26T12:00:00.000Z',
+      end_date_time: '2026-11-26T13:00:00.000Z',
+    }),
+  );
+});
