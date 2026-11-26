@@ -1,57 +1,79 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useTaskLists } from './useTaskLists';
-import { haFetch, callHaService } from '../api/ha-rest';
 
-vi.mock('../api/ha-rest', () => ({
-  hasToken: () => true,
-  haFetch: vi.fn(),
-  callHaService: vi.fn(),
+const iCloudMocks = vi.hoisted(() => ({
+  loadLists: vi.fn(),
+  fetchList: vi.fn(),
+  updateReminder: vi.fn(),
+}));
+
+vi.mock('../api/integration-settings', () => ({
+  loadICloudRemindersLists: iCloudMocks.loadLists,
+  fetchICloudRemindersList: iCloudMocks.fetchList,
+  updateICloudReminder: iCloudMocks.updateReminder,
 }));
 
 vi.mock('./useLocalTasks', () => ({
   useLocalTasks: () => ({
-    lists: [],
-    tasks: [],
     getTasksForList: () => [],
+    toggleTask: vi.fn(),
   }),
 }));
 
-vi.mock('./useTaskmate', () => ({
-  useTaskmate: () => ({ users: [], listByUser: {}, completions: [] }),
-}));
+const availableLists = [
+  { key: 'icloud-grocery', title: 'Groceries', deleted: false, isGroup: false },
+  { key: 'icloud-tasks-a', title: 'Tasks A', deleted: false, isGroup: false },
+  { key: 'icloud-tasks-b', title: 'Tasks B', deleted: false, isGroup: false },
+];
 
-const haFetchMock = vi.mocked(haFetch);
-const callHaServiceMock = vi.mocked(callHaService);
-
-const states = (...ids: string[]) =>
-  ids.map((entity_id) => ({
-    entity_id,
-    state: '0',
-    attributes: { friendly_name: entity_id.replace('todo.', '') },
-  }));
+const reminderFor = (listKey: string) => ({
+  id: `Reminder/${listKey}`,
+  list_id: `List/${listKey}`,
+  title: `Reminder from ${listKey}`,
+  desc: '',
+  completed: false,
+  completed_date: null,
+  due_date: null,
+  start_date: null,
+  priority: 0,
+  flagged: false,
+  all_day: false,
+  deleted: false,
+});
 
 beforeEach(() => {
-  haFetchMock.mockReset();
-  callHaServiceMock.mockReset();
-  haFetchMock.mockResolvedValue(states('todo.tasks_a', 'todo.tasks_b', 'todo.grocery'));
-  callHaServiceMock.mockResolvedValue({ service_response: {} });
+  iCloudMocks.loadLists.mockReset();
+  iCloudMocks.fetchList.mockReset();
+  iCloudMocks.updateReminder.mockReset();
+  iCloudMocks.loadLists.mockResolvedValue({ ok: true, state: 'authenticated', lists: availableLists });
+  iCloudMocks.fetchList.mockImplementation(async (listKey: string) => ({
+    ok: true,
+    state: 'fetched',
+    lists: [{
+      key: listKey,
+      title: listKey,
+      scope: 'private',
+      deleted: false,
+      isGroup: false,
+      count: 1,
+      reminders: [reminderFor(listKey)],
+    }],
+  }));
 });
 
 describe('useTaskLists', () => {
   /*
-   * Regression: the effect used to depend on the list arrays themselves. A
-   * dependency array compares identity, so an inline `settings.taskListIds ?? []`
-   * was a new array on every render, re-running the fetch forever -- 405 tests
-   * passed while the browser was hammering /api/states.
+   * The hook receives settings arrays that may be recreated inline on each
+   * render. Fetching should depend on their contents, not object identity.
    */
-  it('fetches once even when the caller passes a fresh array on every render', async () => {
-    const { rerender } = renderHook(() => useTaskLists(true, [], []));
+  it('fetches once when the caller passes fresh arrays with the same selections', async () => {
+    const { rerender } = renderHook(() => useTaskLists([], [], 0));
 
-    await waitFor(() => expect(haFetchMock).toHaveBeenCalled());
-    const afterFirstFetch = haFetchMock.mock.calls.length;
+    await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(2));
+    const fetchesAfterFirstLoad = iCloudMocks.fetchList.mock.calls.length;
 
-    // Force further renders, each with brand new array literals.
     rerender();
     rerender();
     rerender();
@@ -59,47 +81,50 @@ describe('useTaskLists', () => {
       await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    expect(haFetchMock.mock.calls.length).toBe(afterFirstFetch);
+    expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1);
+    expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(fetchesAfterFirstLoad);
   });
 
-  /* The counterpart: the guard must not be "never refetch". */
-  it('refetches when the selection actually changes', async () => {
+  it('refetches when the selected iCloud task lists change', async () => {
     const { rerender } = renderHook(
-      ({ ids }: { ids: string[] }) => useTaskLists(true, [], ids),
-      { initialProps: { ids: ['todo.tasks_a'] } },
+      ({ ids }: { ids: string[] }) => useTaskLists([], ids),
+      { initialProps: { ids: ['icloud-tasks-a'] } },
     );
 
-    await waitFor(() => expect(haFetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(1));
 
-    rerender({ ids: ['todo.tasks_a', 'todo.tasks_b'] });
+    rerender({ ids: ['icloud-tasks-a', 'icloud-tasks-b'] });
 
-    await waitFor(() => expect(haFetchMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(iCloudMocks.loadLists).toHaveBeenCalledTimes(2));
+    expect(iCloudMocks.fetchList.mock.calls.map(([key]) => key)).toEqual([
+      'icloud-tasks-a',
+      'icloud-tasks-a',
+      'icloud-tasks-b',
+    ]);
   });
 
-  /*
-   * A selection means exactly those lists: everything else is ignored, so a
-   * newly added Home Assistant list cannot appear in the wrong task group.
-   */
-  it('reads only the selected task lists, minus anything chosen as grocery', async () => {
-    renderHook(() => useTaskLists(true, ['todo.grocery'], ['todo.tasks_a']));
+  it('reads only selected task lists and excludes lists selected for groceries', async () => {
+    const { result } = renderHook(() => useTaskLists(
+      ['icloud-grocery'],
+      ['icloud-tasks-a', 'icloud-grocery'],
+    ));
 
-    await waitFor(() => expect(callHaServiceMock).toHaveBeenCalled());
+    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(result.current.items).toHaveLength(1));
 
-    const fetched = callHaServiceMock.mock.calls.map(
-      (call) => (call[2] as { entity_id: string }).entity_id,
-    );
-    expect(fetched).toEqual(['todo.tasks_a']);
+    expect(iCloudMocks.fetchList).toHaveBeenCalledWith('icloud-tasks-a');
+    expect(result.current.items.map((item) => item.listId)).toEqual(['icloud-tasks-a']);
   });
 
-  /* With nothing selected, the old "any todo list that is not grocery" behaviour stands. */
-  it('falls back to every non-grocery list when nothing is selected', async () => {
-    renderHook(() => useTaskLists(true, ['todo.grocery'], []));
+  it('uses all non-grocery lists when no task lists are selected', async () => {
+    renderHook(() => useTaskLists(['icloud-grocery'], []));
 
-    await waitFor(() => expect(callHaServiceMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(iCloudMocks.fetchList).toHaveBeenCalledTimes(2));
 
-    const fetched = callHaServiceMock.mock.calls.map(
-      (call) => (call[2] as { entity_id: string }).entity_id,
-    );
-    expect(fetched).toEqual(['todo.tasks_a', 'todo.tasks_b']);
+    expect(iCloudMocks.fetchList.mock.calls.map(([key]) => key)).toEqual([
+      'icloud-tasks-a',
+      'icloud-tasks-b',
+    ]);
   });
 });

@@ -8,6 +8,7 @@ const CLOUDKIT_DIAGNOSTIC_OPERATIONS = new Set([
   'changes/zone',
 ]);
 const AUTH_STATE_ACTIONS = new Set([
+  'reset',
   'authenticate',
   'list_lists',
   'request_2sa_code',

@@ -647,12 +647,13 @@ test('iCloud worker retains safe authentication status between requests', () => 
     securityKeyNames: [],
   });
 
-  const sendResponse = (response) => {
+  const sendResponse = (response, action) => {
     const timeout = setTimeout(() => {}, 10000);
     worker.pending.set(response.requestId, {
       resolve() {},
       reject() {},
       timeout,
+      action,
     });
     worker.onLine(JSON.stringify(response));
   };
@@ -662,21 +663,21 @@ test('iCloud worker retains safe authentication status between requests', () => 
     ok: true,
     state: 'device_selection_required',
     devices: [{ index: 0, name: 'Trusted phone' }],
-  });
+  }, 'request_2sa_code');
   assert.deepEqual(worker.status(), {
     state: 'device_selection_required',
     devices: [{ index: 0, name: 'Trusted phone' }],
     securityKeyNames: [],
   });
 
-  sendResponse({ requestId: 'verified', ok: true, state: 'authenticated' });
+  sendResponse({ requestId: 'verified', ok: true, state: 'authenticated' }, 'verify_code');
   assert.deepEqual(worker.status(), {
     state: 'authenticated',
     devices: [],
     securityKeyNames: [],
   });
 
-  sendResponse({ requestId: 'reset', ok: true, state: 'disconnected' });
+  sendResponse({ requestId: 'reset', ok: true, state: 'disconnected' }, 'reset');
   assert.equal(worker.status().state, 'disconnected');
 });
 
