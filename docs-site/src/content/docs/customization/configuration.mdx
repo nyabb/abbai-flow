@@ -9,12 +9,16 @@ order: 2
 Configure service connections after starting Abbai Flow in **Settings →
 Integrations**. Enter the Home Assistant URL and token, Encore connection
 details, Spotify developer app credentials, and the meal recipe/menu JSON feed
-URL there. Meal feeds can use an optional bearer token and configurable JSON
-paths to map a provider's response to recipe fields. The app verifies the Home
-Assistant connection before saving. Secrets are stored by the server in the
-persistent data directory and are never returned to the browser.
+URL there. Configure Open-Meteo with a forecast URL that includes your
+latitude and longitude; it is the default weather source and backup. You can
+also configure a custom weather JSON API with an optional query or Bearer key
+and JSON paths that map its current, daily, and hourly response fields. Meal
+feeds can use an optional bearer token and configurable JSON paths to map a
+provider's response to recipe fields. The app verifies the Home Assistant
+connection before saving. Secrets are stored by the server in the persistent
+data directory and are never returned to the browser.
 
-Family name, theme, weather entity, photos, and display behavior are also
+Family name, theme, photos, and display behavior are also
 editable in their existing Settings sections. New installations do not need
 integration or family-preference variables in Docker Compose.
 
@@ -55,7 +59,7 @@ app UI:
 | `ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS` | Host D-Bus socket address; the socket must also be mounted into the container | unset       |
 
 Older family and display preference variables (`FAMILY_NAME`, `THEME`,
-`WEATHER_ENTITY`, `PHOTO_DIRECTORY`, `PHOTO_INTERVAL`, and
+`PHOTO_DIRECTORY`, `PHOTO_INTERVAL`, and
 `SCREEN_SAVER_TIMEOUT`) are initial defaults only. Set their current values in
 the app.
 

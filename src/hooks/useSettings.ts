@@ -33,7 +33,6 @@ export interface AbbaiSettings {
   notificationMinutes: 5 | 10 | 15 | 30;
 
   // Integrations
-  weatherEntity: string;
   defaultGroceryList: string;
   groceryListIds: string[];
   /** Explicit iCloud Reminders list keys used by the Tasks view. */
@@ -92,7 +91,6 @@ function buildDefaults(): AbbaiSettings {
     defaultEventDuration: 60,
     notificationMinutes: 10,
 
-    weatherEntity: config.weather_entity,
     defaultGroceryList: '',
     groceryListIds: [],
     musicDefaultPlayer: '',
@@ -166,6 +164,7 @@ function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = 
   delete saved.kioskMode;
   delete saved.choresEnabled;
   delete saved.choresProvider;
+  delete saved.weatherEntity;
 
   const storedView = saved.defaultView;
   const defaultView =

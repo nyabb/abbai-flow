@@ -314,8 +314,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.integrations.connectionStatusLabel': 'Verbindungsstatus',
   'settings.integrations.connected': 'Verbunden',
   'settings.integrations.disconnected': 'Getrennt',
-  'settings.integrations.weatherEntityLabel': 'Wetter-Entität',
-  'settings.integrations.weatherEntitySublabel': 'Für die Wetteranzeige verwendete Entität',
   'settings.integrations.icloudRemindersTitle': 'iCloud-Erinnerungen',
   'settings.integrations.icloudRemindersSublabel':
     'Verbinde dich direkt mit Apple iCloud, um deine Erinnerungslisten zu verwalten. Das Passwort bleibt auf dem Server.',
@@ -408,8 +406,6 @@ export const de: Record<TranslationKey, string> = {
   'settings.about.resetToDefaults': 'Auf Standardwerte zurücksetzen',
 
   'weatherView.loading': 'Wetterdaten werden geladen...',
-  'weatherView.notConnected': 'Nicht mit Home Assistant verbunden',
-  'weatherView.noEntityFound': 'Keine Wetter-Entität gefunden',
   'weatherView.fetchFailed': 'Wetter konnte nicht abgerufen werden',
   'weatherView.retry': 'Erneut versuchen',
   'weatherView.feelsLike': 'Gefühlt',

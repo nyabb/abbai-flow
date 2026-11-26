@@ -146,30 +146,33 @@ Calls `calendar.delete_event` service.
 ## Weather API
 
 ```typescript
-const weather: WeatherData = await client.getWeather(entityId: string);
+const weather = await fetch('/abbai-flow/weather/forecast', { method: 'POST' });
 ```
 
-Fetches all entity states and extracts the weather entity. Returns:
+Returns current conditions and normalized daily/hourly forecast data from the custom weather API when configured, falling back to Open-Meteo. Custom API keys are sent by the server and are never returned to the browser.
 
 ```typescript
 interface WeatherData {
-  temperature: number;
-  temperatureUnit: string;     // e.g., "°F"
-  condition: string;           // HA weather condition string
-  humidity?: number;
-  windSpeed?: number;
-  forecast: ForecastDay[];     // Up to 5 days
-}
-
-interface ForecastDay {
-  date: string;
-  condition: string;
-  tempHigh: number;
-  tempLow: number;
+  current: {
+    condition: string;
+    temperature: number;
+    temperatureUnit: string;
+    humidity?: number;
+    windSpeed?: number;
+    windSpeedUnit: string;
+    windBearing?: number;
+    pressure?: number;
+    feelsLike?: number;
+  };
+  forecast: Array<{ datetime: string; condition: string; temperature: number; templow: number }>;
+  hourly: Array<{ datetime: string; condition: string; temperature: number }>;
+  sourceName: string;
+  sourceUrl: string;
+  fallbackUsed: boolean;
 }
 ```
 
-**Refresh interval**: 10 minutes (configured in `useWeather.ts`).
+**Refresh interval**: the Weather view refreshes every 10 minutes. The server caches responses for 10 minutes.
 
 ---
 
@@ -352,7 +355,6 @@ interface Abbai FlowConfig {
   family_name: string;
   theme: string;
   auto_dark_mode: boolean;
-  weather_entity: string;
   photo_directory: string;
   photo_interval: number;
   screen_saver_timeout: number;

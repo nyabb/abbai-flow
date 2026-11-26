@@ -12,6 +12,36 @@ export interface MealDataMapping {
   sourceUrlPath: string;
 }
 
+export interface WeatherDataMapping {
+  currentPath: string;
+  currentTemperaturePath: string;
+  currentConditionPath: string;
+  currentTemperatureUnitPath: string;
+  currentHumidityPath: string;
+  currentWindSpeedPath: string;
+  currentWindSpeedUnitPath: string;
+  currentWindBearingPath: string;
+  currentPressurePath: string;
+  currentPressureUnitPath: string;
+  currentFeelsLikePath: string;
+  forecastPath: string;
+  forecastDatePath: string;
+  forecastConditionPath: string;
+  forecastHighPath: string;
+  forecastLowPath: string;
+  forecastPrecipitationProbabilityPath: string;
+  hourlyPath: string;
+  hourlyDateTimePath: string;
+  hourlyConditionPath: string;
+  hourlyTemperaturePath: string;
+  hourlyHumidityPath: string;
+  hourlyWindSpeedPath: string;
+  hourlyWindSpeedUnitPath: string;
+  hourlyPrecipitationProbabilityPath: string;
+}
+
+export type WeatherApiKeyMode = 'query' | 'bearer';
+
 export type CalendarSourceProvider = 'caldav' | 'ics' | 'google';
 
 export interface CalendarSourceSetting {
@@ -32,6 +62,12 @@ export interface CalendarSourceSetting {
 export interface IntegrationSettingsStatus {
   haUrl: string;
   haConfigured: boolean;
+  openMeteoUrl: string;
+  weatherApiUrl: string;
+  weatherApiKeyConfigured: boolean;
+  weatherApiKeyMode: WeatherApiKeyMode;
+  weatherApiKeyParameter: string;
+  weatherDataMapping: WeatherDataMapping;
   encoreUrl: string;
   encoreConfigured: boolean;
   spotifyClientId: string;
@@ -54,6 +90,13 @@ export interface IntegrationSettingsPatch {
   haUrl?: string;
   haToken?: string;
   clearHaToken?: boolean;
+  openMeteoUrl?: string;
+  weatherApiUrl?: string;
+  weatherApiKey?: string;
+  clearWeatherApiKey?: boolean;
+  weatherApiKeyMode?: WeatherApiKeyMode;
+  weatherApiKeyParameter?: string;
+  weatherDataMapping?: Partial<WeatherDataMapping>;
   encoreUrl?: string;
   encoreToken?: string;
   clearEncoreToken?: boolean;

@@ -11,6 +11,17 @@
   overflow-y: auto;
 }
 
+.weather-attribution {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  text-align: right;
+}
+
+.weather-attribution a {
+  color: inherit;
+}
+
 .weather-loading,
 .weather-error {
   display: flex;

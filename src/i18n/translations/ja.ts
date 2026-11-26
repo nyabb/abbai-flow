@@ -309,8 +309,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.integrations.connectionStatusLabel': '接続状態',
   'settings.integrations.connected': '接続済み',
   'settings.integrations.disconnected': '未接続',
-  'settings.integrations.weatherEntityLabel': '天気エンティティ',
-  'settings.integrations.weatherEntitySublabel': '天気表示に使用するエンティティ',
   'settings.integrations.icloudRemindersTitle': 'iCloudリマインダー',
   'settings.integrations.icloudRemindersSublabel':
     'Apple iCloudに直接接続してリマインダーリストを管理します。パスワードはサーバーにのみ保存されます。',
@@ -400,8 +398,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.about.resetToDefaults': 'デフォルトに戻す',
 
   'weatherView.loading': '天気データを読み込み中...',
-  'weatherView.notConnected': 'Home Assistant に接続されていません',
-  'weatherView.noEntityFound': '天気エンティティが見つかりません',
   'weatherView.fetchFailed': '天気の取得に失敗しました',
   'weatherView.retry': '再試行',
   'weatherView.feelsLike': '体感温度',

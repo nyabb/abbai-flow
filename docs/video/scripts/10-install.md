@@ -28,6 +28,6 @@
 
 **Scene:** Click "Open Web UI" or find Abbai Flow in the sidebar. Calendar loads with the family's data already populated from HA.
 
-**Voice:** "Open it up and your calendars, lists, and weather are already there — pulled straight from Home Assistant. Mount a tablet or bookmark it on your phone to keep your family's plans in view."
+**Voice:** "Open it up and your calendars and lists are ready to use. Configure Open-Meteo for weather, and connect Home Assistant for integrated calendars and media. Mount a tablet or bookmark it on your phone to keep your family's plans in view."
 
 **Transitions:** Calendar loads, hold on the full week and today's summary, fade to Abbai Flow logo.

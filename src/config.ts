@@ -14,7 +14,6 @@ export interface AbbaiConfig {
   save_config_in_browser: boolean;
   theme: string;
   auto_dark_mode: boolean;
-  weather_entity: string;
   photo_directory: string;
   photo_interval: number;
   screen_saver_timeout: number;
@@ -51,8 +50,6 @@ export function getConfig(): AbbaiConfig {
       runtime.save_config_in_browser ?? import.meta.env.VITE_SAVE_CONFIG_IN_BROWSER !== 'false',
     theme: runtime.theme || import.meta.env.VITE_THEME || 'skylight',
     auto_dark_mode: runtime.auto_dark_mode ?? import.meta.env.VITE_AUTO_DARK_MODE !== 'false',
-    weather_entity:
-      runtime.weather_entity || import.meta.env.VITE_HA_WEATHER_ENTITY || 'weather.home',
     photo_directory:
       runtime.photo_directory || import.meta.env.VITE_PHOTO_DIRECTORY || '/media/beacon/photos',
     photo_interval: runtime.photo_interval ?? (Number(import.meta.env.VITE_PHOTO_INTERVAL) || 30),

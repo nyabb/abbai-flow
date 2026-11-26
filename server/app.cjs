@@ -28,6 +28,14 @@ const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
 const { ChoresManStore, ChoresManStoreError } = require('./choresman-store.cjs');
 const { ICloudRemindersWorker } = require('./icloud-reminders-worker.cjs');
+const { prepareForecastUrl } = require('./open-meteo.cjs');
+const {
+  WEATHER_MAPPING_KEYS,
+  DEFAULT_WEATHER_MAPPING,
+  createWeatherService,
+  isValidPath,
+  normalizeCustomUrl,
+} = require('./weather-service.cjs');
 const { createCaldavCalendarService } = require('./build/caldav-calendar-bundle.js');
 
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
@@ -800,7 +808,7 @@ function loadPlannerRules() {
  * POST /beacon-action/voice
  * Body: { "text": "add milk to the grocery list" }
  */
-async function handleVoiceAction(req, res, config, caldavCalendars) {
+async function handleVoiceAction(req, res, config, caldavCalendars, weatherService) {
   if (req.method !== 'POST') {
     sendJson(res, 405, { error: 'Method not allowed' });
     return;
@@ -903,30 +911,18 @@ async function handleVoiceAction(req, res, config, caldavCalendars) {
 
   if (intent.fetch === 'weather') {
     try {
-      const states = await getStates();
-      const weatherEntity = states.find(
-        (e) => typeof e.entity_id === 'string' && e.entity_id.startsWith('weather.'),
-      );
-      if (!weatherEntity) {
-        sendJson(res, 200, {
-          response: 'No weather entity found.',
-          action: 'weather',
-          success: false,
-        });
-        return;
-      }
-      const attrs = weatherEntity.attributes || {};
-      const temp =
-        attrs.temperature != null ? `${attrs.temperature}${attrs.temperature_unit || ''}` : '';
-      const condition = weatherEntity.state || '';
-      const summary = `Currently ${condition}${temp ? `, ${temp}` : ''}.`;
+      const weather = await weatherService.getForecast(config);
+      const current = weather.current;
+      const temp = `${current.temperature}${current.temperatureUnit}`;
+      const condition = current.condition || 'unknown';
+      const summary = `Currently ${condition}, ${temp}.`;
 
       sendJson(res, 200, {
         response: summary,
         action: 'weather',
-        entity: weatherEntity.entity_id,
-        state: weatherEntity.state,
-        attributes: attrs,
+        entity: weather.sourceName || 'weather-provider',
+        state: condition,
+        attributes: current,
         success: true,
       });
     } catch (err) {
@@ -934,7 +930,7 @@ async function handleVoiceAction(req, res, config, caldavCalendars) {
         response: 'Failed to fetch weather.',
         action: 'weather',
         success: false,
-        error: err.message,
+        error: err instanceof Error ? err.message : 'Weather forecast request failed.',
       });
     }
     return;
@@ -1171,10 +1167,17 @@ const MEAL_DATA_MAPPING_KEYS = [
   'sourceUrlPath',
 ];
 const EMPTY_MEAL_DATA_MAPPING = Object.fromEntries(MEAL_DATA_MAPPING_KEYS.map((key) => [key, '']));
+const DEFAULT_WEATHER_DATA_MAPPING = { ...DEFAULT_WEATHER_MAPPING };
 const INTEGRATION_SETTING_KEYS = [
   'haToken',
   'haBaseUrl',
   'haWsUrlOverride',
+  'openMeteoUrl',
+  'weatherApiUrl',
+  'weatherApiKey',
+  'weatherApiKeyMode',
+  'weatherApiKeyParameter',
+  'weatherDataMapping',
   'encoreToken',
   'encoreUrl',
   'spotifyClientId',
@@ -1221,6 +1224,23 @@ function readIntegrationSettings(dataDir, fallback) {
             )
           : {}),
       },
+      weatherDataMapping: {
+        ...DEFAULT_WEATHER_DATA_MAPPING,
+        ...(stored.weatherDataMapping &&
+        typeof stored.weatherDataMapping === 'object' &&
+        !Array.isArray(stored.weatherDataMapping)
+          ? Object.fromEntries(
+              WEATHER_MAPPING_KEYS.filter((key) =>
+                Object.prototype.hasOwnProperty.call(stored.weatherDataMapping, key),
+              ).map((key) => [
+                key,
+                typeof stored.weatherDataMapping[key] === 'string'
+                  ? stored.weatherDataMapping[key]
+                  : DEFAULT_WEATHER_DATA_MAPPING[key],
+              ]),
+            )
+          : {}),
+      },
       calendarSources: normalizeCalendarSources(
         stored.calendarSources,
         fallback.calendarSources || [],
@@ -1257,6 +1277,11 @@ function mergeIntegrationSettings(current, patch) {
   const fields = {
     haUrl: 'haBaseUrl',
     haToken: 'haToken',
+    weatherApiUrl: 'weatherApiUrl',
+    openMeteoUrl: 'openMeteoUrl',
+    weatherApiKey: 'weatherApiKey',
+    weatherApiKeyMode: 'weatherApiKeyMode',
+    weatherApiKeyParameter: 'weatherApiKeyParameter',
     encoreToken: 'encoreToken',
     encoreUrl: 'encoreUrl',
     spotifyClientId: 'spotifyClientId',
@@ -1284,6 +1309,10 @@ function mergeIntegrationSettings(current, patch) {
     next.icloudRemindersListKey = next.icloudRemindersListKey.trim();
   }
   if (patch.clearHaToken === true) next.haToken = '';
+  if (patch.clearWeatherApiKey === true) next.weatherApiKey = '';
+  if (patch.weatherApiKeyMode === 'query' || patch.weatherApiKeyMode === 'bearer') {
+    next.weatherApiKeyMode = patch.weatherApiKeyMode;
+  }
   if (patch.clearEncoreToken === true) next.encoreToken = '';
   if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
   if (patch.clearMealSourceToken === true) next.mealSourceToken = '';
@@ -1293,6 +1322,14 @@ function mergeIntegrationSettings(current, patch) {
     for (const key of MEAL_DATA_MAPPING_KEYS) {
       if (typeof patch.mealDataMapping[key] === 'string') {
         next.mealDataMapping[key] = patch.mealDataMapping[key].trim();
+      }
+    }
+  }
+  if (patch.weatherDataMapping && typeof patch.weatherDataMapping === 'object') {
+    next.weatherDataMapping = { ...current.weatherDataMapping };
+    for (const key of WEATHER_MAPPING_KEYS) {
+      if (typeof patch.weatherDataMapping[key] === 'string') {
+        next.weatherDataMapping[key] = patch.weatherDataMapping[key].trim();
       }
     }
   }
@@ -1365,6 +1402,53 @@ function validateIntegrationSettings(settings) {
     }
   } catch {
     return 'Enter a valid Home Assistant URL using http or https.';
+  }
+  if (settings.openMeteoUrl) {
+    try {
+      prepareForecastUrl(settings.openMeteoUrl);
+    } catch (error) {
+      return error instanceof Error ? error.message : 'Enter a valid Open-Meteo forecast URL.';
+    }
+  }
+  if (settings.weatherApiUrl) {
+    try {
+      normalizeCustomUrl(settings.weatherApiUrl);
+    } catch (error) {
+      return error instanceof Error ? error.message : 'Enter a valid custom weather API URL.';
+    }
+    if (!settings.openMeteoUrl) {
+      return 'Set an Open-Meteo URL to use as the default weather source and backup.';
+    }
+    if (!['query', 'bearer'].includes(settings.weatherApiKeyMode || 'query')) {
+      return 'Choose query parameter or Bearer authentication for the custom weather API.';
+    }
+    if (!/^[A-Za-z_][A-Za-z0-9_.-]{0,63}$/.test(settings.weatherApiKeyParameter || 'apikey')) {
+      return 'Enter a valid API key query parameter name.';
+    }
+  }
+  const weatherDataMapping = settings.weatherDataMapping || DEFAULT_WEATHER_DATA_MAPPING;
+  for (const key of WEATHER_MAPPING_KEYS) {
+    const value = weatherDataMapping[key] || '';
+    if (!isValidPath(value)) return `Weather data mapping has an invalid ${key} path.`;
+  }
+  if (settings.weatherApiUrl) {
+    const requiredWeatherPaths = [
+      'currentPath',
+      'currentTemperaturePath',
+      'currentConditionPath',
+      'forecastPath',
+      'forecastDatePath',
+      'forecastConditionPath',
+      'forecastHighPath',
+      'forecastLowPath',
+      'hourlyPath',
+      'hourlyDateTimePath',
+      'hourlyConditionPath',
+      'hourlyTemperaturePath',
+    ];
+    if (requiredWeatherPaths.some((key) => !weatherDataMapping[key])) {
+      return 'Custom weather mapping must include current, daily forecast, and hourly forecast paths.';
+    }
   }
   try {
     const encoreUrl = new URL(settings.encoreUrl);
@@ -1460,6 +1544,12 @@ function publicIntegrationSettings(settings, icloudStatus = {}) {
         ? ''
         : settings.haBaseUrl,
     haConfigured: Boolean(settings.haToken),
+    openMeteoUrl: settings.openMeteoUrl || '',
+    weatherApiUrl: settings.weatherApiUrl || '',
+    weatherApiKeyConfigured: Boolean(settings.weatherApiKey),
+    weatherApiKeyMode: settings.weatherApiKeyMode === 'bearer' ? 'bearer' : 'query',
+    weatherApiKeyParameter: settings.weatherApiKeyParameter || 'apikey',
+    weatherDataMapping: { ...DEFAULT_WEATHER_DATA_MAPPING, ...settings.weatherDataMapping },
     encoreUrl: settings.encoreUrl,
     encoreConfigured: Boolean(settings.encoreToken),
     spotifyClientId: settings.spotifyClientId,
@@ -1522,6 +1612,12 @@ function createApp(options) {
     haToken: options.haToken || '',
     haBaseUrl: (options.haBaseUrl || 'http://supervisor/core').replace(/\/$/, ''),
     haWsUrlOverride: options.haWsUrl || '',
+    openMeteoUrl: '',
+    weatherApiUrl: '',
+    weatherApiKey: '',
+    weatherApiKeyMode: 'query',
+    weatherApiKeyParameter: 'apikey',
+    weatherDataMapping: { ...DEFAULT_WEATHER_DATA_MAPPING },
     encoreToken: options.encoreToken || '',
     encoreUrl: options.encoreUrl || DEFAULT_ENCORE_URL,
     spotifyClientId: options.spotifyClientId || '',
@@ -1611,6 +1707,7 @@ function createApp(options) {
     caldavCalendars:
       options.caldavCalendars ||
       createCaldavCalendarService({ getSources: () => config.calendarSources }),
+    weather: options.weather || createWeatherService(),
   };
   const verifySpotifyCatalog = () => services.spotifyCatalog.verifyCredentials();
   const verifySpotifyPlaylists = () => services.spotifyPlaylists.status();
@@ -1771,6 +1868,7 @@ async function route(req, res, config, services, bluetooth) {
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname === '/abbai-flow/settings/integrations' ||
+    pathname.startsWith('/abbai-flow/weather/') ||
     pathname === '/abbai-flow/calendars/test' ||
     pathname === '/abbai-flow/calendars/event' ||
     pathname.startsWith('/abbai-flow/settings/icloud-reminders') ||
@@ -2001,6 +2099,55 @@ async function route(req, res, config, services, bluetooth) {
       sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST, PUT' });
       return;
     }
+    if (pathname === '/abbai-flow/weather/forecast') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      try {
+        const data = await services.weather.getForecast(config);
+        sendJson(res, 200, data, { 'Cache-Control': 'no-store' });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Could not retrieve weather data.';
+        sendJson(res, 502, { error: message }, { 'Cache-Control': 'no-store' });
+      }
+      return;
+    }
+    if (pathname === '/abbai-flow/weather/test') {
+      if (req.method !== 'POST') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+        return;
+      }
+      const { value, error } = await readJsonObject(req);
+      if (error) {
+        sendJson(res, error.status, { error: error.message });
+        return;
+      }
+      try {
+        const settings = {
+          ...config,
+          openMeteoUrl: String(value.openMeteoUrl || ''),
+          weatherApiUrl: String(value.weatherApiUrl || ''),
+          weatherApiKey:
+            typeof value.apiKey === 'string' && value.apiKey.trim()
+              ? value.apiKey.trim()
+              : config.weatherApiKey || '',
+          weatherApiKeyMode:
+            value.weatherApiKeyMode === 'bearer' ? 'bearer' : 'query',
+          weatherApiKeyParameter: String(value.weatherApiKeyParameter || 'apikey'),
+          weatherDataMapping:
+            value.weatherDataMapping && typeof value.weatherDataMapping === 'object'
+              ? value.weatherDataMapping
+              : config.weatherDataMapping,
+        };
+        const result = await services.weather.test(settings);
+        sendJson(res, 200, result, { 'Cache-Control': 'no-store' });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Could not test the weather API settings.';
+        sendJson(res, 502, { error: message }, { 'Cache-Control': 'no-store' });
+      }
+      return;
+    }
     if (pathname.startsWith('/abbai-flow/settings/icloud-reminders/')) {
       if (req.method !== 'POST') {
         sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
@@ -2118,7 +2265,7 @@ async function route(req, res, config, services, bluetooth) {
       return;
     }
     if (actionPath === '/beacon-action/voice') {
-      await handleVoiceAction(req, res, config, services.caldavCalendars);
+      await handleVoiceAction(req, res, config, services.caldavCalendars, services.weather);
       return;
     }
     if (actionPath === '/beacon-action/service') {
@@ -2194,7 +2341,6 @@ function runtimeConfigFor(config, env = process.env) {
   const passThrough = {
     family_name: env.FAMILY_NAME,
     theme: env.THEME,
-    weather_entity: env.WEATHER_ENTITY,
     photo_directory: env.PHOTO_DIRECTORY,
   };
   for (const [key, value] of Object.entries(passThrough)) {
@@ -2228,7 +2374,6 @@ function configFromEnv(env = process.env) {
     distDir: env.ABBAI_FLOW_DIST || '/app/dist',
     dataDir: env.ABBAI_FLOW_DATA || '/data',
     bluetoothDbusAddress: env.ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS || '',
-    weatherEntity: env.WEATHER_ENTITY || '',
     photoDirectory: env.PHOTO_DIRECTORY || '',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')

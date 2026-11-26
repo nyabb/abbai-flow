@@ -22,7 +22,7 @@ Abbai Flow also works with **any calendar source** Home Assistant supports, incl
 
 ### Does Abbai Flow send my data anywhere?
 
-**No.** Abbai Flow runs entirely on your local network. It communicates only with your Home Assistant instance — never with any external server. There is no telemetry, analytics, or cloud dependency.
+**No.** Abbai Flow runs on your local network and communicates with the services you configure, including Home Assistant and weather APIs. There is no telemetry or analytics.
 
 Data flow: `Google/CalDAV -> Home Assistant -> Abbai Flow (local only)`
 
@@ -32,7 +32,7 @@ Data flow: `Google/CalDAV -> Home Assistant -> Abbai Flow (local only)`
 
 ### Can I use this without Home Assistant?
 
-**Yes.** Abbai Flow runs in standalone mode without a Home Assistant connection. Local calendars, tasks, and shopping lists are available; Home Assistant features such as integrated calendars, weather, and media players need a valid connection. See [Getting Started](/docs/getting-started/installation/).
+**Yes.** Abbai Flow runs in standalone mode without a Home Assistant connection. Local calendars, tasks, and shopping lists are available; integrated calendars and media players need a valid Home Assistant connection. Weather uses Open-Meteo by default and can use an optional custom JSON API. See [Getting Started](/docs/getting-started/installation/).
 
 ---
 
@@ -118,9 +118,9 @@ Click the palette icon at the bottom of the sidebar. A dropdown shows all 7 them
 
 Change the family name in **Settings → General**. See [Configuration](/docs/customization/configuration/).
 
-### How do I change the weather entity?
+### How do I configure the weather forecast?
 
-Set the Home Assistant weather entity in **Settings → Integrations**. Find its entity ID (for example, `weather.home`) in **Settings → Devices & Services → Entities**. See [Configuration](/docs/customization/configuration/).
+Set the Open-Meteo forecast URL in **Settings → Integrations → Weather forecast**. Include `latitude` and `longitude`; Abbai Flow adds the current, daily, and hourly fields it needs. To use another provider, add its JSON API URL, optional query or Bearer key, and map its response paths to Abbai Flow's current, daily, and hourly weather schema. Open-Meteo remains the backup. See [Configuration](/docs/customization/configuration/).
 
 ### How do I connect multiple calendars?
 
