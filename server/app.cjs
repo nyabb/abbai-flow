@@ -2048,6 +2048,16 @@ async function route(req, res, config, services, bluetooth) {
         result = await services.icloudReminders.listLists();
       } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-preview') {
         result = await services.icloudReminders.fetchPreview(String(value.listKey || ''));
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/fetch-list') {
+        result = await services.icloudReminders.fetchList(String(value.listKey || ''));
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/create-reminder') {
+        result = await services.icloudReminders.createReminder(value);
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/update-reminder') {
+        result = await services.icloudReminders.updateReminder(value);
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/delete-reminder') {
+        result = await services.icloudReminders.deleteReminder(value);
+      } else if (pathname === '/abbai-flow/settings/icloud-reminders/move-section') {
+        result = await services.icloudReminders.moveReminderSection(value);
       } else {
         sendJson(res, 404, { error: 'iCloud Reminders route not found' });
         return;

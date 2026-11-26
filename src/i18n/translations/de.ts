@@ -319,22 +319,19 @@ export const de: Record<TranslationKey, string> = {
   'settings.integrations.weatherEntitySublabel': 'Für die Wetteranzeige verwendete Entität',
   'settings.integrations.icloudRemindersTitle': 'iCloud-Erinnerungen',
   'settings.integrations.icloudRemindersSublabel':
-    'Richte Apple iCloud in Home Assistant ein. Jede Erinnerungsliste erscheint unten als Home-Assistant-To-do-Liste.',
-  'settings.integrations.groceryTitle': 'Home-Assistant-Listen',
+    'Verbinde dich direkt mit Apple iCloud, um deine Erinnerungslisten zu verwalten. Das Passwort bleibt auf dem Server.',
+  'settings.integrations.groceryTitle': 'iCloud-Erinnerungslisten',
   'settings.integrations.defaultGroceryListLabel': 'Standard-Einkaufsliste',
   'settings.integrations.defaultGroceryListSublabel':
     'Beim Öffnen der Einkaufsansicht angezeigte Liste',
   'settings.integrations.autoFirstAvailable': 'Automatisch (erste verfügbare)',
   'settings.integrations.groceryListsLabel': 'Einkaufslisten',
   'settings.integrations.groceryListsSublabel':
-    'Wähle die Home-Assistant-To-do-Listen für den Bereich Einkäufe aus',
+    'Wähle die iCloud-Erinnerungslisten für den Bereich Einkäufe aus',
   'settings.integrations.taskListsSublabel':
-    'Wähle die Home-Assistant-To-do-Listen für den Bereich Aufgaben aus',
-  'settings.integrations.noTodoListsFound':
-    'Keine Home-Assistant-To-do-Listen gefunden. Richte iCloud-Erinnerungen in Home Assistant ein, um deine Listen zu synchronisieren.',
-  'settings.integrations.shoppingEntityLabel': 'Entität für Einkaufskarte',
-  'settings.integrations.shoppingEntitySublabel':
-    'HA-To-do-Liste für die Einkaufskarte in der Seitenleiste',
+    'Wähle die iCloud-Erinnerungslisten für den Bereich Aufgaben aus',
+  'settings.integrations.noICloudListsFound':
+    'Keine iCloud-Erinnerungslisten gefunden. Melde dich oben im Bereich iCloud-Erinnerungen an.',
   'settings.integrations.musicAssistantTitle': 'Music Assistant',
   'settings.integrations.defaultPlayerLabel': 'Standard-Player',
   'settings.integrations.defaultPlayerSublabel': 'Standardmäßig verwendeter Medienplayer',
@@ -584,12 +581,26 @@ export const de: Record<TranslationKey, string> = {
   'grocery.items': 'Artikel ({count})',
   'grocery.completed': 'Erledigt ({count})',
   'grocery.deleteItem': 'Artikel löschen',
-  'grocery.haList': '{name} (HA)',
-  'grocery.loadFailed': 'Diese Liste konnte nicht aus Home Assistant geladen werden',
+  'grocery.loadFailed': 'Diese Liste konnte nicht aus iCloud-Erinnerungen geladen werden',
   'grocery.retry': 'Erneut',
   'grocery.tabsLabel': 'Listenart',
   'grocery.tab.grocery': 'Einkäufe',
   'grocery.tab.tasks': 'Aufgaben',
+  'grocery.moveSection': 'In Abschnitt verschieben',
+  'grocery.noSection': 'Kein Abschnitt',
+  'grocery.otherSection': 'Sonstiges',
+  'grocery.editReminder': 'Erinnerung bearbeiten',
+  'grocery.itemTitle': 'Titel der Erinnerung',
+  'grocery.notes': 'Notizen',
+  'grocery.dueDate': 'Fälligkeitsdatum',
+  'grocery.priority': 'Priorität',
+  'grocery.priorityNone': 'Keine',
+  'grocery.priorityHigh': 'Hoch',
+  'grocery.priorityMedium': 'Mittel',
+  'grocery.priorityLow': 'Niedrig',
+  'grocery.flagged': 'Markiert',
+  'grocery.allDay': 'Ganztägig',
+  'grocery.saveReminder': 'Erinnerung speichern',
 
   // ---- card picker modal ----
   'cardPicker.title': 'Karte hinzufügen',

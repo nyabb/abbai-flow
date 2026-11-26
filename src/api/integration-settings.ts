@@ -130,10 +130,37 @@ export interface ICloudRemindersActionResult {
     isGroup: boolean;
     count: number | null;
     reminderCountReturned?: number;
-    sections?: Array<{ id: string; name: string | null; order: number | null }>;
-    reminders?: unknown[];
+    sections?: ICloudReminderSection[];
+    reminders?: ICloudReminder[];
   }>;
+  reminder?: ICloudReminder;
+  reminderId?: string;
   decodedAppleSample?: unknown;
+}
+
+export interface ICloudReminderSection {
+  id: string;
+  name: string | null;
+  order: number | null;
+}
+
+export interface ICloudReminder {
+  id: string;
+  list_id: string;
+  title: string;
+  desc: string;
+  completed: boolean;
+  completed_date: string | null;
+  due_date: string | null;
+  start_date: string | null;
+  priority: number;
+  flagged: boolean;
+  all_day: boolean;
+  deleted: boolean;
+  sectionID?: string | null;
+  sectionName?: string | null;
+  sectionOrder?: number | null;
+  [key: string]: unknown;
 }
 
 function iCloudAction<T>(action: string, body: unknown = {}): Promise<T> {
@@ -160,4 +187,53 @@ export function loadICloudRemindersLists(): Promise<ICloudRemindersActionResult>
 
 export function fetchICloudRemindersPreview(listKey: string): Promise<ICloudRemindersActionResult> {
   return iCloudAction<ICloudRemindersActionResult>('fetch-preview', { listKey });
+}
+
+export function fetchICloudRemindersList(listKey: string): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('fetch-list', { listKey });
+}
+
+export interface ICloudReminderPatch {
+  title?: string;
+  desc?: string;
+  dueDate?: string | null;
+  timeZone?: string | null;
+  priority?: number;
+  flagged?: boolean;
+  completed?: boolean;
+  allDay?: boolean;
+}
+
+export function createICloudReminder(
+  listKey: string,
+  values: ICloudReminderPatch & { title: string; sectionID?: string | null },
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('create-reminder', { listKey, ...values });
+}
+
+export function updateICloudReminder(
+  listKey: string,
+  reminderId: string,
+  patch: ICloudReminderPatch,
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('update-reminder', { listKey, reminderId, patch });
+}
+
+export function deleteICloudReminder(
+  listKey: string,
+  reminderId: string,
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('delete-reminder', { listKey, reminderId });
+}
+
+export function moveICloudReminderSection(
+  listKey: string,
+  reminderId: string,
+  sectionID: string | null,
+): Promise<ICloudRemindersActionResult> {
+  return iCloudAction<ICloudRemindersActionResult>('move-section', {
+    listKey,
+    reminderId,
+    sectionID,
+  });
 }

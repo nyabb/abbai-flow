@@ -36,13 +36,8 @@ export interface AbbaiSettings {
   weatherEntity: string;
   defaultGroceryList: string;
   groceryListIds: string[];
-  /**
-   * HA `todo.*` entities that feed the task lists. Empty means "everything that
-   * is not a grocery list", which is the old guess-based behaviour; naming them
-   * explicitly stops a new list from silently appearing in the wrong place.
-   */
+  /** Explicit iCloud Reminders list keys used by the Tasks view. */
   taskListIds?: string[];
-  shoppingEntity: string;
   musicDefaultPlayer: string;
   photoDirectory: string;
   photoInterval: number;
@@ -100,7 +95,6 @@ function buildDefaults(): AbbaiSettings {
     weatherEntity: config.weather_entity,
     defaultGroceryList: '',
     groceryListIds: [],
-    shoppingEntity: '',
     musicDefaultPlayer: '',
     photoDirectory: config.photo_directory,
     photoInterval: config.photo_interval,

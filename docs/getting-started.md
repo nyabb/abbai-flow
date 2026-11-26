@@ -68,14 +68,14 @@ On desktop the chores planner takes over the full content column, with the app s
 
 ## Lists (Grocery / Shopping)
 
-The lists view manages grocery and task lists from Home Assistant to-do entities, including Apple Reminders lists connected through Home Assistant's Apple iCloud integration.
+The lists view connects directly to iCloud Reminders for grocery and task lists. Sign in to your Apple Account in **Settings → Integrations** and choose which lists appear in each tab.
 
 **Key features:**
 
 - **List selector dropdown** -- switch between selected grocery lists and task lists.
 - **Quick add** -- type an item name and tap Add to append it to the active list.
 - **Check off items** -- tap items to mark them as purchased/completed.
-- **iCloud Reminders** -- connect Apple iCloud in Home Assistant; its reminder lists appear as Home Assistant to-do lists.
+- **iCloud Reminders** -- add, edit, complete, and delete reminders, set due dates and priorities, and move items between list sections.
 
 ### Desktop
 
@@ -100,11 +100,12 @@ for the record format and sync details.
 
 ## Tasks
 
-The tasks view shows todo items from Home Assistant's todo entities and Abbai Flow's built-in task list.
+The Tasks view shows reminders from selected iCloud Reminders lists alongside
+tasks from Abbai Flow's built-in local task list.
 
 **Key features:**
 
-- **Task list selector** -- switch between different HA todo lists.
+- **Task list selector** -- switch between selected iCloud Reminders lists.
 - **Add tasks** -- type a task and press Enter or tap Add.
 - **Mark complete** -- check off tasks to remove them from the active list.
 - **Calendar summary** -- today's open tasks appear beside the week view.
@@ -175,7 +176,7 @@ The settings view is where you configure Abbai Flow's behavior, appearance, and 
 - **Theme** -- choose from 8+ themes (Light, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
 - **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
 - **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
-- **List Providers** -- select Home Assistant to-do lists for Grocery and Tasks. Apple Reminders lists are available through Home Assistant's Apple iCloud integration.
+- **iCloud Reminders** -- authenticate with Apple, select grocery and task lists, and choose the default grocery list.
 - **Weather Entity** -- set which `weather.*` entity powers the Weather view.
 - **Display** -- screen saver timeout, photo slideshow interval, auto-refresh settings.
 

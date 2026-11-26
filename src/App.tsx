@@ -108,7 +108,6 @@ export function App() {
   const music = useMusic(client, connected);
 
   const taskLists = useTaskLists(
-    connected,
     settings.groceryListIds,
     settings.taskListIds ?? [],
     haIntegrationRevision,
@@ -813,8 +812,8 @@ export function App() {
           ) : activeView === 'grocery' ? (
             <GroceryView
               defaultListId={settings.defaultGroceryList || undefined}
-              connected={connected}
               groceryListIds={settings.groceryListIds}
+              taskListIds={settings.taskListIds ?? []}
             />
           ) : activeView === 'timer' ? (
             <div className="view-page">

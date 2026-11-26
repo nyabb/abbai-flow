@@ -267,40 +267,6 @@ Both methods require the HA token for authentication.
 
 ---
 
-## Home Assistant To-do API
-
-**File**: `src/api/home-assistant-todo.ts`
-
-The `HomeAssistantTodoClient` class discovers and operates Home Assistant `todo.*` entities. This includes lists provided by Home Assistant's Apple iCloud integration.
-
-### Discover lists
-
-```typescript
-const lists: GroceryList[] = await todoClient.getLists();
-```
-
-Discovers available `todo.*` entities by fetching all states.
-
-### Get items
-
-```typescript
-const items: GroceryItem[] = await todoClient.getItems(listId: string);
-```
-
-Calls Home Assistant's `todo.get_items` service.
-
-### Add / check / uncheck items
-
-```typescript
-await todoClient.addItem(listId, name);
-await todoClient.checkItem(listId, itemName);
-await todoClient.uncheckItem(listId, itemName);
-```
-
-Uses `todo.add_item` and `todo.update_item` services.
-
----
-
 ## Family Store API
 
 **File**: `src/api/family.ts`

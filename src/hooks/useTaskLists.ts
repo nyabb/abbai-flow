@@ -1,214 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { hasToken, haFetch, callHaService } from '../api/ha-rest';
+import {
+  fetchICloudRemindersList,
+  loadICloudRemindersLists,
+  updateICloudReminder,
+  type ICloudReminder,
+} from '../api/integration-settings';
 import { useLocalTasks } from './useLocalTasks';
-import { useTaskmate } from './useTaskmate';
 
 export interface TaskTodoItem {
   uid: string;
   summary: string;
   status: 'needs_action' | 'completed';
   listId: string;
-  userId?: string;
-}
-
-export function useTaskLists(
-  connected: boolean,
-  groceryListIds: string[] = [],
-  taskListIds: string[] = [],
-  refreshKey = 0,
-) {
-  const localTasks = useLocalTasks();
-  const { users, listByUser, completions } = useTaskmate(connected);
-  const [haItems, setHaItems] = useState<Omit<TaskTodoItem, 'userId'>[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  /*
-   * Array *identity*, not contents, is what a dependency array compares. Callers
-   * routinely pass an inline fallback such as `settings.taskListIds ?? []`, which
-   * is a brand new array on every render -- so depending on the array directly
-   * re-ran this effect on every render and refetched /api/states in a loop. A
-   * joined string changes only when the selection actually changes.
-   */
-  const groceryKey = groceryListIds.join('|');
-  const taskKey = taskListIds.join('|');
-
-  // Fetch HA todo items for task-type lists
-  useEffect(() => {
-    if (!connected && !hasToken()) {
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    let hasLoaded = false;
-
-    // Rebuilt from the keys above so the effect body never closes over an array
-    // whose identity changes every render.
-    const groceryIds = groceryKey ? groceryKey.split('|') : [];
-    const taskIds = taskKey ? taskKey.split('|') : [];
-
-    async function fetchTasks() {
-      if (!hasLoaded) setLoading(true);
-      try {
-        // Get the non-grocery HA todo entities
-        const states = (await haFetch('/api/states')) as Array<{
-          entity_id: string;
-          state: string;
-          attributes: Record<string, unknown>;
-        }>;
-
-        const todoEntities = states.filter((s) => {
-          if (!s.entity_id.startsWith('todo.') || s.state === 'unavailable') return false;
-          const name = (s.attributes.friendly_name as string) || s.entity_id;
-          /*
-           * Naming the task lists explicitly beats guessing: with a selection,
-           * exactly those entities are read and nothing else, so a list added in
-           * Home Assistant stays invisible until it is chosen here. Without one,
-           * fall back to "any todo entity that is not a grocery list".
-           */
-          if (taskIds.length > 0) {
-            return taskIds.includes(s.entity_id) && !groceryIds.includes(s.entity_id);
-          }
-          if (groceryIds.length > 0) {
-            return !groceryIds.includes(s.entity_id);
-          }
-          return !isGroceryEntity(name);
-        });
-
-        /*
-         * Every selected list is read. This used to stop at three
-         * (`slice(0, 3)`), and because the order comes from /api/states it was
-         * not even a predictable three -- lists beyond that simply never showed.
-         */
-        const items: Omit<TaskTodoItem, 'userId'>[] = [];
-        for (const entity of todoEntities) {
-          try {
-            const result = (await callHaService(
-              'todo',
-              'get_items',
-              {
-                entity_id: entity.entity_id,
-              },
-              true,
-            )) as {
-              service_response?: Record<
-                string,
-                { items?: Array<{ uid: string; summary: string; status: string }> }
-              >;
-            };
-            const entityItems = result?.service_response?.[entity.entity_id]?.items ?? [];
-            for (const item of entityItems) {
-              items.push({
-                uid: item.uid,
-                summary: item.summary,
-                status: item.status as 'needs_action' | 'completed',
-                listId: entity.entity_id,
-              });
-            }
-          } catch {
-            /* skip failed lists */
-          }
-        }
-        if (!cancelled) setHaItems(items);
-      } catch (err) {
-        console.warn('Failed to fetch task lists:', err);
-      } finally {
-        hasLoaded = true;
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchTasks();
-    const interval = setInterval(() => {
-      // Nothing to do while the page is hidden; the listener catches up.
-      if (document.visibilityState === 'hidden') return;
-      void fetchTasks();
-    }, 60_000);
-
-    const onVisible = () => {
-      if (document.visibilityState !== 'hidden') void fetchTasks();
-    };
-    document.addEventListener('visibilitychange', onVisible);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  }, [connected, groceryKey, taskKey, refreshKey]);
-
-  const items: TaskTodoItem[] = useMemo(() => {
-    const local: TaskTodoItem[] = localTasks
-      .getTasksForList('abbai-flow-todo')
-      .filter(
-        (t) => t.status === 'needs_action' || (t.completedAt ? isToday(t.completedAt) : false),
-      )
-      .map((t) => ({
-        uid: t.id,
-        summary: t.summary,
-        status: t.status,
-        listId: 'abbai-flow-todo',
-      }));
-
-    const fromHa: TaskTodoItem[] = [];
-    for (const i of haItems) {
-      const userId = listByUser[i.listId]?.childId;
-      if (i.status === 'needs_action' || userId != null) {
-        fromHa.push({ ...i, userId });
-      }
-    }
-
-    const done: TaskTodoItem[] = completions.map((c) => ({
-      uid: c.uid,
-      summary: c.summary,
-      status: 'completed' as const,
-      listId: '',
-      userId: c.userId,
-    }));
-
-    const seen = new Set<string>();
-    return [...local, ...fromHa, ...done].filter((it) => {
-      const key = `${it.userId ?? ''}:${it.uid}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [localTasks, haItems, listByUser, completions]);
-
-  const toggleItem = useCallback(
-    async (uid: string, currentStatus: string, listId?: string) => {
-      // Check if it's a local item
-      const localItem = localTasks.getTasksForList('abbai-flow-todo').find((t) => t.id === uid);
-      if (localItem) {
-        localTasks.toggleTask(uid);
-        return;
-      }
-
-      const haItem =
-        haItems.find((i) => i.uid === uid && (listId == null || i.listId === listId)) ??
-        haItems.find((i) => i.uid === uid);
-      if (!haItem) return;
-      const newStatus = currentStatus === 'needs_action' ? 'completed' : 'needs_action';
-      try {
-        await callHaService('todo', 'update_item', {
-          entity_id: haItem.listId,
-          item: haItem.summary,
-          status: newStatus,
-        });
-        setHaItems((prev) =>
-          prev.map((i) =>
-            i.uid === uid && i.listId === haItem.listId
-              ? { ...i, status: newStatus as 'needs_action' | 'completed' }
-              : i,
-          ),
-        );
-      } catch (err) {
-        console.warn('Failed to toggle todo item:', err);
-      }
-    },
-    [localTasks, haItems],
-  );
-
-  return { items, toggleItem, users, loading };
 }
 
 const GROCERY_KEYWORDS = [
@@ -225,17 +28,150 @@ const GROCERY_KEYWORDS = [
   'meal',
 ];
 
-function isGroceryEntity(name: string): boolean {
+function isGroceryList(name: string): boolean {
   const lower = name.toLowerCase();
-  return GROCERY_KEYWORDS.some((kw) => lower.includes(kw));
+  return GROCERY_KEYWORDS.some((keyword) => lower.includes(keyword));
 }
 
-function isToday(iso: string): boolean {
-  const d = new Date(iso);
+function isToday(value: string | null | undefined): boolean {
+  if (!value) return false;
+  const date = new Date(value);
   const now = new Date();
   return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
+    !Number.isNaN(date.getTime()) &&
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
   );
+}
+
+export function useTaskLists(
+  groceryListIds: string[] = [],
+  taskListIds: string[] = [],
+  refreshKey = 0,
+) {
+  const { getTasksForList, toggleTask } = useLocalTasks();
+  const [reminders, setReminders] = useState<Array<{ listKey: string; reminder: ICloudReminder }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Depend on list contents rather than array identity; callers can pass inline defaults.
+  const groceryKey = groceryListIds.join('|');
+  const taskKey = taskListIds.join('|');
+
+  useEffect(() => {
+    let cancelled = false;
+    let loadedOnce = false;
+    const configuredGroceryIds = groceryKey ? groceryKey.split('|') : [];
+    const configuredTaskIds = taskKey ? taskKey.split('|') : [];
+
+    async function fetchTasks() {
+      if (!loadedOnce) setLoading(true);
+      try {
+        const listResult = await loadICloudRemindersLists();
+        const available = (listResult.lists || []).filter(
+          (list) => !list.deleted && !list.isGroup,
+        );
+        const availableIds = new Set(available.map((list) => list.key));
+        const groceryIds = new Set(configuredGroceryIds.filter((id) => availableIds.has(id)));
+        const explicitTaskIds = configuredTaskIds.filter((id) => availableIds.has(id));
+        const selected = explicitTaskIds.length > 0
+          ? available.filter((list) => explicitTaskIds.includes(list.key) && !groceryIds.has(list.key))
+          : available.filter((list) =>
+              !groceryIds.has(list.key) &&
+              !(groceryIds.size === 0 && isGroceryList(list.title)),
+            );
+        const snapshots = await Promise.all(
+          selected.map((list) => fetchICloudRemindersList(list.key).catch(() => null)),
+        );
+        const items: Array<{ listKey: string; reminder: ICloudReminder }> = [];
+        for (const [index, snapshot] of snapshots.entries()) {
+          for (const reminder of snapshot?.lists?.[0]?.reminders || []) {
+            if (!reminder.deleted) items.push({ listKey: selected[index].key, reminder });
+          }
+        }
+        if (!cancelled) setReminders(items);
+      } catch (error) {
+        console.warn('Failed to fetch iCloud task lists:', error);
+      } finally {
+        loadedOnce = true;
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void fetchTasks();
+    const interval = setInterval(() => {
+      if (document.visibilityState !== 'hidden') void fetchTasks();
+    }, 60_000);
+    const onVisible = () => {
+      if (document.visibilityState !== 'hidden') void fetchTasks();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [groceryKey, taskKey, refreshKey]);
+
+  const items: TaskTodoItem[] = useMemo(() => {
+    const local: TaskTodoItem[] = getTasksForList('abbai-flow-todo')
+      .filter((task) => task.status === 'needs_action' || isToday(task.completedAt))
+      .map((task) => ({
+        uid: task.id,
+        summary: task.summary,
+        status: task.status,
+        listId: 'abbai-flow-todo',
+      }));
+    const fromICloud: TaskTodoItem[] = reminders
+      .filter(({ reminder }) => reminder.completed
+        ? isToday(reminder.completed_date)
+        : true)
+      .map(({ listKey, reminder }) => ({
+        uid: reminder.id,
+        summary: reminder.title,
+        status: reminder.completed ? 'completed' : 'needs_action',
+        listId: listKey,
+      }));
+    const seen = new Set<string>();
+    return [...local, ...fromICloud].filter((item) => {
+      const key = `${item.listId}:${item.uid}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [getTasksForList, reminders]);
+
+  const toggleItem = useCallback(
+    async (uid: string, currentStatus: string, listId?: string) => {
+      const localItem = getTasksForList('abbai-flow-todo').find((task) => task.id === uid);
+      if (localItem) {
+        toggleTask(uid);
+        return;
+      }
+      const entry = reminders.find(
+        ({ listKey, reminder: item }) => item.id === uid && (listId == null || listKey === listId),
+      );
+      if (!entry) return;
+      const { listKey, reminder } = entry;
+      const completed = currentStatus === 'needs_action';
+      setReminders((current) => current.map((item) =>
+        item.listKey === listKey && item.reminder.id === uid
+          ? { ...item, reminder: { ...item.reminder, completed } }
+          : item,
+      ));
+      try {
+        await updateICloudReminder(listKey, reminder.id, { completed });
+      } catch (error) {
+        console.warn('Failed to toggle iCloud reminder:', error);
+        setReminders((current) => current.map((item) =>
+          item.listKey === listKey && item.reminder.id === uid
+            ? { ...item, reminder: { ...item.reminder, completed: reminder.completed } }
+            : item,
+        ));
+      }
+    },
+    [getTasksForList, toggleTask, reminders],
+  );
+
+  return { items, toggleItem, loading };
 }

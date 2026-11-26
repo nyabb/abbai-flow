@@ -1,36 +1,34 @@
 ---
 title: 'Grocery and Tasks Lists'
-description: 'Use Apple Reminders lists in Abbai Flow through Home Assistant.'
+description: 'Manage iCloud Reminders lists directly in Abbai Flow.'
 order: 6
 ---
 
 # Grocery and Tasks Lists
 
-Abbai Flow reads and updates Home Assistant to-do list entities. To use Apple
-Reminders, connect Apple iCloud in Home Assistant. Home Assistant exposes each
-Reminders list as a `todo.*` entity, and changes made in Abbai Flow sync through
-that integration to your Apple devices. See the [Home Assistant Apple iCloud
-integration](https://www.home-assistant.io/integrations/icloud/) for setup
-details.
+Abbai Flow connects directly to Apple iCloud Reminders. In **Settings → Integrations**,
+sign in with your Apple Account and complete Apple's verification step. The
+password is stored on the Abbai Flow server and is not sent to the browser.
 
 ## Choose lists in Abbai Flow
 
-After Home Assistant is connected, open **Settings → Integrations**. Choose the
-to-do lists that should appear in **Grocery** and in **Tasks**. The same
-Home Assistant list discovery is used for both selectors, so you can place each
-Reminders list where it belongs.
+After iCloud is connected, choose which Reminders lists should appear in
+**Grocery** and **Tasks**, then select a default grocery list. Each list can be
+assigned to one of those views.
 
-If no Home Assistant lists are configured, Abbai Flow can use its built-in
-local lists. Local list changes stay in that Abbai Flow browser and do not sync
-to Apple Reminders.
+If iCloud Reminders is unavailable, Abbai Flow can use its built-in local lists.
+Local list changes stay in that Abbai Flow browser and do not sync to Apple
+Reminders.
 
 ## Use the lists
 
 Open **Lists** from the navigation. The Grocery tab shows selected shopping
 lists; the Tasks tab shows selected task lists. Choose a list from the selector,
-add an item, or mark an item complete. For an iCloud Reminders list, Home
-Assistant sends those changes back to Reminders.
+add reminders, mark them complete, or edit their title, notes, due date, priority,
+flag, and all-day setting. Lists with sections let you move reminders between
+sections or leave them unsectioned. Deleting a reminder removes it from the
+active list.
 
-The list panel refreshes periodically while open. If a list is missing, confirm
-that it appears as a `todo.*` entity in Home Assistant and that it is selected
-in Abbai Flow's **Settings → Integrations**.
+The list panel refreshes periodically while open. If a list is missing, reload
+the iCloud list catalog in **Settings → Integrations** and check that the list
+is selected for the appropriate view.

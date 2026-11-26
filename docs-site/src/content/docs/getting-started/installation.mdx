@@ -6,7 +6,7 @@ order: 3
 
 # Getting Started
 
-Abbai Flow runs as a Docker container alongside Home Assistant. It can also run without Home Assistant, using local calendars and lists.
+Abbai Flow runs as a Docker container alongside Home Assistant. It can also run without Home Assistant, using local calendars and lists. Apple Reminders can connect directly through iCloud.
 
 ## Docker
 
@@ -23,7 +23,9 @@ docker run -d \
 
 Open `http://<server-address>:3000`. Images are available for `linux/amd64` and `linux/arm64`.
 
-Until Home Assistant is configured, Abbai Flow runs in standalone mode. Local calendars, tasks, and shopping lists remain available.
+Without Home Assistant, local calendars, tasks, and shopping lists remain
+available. Connect to Apple iCloud in **Settings → Integrations** to sync your
+Reminders lists directly.
 
 ### Docker Compose
 
