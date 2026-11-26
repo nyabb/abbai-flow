@@ -1,3 +1,10 @@
+# [2.36.0](https://github.com/nyabb/abbai-flow/compare/v2.35.1...v2.36.0) (2026-11-26)
+
+
+### Bug Fixes
+
+* **release:** publish releases for untyped commits ([a892bdb](https://github.com/nyabb/abbai-flow/commit/a892bdb536b96551690d9a0b96470dbaccb53d29))
+
 ## [2.35.1](https://github.com/nyabb/abbai-flow/compare/v2.35.0...v2.35.1) (2026-11-26)
 
 
