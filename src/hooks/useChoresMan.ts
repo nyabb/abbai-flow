@@ -101,13 +101,13 @@ function mapSnapshot(source: ChoresManSnapshot): ChoresManState {
       const rawStatus = String(statusInfo?.status || 'pending');
       const sharedFirstClaimant = String(chore.completion_criteria || '').trim().toLowerCase() === 'shared_first'
         ? Object.entries(statusByMember).find(([, info]) =>
-            ['claimed', 'approved'].includes(String(info.status).toLowerCase()),
+            ['in_progress', 'claimed', 'approved'].includes(String(info.status).toLowerCase()),
           )?.[0]
         : null;
       const claimedByOther = sharedFirstClaimant && sharedFirstClaimant.toLocaleLowerCase() !== name.toLocaleLowerCase();
       const status = claimedByOther
         ? 'completed_by_other'
-        : ['approved', 'claimed', 'due', 'overdue'].includes(rawStatus) ? rawStatus : 'pending';
+        : ['approved', 'claimed', 'in_progress', 'due', 'overdue'].includes(rawStatus) ? rawStatus : 'pending';
       const dueDate = dueByMember[name] || statusInfo?.due_date || chore.due_date || null;
       const parent = activeMembers.find((member) => member.role === 'parent');
       const actionData = { chore_id: chore.id, user_name: name };
@@ -118,7 +118,11 @@ function mapSnapshot(source: ChoresManSnapshot): ChoresManState {
           }
         : status === 'approved' || status === 'completed_by_other'
           ? {}
-          : { claim: actionId('claim_chore', actionData) };
+          : status === 'in_progress'
+            ? { claim: actionId('claim_chore', actionData) }
+            : String(chore.completion_criteria || '').trim().toLowerCase() === 'shared_first'
+              ? { take: actionId('take_chore', actionData) }
+              : { claim: actionId('claim_chore', actionData) };
 
       return [{
         id: `choresman:${chore.id}:${user.slug}`,
@@ -149,7 +153,7 @@ function mapSnapshot(source: ChoresManSnapshot): ChoresManState {
         autoApprove: chore.auto_approve === true,
         assignedUserNames: assignedNames,
         completionCriteria: typeof chore.completion_criteria === 'string' ? chore.completion_criteria : null,
-        canClaim: Boolean(actions.claim),
+        canClaim: Boolean(actions.take || actions.claim),
         canApprove: Boolean(actions.approve),
         actions,
         showOnCalendar: chore.show_on_calendar !== false,

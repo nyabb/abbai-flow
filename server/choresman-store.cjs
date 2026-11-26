@@ -17,6 +17,7 @@ const SERVICE_NAMES = [
   'create_chore',
   'update_chore',
   'delete_chore',
+  'take_chore',
   'claim_chore',
   'approve_chore',
   'disapprove_chore',
@@ -1068,7 +1069,7 @@ class ChoresManStore {
           }
         }
         for (const claim of document.chore_claims) {
-          if (claim.member_id === member.id && claim.status === 'claimed') claim.status = 'cancelled';
+          if (claim.member_id === member.id && ['in_progress', 'claimed'].includes(claim.status)) claim.status = 'cancelled';
         }
         for (const claim of document.reward_claims) {
           if (claim.member_id === member.id && claim.status === 'pending') claim.status = 'cancelled';
@@ -1125,7 +1126,7 @@ class ChoresManStore {
         if (chore.rotation_state?.current_member_id === member.id) chore.rotation_state.current_member_id = this._rotationMembers(document, chore)[0] || null;
       }
       for (const claim of document.chore_claims) {
-        if (claim.member_id === member.id && claim.status === 'claimed') claim.status = 'cancelled';
+        if (claim.member_id === member.id && ['in_progress', 'claimed'].includes(claim.status)) claim.status = 'cancelled';
       }
       for (const claim of document.reward_claims) {
         if (claim.member_id === member.id && claim.status === 'pending') claim.status = 'cancelled';
@@ -1362,9 +1363,12 @@ class ChoresManStore {
     return { chore_id: chore.id, deleted: true };
   }
 
-  async _claimChore(document, data) {
+  async _claimChore(document, data, { takeOnly = false } = {}) {
     const chore = this._findChore(document, data);
     const member = this._findMember(document, data);
+    if (takeOnly && chore.completion_criteria !== 'shared_first') {
+      throw new ChoresManStoreError('invalid_data', 'Only a shared-first chore can be taken before completion');
+    }
     const claimTime = this.now();
     if (member.paused && member.paused_until && Date.parse(member.paused_until) <= Date.parse(claimTime)) {
       await this._pauseUserChores(document, { user_id: member.id, paused: false });
@@ -1397,7 +1401,7 @@ class ChoresManStore {
     }
     let rotationStolen = false;
     if (ROTATION_CRITERIA.has(chore.completion_criteria)) {
-      const competingClaim = document.chore_claims.find((claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && ['claimed', 'approved'].includes(claim.status));
+      const competingClaim = document.chore_claims.find((claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && ['in_progress', 'claimed', 'approved'].includes(claim.status));
       if (competingClaim && competingClaim.member_id !== member.id) {
         throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed for this rotation`);
       }
@@ -1421,16 +1425,16 @@ class ChoresManStore {
     }
     if (chore.completion_criteria === 'shared_first') {
       const otherClaim = document.chore_claims.find(
-        (claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && ['claimed', 'approved'].includes(claim.status),
+        (claim) => claim.chore_id === chore.id && claim.occurrence === occurrence && claim.member_id !== member.id && ['in_progress', 'claimed', 'approved'].includes(claim.status),
       );
       if (otherClaim) throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed`);
     }
     let claim = this._claimFor(document, chore, member, nowDate);
-    if (claim && ['claimed', 'approved'].includes(claim.status)) {
+    if (claim && (['claimed', 'approved'].includes(claim.status) || (takeOnly && claim.status === 'in_progress'))) {
       throw new ChoresManStoreError('chore_already_claimed', `${chore.name} is already claimed for this period`);
     }
     const timestamp = isoNow(this.now);
-    this._clearNotifications(document, chore.id);
+    if (!takeOnly) this._clearNotifications(document, chore.id);
     if (!claim) {
       claim = {
         id: this.idFactory(),
@@ -1439,29 +1443,38 @@ class ChoresManStore {
         member_id: member.id,
         user_name: member.name,
         occurrence,
-        status: 'claimed',
+        status: takeOnly ? 'in_progress' : 'claimed',
         claimed_at: timestamp,
+        ...(takeOnly ? { started_at: timestamp } : { completed_at: timestamp }),
         due_date_at_claim: dueDate,
         ...(rotationStolen ? { rotation_stolen: true } : {}),
       };
       document.chore_claims.push(claim);
     } else {
-      claim.status = 'claimed';
-      claim.claimed_at = timestamp;
+      const wasInProgress = claim.status === 'in_progress';
+      claim.status = takeOnly ? 'in_progress' : 'claimed';
+      if (takeOnly) {
+        claim.started_at = timestamp;
+        delete claim.completed_at;
+      }
+      else {
+        if (!wasInProgress) claim.claimed_at = timestamp;
+        claim.completed_at = timestamp;
+      }
       claim.approved_at = null;
       claim.disapproved_at = null;
       claim.approver_name = null;
       claim.due_date_at_claim = dueDate;
       if (rotationStolen) claim.rotation_stolen = true;
     }
-    this._event(document, { type: 'chore_claimed', chore_id: chore.id, member_id: member.id, user_name: member.name, claim_id: claim.id });
-    if (chore.notify_on_claim !== false) {
+    this._event(document, { type: takeOnly ? 'chore_taken' : 'chore_claimed', chore_id: chore.id, member_id: member.id, user_name: member.name, claim_id: claim.id });
+    if (!takeOnly && chore.notify_on_claim !== false) {
       this._queueForParents(document, {
         type: 'chore_claimed', title: `${member.name} claimed ${chore.name}`,
         message: `${member.name} is waiting for approval.`, referenceId: claim.id, action: 'approve_chore',
       });
     }
-    if (chore.auto_approve) {
+    if (!takeOnly && chore.auto_approve) {
       this._automaticallyApproveClaim(document, chore, member, claim);
     }
     return { chore_id: chore.id, claim_id: claim.id, status: claim.status };
@@ -1560,7 +1573,7 @@ class ChoresManStore {
       if (
         claim.chore_id === chore.id &&
         (!scopedMember || claim.member_id === scopedMember.id) &&
-        ['claimed', 'approved'].includes(claim.status)
+        ['in_progress', 'claimed', 'approved'].includes(claim.status)
       ) {
         claim.status = 'reset';
         claim.reset_at = isoNow(this.now);
@@ -2459,7 +2472,7 @@ class ChoresManStore {
       let changed = false;
       for (const memberId of targets) {
         const due = memberId ? chore.due_date_by_member?.[memberId] || chore.due_date : chore.due_date;
-        const inFlight = document.chore_claims.some((claim) => claim.chore_id === chore.id && (!memberId || claim.member_id === memberId) && claim.occurrence === cycleKey(chore, claim.member_id, this.now()) && ['claimed', 'approved'].includes(claim.status));
+        const inFlight = document.chore_claims.some((claim) => claim.chore_id === chore.id && (!memberId || claim.member_id === memberId) && claim.occurrence === cycleKey(chore, claim.member_id, this.now()) && ['in_progress', 'claimed', 'approved'].includes(claim.status));
         if (inFlight) {
           skipped.push({ chore_id: chore.id, chore_name: chore.name, user_id: memberId, reason: 'in_flight' });
           continue;
@@ -2521,7 +2534,7 @@ class ChoresManStore {
         const due = this._effectiveDueDate(chore, memberId);
         if (!due || Date.parse(due) >= Date.parse(now)) continue;
         const current = cycleKey(chore, memberId, now);
-        const claims = document.chore_claims.filter((claim) => claim.chore_id === chore.id && claim.member_id === memberId && claim.occurrence === current && ['claimed', 'approved'].includes(claim.status));
+        const claims = document.chore_claims.filter((claim) => claim.chore_id === chore.id && claim.member_id === memberId && claim.occurrence === current && ['in_progress', 'claimed', 'approved'].includes(claim.status));
         for (const claim of claims) {
           claim.status = 'reset';
           claim.reset_at = isoNow(this.now);
@@ -2549,7 +2562,7 @@ class ChoresManStore {
   _resetChoresToPending(document) {
     let reset = 0;
     for (const claim of document.chore_claims) {
-      if (['claimed', 'approved'].includes(claim.status)) {
+      if (['in_progress', 'claimed', 'approved'].includes(claim.status)) {
         claim.status = 'reset';
         claim.reset_at = isoNow(this.now);
         this._clearNotifications(document, claim.id);
@@ -2864,6 +2877,7 @@ class ChoresManStore {
       create_chore: (document) => this._createChore(document, data),
       update_chore: (document) => this._updateChore(document, data),
       delete_chore: (document) => this._deleteChore(document, data),
+      take_chore: (document) => this._claimChore(document, data, { takeOnly: true }),
       claim_chore: (document) => this._claimChore(document, data),
       approve_chore: (document) => this._approveChore(document, data),
       disapprove_chore: (document) => this._disapproveChore(document, data),

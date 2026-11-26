@@ -272,11 +272,15 @@ describe('ChorePlanner anyone chores', () => {
       dueDate: null,
       completionCriteria: 'shared_first',
       assignedUserNames: ['Maya', 'Zara'],
-      canClaim: true,
-      canApprove: false,
-      actions: {
-        claim: `choresman-action:claim-table-setting:${name.toLowerCase()}`,
-      },
+      canClaim: status !== 'completed_by_other',
+      canApprove: status === 'claimed',
+      actions: status === 'pending'
+        ? { take: `choresman-action:take-table-setting:${name.toLowerCase()}` }
+        : status === 'in_progress'
+          ? { claim: `choresman-action:complete-table-setting:${name.toLowerCase()}` }
+          : status === 'claimed'
+            ? { approve: `choresman-action:approve-table-setting:${name.toLowerCase()}` }
+            : {},
     });
 
     return {
@@ -307,17 +311,17 @@ describe('ChorePlanner anyone chores', () => {
     expect(column(container, 'Zara').querySelectorAll('.planner-row')).toHaveLength(0);
   });
 
-  it('tells the child it waits for a parent once a free chore is claimed', () => {
-    mocks.state.current = anyoneState('claimed', 'pending');
+  it('moves a taken chore to the child’s list without marking it completed', () => {
+    mocks.state.current = anyoneState('in_progress', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
     const labels = [...container.querySelectorAll('.planner-row-check')].map(
       (button) => button.getAttribute('aria-label') ?? '',
     );
 
-    // Zara claimed it, so her row says a parent still has to sign off. The
-    // pending copy for Maya is no longer offered because ChoresMan locks the
-    // shared chore to its first claimant.
-    expect(labels.some((text) => text.startsWith('Wacht op goedkeuring'))).toBe(true);
+    // Taking it only assigns the chore. Zara still has to mark it done; there
+    // is no approval request yet, and Maya no longer sees a free chore.
+    expect(labels.some((text) => text.startsWith('Ik heb het gedaan!'))).toBe(true);
+    expect(labels.some((text) => text.startsWith('Wacht op goedkeuring'))).toBe(false);
     expect(labels.some((text) => text.startsWith('Afgerond'))).toBe(false);
     expect(labels.some((text) => text.startsWith('Bevestigen'))).toBe(false);
     expect(freeColumn(container).querySelectorAll('.planner-row')).toHaveLength(0);
@@ -330,7 +334,7 @@ describe('ChorePlanner anyone chores', () => {
     localStorage.setItem('abbai-flow-filter-chore-board-tab', JSON.stringify('free'));
     mocks.state.current = anyoneState('pending', 'pending');
     mocks.runActionId.mockImplementationOnce(async () => {
-      mocks.state.current = anyoneState('claimed', 'pending');
+      mocks.state.current = anyoneState('in_progress', 'completed_by_other');
     });
 
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
@@ -341,6 +345,8 @@ describe('ChorePlanner anyone chores', () => {
         name: 'Zara',
       }),
     );
+
+    expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:take-table-setting:zara');
 
     await waitFor(() => {
       expect(
@@ -361,7 +367,7 @@ describe('ChorePlanner anyone chores', () => {
   });
 
   it('moves the chore into the claimer’s column, out of the free column', () => {
-    mocks.state.current = anyoneState('claimed', 'completed_by_other');
+    mocks.state.current = anyoneState('in_progress', 'completed_by_other');
     const { container } = renderPlanner([PARENT, ZARA, MAYA]);
 
     const zara = column(container, 'Zara');
@@ -661,6 +667,7 @@ describe('ChorePlanner completion confirmation', () => {
           ...choresManState().chores[0],
           completionCriteria: 'shared_first',
           assignedUserNames: ['Zara', 'Maya'],
+          actions: { take: 'choresman-action:take-afwassen' },
         },
       ],
     });
@@ -676,7 +683,7 @@ describe('ChorePlanner completion confirmation', () => {
     );
 
     await waitFor(() =>
-      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:claim-afwassen'),
+      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:take-afwassen'),
     );
     await waitFor(() =>
       expect(container.querySelector('.planner-toast')?.textContent).toBe('Geclaimd · Afwassen'),

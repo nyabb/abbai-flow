@@ -557,7 +557,7 @@ export function App() {
   const calendarCompletedChoreIds = useMemo(() => {
     const ids = new Set<string>();
     for (const chore of choresManData?.chores ?? []) {
-      if (/^(approved|completed|done)/i.test(chore.status)) {
+      if (/^(approved|completed|done)$/i.test(chore.status)) {
         ids.add(chore.id);
       }
     }
@@ -566,17 +566,17 @@ export function App() {
 
   const calendarWaitingChoreIds = useMemo(
     () => new Set((choresManData?.chores ?? [])
-      .filter((chore) => chore.status === 'claimed')
+      .filter((chore) => ['in_progress', 'claimed'].includes(chore.status))
       .map((chore) => chore.id)),
     [choresManData],
   );
 
   const handleCalendarToggleChore = useCallback(
     (choreId: string) => {
-      // The calendar only lets a member claim a chore. Parent approval stays
-      // in the PIN-gated planner flow.
+      // Taking a shared chore assigns it; ticking an assigned chore submits it
+      // for review. Parent approval stays in the PIN-gated planner flow.
       const chore = choresManData?.chores.find((item) => item.id === choreId);
-      const actionId = chore?.actions.claim;
+      const actionId = chore?.actions.take ?? chore?.actions.claim;
       if (actionId) void runChoresManAction(actionId);
     },
     [choresManData, runChoresManAction],

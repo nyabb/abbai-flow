@@ -148,6 +148,8 @@ describe('choresManTaskStatus', () => {
   it('maps ChoresMan statuses onto planner statuses', () => {
     expect(choresManTaskStatus('approved')).toBe('completed');
     expect(choresManTaskStatus('completed')).toBe('completed');
+    expect(choresManTaskStatus('completed_by_other')).toBe('active');
+    expect(choresManTaskStatus('in_progress')).toBe('active');
     expect(choresManTaskStatus('overdue')).toBe('late');
     expect(choresManTaskStatus('missed')).toBe('late');
     expect(choresManTaskStatus('due')).toBe('active');
@@ -163,7 +165,11 @@ describe('shared chores', () => {
       assignee: name,
       assignedUserNames: ['Maya', 'Nova'],
       completionCriteria: 'shared_first',
-      actions: status === 'claimed' ? { approve: 'choresman-action:approve:table' } : {},
+      actions: status === 'claimed'
+        ? { approve: 'choresman-action:approve:table' }
+        : status === 'in_progress'
+          ? { claim: 'choresman-action:complete:table' }
+          : { take: 'choresman-action:take:table' },
     });
 
   it('labels a first-come chore as anyone while it is open', () => {
@@ -186,15 +192,17 @@ describe('shared chores', () => {
     expect(view.tasks.every((task) => task.audience === 'everyone')).toBe(true);
   });
 
-  it('drops the row after another child claims a shared chore', () => {
+  it('keeps a taken chore active and drops it from the other child’s board', () => {
     const view = buildChorePlannerView(
-      state([shared('Maya', 'claimed'), shared('Nova', 'completed_by_other')], users),
+      state([shared('Maya', 'in_progress'), shared('Nova', 'completed_by_other')], users),
       [],
     );
     expect(view.tasks.map((task) => task.name)).toEqual(['Tafel dekken']);
-    expect(view.tasks[0].awaitingReview).toBe(true);
+    expect(view.tasks[0].awaitingReview).toBe(false);
+    expect(view.tasks[0].statusOverride).toBe('active');
     expect(view.tasks[0].memberId).toBe('choresman:maya');
     expect(view.tasks[0].audience).toBe('member');
+    expect(view.tasks[0].actions?.claim).toBe('choresman-action:complete:table');
   });
 });
 
