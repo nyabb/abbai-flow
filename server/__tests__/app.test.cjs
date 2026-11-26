@@ -725,8 +725,14 @@ test('iCloud worker logs only reminder mutations', () => {
       event: 'request_finished',
       action: 'move_reminder_section',
       request_id: 'req-123',
-      ok: true,
-      state: 'updated',
+      ok: false,
+      error_code: 'icloud_section_update_failed',
+      failure_stage: 'list_record_update',
+      apple_error_code: 'CONFLICT',
+      http_status: 409,
+      partial: true,
+      reminder_id: 'must-not-be-logged',
+      response_body: 'must-not-be-logged',
       duration_ms: 120,
     }));
   } finally {
@@ -735,7 +741,11 @@ test('iCloud worker logs only reminder mutations', () => {
 
   assert.equal(logged.length, 1);
   assert.match(logged[0], /"action":"move_reminder_section"/);
+  assert.match(logged[0], /"failure_stage":"list_record_update"/);
+  assert.match(logged[0], /"apple_error_code":"CONFLICT"/);
+  assert.match(logged[0], /"partial":true/);
   assert.doesNotMatch(logged[0], /private reminder text/);
+  assert.doesNotMatch(logged[0], /must-not-be-logged/);
 });
 
 test('service bridge validates input and forwards to Home Assistant', async (t) => {

@@ -118,9 +118,12 @@ class ICloudRemindersWorker {
       'ok',
       'state',
       'error_code',
+      'failure_stage',
+      'apple_error_code',
       'http_status',
       'duration_ms',
       'list_count',
+      'partial',
     ]) {
       const value = entry[key];
       if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {

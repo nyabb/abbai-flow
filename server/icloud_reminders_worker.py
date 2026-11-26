@@ -44,6 +44,8 @@ two_step_device: dict[str, Any] | None = None
 auth_mode: str | None = None
 _REMINDER_LIST_CACHE: dict[str, dict[str, Any]] = {}
 _REMINDER_AVAILABLE_LISTS: dict[str, Any] = {}
+_REMINDER_LIST_CATALOG: dict[str, Any] | None = None
+_REMINDER_LIST_CATALOG_DIRTY = True
 _REMINDER_SYNC_CURSOR: str | None = None
 _REMINDER_REVISION_SEQUENCE = time.time_ns() // 1_000
 
@@ -212,6 +214,67 @@ def _download_section_asset_bytes(raw_client: Any, asset: Any) -> bytes:
             raise ValueError("The section membership asset is too large.")
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+class SectionMutationError(RuntimeError):
+    """A section-write failure with safe diagnostic fields for operator logs."""
+
+    def __init__(
+        self,
+        stage: str,
+        *,
+        apple_error_code: str | None = None,
+        http_status: int | None = None,
+        message: str = "iCloud could not save the section change. Refresh the list and try again.",
+    ) -> None:
+        super().__init__(message)
+        self.stage = stage
+        self.apple_error_code = _safe_cloudkit_error_code(apple_error_code)
+        self.http_status = http_status if isinstance(http_status, int) and 100 <= http_status <= 599 else None
+
+
+def _safe_cloudkit_error_code(value: Any) -> str | None:
+    if not isinstance(value, (str, int)) or isinstance(value, bool):
+        return None
+    code = str(value)
+    if not code or len(code) > 64 or not all(character.isalnum() or character in "_.-" for character in code):
+        return None
+    return code
+
+
+def _section_mutation_error(exc: Exception, stage: str) -> SectionMutationError:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    if status is None:
+        status = getattr(exc, "status_code", None)
+    code = getattr(exc, "code", None)
+    return SectionMutationError(
+        stage,
+        apple_error_code=_safe_cloudkit_error_code(code),
+        http_status=status,
+    )
+
+
+def _section_mutation_failure(
+    exc: SectionMutationError,
+    *,
+    reminder_id: str | None = None,
+) -> dict[str, Any]:
+    result: dict[str, Any] = {
+        "ok": False,
+        "errorCode": "icloud_section_update_failed",
+        "error": str(exc),
+        "failureStage": exc.stage,
+    }
+    if exc.apple_error_code:
+        result["appleErrorCode"] = exc.apple_error_code
+    if exc.http_status:
+        result["httpStatus"] = exc.http_status
+    if reminder_id:
+        result["partial"] = True
+        result["reminderId"] = reminder_id
+        result["error"] = "The reminder was created, but iCloud could not move it into the selected section. Check the list before retrying."
+    return result
 
 
 def _full_section_value(
@@ -435,7 +498,19 @@ def _normalized_record_identifier(value: Any) -> str:
     return "".join(character for character in identifier.upper() if character.isalnum())
 
 
-def _selected_reminders_list(reminders_service: Any, list_key: str) -> tuple[list[Any], Any]:
+def _selected_reminders_list(
+    reminders_service: Any,
+    list_key: str,
+    *,
+    refresh: bool = False,
+) -> tuple[list[Any], Any]:
+    cached_list = _REMINDER_AVAILABLE_LISTS.get(list_key)
+    if cached_list is not None and not refresh:
+        lists = list(_REMINDER_AVAILABLE_LISTS.values())
+        if getattr(cached_list, "deleted", False) or getattr(cached_list, "is_group", False):
+            raise LookupError("Choose an active iCloud Reminders list, then try again.")
+        return lists, cached_list
+
     lists = list(reminders_service.lists())
     _remember_reminder_lists(lists)
     reminder_list = next(
@@ -454,11 +529,20 @@ def _selected_reminders_list(reminders_service: Any, list_key: str) -> tuple[lis
 
 
 def _remember_reminder_lists(lists: list[Any]) -> None:
+    global _REMINDER_LIST_CATALOG, _REMINDER_LIST_CATALOG_DIRTY
     _REMINDER_AVAILABLE_LISTS.clear()
     for reminder_list in lists:
         key = reminders_list_key(reminder_list)
         if key:
             _REMINDER_AVAILABLE_LISTS[key] = reminder_list
+    _REMINDER_LIST_CATALOG = {
+        "ok": True,
+        "state": "authenticated",
+        "pyicloudVersion": importlib.metadata.version("pyicloud"),
+        "listCount": len(lists),
+        "lists": [reminders_list_summary(reminder_list) for reminder_list in lists[:50]],
+    }
+    _REMINDER_LIST_CATALOG_DIRTY = False
 
 
 def _parse_due_date(value: Any) -> dt.datetime | None:
@@ -479,7 +563,7 @@ def _validate_priority(value: Any) -> int:
     return value
 
 
-def _move_reminder_section(
+def _move_reminder_section_impl(
     reminders_service: Any,
     reminder_list: Any,
     selected_list_ref: dict[str, Any],
@@ -488,6 +572,7 @@ def _move_reminder_section(
     section_id: str | None,
 ) -> None:
     """Update Apple's list-level membership asset using CloudKit change tags."""
+    selected_list_ref["section_mutation_stage"] = "list_record_context"
     record_id = str(getattr(reminder_list, "id", ""))
     _log_selected_section_assets(selected_list_ref, list_key, "", record_id)
     context = selected_list_ref.get("section_query_context")
@@ -506,6 +591,7 @@ def _move_reminder_section(
         raise RuntimeError("This list has no writable section membership asset.")
 
     if section_id is not None:
+        selected_list_ref["section_mutation_stage"] = "section_validation"
         valid_sections = {
             _normalized_record_identifier(section.get("id"))
             for section in selected_list_ref.get("sections", [])
@@ -514,7 +600,9 @@ def _move_reminder_section(
         if _normalized_record_identifier(section_id) not in valid_sections:
             raise ValueError("Choose an existing section in this iCloud Reminders list.")
 
+    selected_list_ref["section_mutation_stage"] = "membership_asset_download"
     payload = _download_section_asset_bytes(raw_client, asset)
+    selected_list_ref["section_mutation_stage"] = "membership_asset_decode"
     try:
         document = json.loads(payload.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -550,6 +638,7 @@ def _move_reminder_section(
     if not isinstance(record_name, str) or not isinstance(zone_id, dict):
         raise RuntimeError("Apple's list record is missing its CloudKit routing metadata.")
 
+    selected_list_ref["section_mutation_stage"] = "asset_upload_token"
     token_response = post("/assets/upload", {
         "zoneID": zone_id,
         "tokens": [{
@@ -569,6 +658,7 @@ def _move_reminder_section(
     upload = getattr(session, "post", None)
     if not callable(upload):
         raise RuntimeError("This PyICloud version cannot upload section assets.")
+    selected_list_ref["section_mutation_stage"] = "asset_upload"
     upload_response = upload(
         upload_url,
         data=updated_payload,
@@ -576,7 +666,13 @@ def _move_reminder_section(
         timeout=30,
     )
     if not getattr(upload_response, "ok", False):
-        raise RuntimeError("Apple rejected the section membership asset upload.")
+        status = getattr(upload_response, "status_code", None)
+        raise SectionMutationError(
+            "asset_upload",
+            http_status=status,
+            message="iCloud rejected the section update. Refresh the list and try again.",
+        )
+    selected_list_ref["section_mutation_stage"] = "asset_upload_response"
     try:
         asset_response = upload_response.json()
     except Exception as exc:
@@ -586,6 +682,7 @@ def _move_reminder_section(
     if not isinstance(uploaded_asset, dict) or not required_asset_fields.issubset(uploaded_asset):
         raise RuntimeError("Apple's section asset upload response is incomplete.")
 
+    selected_list_ref["section_mutation_stage"] = "list_record_update"
     updated_record = post("/records/modify", {
         "zoneID": zone_id,
         "operations": [{
@@ -609,12 +706,51 @@ def _move_reminder_section(
     update_result = results[0]
     error_code = update_result.get("serverErrorCode") or update_result.get("errorCode")
     if error_code:
-        code = str(error_code)
+        code = _safe_cloudkit_error_code(error_code)
         if code in {"ZONE_WIDE_WILDCARD", "CONFLICT", "SERVER_RECORD_CHANGED"}:
-            raise RuntimeError("The list changed while the reminder was moving. Refresh and try again.")
-        raise RuntimeError(f"Apple rejected the section membership update ({code}).")
+            raise SectionMutationError(
+                "list_record_update",
+                apple_error_code=code,
+                message="The list changed while the reminder was moving. Refresh and try again.",
+            )
+        raise SectionMutationError("list_record_update", apple_error_code=code)
     if not isinstance(update_result.get("recordChangeTag"), str):
         raise RuntimeError("Apple returned no change tag for the section update.")
+
+
+def _move_reminder_section(
+    reminders_service: Any,
+    reminder_list: Any,
+    selected_list_ref: dict[str, Any],
+    list_key: str,
+    reminder_id: str,
+    section_id: str | None,
+) -> None:
+    try:
+        _move_reminder_section_impl(
+            reminders_service,
+            reminder_list,
+            selected_list_ref,
+            list_key,
+            reminder_id,
+            section_id,
+        )
+    except SectionMutationError:
+        raise
+    except ValueError as exc:
+        if selected_list_ref.get("section_mutation_stage") == "section_validation":
+            raise
+        raise _section_mutation_error(
+            exc,
+            str(selected_list_ref.get("section_mutation_stage") or "section_update"),
+        ) from exc
+    except Exception as exc:
+        raise _section_mutation_error(
+            exc,
+            str(selected_list_ref.get("section_mutation_stage") or "section_update"),
+        ) from exc
+    finally:
+        selected_list_ref.pop("section_mutation_stage", None)
 
 
 def _cloudkit_record_summaries(
@@ -906,6 +1042,7 @@ def json_value(value: Any, depth: int = 0) -> Any:
 
 def authenticate(request: dict[str, Any]) -> dict[str, Any]:
     global api, auth_mode, two_step_devices, two_step_device, _REMINDER_SYNC_CURSOR
+    global _REMINDER_LIST_CATALOG, _REMINDER_LIST_CATALOG_DIRTY
     if not PYICLOUD_AVAILABLE:
         return {"ok": False, "errorCode": "pyicloud_unavailable", "error": "PyICloud is not installed in this server runtime."}
     apple_id = str(request.get("appleId") or "").strip()
@@ -921,6 +1058,8 @@ def authenticate(request: dict[str, Any]) -> dict[str, Any]:
     two_step_device = None
     _REMINDER_LIST_CACHE.clear()
     _REMINDER_AVAILABLE_LISTS.clear()
+    _REMINDER_LIST_CATALOG = None
+    _REMINDER_LIST_CATALOG_DIRTY = True
     _REMINDER_SYNC_CURSOR = None
     try:
         api = PyiCloudService(
@@ -1029,15 +1168,12 @@ def fetch_lists() -> dict[str, Any]:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
     try:
         reminders_service = api.reminders
+        _sync_cached_reminder_changes(reminders_service)
+        if _REMINDER_LIST_CATALOG is not None and not _REMINDER_LIST_CATALOG_DIRTY:
+            return json.loads(json.dumps(_REMINDER_LIST_CATALOG, ensure_ascii=False))
         lists = list(reminders_service.lists())
         _remember_reminder_lists(lists)
-        return {
-            "ok": True,
-            "state": "authenticated",
-            "pyicloudVersion": importlib.metadata.version("pyicloud"),
-            "listCount": len(lists),
-            "lists": [reminders_list_summary(reminder_list) for reminder_list in lists[:50]],
-        }
+        return json.loads(json.dumps(_REMINDER_LIST_CATALOG, ensure_ascii=False))
     except Exception as exc:
         return {"ok": False, **safe_error(exc)}
 
@@ -1092,7 +1228,7 @@ def _load_list_section_context(
 ) -> tuple[list[Any], Any, dict[str, Any]]:
     selected_list_ref: dict[str, Any] = {}
     with inspect_cloudkit_responses(reminders_service, list_key, request_id, selected_list_ref):
-        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        lists, reminder_list = _selected_reminders_list(reminders_service, list_key, refresh=True)
         selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
         _query_section_records(reminders_service, selected_list_ref, list_key, request_id)
     if selected_list_ref.get("section_lookup_error"):
@@ -1110,7 +1246,7 @@ def _load_list_snapshot(
 ) -> tuple[list[Any], Any, Any, dict[str, Any]]:
     selected_list_ref: dict[str, Any] = {}
     with inspect_cloudkit_responses(reminders_service, list_key, request_id, selected_list_ref):
-        lists, reminder_list = _selected_reminders_list(reminders_service, list_key)
+        lists, reminder_list = _selected_reminders_list(reminders_service, list_key, refresh=True)
         selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
         _query_section_records(reminders_service, selected_list_ref, list_key, request_id)
         batch = reminders_service.list_reminders(
@@ -1196,12 +1332,15 @@ def _apply_reminder_change(event: Any) -> None:
 
 def _read_reminder_changes(reminders_service: Any, since: str | None) -> bool:
     """Advance the account-wide cursor and apply only changed reminders to cached lists."""
-    global _REMINDER_SYNC_CURSOR
+    global _REMINDER_SYNC_CURSOR, _REMINDER_LIST_CATALOG_DIRTY
     if not _reminder_sync_supported(reminders_service):
         return False
     try:
         next_cursor = reminders_service.sync_cursor()
         if since and since != next_cursor:
+            _REMINDER_LIST_CATALOG_DIRTY = True
+            for cache in _REMINDER_LIST_CACHE.values():
+                cache["sections_loaded"] = False
             for event in reminders_service.iter_changes(since=since):
                 _apply_reminder_change(event)
         _REMINDER_SYNC_CURSOR = next_cursor
@@ -1209,20 +1348,23 @@ def _read_reminder_changes(reminders_service: Any, since: str | None) -> bool:
     except Exception:
         _REMINDER_SYNC_CURSOR = None
         _REMINDER_LIST_CACHE.clear()
+        _REMINDER_LIST_CATALOG_DIRTY = True
         return False
 
 
 def _sync_cached_reminder_changes(reminders_service: Any) -> bool:
-    global _REMINDER_SYNC_CURSOR
+    global _REMINDER_SYNC_CURSOR, _REMINDER_LIST_CATALOG_DIRTY
     if not _reminder_sync_supported(reminders_service):
         _REMINDER_LIST_CACHE.clear()
         _REMINDER_SYNC_CURSOR = None
+        _REMINDER_LIST_CATALOG_DIRTY = True
         return False
     if _REMINDER_SYNC_CURSOR is None:
         try:
             _REMINDER_SYNC_CURSOR = reminders_service.sync_cursor()
         except Exception:
             _REMINDER_LIST_CACHE.clear()
+            _REMINDER_LIST_CATALOG_DIRTY = True
             return False
         return True
     return _read_reminder_changes(reminders_service, _REMINDER_SYNC_CURSOR)
@@ -1518,6 +1660,7 @@ def fetch_task_lists(request: dict[str, Any]) -> dict[str, Any]:
 def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
     if api is None:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    created_reminder_id: str | None = None
     try:
         title = str(request.get("title") or "").strip()
         if not title:
@@ -1551,13 +1694,14 @@ def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
             flagged=bool(request.get("flagged", False)),
             all_day=bool(request.get("allDay", False)),
         )
+        created_reminder_id = str(getattr(created, "id", "")) or None
         if section_id is not None:
             _move_reminder_section(
                 reminders_service,
                 reminder_list,
                 selected_ref,
                 list_key,
-                str(getattr(created, "id", "")),
+                created_reminder_id or "",
                 str(section_id),
             )
         created_data = json_value(created)
@@ -1588,6 +1732,8 @@ def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
         }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
+    except SectionMutationError as exc:
+        return _section_mutation_failure(exc, reminder_id=created_reminder_id)
     except Exception as exc:
         return {"ok": False, **safe_error(exc)}
 
@@ -1735,6 +1881,8 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
         }
     except (ValueError, LookupError) as exc:
         return {"ok": False, "errorCode": "invalid_request", "error": str(exc)}
+    except SectionMutationError as exc:
+        return _section_mutation_failure(exc)
     except Exception as exc:
         return {"ok": False, **safe_error(exc)}
 
@@ -1749,12 +1897,15 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
         }
     if action == "reset":
         global api, auth_mode, two_step_devices, two_step_device, _REMINDER_SYNC_CURSOR
+        global _REMINDER_LIST_CATALOG, _REMINDER_LIST_CATALOG_DIRTY
         api = None
         auth_mode = None
         two_step_devices = []
         two_step_device = None
         _REMINDER_LIST_CACHE.clear()
         _REMINDER_AVAILABLE_LISTS.clear()
+        _REMINDER_LIST_CATALOG = None
+        _REMINDER_LIST_CATALOG_DIRTY = True
         _REMINDER_SYNC_CURSOR = None
         return {"ok": True, "state": "disconnected"}
     if action == "authenticate":
@@ -1804,6 +1955,10 @@ for line in sys.stdin:
             ok=bool(result.get("ok")),
             state=result.get("state"),
             error_code=result.get("errorCode"),
+            failure_stage=result.get("failureStage"),
+            apple_error_code=result.get("appleErrorCode"),
+            http_status=result.get("httpStatus"),
+            partial=result.get("partial"),
             duration_ms=round((time.monotonic() - started_at) * 1000),
             list_count=result.get("listCount"),
             reminder_counts=[
