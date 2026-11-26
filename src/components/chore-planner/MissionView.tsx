@@ -2,7 +2,7 @@
  * The guided "missions" run: the overview of a child's chores, the one-at-a-time
  * mission screen, and the closing celebration card.
  */
-import { Check, ChevronRight } from 'lucide-react';
+import { Check, ChevronRight, Trophy } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import type { I18nValue } from '../../i18n';
@@ -136,20 +136,40 @@ export function MissionView({
         <div className="planner-mission-hero">
           {currentTask.icon && <span>{currentTask.icon}</span>}
           <h2>{currentTask.name}</h2>
-          {currentTask.points > 0 && <b>⭐ {currentTask.points}</b>}
           <p>{remaining}</p>
         </div>
         {currentTask.awaitingReview ? (
           /* The child already did their part; only a parent can finish this
              step, so the mission screen must offer the approval instead of a
              button that refuses the tap. */
-          <button className="planner-primary" onClick={onApprove}>
-            {c.approveCompletion}
+          <button
+            className="planner-primary planner-mission-action"
+            aria-label={c.approveCompletion}
+            onClick={onApprove}
+          >
+            <span>{c.approveCompletion}</span>
+            {currentTask.points > 0 && (
+              <span className="planner-mission-points">
+                <Trophy aria-hidden="true" /> {currentTask.points}
+              </span>
+            )}
           </button>
         ) : (
-          <button className="planner-mission-done" disabled={!online || busy} onClick={onComplete}>
-            {c.iDidIt}
-            <Check />
+          <button
+            className="planner-mission-done planner-mission-action"
+            aria-label={c.iDidIt}
+            disabled={!online || busy}
+            onClick={onComplete}
+          >
+            <span className="planner-mission-action-label">
+              {c.iDidIt}
+              <Check aria-hidden="true" />
+            </span>
+            {currentTask.points > 0 && (
+              <span className="planner-mission-points">
+                <Trophy aria-hidden="true" /> {currentTask.points}
+              </span>
+            )}
           </button>
         )}
       </main>

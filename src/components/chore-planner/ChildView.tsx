@@ -22,6 +22,7 @@ export interface ChildViewProps {
   isParent: boolean;
   spendableFor: (member: PlannerMember) => number;
   columnTasks: (memberId: string) => PlannerTask[];
+  freeTasks: PlannerTask[];
   columnRoutines: (memberId: string) => Routine[];
   completedTasksFor: (memberId: string) => PlannerTask[];
   completedHistory: ChoresManChoreHistoryEntry[] | null;
@@ -46,6 +47,7 @@ export function ChildView({
   isParent,
   spendableFor,
   columnTasks,
+  freeTasks,
   columnRoutines,
   completedTasksFor,
   completedHistory,
@@ -110,94 +112,142 @@ export function ChildView({
   return (
     <main className="planner-detail">
       <header className="planner-detail-hero">
-        <span className="planner-detail-avatar">
-          <MemberAvatar member={childMember} />
-        </span>
-        <div className="planner-detail-copy">
-          <h2>{childMember.name}</h2>
-          {!isParent && (
-            <span className="planner-detail-points">
-              <span aria-hidden="true">{'\u{1FA99}'}</span>
-              {spendableFor(childMember)}
+        <div className="planner-detail-toolbar">
+          <div className="planner-detail-nav">
+            <button
+              type="button"
+              className="planner-icon-button"
+              onClick={() => onStepChild(-1)}
+              aria-label={c.prevChild}
+            >
+              <ChevronLeft />
+            </button>
+            <button
+              type="button"
+              className="planner-icon-button"
+              onClick={() => onStepChild(1)}
+              aria-label={c.nextChild}
+            >
+              <ChevronRight />
+            </button>
+          </div>
+        </div>
+
+        <div className="planner-detail-overview">
+          <div className="planner-detail-profile">
+            <span className="planner-detail-avatar">
+              <MemberAvatar member={childMember} />
             </span>
+            <div className="planner-detail-copy">
+              <h2>{childMember.name}</h2>
+              {!isParent && (
+                <span className="planner-detail-points">
+                  <span aria-hidden="true">{'\u{1FA99}'}</span>
+                  {spendableFor(childMember)}
+                </span>
+              )}
+            </div>
+            {!isParent && (
+              <button
+                type="button"
+                className="planner-col-play planner-col-play--big"
+                disabled={!canRunMissions(childMember.id)}
+                onClick={() => onStartMissions(childMember.id)}
+                aria-label={`${c.startMissions}: ${childMember.name}`}
+              >
+                {'\u25B6'}
+              </button>
+            )}
+          </div>
+
+          {!isParent && (
+            <section className="planner-detail-goals">
+              <div className="planner-detail-goals-head">
+                <h3>{c.goals}</h3>
+                <button
+                  type="button"
+                  className="planner-detail-goal-add"
+                  onClick={() => onNewGoal(childMember.id)}
+                  aria-label={c.setGoal}
+                >
+                  <Plus aria-hidden="true" />
+                </button>
+              </div>
+              {rewards.length === 0 ? (
+                <p className="planner-detail-goals-empty">{c.noRewards}</p>
+              ) : (
+                <div className="planner-detail-goal-list">
+                  {rewards.map((reward) => renderRewardRow(reward))}
+                </div>
+              )}
+            </section>
           )}
         </div>
-        <div className="planner-detail-nav">
-          <button
-            type="button"
-            className="planner-icon-button"
-            onClick={() => onStepChild(-1)}
-            aria-label={c.prevChild}
-          >
-            <ChevronLeft />
-          </button>
-          <button
-            type="button"
-            className="planner-icon-button"
-            onClick={() => onStepChild(1)}
-            aria-label={c.nextChild}
-          >
-            <ChevronRight />
-          </button>
-        </div>
-        {!isParent && (
-          <button
-            type="button"
-            className="planner-col-play planner-col-play--big"
-            disabled={!canRunMissions(childMember.id)}
-            onClick={() => onStartMissions(childMember.id)}
-            aria-label={`${c.startMissions}: ${childMember.name}`}
-          >
-            {'\u25B6'}
-          </button>
-        )}
       </header>
 
-      {!isParent && (
-        <section className="planner-detail-section">
-          <h3>
-            {c.goals}
-            <span>{rewards.length}</span>
-          </h3>
-          {rewards.length === 0 && <p className="planner-col-empty">{c.noRewards}</p>}
-          {rewards.map((reward) => renderRewardRow(reward))}
-          <button
-            className="planner-ghost planner-reward-new"
-            onClick={() => onNewGoal(childMember.id)}
-          >
-            <Plus />
-            {c.setGoal}
-          </button>
-        </section>
-      )}
+      <div className="planner-detail-columns">
+        {!isParent && (
+          <section className="planner-detail-section planner-detail-section--chores">
+            <h3>{c.choresColumn}<span>{chores.length}</span></h3>
+            {chores.length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              chores.map((task) => renderRow(task))
+            )}
+          </section>
+        )}
 
-      {!isParent && (
-        <section className="planner-detail-section">
-          <h3>
-            {c.choresColumn}
-            <span>{chores.length}</span>
-          </h3>
-          {chores.length === 0 ? (
-            <p className="planner-col-empty">{c.nothing}</p>
+        <section className="planner-detail-section planner-detail-section--routines">
+          <div className="planner-detail-section-head">
+            <h3>{c.routines}<span>{routines.length}</span></h3>
+            {isParent ? (
+              onNewRoutine && (
+                <button
+                  type="button"
+                  className="planner-section-action"
+                  onClick={() => onNewRoutine(childMember.id)}
+                >
+                  <Plus aria-hidden="true" /> {c.addRoutine}
+                </button>
+              )
+            ) : (
+              <button
+                type="button"
+                className="planner-section-action"
+                disabled={!canRunMissions(childMember.id)}
+                onClick={() => onOpenMissions(childMember.id)}
+              >
+                {'\u25B6'} {c.missions}
+              </button>
+            )}
+          </div>
+          {routines.length === 0 ? (
+            <p className="planner-col-empty">{c.noRoutines}</p>
           ) : (
-            chores.map((task) => renderRow(task))
+            routines.map((routine) => routineRow(routine, childMember.id))
           )}
         </section>
-      )}
+
+        {!isParent && (
+          <section className="planner-detail-section planner-detail-section--free">
+            <h3>{c.free}<span>{freeTasks.length}</span></h3>
+            {freeTasks.length === 0 ? (
+              <p className="planner-col-empty">{c.nothing}</p>
+            ) : (
+              freeTasks.map((task) => renderRow(task))
+            )}
+          </section>
+        )}
+      </div>
 
       {!isParent && (
-        <section className="planner-detail-section">
-          <h3>
-            {c.completedHistory}
-            <span>{visibleCompletions.length}</span>
-          </h3>
+        <section className="planner-detail-section planner-detail-history">
+          <h3>{c.completedHistory}<span>{visibleCompletions.length}</span></h3>
           <label className="planner-history-filter">
             <span>{c.historyRange}</span>
             <select
               value={historyRange}
-              onChange={(event) =>
-                setHistoryRange(event.currentTarget.value as HistoryRange)
-              }
+              onChange={(event) => setHistoryRange(event.currentTarget.value as HistoryRange)}
             >
               <option value="twoDays">{c.historyLastTwoDays}</option>
               <option value="week">{c.historyLastWeek}</option>
@@ -222,40 +272,6 @@ export function ChildView({
           )}
         </section>
       )}
-
-      <section className="planner-detail-section">
-        <div className="planner-detail-section-head">
-          <h3>
-            {c.routines}
-            <span>{routines.length}</span>
-          </h3>
-          {isParent ? (
-            onNewRoutine && (
-              <button
-                type="button"
-                className="planner-section-action"
-                onClick={() => onNewRoutine(childMember.id)}
-              >
-                <Plus aria-hidden="true" /> {c.addRoutine}
-              </button>
-            )
-          ) : (
-            <button
-              type="button"
-              className="planner-section-action"
-              disabled={!canRunMissions(childMember.id)}
-              onClick={() => onOpenMissions(childMember.id)}
-            >
-              {'\u25B6'} {c.missions}
-            </button>
-          )}
-        </div>
-        {routines.length === 0 ? (
-          <p className="planner-col-empty">{c.noRoutines}</p>
-        ) : (
-          routines.map((routine) => routineRow(routine, childMember.id))
-        )}
-      </section>
     </main>
   );
 }

@@ -315,7 +315,7 @@ export function ChoreBoard({
                     chores.map((task) => renderRow(task))
                   )}
 
-                  <div className="planner-section-head">
+                  <div className="planner-section-head planner-section-head--routines">
                     <h2>
                       {c.routines}
                       <span>{routines.length}</span>
@@ -335,17 +335,19 @@ export function ChoreBoard({
                     routines.map((routine) => routineRow(routine, member.id))
                   )}
 
-                  <div className="planner-section-head">
-                    <h2>{c.goals}</h2>
-                    <button
-                      type="button"
-                      className="planner-section-action"
-                      onClick={() => onNewGoal(member.id)}
-                    >
-                      <Plus aria-hidden="true" /> {c.setGoal}
-                    </button>
+                  <div className="planner-desktop-goals">
+                    <div className="planner-section-head">
+                      <h2>{c.goals}</h2>
+                      <button
+                        type="button"
+                        className="planner-section-action"
+                        onClick={() => onNewGoal(member.id)}
+                      >
+                        <Plus aria-hidden="true" /> {c.setGoal}
+                      </button>
+                    </div>
+                    {renderGoals(member.id)}
                   </div>
-                  {renderGoals(member.id)}
                 </>
               )}
             </div>

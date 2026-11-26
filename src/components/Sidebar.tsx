@@ -78,6 +78,11 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.weather',
   },
+  {
+    id: 'settings',
+    icon: <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
+    labelKey: 'nav.settings',
+  },
 ];
 
 /** Keep the same page order in the desktop rail and full bottom bar. */
@@ -97,12 +102,17 @@ const COMPACT_MORE_IDS: SidebarView[] = ['music', 'weather', 'timer'];
 export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
   const { t } = useTranslation();
   const compactPhone = useMediaQuery('(max-width: 480px)');
+  const portraitDisplay = useMediaQuery(
+    '(min-width: 900px) and (min-height: 1200px) and (orientation: portrait)',
+  );
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRootRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
   const itemFor = (id: SidebarView) => NAV_ITEMS.find((item) => item.id === id)!;
   const desktopNav = MOBILE_NAV_IDS.map(itemFor);
-  const mobileNav = (compactPhone ? COMPACT_NAV_IDS : MOBILE_NAV_IDS).map(itemFor);
+  const mobileNavIds = compactPhone ? COMPACT_NAV_IDS : MOBILE_NAV_IDS;
+  const mobileNav = mobileNavIds.map(itemFor);
+  if (portraitDisplay && !compactPhone) mobileNav.push(itemFor('settings'));
   const moreNav = COMPACT_MORE_IDS.map(itemFor);
   const quickAddLabel = t('omniAdd.quickAdd');
   const activeViewInMore = COMPACT_MORE_IDS.includes(activeView);

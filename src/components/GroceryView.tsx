@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Edit2, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import {
   createICloudReminder,
   deleteICloudReminder,
@@ -480,7 +480,7 @@ export function GroceryView({
             aria-label={t('grocery.editReminder')}
             title={t('grocery.editReminder')}
           >
-            <Edit2 size={14} />
+            <ChevronRight size={18} />
           </button>
         )}
         <button
