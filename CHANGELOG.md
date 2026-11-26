@@ -1,3 +1,10 @@
+## [2.33.1](https://github.com/nyabb/abbai-flow/compare/v2.33.0...v2.33.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* clarify integration action progress ([d52cf3a](https://github.com/nyabb/abbai-flow/commit/d52cf3a9be83d0c3a08a3599152dbf09d3ae84b8))
+
 # [2.33.0](https://github.com/nyabb/abbai-flow/compare/v2.32.2...v2.33.0) (2026-11-26)
 
 
