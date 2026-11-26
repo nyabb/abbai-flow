@@ -78,6 +78,9 @@ function safeCloudKitDiagnostic(entry) {
       if (typeof item.matchesSelectedList === 'boolean') {
         record.matchesSelectedList = item.matchesSelectedList;
       }
+      if (typeof item.recordErrorCode === 'string') {
+        record.record_error_code = item.recordErrorCode.slice(0, 100);
+      }
       if (typeof item.sectionID === 'string' && /^[a-f0-9-]{16,100}$/iu.test(item.sectionID)) {
         record.section_id = item.sectionID;
       }
@@ -106,10 +109,9 @@ function safeCloudKitDiagnostic(entry) {
     operation: entry.operation,
     list_key: entry.list_key,
     ...(typeof entry.diagnostic_phase === 'string' ? { diagnostic_phase: entry.diagnostic_phase.slice(0, 80) } : {}),
-    ...(typeof entry.query_record_type === 'string' ? { query_record_type: entry.query_record_type.slice(0, 100) } : {}),
+    ...(typeof entry.lookup_record_type === 'string' ? { lookup_record_type: entry.lookup_record_type.slice(0, 100) } : {}),
     ...(Number.isInteger(entry.candidate_count) ? { candidate_count: entry.candidate_count } : {}),
-    ...(Number.isInteger(entry.zone_record_count) ? { zone_record_count: entry.zone_record_count } : {}),
-    ...(typeof entry.query_error_code === 'string' ? { query_error_code: entry.query_error_code.slice(0, 100) } : {}),
+    ...(Number.isInteger(entry.lookup_result_count) ? { lookup_result_count: entry.lookup_result_count } : {}),
     ...(typeof entry.selected_record_id_hash === 'string' && /^[a-f0-9]{16}$/u.test(entry.selected_record_id_hash)
       ? { selected_record_id_hash: entry.selected_record_id_hash }
       : {}),
@@ -217,7 +219,7 @@ class ICloudRemindersWorker {
         'request_finished',
         'request_failed',
         'cloudkit_response_inspected',
-        'cloudkit_section_query_failed',
+        'cloudkit_section_lookup_failed',
         'cloudkit_diagnostic_unavailable',
       ].includes(
         entry.event,
@@ -233,12 +235,13 @@ class ICloudRemindersWorker {
     } else if (entry.event === 'cloudkit_diagnostic_unavailable') {
       if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
       safeEntry.list_key = entry.list_key;
-    } else if (entry.event === 'cloudkit_section_query_failed') {
+    } else if (entry.event === 'cloudkit_section_lookup_failed') {
       if (!['private', 'shared'].includes(entry.scope)) return;
       if (typeof entry.list_key !== 'string' || !/^[a-f0-9]{64}$/u.test(entry.list_key)) return;
       safeEntry.scope = entry.scope;
       safeEntry.list_key = entry.list_key;
       if (typeof entry.error_type === 'string') safeEntry.error_type = entry.error_type.slice(0, 100);
+      if (Number.isInteger(entry.http_status)) safeEntry.http_status = entry.http_status;
     }
     for (const key of [
       'pyicloud_available',
@@ -248,6 +251,7 @@ class ICloudRemindersWorker {
       'ok',
       'state',
       'error_code',
+      'http_status',
       'duration_ms',
       'list_count',
     ]) {

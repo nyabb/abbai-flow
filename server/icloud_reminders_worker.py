@@ -326,6 +326,11 @@ def _cloudkit_record_summaries(
             "recordIdHash": record_id_hash,
             "fieldNames": field_names[:_MAX_DIAGNOSTIC_FIELDS],
         }
+        for error_key in ("serverErrorCode", "errorCode", "code"):
+            error_code = record.get(error_key)
+            if isinstance(error_code, (str, int)) and not isinstance(error_code, bool):
+                summary["recordErrorCode"] = str(error_code)[:100]
+                break
         matches_selected_list = (
             selected_record_id_hash is not None
             and record_type.lower() == "list"
@@ -462,68 +467,52 @@ def inspect_cloudkit_responses(
             selected_record_id_hash = _short_hash(selected_list_id) if selected_list_id else None
             response_to_summarize = response
             raw_response_records = _cloudkit_response_records(response)
-            query_record_type = None
+            lookup_record_type = None
             candidate_count = None
-            zone_record_count = None
-            query_error_code = None
-            if operation == "records/query" and isinstance(payload, dict):
-                query = payload.get("query")
-                if isinstance(query, dict) and str(query.get("recordType") or "").lower() == "listsection":
-                    query_record_type = str(query.get("recordType"))[:100]
-                    if isinstance(response, dict):
-                        for error_key in ("serverErrorCode", "errorCode", "code"):
-                            error_value = response.get(error_key)
-                            if isinstance(error_value, str):
-                                query_error_code = error_value[:100]
-                                break
-                    section_ids = selected_list_ref.get("section_ids", []) if selected_list_ref else []
-                    normalized_section_ids = {
-                        _normalized_record_identifier(identifier)
-                        for identifier in section_ids
-                        if isinstance(identifier, str)
-                    }
-                    candidate_count = len(normalized_section_ids)
-                    zone_record_count = len(raw_response_records)
-                    section_order = {
-                        _normalized_record_identifier(identifier): index
-                        for index, identifier in enumerate(section_ids)
-                        if isinstance(identifier, str)
-                    }
-                    matching_records = [
-                        record for record in raw_response_records
-                        if _normalized_record_identifier(record.get("recordName")) in normalized_section_ids
-                    ]
-                    matching_records.sort(
-                        key=lambda record: section_order.get(
-                            _normalized_record_identifier(record.get("recordName")),
-                            len(section_order),
-                        )
-                    )
-                    response_to_summarize = {"records": matching_records}
+            lookup_result_count = None
+            lookup_order: dict[str, int] = {}
+            lookup_section_ids: dict[str, str] = {}
+            if operation == "records/lookup" and isinstance(payload, dict):
+                requested_records = payload.get("records")
+                section_ids = selected_list_ref.get("section_ids", []) if selected_list_ref else []
+                for index, section_id in enumerate(section_ids):
+                    if isinstance(section_id, str):
+                        normalized_id = _normalized_record_identifier(section_id)
+                        lookup_order[normalized_id] = index
+                        lookup_section_ids[normalized_id] = section_id
+                requested_ids = {
+                    _normalized_record_identifier(item.get("recordName"))
+                    for item in requested_records
+                    if isinstance(item, dict) and isinstance(item.get("recordName"), str)
+                } if isinstance(requested_records, list) else set()
+                if requested_ids and requested_ids.issubset(lookup_section_ids):
+                    lookup_record_type = "ListSection"
+                    candidate_count = len(requested_ids)
+                    lookup_result_count = len(raw_response_records)
             record_count, record_type_counts, records = _cloudkit_record_summaries(
                 response_to_summarize,
                 selected_record_id_hash=selected_record_id_hash,
                 raw_client=_raw_client,
             )
-            if query_record_type:
-                for summary, raw_record in zip(records, matching_records):
-                    section_id = str(raw_record.get("recordName") or "").rsplit("/", 1)[-1]
+            if lookup_record_type:
+                for summary, raw_record in zip(records, raw_response_records):
+                    normalized_id = _normalized_record_identifier(raw_record.get("recordName"))
+                    section_id = lookup_section_ids.get(normalized_id)
                     if section_id:
+                        if summary["recordType"] == "<unknown>":
+                            summary["recordType"] = lookup_record_type
                         summary["sectionID"] = section_id[:100]
-                        summary["sectionOrder"] = section_order.get(
-                            _normalized_record_identifier(raw_record.get("recordName"))
-                        )
+                        summary["sectionOrder"] = lookup_order.get(normalized_id)
             log_event(
                 "cloudkit_response_inspected",
                 scope=_scope,
                 operation=operation,
-                **({"diagnostic_phase": "list_section_query"} if query_record_type else {}),
+                **({"diagnostic_phase": "list_section_lookup"} if lookup_record_type else {}),
                 list_key=list_key,
                 selected_record_id_hash=selected_record_id_hash,
-                **({"query_record_type": query_record_type} if query_record_type else {}),
+                **({"lookup_record_type": lookup_record_type} if lookup_record_type else {}),
                 **({"candidate_count": candidate_count} if candidate_count is not None else {}),
-                **({"zone_record_count": zone_record_count} if zone_record_count is not None else {}),
-                **({"query_error_code": query_error_code} if query_error_code else {}),
+                **({"lookup_result_count": lookup_result_count} if lookup_result_count is not None else {}),
                 request_id=request_id,
                 record_count=record_count,
                 record_type_counts=record_type_counts,
@@ -779,27 +768,27 @@ def fetch_preview(request: dict[str, Any]) -> dict[str, Any]:
                     zone_id = selected_record.get("zoneID") if isinstance(selected_record, dict) else None
                     if not isinstance(zone_id, dict) or not isinstance(zone_id.get("zoneName"), str):
                         zone_id = {"zoneName": "Reminders", "ownerRecordName": "_defaultOwner"}
-                    query_payload: dict[str, Any] = {
+                    lookup_payload: dict[str, Any] = {
                         "zoneID": zone_id,
-                        "resultsLimit": 200,
-                        "query": {"recordType": "ListSection"},
+                        "records": [
+                            {"recordName": f"ListSection/{section_id}"}
+                            for section_id in section_ids
+                        ],
                     }
                     try:
-                        for _ in range(10):
-                            query_response = post("records/query", query_payload)
-                            if not isinstance(query_response, dict):
-                                break
-                            continuation = query_response.get("continuationMarker")
-                            if not continuation:
-                                break
-                            query_payload["continuationMarker"] = continuation
-                    except Exception as section_query_exc:
+                        post("records/lookup", lookup_payload)
+                    except Exception as section_lookup_exc:
+                        error_code = getattr(section_lookup_exc, "code", None)
+                        response = getattr(section_lookup_exc, "response", None)
+                        status_code = getattr(response, "status_code", None)
                         log_event(
-                            "cloudkit_section_query_failed",
+                            "cloudkit_section_lookup_failed",
                             scope=context.get("scope", "private"),
                             list_key=selected_key,
                             request_id=str(request.get("requestId") or "")[:100],
-                            error_type=type(section_query_exc).__name__,
+                            error_type=type(section_lookup_exc).__name__,
+                            **({"error_code": str(error_code)[:100]} if isinstance(error_code, (str, int)) else {}),
+                            **({"http_status": status_code} if isinstance(status_code, int) else {}),
                         )
             batch = reminders_service.list_reminders(
                 reminder_list,
