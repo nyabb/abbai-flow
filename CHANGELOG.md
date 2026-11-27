@@ -1,3 +1,10 @@
+# [3.3.0](https://github.com/nyabb/abbai-flow/compare/v3.2.0...v3.3.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* open music controls from header and play playlists ([2003054](https://github.com/nyabb/abbai-flow/commit/20030545cd692f2a0fa5c5137e11cfdc005ecc7f))
+
 # [3.2.0](https://github.com/nyabb/abbai-flow/compare/v3.1.2...v3.2.0) (2026-11-27)
 
 ## [3.1.2](https://github.com/nyabb/abbai-flow/compare/v3.1.1...v3.1.2) (2026-11-27)
