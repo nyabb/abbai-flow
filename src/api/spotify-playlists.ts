@@ -346,9 +346,6 @@ export class SpotifyPlaylistLibrary {
       });
 
     switch (actionValue) {
-      case 'activate':
-        await request('PUT', '/me/player', { device_ids: [deviceId], play: true });
-        return;
       case 'playTrack':
         if (typeof value !== 'string' || !/^spotify:track:[A-Za-z0-9]{1,64}$/.test(value)) {
           throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify track URI');

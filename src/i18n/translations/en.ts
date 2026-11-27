@@ -321,11 +321,6 @@ export const en = {
   'settings.integrations.saving': 'Saving…',
   'settings.integrations.saved': 'Settings saved.',
   'settings.integrations.saveError': 'Could not save integration settings.',
-  'settings.integrations.encoreTitle': 'Encore music',
-  'settings.integrations.encoreUrlLabel': 'Encore WebSocket URL',
-  'settings.integrations.encoreUrlHelp': 'WebSocket address for the Encore server.',
-  'settings.integrations.encoreTokenLabel': 'Encore token',
-  'settings.integrations.encoreTokenHelp': 'Bearer token used to connect to Encore.',
   'settings.integrations.spotifyTitle': 'Spotify developer app',
   'settings.integrations.spotifyClientIdLabel': 'Client ID',
   'settings.integrations.spotifyClientSecretLabel': 'Client secret',
@@ -722,25 +717,19 @@ export const en = {
   'music.spotify': 'Spotify',
   'music.spotifyStatusNotConfigured': 'Not configured',
   'music.spotifyStatusLoggedOut': 'Spotify logged out',
-  'music.spotifyStatusDeviceInactive': 'Device inactive',
+  'music.spotifyStatusDeviceInactive': 'Browser player ready',
   'music.spotifyStatusNoPlayback': 'No active playback',
   'music.spotifyStatusPlaying': 'Playing',
   'music.spotifyStatusPaused': 'Paused',
   'music.spotifyStatusBuffering': 'Buffering',
   'music.spotifyConfigure':
-    'Configure the Spotify connection through Encore in Settings → Integrations.',
-  'music.spotifyConnectionHelp': 'Encore is unavailable. Abbai Flow will reconnect automatically.',
-  'music.spotifyLoginHelp':
-    'Log in to Spotify through your Spotify app to start playback on the Soloist device.',
+    'Configure Spotify developer app credentials and the OAuth redirect URL in Settings → Integrations.',
+  'music.spotifyConnectionHelp':
+    'Spotify browser playback is unavailable. Refresh the Music page and try again.',
   'music.spotifyDevice': 'Playback device',
-  'music.spotifyOutput': 'Playback output',
-  'music.spotifyOutputEncore': 'Encore',
-  'music.spotifyOutputBrowser': 'This browser',
   'music.spotifyBrowserEnable': 'Enable browser playback',
-  'music.spotifyBrowserConnecting': 'Connecting browser player…',
   'music.spotifyBrowserReconnectHelp': 'Reconnect Spotify to grant browser playback permissions.',
   'music.spotifyBrowserEnableFailed': 'Could not open Spotify authorization.',
-  'music.spotifyBrowserStartFailed': 'Could not start browser playback.',
   'music.spotifyRepeatContext': 'Repeat playlist',
   'music.spotifyRepeatTrack': 'Repeat track',
   'music.spotifyRepeat': 'Repeat',
@@ -748,7 +737,6 @@ export const en = {
   'music.spotifyContext': 'Playing from',
   'music.spotifySeek': 'Playback position',
   'music.spotifyShuffle': 'Shuffle',
-  'music.spotifyActivate': 'Activate device',
   'music.spotifyQueue': 'Up next',
   'music.spotifyQueueEmpty': 'No upcoming tracks',
   'music.spotifySearch': 'Search Spotify',
@@ -837,7 +825,7 @@ export const en = {
   'music.bluetoothNoDevices':
     'No devices found yet. Start a scan to discover nearby Bluetooth devices.',
   'music.bluetoothAudioRoutingNote':
-    'Pairing connects the Bluetooth device to the Raspberry Pi. Select it as Soloist’s audio output in Encore if audio does not switch automatically.',
+    'Bluetooth pairing here connects a device to the Raspberry Pi. Browser playback uses the audio output selected on the device running this browser.',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'No lists available',

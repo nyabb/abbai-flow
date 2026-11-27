@@ -242,7 +242,6 @@ function SavedSecretControl({
 
 type ClearSecretField =
   | 'clearWeatherApiKey'
-  | 'clearEncoreToken'
   | 'clearSpotifyClientSecret'
   | 'clearMealSourceToken'
   | 'clearIcloudPassword';
@@ -270,8 +269,6 @@ export function IntegrationsSection({
   const [weatherDataMapping, setWeatherDataMapping] = useState<WeatherDataMapping>(
     DEFAULT_WEATHER_DATA_MAPPING,
   );
-  const [encoreUrl, setEncoreUrl] = useState('ws://host.docker.internal:8095/');
-  const [encoreToken, setEncoreToken] = useState('');
   const [spotifyClientId, setSpotifyClientId] = useState('');
   const [spotifyClientSecret, setSpotifyClientSecret] = useState('');
   const [spotifyMarket, setSpotifyMarket] = useState('NL');
@@ -348,7 +345,6 @@ export function IntegrationsSection({
         setWeatherApiKeyMode(status.weatherApiKeyMode);
         setWeatherApiKeyParameter(status.weatherApiKeyParameter);
         setWeatherDataMapping({ ...DEFAULT_WEATHER_DATA_MAPPING, ...status.weatherDataMapping });
-        setEncoreUrl(status.encoreUrl);
         setSpotifyClientId(status.spotifyClientId);
         setSpotifyMarket(status.spotifyMarket);
         setSpotifyRedirectUri(status.spotifyRedirectUri);
@@ -537,8 +533,6 @@ export function IntegrationsSection({
         weatherApiKeyMode,
         weatherApiKeyParameter,
         weatherDataMapping,
-        encoreUrl,
-        ...(encoreToken.trim() ? { encoreToken: encoreToken.trim() } : {}),
         spotifyClientId,
         ...(spotifyClientSecret.trim() ? { spotifyClientSecret: spotifyClientSecret.trim() } : {}),
         spotifyMarket: spotifyMarket.trim().toUpperCase(),
@@ -564,7 +558,6 @@ export function IntegrationsSection({
       setIcloudDevices(status.icloudDevices);
       setIcloudSecurityKeys(status.icloudSecurityKeyNames);
       setWeatherApiKey('');
-      setEncoreToken('');
       setSpotifyClientSecret('');
       setMealSourceToken('');
       setIcloudPassword('');
@@ -1003,60 +996,6 @@ export function IntegrationsSection({
 
       {serverBacked && (
         <>
-          <div className="settings-group">
-            <div className="settings-group-title">{t('settings.integrations.encoreTitle')}</div>
-            <div className="settings-row settings-integration-field">
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.integrations.encoreUrlLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {t('settings.integrations.encoreUrlHelp')}
-                </div>
-              </div>
-              <input
-                className="settings-input settings-input--wide"
-                value={encoreUrl}
-                onChange={(event) => setEncoreUrl(event.target.value)}
-                placeholder="ws://host.docker.internal:8095/"
-              />
-            </div>
-            <div className="settings-row settings-integration-field">
-              <div>
-                <div className="settings-row-label">
-                  {t('settings.integrations.encoreTokenLabel')}
-                </div>
-                <div className="settings-row-sublabel">
-                  {integrationStatus?.encoreConfigured
-                    ? t('settings.integrations.secretSaved')
-                    : t('settings.integrations.encoreTokenHelp')}
-                </div>
-              </div>
-              <SavedSecretControl
-                label={t('settings.integrations.encoreTokenLabel')}
-                value={encoreToken}
-                onChange={setEncoreToken}
-                configured={Boolean(integrationStatus?.encoreConfigured)}
-                disabled={integrationStatusLoading}
-                busy={integrationBusy}
-                removeLabel={t('settings.integrations.clearSecret')}
-                onRemove={() => void removeSavedSecret('clearEncoreToken')}
-              />
-            </div>
-            <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                className="settings-btn settings-btn--primary"
-                onClick={() => void saveServerIntegrations()}
-                disabled={integrationBusy || integrationStatusLoading}
-              >
-                {settingsSaving
-                  ? t('settings.integrations.saving')
-                  : t('settings.integrations.save')}
-              </button>
-            </div>
-          </div>
-
           <div className="settings-group">
             <div className="settings-group-title">{t('settings.integrations.spotifyTitle')}</div>
             <div className="settings-row settings-integration-field">

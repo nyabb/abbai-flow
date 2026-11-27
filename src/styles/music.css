@@ -1513,21 +1513,6 @@
   font-weight: 800;
 }
 
-.spotify-activate-button {
-  min-height: 42px;
-  margin-top: 10px;
-  padding: 0 16px;
-  color: var(--text-primary);
-  background: var(--bg-hover);
-  border-radius: var(--radius-pill);
-  font-size: 0.82rem;
-  font-weight: 650;
-}
-
-.spotify-activate-button:hover {
-  background: var(--border);
-}
-
 .spotify-volume {
   display: flex;
   align-items: center;
@@ -1796,7 +1781,6 @@
   .spotify-context,
   .spotify-progress,
   .spotify-controls,
-  .spotify-activate-button,
   .spotify-volume,
   .spotify-control-error {
     grid-column: 1 / -1;

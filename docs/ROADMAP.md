@@ -19,7 +19,7 @@ required.
   calendar sources.
 - Continue work on iCloud Reminders reliability and sync visibility.
 - Expand meal planning and supported recipe data formats.
-- Improve Spotify and Encore connection status and device selection.
+- Improve Spotify browser playback setup and connection feedback.
 
 ## Distribution
 

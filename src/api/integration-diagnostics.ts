@@ -1,8 +1,6 @@
-import type { EncoreMusic, EncoreSnapshot } from './encore-music';
 import type { BluetoothSnapshot } from './bluetooth-types';
 
 export interface IntegrationDiagnosticConfig {
-  encoreToken: string;
   spotifyClientId: string;
   spotifyClientSecret: string;
   spotifyMarket: string;
@@ -39,70 +37,6 @@ function cleanLabel(value: string | null | undefined): string {
     .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
     .trim()
     .slice(0, 100);
-}
-
-function logEncoreStateChanges(
-  logger: IntegrationDiagnosticLogger,
-  encore: Pick<EncoreMusic, 'subscribe'>,
-): () => void {
-  let configuredLogged = false;
-  let lastConnection: EncoreSnapshot['connection'] | null = null;
-  let lastLoggedIn: boolean | null = null;
-  let lastDeviceKey: string | null = null;
-  let lastError: string | null = null;
-
-  return encore.subscribe((snapshot) => {
-    if (!snapshot.configured) {
-      if (!configuredLogged) {
-        logger.warn(
-          '[Integration] Spotify playback (Encore): not configured; add the connection in Settings → Integrations.',
-        );
-        configuredLogged = true;
-      }
-      return;
-    }
-
-    if (snapshot.connection !== lastConnection) {
-      lastConnection = snapshot.connection;
-      if (snapshot.connection === 'connecting') {
-        logger.info(
-          '[Integration] Spotify playback (Encore): connecting to the WebSocket gateway.',
-        );
-      } else if (snapshot.connection === 'connected') {
-        logger.info('[Integration] Spotify playback (Encore): WebSocket connected.');
-      } else {
-        logger.warn('[Integration] Spotify playback (Encore): disconnected; reconnect will retry.');
-      }
-    }
-
-    if (snapshot.error && snapshot.error !== lastError) {
-      logger.warn('[Integration] Spotify playback (Encore): ' + cleanLabel(snapshot.error) + '.');
-    }
-    lastError = snapshot.error;
-
-    if (snapshot.auth.loggedIn !== null && snapshot.auth.loggedIn !== lastLoggedIn) {
-      lastLoggedIn = snapshot.auth.loggedIn;
-      logger[snapshot.auth.loggedIn ? 'info' : 'warn'](
-        '[Integration] Spotify session: ' +
-          (snapshot.auth.loggedIn ? 'logged in.' : 'logged out; playback is unavailable.'),
-      );
-    }
-
-    if (snapshot.auth.loggedIn === true) {
-      const deviceName = cleanLabel(snapshot.auth.deviceName);
-      const deviceKey = `${snapshot.auth.isActive}:${deviceName}`;
-      if (deviceKey !== lastDeviceKey && snapshot.auth.isActive !== null) {
-        lastDeviceKey = deviceKey;
-        logger[snapshot.auth.isActive ? 'info' : 'warn'](
-          '[Integration] Spotify Soloist device ' +
-            (deviceName ? `"${deviceName}" ` : '') +
-            (snapshot.auth.isActive
-              ? 'is active for playback.'
-              : 'is logged in but not active for playback.'),
-        );
-      }
-    }
-  });
 }
 
 function logBluetoothStateChanges(
@@ -221,19 +155,14 @@ async function checkSpotifyPlaylists(
   }
 }
 
-/** Start non-blocking, secret-safe startup checks and Encore status logging. */
+/** Start non-blocking, secret-safe Spotify and Bluetooth startup checks. */
 export function startIntegrationDiagnostics(
   config: IntegrationDiagnosticConfig,
-  encore: Pick<EncoreMusic, 'subscribe'>,
   options: IntegrationDiagnosticsOptions = {},
 ): IntegrationDiagnosticsHandle {
   const logger = options.logger || console;
-  logger.info(
-    `[Integration] Spotify playback (Encore): ${config.encoreToken ? 'token configured; connection status follows' : 'not configured; add connection details in Settings → Integrations'}.`,
-  );
   logger.info(`[Integration] Spotify catalog market: ${cleanLabel(config.spotifyMarket) || 'NL'}.`);
 
-  const unsubscribeEncore = logEncoreStateChanges(logger, encore);
   const unsubscribeBluetooth = options.bluetooth
     ? logBluetoothStateChanges(logger, options.bluetooth)
     : () => undefined;
@@ -245,7 +174,6 @@ export function startIntegrationDiagnostics(
   return {
     ready,
     stop() {
-      unsubscribeEncore();
       unsubscribeBluetooth();
     },
   };

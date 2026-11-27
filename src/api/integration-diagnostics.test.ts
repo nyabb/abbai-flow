@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { EncoreSnapshot } from './encore-music';
 import type { BluetoothSnapshot } from './bluetooth-types';
 import {
   startIntegrationDiagnostics,
@@ -7,30 +6,8 @@ import {
   type IntegrationDiagnosticLogger,
 } from './integration-diagnostics';
 
-function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
-  return {
-    configured: true,
-    connection: 'connecting',
-    auth: { loggedIn: null, isActive: null, deviceName: null },
-    playback: {
-      status: 'idle',
-      item: null,
-      context: null,
-      position: null,
-      volume: null,
-      options: { shuffle: null, repeat: null },
-      availableActions: [],
-    },
-    queue: { previous: [], upcoming: [] },
-    error: null,
-    updatedAt: 1,
-    ...overrides,
-  };
-}
-
 function config(overrides: Partial<IntegrationDiagnosticConfig> = {}): IntegrationDiagnosticConfig {
   return {
-    encoreToken: 'server-encore-token',
     spotifyClientId: 'server-client-id',
     spotifyClientSecret: 'server-client-secret',
     spotifyMarket: 'NL',
@@ -48,6 +25,30 @@ function diagnosticsLogger() {
 }
 
 describe('integration startup diagnostics', () => {
+  it('checks Spotify credentials without exposing secrets', async () => {
+    const verifySpotifyCatalog = vi.fn(async () => ({ ok: true }));
+    const verifySpotifyPlaylists = vi.fn(async () => ({
+      configured: true,
+      authorized: true,
+      redirectConfigured: true,
+    }));
+    const { entries, logger } = diagnosticsLogger();
+
+    const handle = startIntegrationDiagnostics(config(), {
+      logger,
+      verifySpotifyCatalog,
+      verifySpotifyPlaylists,
+    });
+    await handle.ready;
+
+    expect(verifySpotifyCatalog).toHaveBeenCalledOnce();
+    expect(verifySpotifyPlaylists).toHaveBeenCalledOnce();
+    expect(entries.join('\n')).toContain('Spotify catalog search: credentials accepted.');
+    expect(entries.join('\n')).toContain('Spotify playlists: Spotify account authorization is available.');
+    expect(entries.join('\n')).not.toContain('server-client-secret');
+    handle.stop();
+  });
+
   it('logs Bluetooth connection changes without logging device addresses', async () => {
     let onBluetoothSnapshot: ((value: BluetoothSnapshot) => void) | undefined;
     const unsubscribeBluetooth = vi.fn();
@@ -68,14 +69,10 @@ describe('integration startup diagnostics', () => {
         return unsubscribeBluetooth;
       },
     };
-    const encore = { subscribe: () => vi.fn() };
     const { entries, logger } = diagnosticsLogger();
-    const handle = startIntegrationDiagnostics(
-      config({ encoreToken: '', spotifyClientId: '', spotifyClientSecret: '' }),
-      encore as never,
-      { logger, bluetooth },
-    );
+    const handle = startIntegrationDiagnostics(config(), { logger, bluetooth });
     await handle.ready;
+
     onBluetoothSnapshot?.({
       configured: true,
       connection: 'connected',
@@ -110,48 +107,5 @@ describe('integration startup diagnostics', () => {
     expect(entries.join('\n')).not.toContain('secret-device-address');
     handle.stop();
     expect(unsubscribeBluetooth).toHaveBeenCalledOnce();
-  });
-
-  it('checks Spotify credentials and logs playback state without exposing secrets', async () => {
-    let onEncoreSnapshot: ((value: EncoreSnapshot) => void) | undefined;
-    const unsubscribe = vi.fn();
-    const encore = {
-      subscribe: (listener: (value: EncoreSnapshot) => void) => {
-        onEncoreSnapshot = listener;
-        listener(snapshot());
-        return unsubscribe;
-      },
-    };
-    const verifySpotifyCatalog = vi.fn(async () => ({ ok: true }));
-    const { entries, logger } = diagnosticsLogger();
-
-    const handle = startIntegrationDiagnostics(config(), encore as never, {
-      logger,
-      verifySpotifyCatalog,
-    });
-    await handle.ready;
-
-    expect(verifySpotifyCatalog).toHaveBeenCalledOnce();
-    expect(entries.join('\n')).toContain('Spotify catalog search: credentials accepted.');
-
-    onEncoreSnapshot?.(
-      snapshot({
-        connection: 'connected',
-        auth: { loggedIn: true, isActive: false, deviceName: 'Abbai Party' },
-      }),
-    );
-    onEncoreSnapshot?.(
-      snapshot({
-        connection: 'connected',
-        auth: { loggedIn: true, isActive: true, deviceName: 'Abbai Party' },
-      }),
-    );
-    expect(entries.join('\n')).toContain('Spotify session: logged in.');
-    expect(entries.join('\n')).toContain('device "Abbai Party" is active for playback.');
-    expect(entries.join('\n')).not.toContain('server-encore-token');
-    expect(entries.join('\n')).not.toContain('server-client-secret');
-
-    handle.stop();
-    expect(unsubscribe).toHaveBeenCalledOnce();
   });
 });

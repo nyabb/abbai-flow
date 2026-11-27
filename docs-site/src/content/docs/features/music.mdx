@@ -1,23 +1,22 @@
 ---
 title: 'Music'
-description: 'Search Spotify, manage playlists, and play music through Encore or the browser.'
+description: 'Search Spotify, manage playlists, and play music in the browser.'
 order: 5
 ---
 
 # Music
 
-The Music page supports Spotify catalog and playlist features, with playback
-through Encore or the current browser.
+The Music page searches Spotify, manages playlists, and plays audio directly in
+the current browser.
 
 ## Connect services
 
-Configure supported music connections in **Settings → Integrations**. Spotify
-playlist management and browser playback also require connecting a Spotify
-account from the Music page after configuring the developer app credentials
-and redirect URI. Browser playback requires Spotify Premium and plays through
-the audio output selected by the computer running the browser. Reconnect
-Spotify to grant browser playback permissions if the account was previously
-connected only for playlists.
+Configure Spotify developer app credentials and the OAuth redirect URL in
+**Settings → Integrations**, then connect your Spotify account from the Music
+page. Browser playback requires Spotify Premium and plays through the audio
+output selected on the device running the browser. Reconnect Spotify to grant
+browser playback permissions if the account was previously connected only for
+playlists.
 
 Register the exact HTTPS callback URL configured under **Settings →
 Integrations** in the Spotify Developer Dashboard. For local development, use

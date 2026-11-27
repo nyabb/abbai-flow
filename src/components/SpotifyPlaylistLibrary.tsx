@@ -14,6 +14,7 @@ import { LoadingPlaceholder } from './LoadingPlaceholder';
 
 interface SpotifyPlaylistLibraryProps {
   library: UseSpotifyPlaylistsResult;
+  canPlay: boolean;
   onPlayTrack: (uri: string) => void;
 }
 
@@ -35,7 +36,7 @@ function SpotifyArtwork({
   );
 }
 
-export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylistLibraryProps) {
+export function SpotifyPlaylistLibrary({ library, canPlay, onPlayTrack }: SpotifyPlaylistLibraryProps) {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
@@ -135,6 +136,7 @@ export function SpotifyPlaylistLibrary({ library, onPlayTrack }: SpotifyPlaylist
         type="button"
         className="spotify-playlist-track-play"
         aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
+        disabled={!canPlay}
         onClick={() => onPlayTrack(track.uri)}
       >
         {t('music.play')}

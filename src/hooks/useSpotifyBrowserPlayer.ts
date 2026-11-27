@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { EncoreEntity, EncoreSnapshot, EncorePlayback, EncoreQueueItem } from '../api/encore-music';
+import type {
+  MusicEntity,
+  MusicPlayback,
+  MusicQueueItem,
+  MusicSnapshot,
+} from '../api/music-player';
 
 interface SpotifyBrowserTrack {
   uri?: string;
@@ -69,7 +74,7 @@ declare global {
 
 let sdkPromise: Promise<SpotifyBrowserSdk> | null = null;
 
-const EMPTY_PLAYBACK: EncorePlayback = {
+const EMPTY_PLAYBACK: MusicPlayback = {
   status: 'idle',
   item: null,
   context: null,
@@ -79,7 +84,7 @@ const EMPTY_PLAYBACK: EncorePlayback = {
   availableActions: [],
 };
 
-function emptySnapshot(authorized: boolean, playbackAuthorized: boolean): EncoreSnapshot {
+function emptySnapshot(authorized: boolean, playbackAuthorized: boolean): MusicSnapshot {
   return {
     configured: playbackAuthorized,
     connection: 'disconnected',
@@ -143,7 +148,7 @@ function loadSpotifySdk(): Promise<SpotifyBrowserSdk> {
   return sdkPromise;
 }
 
-function normalizeTrack(track: SpotifyBrowserTrack | undefined): EncoreEntity | null {
+function normalizeTrack(track: SpotifyBrowserTrack | undefined): MusicEntity | null {
   if (!track) return null;
   const artwork = track.album?.images?.find((image) => typeof image.url === 'string')?.url;
   return {
@@ -162,17 +167,17 @@ function normalizeTrack(track: SpotifyBrowserTrack | undefined): EncoreEntity | 
   };
 }
 
-function normalizeQueue(tracks: SpotifyBrowserTrack[] | undefined): EncoreQueueItem[] {
+function normalizeQueue(tracks: SpotifyBrowserTrack[] | undefined): MusicQueueItem[] {
   return (tracks || [])
     .map((track) => normalizeTrack(track))
-    .filter((track): track is EncoreEntity => track !== null)
+    .filter((track): track is MusicEntity => track !== null)
     .map((track) => ({ ...track, source: null }));
 }
 
 function snapshotFromPlayerState(
   state: SpotifyBrowserState | null,
-  current: EncoreSnapshot,
-): EncoreSnapshot {
+  current: MusicSnapshot,
+): MusicSnapshot {
   if (!state) {
     return {
       ...current,
@@ -191,7 +196,7 @@ function snapshotFromPlayerState(
       : typeof contextMetadata?.name === 'string'
         ? contextMetadata.name
         : null;
-  const context: EncoreEntity | null = contextUri
+  const context: MusicEntity | null = contextUri
     ? {
         uri: contextUri,
         entityType: contextUri.split(':')[1] || null,
@@ -251,7 +256,6 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
   const [snapshot, setSnapshot] = useState(() => emptySnapshot(authorized, playbackAuthorized));
   const [loading, setLoading] = useState(false);
   const [deviceId, setDeviceId] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const playerRef = useRef<SpotifyBrowserPlayer | null>(null);
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
@@ -272,7 +276,7 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
       error: null,
     });
 
-    const updateSnapshot = (next: EncoreSnapshot) => {
+    const updateSnapshot = (next: MusicSnapshot) => {
       if (disposed) return;
       snapshotRef.current = next;
       setSnapshot(next);
@@ -395,9 +399,7 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
       playerRef.current = null;
       setDeviceId(null);
     };
-  }, [authorized, playbackAuthorized, retryCount]);
-
-  const retry = useCallback(() => setRetryCount((current) => current + 1), []);
+  }, [authorized, playbackAuthorized]);
 
   const sendSpotifyControl = useCallback(
     async (action: string, value?: unknown) => {
@@ -419,22 +421,6 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
     [deviceId],
   );
 
-  const activate = useCallback(async () => {
-    const player = playerRef.current;
-    if (!player || !deviceId) return { ok: false, error: 'Browser player is still connecting' };
-    void player.activateElement().catch(() => undefined);
-    const result = await sendSpotifyControl('activate');
-    if (result.ok) {
-      setSnapshot((current) => ({
-        ...current,
-        auth: { ...current.auth, isActive: true, deviceName: 'This browser' },
-        error: null,
-        updatedAt: Date.now(),
-      }));
-    }
-    return result;
-  }, [deviceId, sendSpotifyControl]);
-
   const control = useCallback(
     async (action: string, value?: unknown) => {
       const player = playerRef.current;
@@ -442,8 +428,6 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
       try {
         if (action === 'playTrack') void player.activateElement().catch(() => undefined);
         switch (action) {
-          case 'activate':
-            return await activate();
           case 'playTrack':
           case 'shuffle':
           case 'repeat': {
@@ -496,15 +480,13 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
         return { ok: false, error: 'Spotify playback request failed' };
       }
     },
-    [activate, deviceId, sendSpotifyControl],
+    [deviceId, sendSpotifyControl],
   );
 
   return {
     snapshot,
     loading,
     ready: Boolean(deviceId && snapshot.connection === 'connected'),
-    retry,
-    activate,
     control,
   };
 }

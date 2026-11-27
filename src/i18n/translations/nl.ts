@@ -312,11 +312,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.saving': 'Opslaan…',
   'settings.integrations.saved': 'Instellingen opgeslagen.',
   'settings.integrations.saveError': 'Integratie-instellingen konden niet worden opgeslagen.',
-  'settings.integrations.encoreTitle': 'Encore-muziek',
-  'settings.integrations.encoreUrlLabel': 'Encore WebSocket-URL',
-  'settings.integrations.encoreUrlHelp': 'WebSocket-adres van de Encore-server.',
-  'settings.integrations.encoreTokenLabel': 'Encore-token',
-  'settings.integrations.encoreTokenHelp': 'Bearer-token voor verbinding met Encore.',
   'settings.integrations.spotifyTitle': 'Spotify-ontwikkelaarsapp',
   'settings.integrations.spotifyClientIdLabel': 'Client-ID',
   'settings.integrations.spotifyClientSecretLabel': 'Clientgeheim',
@@ -567,26 +562,19 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotify': 'Spotify',
   'music.spotifyStatusNotConfigured': 'Niet ingesteld',
   'music.spotifyStatusLoggedOut': 'Spotify uitgelogd',
-  'music.spotifyStatusDeviceInactive': 'Apparaat inactief',
+  'music.spotifyStatusDeviceInactive': 'Browser-speler klaar',
   'music.spotifyStatusNoPlayback': 'Geen actieve weergave',
   'music.spotifyStatusPlaying': 'Speelt af',
   'music.spotifyStatusPaused': 'Gepauzeerd',
   'music.spotifyStatusBuffering': 'Laden',
   'music.spotifyConfigure':
-    'Stel de Spotify-verbinding via Encore in bij Instellingen → Integraties.',
+    'Stel de Spotify-ontwikkelaarsapp en OAuth-omleidings-URL in bij Instellingen → Integraties.',
   'music.spotifyConnectionHelp':
-    'Encore is niet bereikbaar. Abbai Flow probeert automatisch opnieuw te verbinden.',
-  'music.spotifyLoginHelp':
-    'Log in bij Spotify via de Spotify-app om af te spelen op het Soloist-apparaat.',
+    'Spotify-browserafspelen is niet beschikbaar. Vernieuw de muziekpagina en probeer het opnieuw.',
   'music.spotifyDevice': 'Afspeelapparaat',
-  'music.spotifyOutput': 'Audio-uitvoer',
-  'music.spotifyOutputEncore': 'Encore',
-  'music.spotifyOutputBrowser': 'Deze browser',
   'music.spotifyBrowserEnable': 'Afspelen in browser inschakelen',
-  'music.spotifyBrowserConnecting': 'Browser-speler verbinden…',
   'music.spotifyBrowserReconnectHelp': 'Verbind Spotify opnieuw om browserafspeelrechten te geven.',
   'music.spotifyBrowserEnableFailed': 'Spotify-autorisatie kon niet worden geopend.',
-  'music.spotifyBrowserStartFailed': 'Afspelen in de browser is niet gestart.',
   'music.spotifyRepeatContext': 'Playlist herhalen',
   'music.spotifyRepeatTrack': 'Nummer herhalen',
   'music.spotifyRepeat': 'Herhalen',
@@ -594,7 +582,6 @@ export const nl: Record<TranslationKey, string> = {
   'music.spotifyContext': 'Speelt af vanuit',
   'music.spotifySeek': 'Afspeelpositie',
   'music.spotifyShuffle': 'Willekeurig',
-  'music.spotifyActivate': 'Apparaat activeren',
   'music.spotifyQueue': 'Hierna',
   'music.spotifyQueueEmpty': 'Geen volgende nummers',
   'music.spotifySearch': 'Zoek op Spotify',
@@ -683,7 +670,7 @@ export const nl: Record<TranslationKey, string> = {
   'music.bluetoothNoDevices':
     'Nog geen apparaten gevonden. Start een zoekopdracht om Bluetooth-apparaten in de buurt te vinden.',
   'music.bluetoothAudioRoutingNote':
-    'Koppelen verbindt het apparaat met de Raspberry Pi. Kies het in Encore als Soloist-audio-uitvoer als het geluid niet automatisch overschakelt.',
+    'Bluetooth koppelen verbindt een apparaat met de Raspberry Pi. Browsermuziek gebruikt de audio-uitvoer die is gekozen op het apparaat waarop deze browser draait.',
 
   // ---- grocery / lists view ----
   'grocery.noListsAvailable': 'Geen lijsten beschikbaar',
