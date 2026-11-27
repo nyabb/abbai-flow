@@ -295,6 +295,41 @@ describe('Spotify playlist library', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it('preserves Spotify transfer errors so unavailable browser devices are diagnosable', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ error: { status: 404, message: 'Device not found' } }, 404));
+    const service = library(
+      fetcher,
+      tokenStore({
+        ...storedToken(),
+        scopes: [
+          'streaming',
+          'user-read-email',
+          'user-read-private',
+          'user-read-playback-state',
+          'user-modify-playback-state',
+        ],
+      }),
+    );
+
+    await expect(
+      service.controlPlayback('browser-device-id', 'activate'),
+    ).rejects.toMatchObject({
+      code: 'unavailable',
+      status: 502,
+      upstreamStatus: 404,
+      message: 'Spotify could not find the browser player. Refresh the Music page and try again.',
+    });
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.spotify.com/v1/me/player',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ device_ids: ['browser-device-id'], play: true }),
+      }),
+    );
+  });
+
   it('clears an expired/revoked refresh token and asks the user to reconnect', async () => {
     const storage = tokenStore(storedToken(0));
     const fetcher = vi

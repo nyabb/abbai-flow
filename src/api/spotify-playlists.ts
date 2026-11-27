@@ -70,6 +70,7 @@ export class SpotifyPlaylistError extends Error {
     readonly code: SpotifyPlaylistErrorCode,
     readonly status: number,
     message: string,
+    readonly upstreamStatus?: number,
   ) {
     super(message);
     this.name = 'SpotifyPlaylistError';
@@ -765,18 +766,53 @@ export class SpotifyPlaylistLibrary {
       if (error instanceof SpotifyPlaylistError) throw error;
       throw new SpotifyPlaylistError('unavailable', 503, 'Spotify is temporarily unavailable');
     }
-    if (!response.ok) throw this.responseError(response.status);
+    if (!response.ok) throw this.responseError(response.status, path);
     return response;
   }
 
-  private responseError(status: number): SpotifyPlaylistError {
+  private responseError(status: number, path = ''): SpotifyPlaylistError {
     if (status === 401)
-      return new SpotifyPlaylistError('not_authorized', 401, 'Reconnect your Spotify account');
+      return new SpotifyPlaylistError(
+        'not_authorized',
+        401,
+        'Reconnect your Spotify account',
+        status,
+      );
     if (status === 403)
-      return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied this request');
+      return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied this request', status);
     if (status === 429)
-      return new SpotifyPlaylistError('rate_limited', 429, 'Spotify is busy; try again shortly');
-    return new SpotifyPlaylistError('unavailable', 502, 'Spotify is temporarily unavailable');
+      return new SpotifyPlaylistError(
+        'rate_limited',
+        429,
+        'Spotify is busy; try again shortly',
+        status,
+      );
+    if (status === 400) {
+      return new SpotifyPlaylistError(
+        'invalid_request',
+        400,
+        path.startsWith('/me/player')
+          ? 'Spotify rejected the playback request. Refresh the browser player and try again.'
+          : 'Spotify rejected the request.',
+        status,
+      );
+    }
+    if (status === 404) {
+      return new SpotifyPlaylistError(
+        'unavailable',
+        502,
+        path.startsWith('/me/player')
+          ? 'Spotify could not find the browser player. Refresh the Music page and try again.'
+          : 'Spotify could not find the requested resource.',
+        status,
+      );
+    }
+    return new SpotifyPlaylistError(
+      'unavailable',
+      502,
+      'Spotify is temporarily unavailable',
+      status,
+    );
   }
 
   private async jsonResponse(response: Response): Promise<unknown> {
