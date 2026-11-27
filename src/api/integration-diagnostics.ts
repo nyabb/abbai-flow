@@ -32,6 +32,15 @@ export interface IntegrationDiagnosticsHandle {
   stop(): void;
 }
 
+function cleanLabel(value: string | null | undefined): string {
+  const normalized = value || '';
+  return normalized
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+    .trim()
+    .slice(0, 100);
+}
+
 function logEncoreStateChanges(
   logger: IntegrationDiagnosticLogger,
   encore: Pick<EncoreMusic, 'subscribe'>,
