@@ -8,7 +8,7 @@ import { loadData, loadDataSync, saveData } from '../api/abbai-flow-store';
  */
 
 const EVENTS_KEY = 'abbai-flow-local-events';
-const LOCAL_CAL_ID = 'beacon-local';
+const LOCAL_CAL_ID = 'abbai-flow-local';
 const LOCAL_CAL_NAME = 'Abbai Flow';
 
 export const LOCAL_CALENDAR: CalendarInfo = {

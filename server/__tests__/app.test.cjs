@@ -28,7 +28,7 @@ const { ICloudRemindersWorker } = require('../icloud-reminders-worker.cjs');
 /* ------------------------------------------------------------------ */
 
 function tmpDir(prefix) {
-  return fs.mkdtempSync(path.join(os.tmpdir(), `beacon-${prefix}-`));
+  return fs.mkdtempSync(path.join(os.tmpdir(), `abbai-flow-${prefix}-`));
 }
 
 function listen(server) {
@@ -46,10 +46,10 @@ function close(server) {
 }
 
 /** Start the Abbai Flow app on an ephemeral port. */
-async function startBeacon(overrides = {}) {
+async function startApp(overrides = {}) {
   const distDir = overrides.distDir || tmpDir('dist');
   const dataDir = overrides.dataDir || tmpDir('data');
-  fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>beacon</title>');
+  fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>Abbai Flow</title>');
 
   const { server } = createApp({
     distDir,
@@ -123,27 +123,27 @@ test('origin guard allows same-origin and native shells only', () => {
   assert.equal(isAllowedOrigin({ headers: { origin: 'null' } }, allowed), true);
   assert.equal(
     isAllowedOrigin(
-      { headers: { origin: 'http://beacon.local:3000', host: 'beacon.local:3000' } },
+      { headers: { origin: 'http://abbai-flow.local:3000', host: 'abbai-flow.local:3000' } },
       allowed,
     ),
     true,
   );
   assert.equal(
     isAllowedOrigin(
-      { headers: { origin: 'https://evil.example', host: 'beacon.local:3000' } },
+      { headers: { origin: 'https://evil.example', host: 'abbai-flow.local:3000' } },
       allowed,
     ),
     false,
   );
   assert.equal(
     isAllowedOrigin(
-      { headers: { origin: 'capacitor://localhost', host: 'beacon.local:3000' } },
+      { headers: { origin: 'capacitor://localhost', host: 'abbai-flow.local:3000' } },
       allowed,
     ),
     true,
   );
   assert.equal(
-    isAllowedOrigin({ headers: { origin: 'https://tablet.example', host: 'beacon.local:3000' } }, [
+    isAllowedOrigin({ headers: { origin: 'https://tablet.example', host: 'abbai-flow.local:3000' } }, [
       'https://tablet.example',
     ]),
     true,
@@ -186,51 +186,51 @@ test('documents are written atomically and corrupt files are reported', async ()
 
 test('persisted data API round-trips, rejects bad payloads and hides corruption', async (t) => {
   const dataDir = tmpDir('api-data');
-  const beacon = await startBeacon({ dataDir });
-  t.after(() => beacon.close());
+  const app = await startApp({ dataDir });
+  t.after(() => app.close());
 
-  const empty = await request(beacon.port, { path: '/beacon-data/family' });
+  const empty = await request(app.port, { path: '/abbai-flow/data/family' });
   assert.equal(empty.status, 200);
   assert.equal(empty.json, null);
   assert.equal(empty.headers['cache-control'], 'no-store');
 
-  const put = await request(beacon.port, {
+  const put = await request(app.port, {
     method: 'PUT',
-    path: '/beacon-data/family',
+    path: '/abbai-flow/data/family',
     body: { name: 'Sachshaus' },
   });
   assert.equal(put.status, 200);
   assert.deepEqual(put.json, { ok: true });
 
-  const read = await request(beacon.port, { path: '/beacon-data/family' });
+  const read = await request(app.port, { path: '/abbai-flow/data/family' });
   assert.deepEqual(read.json, { name: 'Sachshaus' });
 
-  const invalid = await request(beacon.port, {
+  const invalid = await request(app.port, {
     method: 'PUT',
-    path: '/beacon-data/family',
+    path: '/abbai-flow/data/family',
     body: '{not json',
     headers: { 'Content-Type': 'application/json' },
   });
   assert.equal(invalid.status, 400);
 
-  const wrongMethod = await request(beacon.port, { method: 'DELETE', path: '/beacon-data/family' });
+  const wrongMethod = await request(app.port, { method: 'DELETE', path: '/abbai-flow/data/family' });
   assert.equal(wrongMethod.status, 405);
 
   // A corrupt document must surface as an error, never as a silent success.
   fs.writeFileSync(path.join(dataDir, 'broken.json'), '{oops');
-  const corrupt = await request(beacon.port, { path: '/beacon-data/broken' });
+  const corrupt = await request(app.port, { path: '/abbai-flow/data/broken' });
   assert.equal(corrupt.status, 500);
   assert.match(corrupt.json.error, /corrupt/i);
 });
 
 test('data API rejects oversized documents', async (t) => {
-  const beacon = await startBeacon();
-  t.after(() => beacon.close());
+  const app = await startApp();
+  t.after(() => app.close());
 
   const big = 'x'.repeat(1024 * 1024 + 64);
-  const res = await request(beacon.port, {
+  const res = await request(app.port, {
     method: 'PUT',
-    path: '/beacon-data/huge',
+    path: '/abbai-flow/data/huge',
     body: JSON.stringify({ blob: big }),
   });
   assert.equal(res.status, 413);
@@ -245,7 +245,7 @@ test('integration settings redact secrets and persist saved values across restar
     spotifyMarket: 'NL',
     spotifyRedirectUri: 'https://abbai.example/old-callback',
   };
-  const app = await startBeacon(legacy);
+  const app = await startApp(legacy);
   t.after(() => app.close());
 
   const initial = await request(app.port, { path: '/abbai-flow/settings/integrations' });
@@ -314,7 +314,7 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(persisted.icloudRemindersListKey, 'b'.repeat(64));
   assert.equal(fs.statSync(settingsPath).mode & 0o777, 0o600);
 
-  const restarted = await startBeacon(legacy);
+  const restarted = await startApp(legacy);
   t.after(() => restarted.close());
   const afterRestart = await request(restarted.port, { path: '/abbai-flow/settings/integrations' });
   assert.equal(afterRestart.status, 200);
@@ -377,7 +377,7 @@ test('integration settings report the current iCloud authentication state', asyn
     }),
     stop() {},
   };
-  const app = await startBeacon({ icloudReminders });
+  const app = await startApp({ icloudReminders });
   t.after(() => app.close());
 
   const initial = await request(app.port, { path: '/abbai-flow/settings/integrations' });
@@ -437,7 +437,7 @@ test('saved iCloud credentials are authenticated at server startup', async (t) =
     status: () => ({ state: 'disconnected', devices: [], securityKeyNames: [] }),
     stop() {},
   };
-  const app = await startBeacon({ dataDir, icloudReminders });
+  const app = await startApp({ dataDir, icloudReminders });
   t.after(() => app.close());
 
   await new Promise((resolve) => setImmediate(resolve));
@@ -545,10 +545,10 @@ test('calendar catalog returns calendars discovered by the CalDAV service', asyn
     listCallCount += 1;
     return calendars;
   };
-  const beacon = await startBeacon({ caldavCalendars: { listCalendars } });
-  t.after(() => beacon.close());
+  const app = await startApp({ caldavCalendars: { listCalendars } });
+  t.after(() => app.close());
 
-  const response = await request(beacon.port, { path: '/abbai-flow/calendars' });
+  const response = await request(app.port, { path: '/abbai-flow/calendars' });
   assert.equal(response.status, 200);
   assert.deepEqual(response.json.calendars, calendars);
   assert.equal(listCallCount, 1);
@@ -559,10 +559,10 @@ test('calendar catalog returns calendars discovered by the CalDAV service', asyn
 /* ------------------------------------------------------------------ */
 
 test('planner mutate applies an operation and writes the document', async (t) => {
-  const beacon = await startBeacon({});
-  t.after(() => beacon.close());
+  const app = await startApp({});
+  t.after(() => app.close());
 
-  const applied = await request(beacon.port, {
+  const applied = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: {
@@ -576,7 +576,7 @@ test('planner mutate applies an operation and writes the document', async (t) =>
   assert.equal(applied.json.duplicate, false);
   assert.equal(applied.json.result.name, 'Morning');
 
-  const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
+  const stored = await request(app.port, { path: '/abbai-flow/data/abbai-flow-planner-meta' });
   assert.equal(stored.status, 200);
   assert.deepEqual(
     stored.json.routines.map((routine) => routine.name),
@@ -585,8 +585,8 @@ test('planner mutate applies an operation and writes the document', async (t) =>
 });
 
 test('planner mutate replays an idempotency key instead of applying twice', async (t) => {
-  const beacon = await startBeacon({});
-  t.after(() => beacon.close());
+  const app = await startApp({});
+  t.after(() => app.close());
 
   const op = {
     target: 'redemptions',
@@ -594,7 +594,7 @@ test('planner mutate replays an idempotency key instead of applying twice', asyn
     op: { type: 'addPoints', user: 'Ada', reward: 'Cinema', cost: 100, amount: 30 },
   };
 
-  const first = await request(beacon.port, {
+  const first = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: op,
@@ -602,7 +602,7 @@ test('planner mutate replays an idempotency key instead of applying twice', asyn
   assert.equal(first.status, 200);
   assert.equal(first.json.changed, true);
 
-  const replay = await request(beacon.port, {
+  const replay = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: op,
@@ -611,30 +611,30 @@ test('planner mutate replays an idempotency key instead of applying twice', asyn
   assert.equal(replay.json.changed, false);
   assert.equal(replay.json.duplicate, true);
 
-  const stored = await request(beacon.port, { path: '/beacon-data/beacon-reward-redemptions' });
+  const stored = await request(app.port, { path: '/abbai-flow/data/abbai-flow-reward-redemptions' });
   assert.equal(stored.json.length, 1);
   assert.equal(stored.json[0].points, 30);
 });
 
 test('planner mutate rejects malformed requests without writing', async (t) => {
-  const beacon = await startBeacon({});
-  t.after(() => beacon.close());
+  const app = await startApp({});
+  t.after(() => app.close());
 
-  const unknownTarget = await request(beacon.port, {
+  const unknownTarget = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: { target: 'nope', key: 'k1', op: { type: 'upsertRoutine', name: 'X' } },
   });
   assert.equal(unknownTarget.status, 400);
 
-  const missingKey = await request(beacon.port, {
+  const missingKey = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: { target: 'meta', op: { type: 'upsertRoutine', name: 'X' } },
   });
   assert.equal(missingKey.status, 400);
 
-  const missingOp = await request(beacon.port, {
+  const missingOp = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: { target: 'meta', key: 'k2' },
@@ -642,22 +642,22 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
   assert.equal(missingOp.status, 400);
 
   // An operation the rules do not know must fail loudly, not look like a no-op.
-  const unknownOp = await request(beacon.port, {
+  const unknownOp = await request(app.port, {
     method: 'POST',
     path: '/api/planner/mutate',
     body: { target: 'meta', key: 'k3', op: { type: 'explode' } },
   });
   assert.equal(unknownOp.status, 400);
 
-  const wrongMethod = await request(beacon.port, { method: 'GET', path: '/api/planner/mutate' });
+  const wrongMethod = await request(app.port, { method: 'GET', path: '/api/planner/mutate' });
   assert.equal(wrongMethod.status, 405);
 
-  const stored = await request(beacon.port, { path: '/beacon-data/beacon-planner-meta' });
+  const stored = await request(app.port, { path: '/abbai-flow/data/abbai-flow-planner-meta' });
   assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
 });
 
 test('ChoresMan serves and persists local chores', async (t) => {
-  const app = await startBeacon();
+  const app = await startApp();
   t.after(() => app.close());
 
   const initial = await request(app.port, { path: '/abbai-flow/choresman' });
@@ -741,7 +741,7 @@ test('Spotify playlist API is same-origin guarded and its OAuth callback returns
     beginAuthorization: async () => 'https://accounts.spotify.com/authorize',
     completeAuthorization: async (...args) => calls.push(args),
   };
-  const app = await startBeacon({ spotifyPlaylists });
+  const app = await startApp({ spotifyPlaylists });
   t.after(() => app.close());
 
   const status = await request(app.port, { path: '/abbai-flow/music/library/status' });
@@ -786,7 +786,7 @@ test('Bluetooth status is readable while Bluetooth controls remain same-origin g
     }),
     control: async (control) => calls.push(control),
   };
-  const app = await startBeacon({ bluetooth });
+  const app = await startApp({ bluetooth });
   t.after(() => app.close());
 
   const state = await request(app.port, { path: '/abbai-flow/bluetooth/state' });

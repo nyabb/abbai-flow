@@ -124,15 +124,15 @@ describe('resolveCalendarColor', () => {
   });
 
   it('falls back to defaultColor instead of the positional palette when provided', () => {
-    const color = resolveCalendarColor('beacon-local', 0, {
+    const color = resolveCalendarColor('abbai-flow-local', 0, {
       defaultColor: '#6366f1',
     });
     expect(color).toBe('#6366f1');
   });
 
   it('still lets a user override beat defaultColor', () => {
-    const color = resolveCalendarColor('beacon-local', 0, {
-      calendarColors: { 'beacon-local': '#ff6600' },
+    const color = resolveCalendarColor('abbai-flow-local', 0, {
+      calendarColors: { 'abbai-flow-local': '#ff6600' },
       defaultColor: '#6366f1',
     });
     expect(color).toBe('#ff6600');

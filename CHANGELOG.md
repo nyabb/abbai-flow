@@ -26,7 +26,7 @@
 # [3.0.0](https://github.com/nyabb/abbai-flow/compare/v2.39.0...v3.0.0) (2026-11-27)
 
 
-* feat!: remove Home Assistant dependencies ([76bfa91](https://github.com/nyabb/abbai-flow/commit/76bfa91b0da0f7a032212737457786b87725ec5e))
+* feat!: remove legacy integration dependencies ([76bfa91](https://github.com/nyabb/abbai-flow/commit/76bfa91b0da0f7a032212737457786b87725ec5e))
 
 
 ### Bug Fixes
@@ -37,7 +37,7 @@
 
 ### BREAKING CHANGES
 
-* Home Assistant integration and deployment support have been removed. Configure supported integrations directly in Abbai Flow.
+* Legacy integration and deployment support have been removed. Configure supported integrations directly in Abbai Flow.
 
 # [2.39.0](https://github.com/nyabb/abbai-flow/compare/v2.38.1...v2.39.0) (2026-11-26)
 
@@ -51,7 +51,7 @@
 
 ### Bug Fixes
 
-* restrict event calendars and remove HA music player ([af61f28](https://github.com/nyabb/abbai-flow/commit/af61f284678f8c9a2cfad9e2b056ebd108b3902e))
+* restrict event calendars and remove legacy music player ([af61f28](https://github.com/nyabb/abbai-flow/commit/af61f284678f8c9a2cfad9e2b056ebd108b3902e))
 
 # [2.38.0](https://github.com/nyabb/abbai-flow/compare/v2.37.0...v2.38.0) (2026-11-26)
 
@@ -544,7 +544,7 @@
 
 ### Bug Fixes
 
-* **server:** honour HA_URL and ship the runtime config to the browser ([90801e6](https://github.com/nyabb/abbai-flow/commit/90801e6a7c8aae5df55ef017999d2ae588e57843))
+* **server:** honour INTEGRATION_URL and ship the runtime config to the browser ([90801e6](https://github.com/nyabb/abbai-flow/commit/90801e6a7c8aae5df55ef017999d2ae588e57843))
 
 ## [2.0.1](https://github.com/nyabb/abbai-flow/compare/v2.0.0...v2.0.1) (2026-11-11)
 
@@ -561,15 +561,7 @@
 
 ### BREAKING CHANGES
 
-* The application is now Abbai Flow and ships only as a
-container image (ghcr.io/<owner>/abbai-flow). The Home Assistant add-on is
-gone: config.yaml, repository.yaml, build.yaml and run.sh are removed, the
-beacon/ mirror tree no longer exists, and semantic-release no longer bumps or
-copies add-on manifests. Household data is preserved — storage keys, the
-/beacon-data API and the BEACON_* environment variables keep their names on
-purpose, so chores, routines, missions, rewards, calendars, lists and settings
-survive the upgrade. See docs/upgrade-2.0.0.md for the add-on-to-container
-migration and rollback path.
+* The application ships as a standalone container image. Legacy deployment packaging and the duplicate source tree have been removed; configuration and persistence use the application's canonical interfaces.
 
 ## [1.61.1](https://github.com/nyabb/abbai-flow/compare/v1.61.0...v1.61.1) (2026-11-10)
 
@@ -694,7 +686,7 @@ migration and rollback path.
 * make the interface comfortable to touch, not just to click ([955f13d](https://github.com/nyabb/abbai-flow/commit/955f13da54cf9f54214d771d60c60c4f8b95fa73))
 * put the display-mode options in Settings > Display ([20b53df](https://github.com/nyabb/abbai-flow/commit/20b53df4f5535f2597a705d8346739187efcbe6a))
 * stop burning a Raspberry Pi's CPU on work nobody can see ([afd02c3](https://github.com/nyabb/abbai-flow/commit/afd02c3ff000d3448e9ba2ac3a33f715f97cf30f))
-* tell offline, Abbai Flow-down and Home Assistant-down apart, and recover ([3534000](https://github.com/nyabb/abbai-flow/commit/353400084383969130136c7d96e23563b40090f0))
+* tell offline and server-down states apart, and recover ([3534000](https://github.com/nyabb/abbai-flow/commit/353400084383969130136c7d96e23563b40090f0))
 
 ## [1.52.1](https://github.com/nyabb/abbai-flow/compare/v1.52.0...v1.52.1) (2026-11-10)
 
@@ -717,7 +709,7 @@ migration and rollback path.
 
 * **deps:** make npm ci install cleanly on CI again ([a6f7aec](https://github.com/nyabb/abbai-flow/commit/a6f7aec20918a200446d4931d2c7a13d6b58b4e7))
 * **music:** call every hook before the empty-state return ([dedc428](https://github.com/nyabb/abbai-flow/commit/dedc4286ac0afab7f5a9d2e7511ef165bbcc055e))
-* **server:** proxy Home Assistant over the configured protocol ([52fd962](https://github.com/nyabb/abbai-flow/commit/52fd96239baa4e491604bfdff20eee121d51f740))
+* **server:** proxy integrations over the configured protocol ([52fd962](https://github.com/nyabb/abbai-flow/commit/52fd96239baa4e491604bfdff20eee121d51f740))
 * **store:** report rejected server writes instead of claiming success ([268d603](https://github.com/nyabb/abbai-flow/commit/268d603397b32fd699bb84540c3eb33a705ac13d))
 
 
@@ -864,7 +856,7 @@ migration and rollback path.
 * **choreops:** claim/approve actions via button.press with optimistic UI ([72e556e](https://github.com/nyabb/abbai-flow/commit/72e556e30f8e1d9c01e5fe11a6144d6742e70d21))
 * **choreops:** drive dashboard and calendar chore widgets from the selected backend ([db059c2](https://github.com/nyabb/abbai-flow/commit/db059c232e055a05cb6e18e00b717c976cc73886))
 * **choreops:** link family members to ChoreOps users ([56b6cc2](https://github.com/nyabb/abbai-flow/commit/56b6cc299a45fed36e45a36064af95db22c55fa6))
-* **choreops:** list HA persons in the member picker so non-ChoreOps parents can be added ([a278a30](https://github.com/nyabb/abbai-flow/commit/a278a3052a79d24ac10244acc16ce64981b35685))
+* **choreops:** list configured service users in the member picker so additional parents can be added ([a278a30](https://github.com/nyabb/abbai-flow/commit/a278a3052a79d24ac10244acc16ce64981b35685))
 * **choreops:** source member identity from ChoreOps users in the add/edit form ([2091882](https://github.com/nyabb/abbai-flow/commit/2091882e96e4f08fa055248dba97a8b53e9459b3))
 * **chores:** make ChoreOps the only chore source and restyle the chores screen ([4497a32](https://github.com/nyabb/abbai-flow/commit/4497a32907edba7f1dd957ab19b3eabdcc5788b6))
 
@@ -885,26 +877,26 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 
 ### Features
 
-* add standalone Docker support with the Home Assistant token proxy ([7d4797f](https://github.com/nyabb/abbai-flow/commit/7d4797ff13e9b0f115ceb2f6733cc647d39ff9b1))
+* add standalone container support with the service token proxy ([7d4797f](https://github.com/nyabb/abbai-flow/commit/7d4797ff13e9b0f115ceb2f6733cc647d39ff9b1))
 
 # 1.0.0 (2026-11-05)
 
 
 ### Bug Fixes
 
-* add CHANGELOG.md to beacon/ add-on directory ([6f666b5](https://github.com/nyabb/abbai-flow/commit/6f666b54a2dea7518817716db51e9bd3824266fe))
+* add CHANGELOG.md to distribution directory ([6f666b5](https://github.com/nyabb/abbai-flow/commit/6f666b54a2dea7518817716db51e9bd3824266fe))
 * add chore edit/delete UI, assignee visibility, and dynamic version ([103ad44](https://github.com/nyabb/abbai-flow/commit/103ad4438749aedec825226b3fba55b1f403717b)), closes [#1](https://github.com/nyabb/abbai-flow/issues/1)
 * add default BUILD_FROM value in Dockerfile ([1b3eacd](https://github.com/nyabb/abbai-flow/commit/1b3eacd00b7d606bd24288e02b072e9a67ef83bd))
-* add ha_token config option for add-on authentication ([582bb46](https://github.com/nyabb/abbai-flow/commit/582bb46406c2b0d726fcfcea429cdb37d0461cf4))
-* add ha_token option for browser-side HA auth ([13d4674](https://github.com/nyabb/abbai-flow/commit/13d46742712ac018aca4d1e3fe070702a7982b70))
-* add icon.png and logo.png for HA add-on store listing ([1533e06](https://github.com/nyabb/abbai-flow/commit/1533e069285fd681b92d970c0c70989002f2e5c9))
+* add service_token config option for deployment authentication ([582bb46](https://github.com/nyabb/abbai-flow/commit/582bb46406c2b0d726fcfcea429cdb37d0461cf4))
+* add service token option for browser-side authentication ([13d4674](https://github.com/nyabb/abbai-flow/commit/13d46742712ac018aca4d1e3fe070702a7982b70))
+* add icon.png and logo.png for deployment listing ([1533e06](https://github.com/nyabb/abbai-flow/commit/1533e069285fd681b92d970c0c70989002f2e5c9))
 * add image field to config.yaml, remove dead GroceryDrawer ([e97f210](https://github.com/nyabb/abbai-flow/commit/e97f210da517bdbf477fecc251cbc076878bbce3))
 * add safe area padding to mobile tab bar for iPhone home indicator ([f3a24a3](https://github.com/nyabb/abbai-flow/commit/f3a24a38cf4c0a82110732de0d60f208eefb0f87))
 * add viewport-fit=cover for iOS safe area insets ([84ff7b3](https://github.com/nyabb/abbai-flow/commit/84ff7b3a5047e907571c1d1ebacee1c4d4960b71))
 * align CSS variables with theme hook — dark themes now render correctly ([bebb34a](https://github.com/nyabb/abbai-flow/commit/bebb34a4f4f5b3fa9e88df406e7aaa5e418c7e19))
 * all-day event dtend, calendar visibility persistence, chores toggle, assignee display ([2fe7cc3](https://github.com/nyabb/abbai-flow/commit/2fe7cc3cce58cc72c748dcc38d0b4707e9fd7dd1))
 * all-day events align with calendar day columns ([07563f4](https://github.com/nyabb/abbai-flow/commit/07563f44fdb13296ff8bf1e2fee2367abb8bc693))
-* allow HA connection without token in ingress mode ([bc2ef35](https://github.com/nyabb/abbai-flow/commit/bc2ef35cdda606ef3076443a3a2e4468bf59841b))
+* allow an embedded deployment connection without a token ([bc2ef35](https://github.com/nyabb/abbai-flow/commit/bc2ef35cdda606ef3076443a3a2e4468bf59841b))
 * bucket chore and routine completions by local day, not UTC ([3a8ff59](https://github.com/nyabb/abbai-flow/commit/3a8ff593b599bec84be1870243e88e733ddfd00b))
 * **build:** exclude test files from production tsc build ([#12](https://github.com/nyabb/abbai-flow/issues/12)) ([1bbb873](https://github.com/nyabb/abbai-flow/commit/1bbb8736e87d4f8607e21ea6c14d041a5f5174cd))
 * calendar layout whitespace and add-on auth/URL resolution ([0daec9f](https://github.com/nyabb/abbai-flow/commit/0daec9f94b89b51b55926f5781e7a426fa3c7430))
@@ -918,19 +910,19 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * **ci:** publish images to fork GHCR namespace and exclude .env from build context ([4435d33](https://github.com/nyabb/abbai-flow/commit/4435d33ec0265ad58d32a2044032778335f282e4))
 * clean up duplicate sidebar CSS rules, force display:flex in ingress ([015a4de](https://github.com/nyabb/abbai-flow/commit/015a4de6515ff99be7154bff9738614f4382737d))
 * clone sidebar nav into mobile menu for docs navigation ([ba50aff](https://github.com/nyabb/abbai-flow/commit/ba50aff3331b1a053f6ad55c98f06639f8e8c442))
-* copy run.sh to / (root) where hassio base expects it ([1e03774](https://github.com/nyabb/abbai-flow/commit/1e03774e832817761494cb07516064fd679132f4))
-* create recurring calendar events via HA WebSocket API ([ae02469](https://github.com/nyabb/abbai-flow/commit/ae024697d75e41a473f368e6299351baea7e908d))
+* copy run.sh to the root where the container runtime expects it ([1e03774](https://github.com/nyabb/abbai-flow/commit/1e03774e832817761494cb07516064fd679132f4))
+* create recurring calendar events via the configured WebSocket API ([ae02469](https://github.com/nyabb/abbai-flow/commit/ae024697d75e41a473f368e6299351baea7e908d))
 * dashboard equal thirds layout, weather moved to clock column ([870c13d](https://github.com/nyabb/abbai-flow/commit/870c13d0fd4d1b5bed6fca308431017300682203))
 * **dashboard:** render Family layout as vertical columns, not stacked rows ([bac3427](https://github.com/nyabb/abbai-flow/commit/bac34279e5ba91b0b1e4194631f9eaed3e4ecdb5))
 * deduplicate media players, prefer device_class entity for controls ([4d0b587](https://github.com/nyabb/abbai-flow/commit/4d0b58780279bde3993403ac594899ff7b7fff30))
 * default docs to dark mode, improve prose text contrast ([04dee77](https://github.com/nyabb/abbai-flow/commit/04dee778f2a0751ed614552a174eff9197eae157))
 * define missing CSS vars, music empty state, touch target sizes ([e240dd7](https://github.com/nyabb/abbai-flow/commit/e240dd7665800b4645cec134f73594a8f49c358f))
 * desktop sidebar showing on mobile — removed inline display:flex that overrode media query ([b0b187f](https://github.com/nyabb/abbai-flow/commit/b0b187f2b2ebe18e842f98055409d25547a886bc))
-* detect HA ingress via URL path, not just iframe ([5bbbef7](https://github.com/nyabb/abbai-flow/commit/5bbbef79bc7991c1ae287d8a686265a12ba1f9ea))
+* detect embedded deployment by URL path, not just iframe ([5bbbef7](https://github.com/nyabb/abbai-flow/commit/5bbbef79bc7991c1ae287d8a686265a12ba1f9ea))
 * disable event notifications and permission prompt on kid displays ([d0206a1](https://github.com/nyabb/abbai-flow/commit/d0206a16913070d2479cba967675893d620ad9ed))
 * discover all todo.* entities for AnyList, fix API URL for ingress ([c10afe5](https://github.com/nyabb/abbai-flow/commit/c10afe51e5d24ee89f973ee679b74f2493c2a411))
 * **docker:** add missing custom_intents/custom_sentences at repo root ([c14f854](https://github.com/nyabb/abbai-flow/commit/c14f854a60033d0e2248b5f06f2cdfb769382585)), closes [#8](https://github.com/nyabb/abbai-flow/issues/8) [#9](https://github.com/nyabb/abbai-flow/issues/9) [8/#9](https://github.com/nyabb/abbai-flow/issues/9)
-* Dockerfile ARG placement for HA build system ([9fc04ca](https://github.com/nyabb/abbai-flow/commit/9fc04ca75342dd3684f5c7638c39ace1472e71c8))
+* Dockerfile ARG placement for the container build system ([9fc04ca](https://github.com/nyabb/abbai-flow/commit/9fc04ca75342dd3684f5c7638c39ace1472e71c8))
 * event card/block text always dark on pastel backgrounds ([0d8f5ea](https://github.com/nyabb/abbai-flow/commit/0d8f5ea02d040e38aa8fffcbd4a4f0c6da4b58cf))
 * FAB chore button opens chores panel, screensaver respects settings ([e03492d](https://github.com/nyabb/abbai-flow/commit/e03492d6f70d25993c372afea5007880903a3ebb))
 * FAB chore button opens panel + screensaver reads settings ([a847278](https://github.com/nyabb/abbai-flow/commit/a8472780dc387553ce6ebc4fcbef8ba81d96622b))
@@ -938,7 +930,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * family name updates reactively from settings in dashboard greeting ([6345141](https://github.com/nyabb/abbai-flow/commit/63451419932d93f145ed3b20e765f95dabe2b1ed))
 * grocery list discovery and item loading ([abb01e6](https://github.com/nyabb/abbai-flow/commit/abb01e6788b1cdfd0b15dffdf1289be28c86a3ec))
 * grow mobile tab bar height to include safe area inset ([805e5c3](https://github.com/nyabb/abbai-flow/commit/805e5c3c4064fdc9dd25751b0b0cf49776ee45c9))
-* HA ingress auth — create long-lived token from supervisor ([e5c2c43](https://github.com/nyabb/abbai-flow/commit/e5c2c434af0c2a90333dea29ff513fbf85a30cc9))
+* embedded deployment authentication — create a long-lived token ([e5c2c43](https://github.com/nyabb/abbai-flow/commit/e5c2c434af0c2a90333dea29ff513fbf85a30cc9))
 * hide completed tasks from dashboard, only show pending items ([123bb34](https://github.com/nyabb/abbai-flow/commit/123bb342a554bb8a4cab60148e44625edbb663cc))
 * hide demo badge in add-on mode, improve mobile tab bar spacing ([751411e](https://github.com/nyabb/abbai-flow/commit/751411e4f57d1087464a69600faac573e5e03e03))
 * hide permanently disabled calendars from FamilyFilter pills ([5590af9](https://github.com/nyabb/abbai-flow/commit/5590af9d8680feaa91b7353eba5781133ae05bc6))
@@ -963,21 +955,21 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * path traversal, shell injection, body limits, async I/O, auth ([6e8c672](https://github.com/nyabb/abbai-flow/commit/6e8c672664e5b5ed376b5e019e03b77104689144))
 * refresh shared settings when the app becomes visible ([fab908e](https://github.com/nyabb/abbai-flow/commit/fab908e953399c19283b2e056f3883ff3e03aaee))
 * release workflow — upgrade to Node 22, fix sed for Linux, enable git credentials ([e6e1cac](https://github.com/nyabb/abbai-flow/commit/e6e1caca4ef781efe94413879b8e35b5d5f194f3))
-* remove CMD — hassio base uses s6-overlay which calls /run.sh ([2ee291e](https://github.com/nyabb/abbai-flow/commit/2ee291e54d17282ae30f977acfa8431041e49990))
-* remove CSS filter that turned beacon icon solid black ([578625f](https://github.com/nyabb/abbai-flow/commit/578625f5f304d391ff37bc63c0c5128cec26210b))
+* remove CMD — the container base uses s6-overlay which calls /run.sh ([2ee291e](https://github.com/nyabb/abbai-flow/commit/2ee291e54d17282ae30f977acfa8431041e49990))
+* remove CSS filter that turned the app icon solid black ([578625f](https://github.com/nyabb/abbai-flow/commit/578625f5f304d391ff37bc63c0c5128cec26210b))
 * remove gap above mobile tab bar, use min-height for safe area ([c972bad](https://github.com/nyabb/abbai-flow/commit/c972bad8c2b6297526be52b495ff0193b864d4d9))
 * remove orphaned palette icon from More menu, 2-col theme grid on mobile ([b0f0cb1](https://github.com/nyabb/abbai-flow/commit/b0f0cb1147a7af1fc42a9f5dffd3fc92b110d4be))
 * remove orphaned ThemeSelector icon from sidebar — theming is in Settings ([a73ad80](https://github.com/nyabb/abbai-flow/commit/a73ad806fb522740583d51b3a085fd2e4ba4f6ca))
 * remove unused previousView variable ([0f54891](https://github.com/nyabb/abbai-flow/commit/0f54891b14b93db2381f2e76e54b9df83154ae5a))
-* request auth token from HA frontend via postMessage ([37d215f](https://github.com/nyabb/abbai-flow/commit/37d215fd94e6e1c33d289f556dd578d0ed8dc0c8))
+* request auth token from the parent frontend via postMessage ([37d215f](https://github.com/nyabb/abbai-flow/commit/37d215fd94e6e1c33d289f556dd578d0ed8dc0c8))
 * resolve calendar default/colors and add multi-calendar family linking ([9836159](https://github.com/nyabb/abbai-flow/commit/98361594663869fdf9682b583137d1efd0ab91a5)), closes [#1](https://github.com/nyabb/abbai-flow/issues/1)
 * resolve calendar event CRUD bugs (edit duplicates, end-time drift, dead deletes, dashboard edit) ([542812a](https://github.com/nyabb/abbai-flow/commit/542812a4c549f3769812cb3bcc5164e3d561154a)), closes [#1](https://github.com/nyabb/abbai-flow/issues/1)
-* resolve HA media photos through ha-rest and resolve_media ([#41](https://github.com/nyabb/abbai-flow/issues/41)) ([#49](https://github.com/nyabb/abbai-flow/issues/49)) ([2ed658c](https://github.com/nyabb/abbai-flow/commit/2ed658c367b86bce6e335b9789cccbe45bb0aea2))
-* resolve HA URL from browser origin in ingress mode ([ab91372](https://github.com/nyabb/abbai-flow/commit/ab91372c8e6e6872fe8d0a7f17d3181fecd8bcef))
-* resolve HA WebSocket URL from parent frame, force HTTPS for ingress ([d162a4b](https://github.com/nyabb/abbai-flow/commit/d162a4b17496a5fcb6d7a42b4e06d05e3c175162))
+* resolve provider media photos through the REST client and resolve_media ([#41](https://github.com/nyabb/abbai-flow/issues/41)) ([#49](https://github.com/nyabb/abbai-flow/issues/49)) ([2ed658c](https://github.com/nyabb/abbai-flow/commit/2ed658c367b86bce6e335b9789cccbe45bb0aea2))
+* resolve service URL from browser origin in embedded mode ([ab91372](https://github.com/nyabb/abbai-flow/commit/ab91372c8e6e6872fe8d0a7f17d3181fecd8bcef))
+* resolve service WebSocket URL from parent frame, force HTTPS for embedded mode ([d162a4b](https://github.com/nyabb/abbai-flow/commit/d162a4b17496a5fcb6d7a42b4e06d05e3c175162))
 * respect the notification lead-time setting ([#14](https://github.com/nyabb/abbai-flow/issues/14)) ([#50](https://github.com/nyabb/abbai-flow/issues/50)) ([bbeece3](https://github.com/nyabb/abbai-flow/commit/bbeece3a9c51caf075e7d7f34f4cc6f95a914fc4))
 * respect Week Starts On setting in week calendar ([0815b24](https://github.com/nyabb/abbai-flow/commit/0815b24e721d7a24529c6a987290f84b7b9c74b8))
-* restore calendar event update/delete after HA moved them to WS-only commands ([69bbedb](https://github.com/nyabb/abbai-flow/commit/69bbedba31bb28d2ecd56f039751ab0e4413ed3d))
+* restore calendar event update/delete after they moved to WebSocket-only commands ([69bbedb](https://github.com/nyabb/abbai-flow/commit/69bbedba31bb28d2ecd56f039751ab0e4413ed3d))
 * route API calls through ingress path in add-on proxy mode ([2ef91e1](https://github.com/nyabb/abbai-flow/commit/2ef91e16ca74211a5bbc79caecdbf12be5c5254a))
 * runtime-config.js path relative for ingress ([84b5f04](https://github.com/nyabb/abbai-flow/commit/84b5f04256bfe5b12fb874f6f12cf921aff7dbf6))
 * same-day chore dedup and kid display loading escape hatch ([abe6af6](https://github.com/nyabb/abbai-flow/commit/abe6af672563016838d997881fa046df859c12fc))
@@ -986,19 +978,19 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * set GitHub Pages base path for docs site ([2710789](https://github.com/nyabb/abbai-flow/commit/2710789c4a889e88cef13fa48582644f3b4ab5a9))
 * show calendar filter pill names on mobile instead of dot-only ([f2f19fe](https://github.com/nyabb/abbai-flow/commit/f2f19feb96e1718ac6fe54ddad319b97c2d63d46))
 * sidebar icons use theme-aware colors in dark mode ([8a59299](https://github.com/nyabb/abbai-flow/commit/8a59299d2d13d86a115682b2b318730c56f42ed3))
-* simplify repository.yaml for HA add-on discovery, add docs URL to repo ([958d94a](https://github.com/nyabb/abbai-flow/commit/958d94ad5fb639b3dcae08860f01cba0fdb79607))
-* skip onboarding in HA ingress mode ([b7293e7](https://github.com/nyabb/abbai-flow/commit/b7293e71fb9c8c54c2aa551ce9ab98421297c30a))
-* sync all changes to beacon/ add-on subdirectory ([33a9856](https://github.com/nyabb/abbai-flow/commit/33a9856f8853b8c0d2f584916bd97bc7a79db3a1))
-* sync beacon/ add-on tree with root and fail CI on drift ([#52](https://github.com/nyabb/abbai-flow/issues/52)) ([9391c1f](https://github.com/nyabb/abbai-flow/commit/9391c1f4ca2cd82b50ff54ddc88b541b59c20c7e)), closes [#47](https://github.com/nyabb/abbai-flow/issues/47) [48-#51](https://github.com/48-/issues/51)
+* simplify repository metadata and add a docs URL ([958d94a](https://github.com/nyabb/abbai-flow/commit/958d94ad5fb639b3dcae08860f01cba0fdb79607))
+* skip onboarding in embedded mode ([b7293e7](https://github.com/nyabb/abbai-flow/commit/b7293e71fb9c8c54c2aa551ce9ab98421297c30a))
+* sync all changes to the distribution subdirectory ([33a9856](https://github.com/nyabb/abbai-flow/commit/33a9856f8853b8c0d2f584916bd97bc7a79db3a1))
+* sync the distribution tree with root and fail CI on drift ([#52](https://github.com/nyabb/abbai-flow/issues/52)) ([9391c1f](https://github.com/nyabb/abbai-flow/commit/9391c1f4ca2cd82b50ff54ddc88b541b59c20c7e)), closes [#47](https://github.com/nyabb/abbai-flow/issues/47) [48-#51](https://github.com/48-/issues/51)
 * synchronous server restore prevents settings/family data loss ([ec5d547](https://github.com/nyabb/abbai-flow/commit/ec5d547d3064f02fb751545cefcd4ebfc44d86d0))
 * theme selection in Settings now applies CSS variables immediately ([e132e49](https://github.com/nyabb/abbai-flow/commit/e132e49c084e490942ac2260bf9631446e40fbfb))
 * timer panel slides from right (matches sidebar position) ([8046e34](https://github.com/nyabb/abbai-flow/commit/8046e342bb905a178b978e85d59e73396e9789c1))
 * **tokens:** wire the 10-role color tokens into real consumers ([fb9604c](https://github.com/nyabb/abbai-flow/commit/fb9604c69c6402f232de3189ab10edb6d1fe5cac)), closes [#ef4444](https://github.com/nyabb/abbai-flow/issues/ef4444) [#ef4444](https://github.com/nyabb/abbai-flow/issues/ef4444) [#f59e0b](https://github.com/nyabb/abbai-flow/issues/f59e0b)
 * use GitHub repo for astro-tinker dep (not local file path) ([cdf544d](https://github.com/nyabb/abbai-flow/commit/cdf544daefcd86de240c366c733a7d0c0d5d3979))
 * use marketplace install for Abbai Flow Claude plugin ([9b9f8b6](https://github.com/nyabb/abbai-flow/commit/9b9f8b6aa5fa5e35efb96584a559f1146477ddf6))
-* use node:20-alpine runtime instead of hassio base (s6 conflict) ([ea6adc4](https://github.com/nyabb/abbai-flow/commit/ea6adc4dd085116a360256e91a519ec2c3d40243))
-* use nullish coalescing for ha_url — empty string was falling through to supervisor URL ([53769dd](https://github.com/nyabb/abbai-flow/commit/53769ddccd9572dd578ce9a4af10c3da36bbbf7e))
-* use relative base path for HA ingress compatibility ([7882bb7](https://github.com/nyabb/abbai-flow/commit/7882bb764eb571c9d48a848c321f48f176437600))
+* use node:20-alpine runtime instead of the legacy base (s6 conflict) ([ea6adc4](https://github.com/nyabb/abbai-flow/commit/ea6adc4dd085116a360256e91a519ec2c3d40243))
+* use nullish coalescing for service_url — empty string was falling through to the configured URL ([53769dd](https://github.com/nyabb/abbai-flow/commit/53769ddccd9572dd578ce9a4af10c3da36bbbf7e))
+* use relative base path for embedded deployment compatibility ([7882bb7](https://github.com/nyabb/abbai-flow/commit/7882bb764eb571c9d48a848c321f48f176437600))
 * use relative path for runtime-config.js (fixes ingress 404) ([ddf29f2](https://github.com/nyabb/abbai-flow/commit/ddf29f28ad79541304b43773999b348b767d2ca7))
 * use REST API for calendars (WS doesn't support calendar commands) ([dc30c82](https://github.com/nyabb/abbai-flow/commit/dc30c826d239738445246e66253d7d7c37e09e94))
 * use simpler emoji for All tab (ZWJ sequences break on some renderers) ([2ef46bc](https://github.com/nyabb/abbai-flow/commit/2ef46bca2ff38b725795f9d849e418ccc9282915))
@@ -1022,9 +1014,9 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * add Streamable HTTP transport to MCP server ([373e37d](https://github.com/nyabb/abbai-flow/commit/373e37dc61a32843481f3ad152e26ec1e830d59d))
 * add useRoutines hook ([d8cc28d](https://github.com/nyabb/abbai-flow/commit/d8cc28d23a01724fe81ca91a1c1e7d14fe6c2ff1))
 * add video featurette recording script with demo data anonymization ([02572b2](https://github.com/nyabb/abbai-flow/commit/02572b2fd38a1375c8f1b4a1687426ab80059921))
-* add-on API proxy — zero-config HA connection ([e16dbf5](https://github.com/nyabb/abbai-flow/commit/e16dbf5c3e42d6d65db2e7cb0e04e4131aebec8e))
+* service API proxy — zero-config connection ([e16dbf5](https://github.com/nyabb/abbai-flow/commit/e16dbf5c3e42d6d65db2e7cb0e04e4131aebec8e))
 * allow unassigned chores kids can claim ([9b301b9](https://github.com/nyabb/abbai-flow/commit/9b301b9dcdd3d1c6278f92a387db940de5fa6a3f))
-* auto-detect HA ingress mode, adapt sidebar for available space ([5ea4b82](https://github.com/nyabb/abbai-flow/commit/5ea4b82b420b79e1e49d2166b0b74d9b2f948ee9))
+* auto-detect embedded mode, adapt sidebar for available space ([5ea4b82](https://github.com/nyabb/abbai-flow/commit/5ea4b82b420b79e1e49d2166b0b74d9b2f948ee9))
 * Abbai Flow docs site with astro-tinker theme ([af5ad81](https://github.com/nyabb/abbai-flow/commit/af5ad810cac0565c44456d17dbc1f990dc3ca1a8))
 * Abbai Flow v0.2.0 — light-themed calendar and full feature suite ([7a5bf66](https://github.com/nyabb/abbai-flow/commit/7a5bf660b1c02d7fbef9e2f112e429b1626aa557))
 * Abbai Flow v1.0.0 — feature complete ([ad8befb](https://github.com/nyabb/abbai-flow/commit/ad8befbca84390ed11fdbad4f45c79b53b3b21ae))
@@ -1033,7 +1025,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * chore payout ledger with auto-generated parent chores ([ad8b38d](https://github.com/nyabb/abbai-flow/commit/ad8b38d2705cd096de8ce191dac728163e7ac38d))
 * configurable dashboard layout presets ([92e1dc7](https://github.com/nyabb/abbai-flow/commit/92e1dc737aff9baa4820d6faead148e83e518470))
 * configurable grocery list IDs and sidebar shopping card ([#39](https://github.com/nyabb/abbai-flow/issues/39)) ([872878c](https://github.com/nyabb/abbai-flow/commit/872878c61c4cc36594db080d6cab18a3472ba8c3)), closes [#32](https://github.com/nyabb/abbai-flow/issues/32) [#26](https://github.com/nyabb/abbai-flow/issues/26)
-* dashboard shows todo items from HA lists, music works via REST ([513f748](https://github.com/nyabb/abbai-flow/commit/513f748faed1f40a9eadbff7edfa7f591aacfcd1))
+* dashboard shows todo items from connected lists, music works via REST ([513f748](https://github.com/nyabb/abbai-flow/commit/513f748faed1f40a9eadbff7edfa7f591aacfcd1))
 * dashboard view, music, photos, OSS docs — Abbai Flow v0.3.0 ([e93dcc5](https://github.com/nyabb/abbai-flow/commit/e93dcc5481b5073d659b175168f098101e17be85))
 * dedicated full-page ChoresView replacing slide-out panel ([a05b444](https://github.com/nyabb/abbai-flow/commit/a05b444bd86fd592dc78f49c526c1aa288b27c7c))
 * dedicated full-screen Chores view with per-member columns ([29de05a](https://github.com/nyabb/abbai-flow/commit/29de05a382a7aa43b1bf30a0afa44dd7ca3240f3))
@@ -1049,15 +1041,15 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * max completions per chore frequency period ([b94a69f](https://github.com/nyabb/abbai-flow/commit/b94a69f21167c2a6cdf68bd94cffb0842a79656c))
 * MCP chore CRUD and family member tools ([b6d1706](https://github.com/nyabb/abbai-flow/commit/b6d1706b952384aa87ddf6a4bd2232c29e700ef0))
 * meal plan integration with dashboard display and MCP tools ([2c591bb](https://github.com/nyabb/abbai-flow/commit/2c591bb56f8bc1a4f7618be7015d4aee1803ce7b))
-* move Abbai Flow sidebar to right side — avoids HA sidebar overlap ([9e6ce5e](https://github.com/nyabb/abbai-flow/commit/9e6ce5e1d0ff0f18675718e13944ea96f0fb017f))
+* move Abbai Flow sidebar to right side — avoids host sidebar overlap ([9e6ce5e](https://github.com/nyabb/abbai-flow/commit/9e6ce5e1d0ff0f18675718e13944ea96f0fb017f))
 * multi-tap counter for repeatable chores ([48b15e0](https://github.com/nyabb/abbai-flow/commit/48b15e0366364d88fcd8f215b56d880f04e94e9b))
 * multiple simultaneous named timers ([6c5e356](https://github.com/nyabb/abbai-flow/commit/6c5e356e09c4b44a99520641d7a182aa7d8f3cd8))
 * on-screen kiosk keyboard + Music Assistant search/browse/queue ([f1f2e60](https://github.com/nyabb/abbai-flow/commit/f1f2e60cdda1ff32e7d0f7daab2a59c0802c98bb))
 * per-family-member dashboard with calendar columns ([e836365](https://github.com/nyabb/abbai-flow/commit/e836365f0f27208b86d5da136f138f6c671226bc))
-* photo screensaver with Google Photos (HA) + Immich support ([8049c79](https://github.com/nyabb/abbai-flow/commit/8049c79bea73e2a6af9ab82e70205f5135a35171))
+* photo screensaver with Google Photos + Immich support ([8049c79](https://github.com/nyabb/abbai-flow/commit/8049c79bea73e2a6af9ab82e70205f5135a35171))
 * rebuild docs with astro-terminal-docs theme + Abbai Flow gold ([0c44556](https://github.com/nyabb/abbai-flow/commit/0c44556663716c8d0081027b099d7d5211d690a6)), closes [#f59e0b](https://github.com/nyabb/abbai-flow/issues/f59e0b)
 * rename Midnight → Abbai Flow Dark, Midnight Light → Abbai Flow Light ([6e62124](https://github.com/nyabb/abbai-flow/commit/6e6212432f99fc94a5d2a264343e4738750b2c45)), closes [#0f172a](https://github.com/nyabb/abbai-flow/issues/0f172a) [#f59e0b](https://github.com/nyabb/abbai-flow/issues/f59e0b) [#f8fafc](https://github.com/nyabb/abbai-flow/issues/f8fafc)
-* restructure as HA add-on repository ([76e766e](https://github.com/nyabb/abbai-flow/commit/76e766ed12ee19550d275bc76a5d6f243dec12fe))
+* restructure as a deployment repository ([76e766e](https://github.com/nyabb/abbai-flow/commit/76e766ed12ee19550d275bc76a5d6f243dec12fe))
 * separate Lists and Tasks views with auto-categorization ([136ddc6](https://github.com/nyabb/abbai-flow/commit/136ddc60120776d102b314b92dd972e8839a2728))
 * server-first data sync — all devices share same data ([831b344](https://github.com/nyabb/abbai-flow/commit/831b344bedbb592d42a1d78a9597e0544b922b5d))
 * server-side data persistence for family, settings, chores ([8bf3391](https://github.com/nyabb/abbai-flow/commit/8bf3391b2e2950cb24f99ded23311bed7069f37a))
@@ -1068,7 +1060,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 * translate card registry, weather, timer, countdown, and photo frame ([#47](https://github.com/nyabb/abbai-flow/issues/47)) ([#48](https://github.com/nyabb/abbai-flow/issues/48)) ([16d1548](https://github.com/nyabb/abbai-flow/commit/16d15480eb1f3f956b3e07831cd94af68c92f831))
 * two-column calendar layout + meal plan view ([5eacf61](https://github.com/nyabb/abbai-flow/commit/5eacf61cde61df28d3fec11b6b5cbcdcbfc21a9d))
 * two-column calendar view with sidebar for tasks and events ([fad959f](https://github.com/nyabb/abbai-flow/commit/fad959f3e257910a63320d16776d5299e3402378))
-* voice control, MCP server, HA custom sentences + code cleanup ([03b7133](https://github.com/nyabb/abbai-flow/commit/03b7133d390cf8f8dee496a34cada8056f0e243d))
+* voice control, MCP server, custom intent sentences + code cleanup ([03b7133](https://github.com/nyabb/abbai-flow/commit/03b7133d390cf8f8dee496a34cada8056f0e243d))
 * weather forecast view and calendar day weather headers ([4eebe69](https://github.com/nyabb/abbai-flow/commit/4eebe6965f5309d96b542ea18f97e20e44690330))
 * week navigation, inline event details, and stacked dashboard ([919f5f5](https://github.com/nyabb/abbai-flow/commit/919f5f5cb61188c8fe4503d756dbb09ecdb07145))
 * wire kid display focus shell into App ([7e56e95](https://github.com/nyabb/abbai-flow/commit/7e56e95f63224095e5a4243d0e468fb1093a9603))
@@ -1099,7 +1091,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 
 ### Bug Fixes
 
-* sync beacon/ add-on tree with root and fail CI on drift ([#52](https://github.com/nyabb/abbai-flow/issues/52)) ([9391c1f](https://github.com/nyabb/abbai-flow/commit/9391c1f4ca2cd82b50ff54ddc88b541b59c20c7e)), closes [#47](https://github.com/nyabb/abbai-flow/issues/47) [48-#51](https://github.com/48-/issues/51)
+* sync the distribution tree with root and fail CI on drift ([#52](https://github.com/nyabb/abbai-flow/issues/52)) ([9391c1f](https://github.com/nyabb/abbai-flow/commit/9391c1f4ca2cd82b50ff54ddc88b541b59c20c7e)), closes [#47](https://github.com/nyabb/abbai-flow/issues/47) [48-#51](https://github.com/48-/issues/51)
 
 ## [1.39.3](https://github.com/nyabb/abbai-flow/compare/v1.39.2...v1.39.3) (2026-10-11)
 
@@ -1120,7 +1112,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 
 ### Bug Fixes
 
-* resolve HA media photos through ha-rest and resolve_media ([#41](https://github.com/nyabb/abbai-flow/issues/41)) ([#49](https://github.com/nyabb/abbai-flow/issues/49)) ([2ed658c](https://github.com/nyabb/abbai-flow/commit/2ed658c367b86bce6e335b9789cccbe45bb0aea2))
+* resolve provider media photos through the REST client and resolve_media ([#41](https://github.com/nyabb/abbai-flow/issues/41)) ([#49](https://github.com/nyabb/abbai-flow/issues/49)) ([2ed658c](https://github.com/nyabb/abbai-flow/commit/2ed658c367b86bce6e335b9789cccbe45bb0aea2))
 
 # [1.39.0](https://github.com/nyabb/abbai-flow/compare/v1.38.0...v1.39.0) (2026-10-11)
 
@@ -1174,7 +1166,7 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 
 ### Bug Fixes
 
-* create recurring calendar events via HA WebSocket API ([ae02469](https://github.com/nyabb/abbai-flow/commit/ae024697d75e41a473f368e6299351baea7e908d))
+* create recurring calendar events via the configured WebSocket API ([ae02469](https://github.com/nyabb/abbai-flow/commit/ae024697d75e41a473f368e6299351baea7e908d))
 * hide permanently disabled calendars from FamilyFilter pills ([5590af9](https://github.com/nyabb/abbai-flow/commit/5590af9d8680feaa91b7353eba5781133ae05bc6))
 * honor default grocery list even without English keywords ([842ba5c](https://github.com/nyabb/abbai-flow/commit/842ba5c0f5e9c0b13ffd7ef9c32d0e68cece6313))
 
@@ -1184,13 +1176,13 @@ This tag points to the emoji-picker change already documented in 1.42.0; it cont
 ### Features
 
 * add TaskMate multi-user task support with correct per-user completion state ([b743328](https://github.com/nyabb/abbai-flow/commit/b743328d83011d22417cdba80e2bc7debef688e0)) — thanks [@peaches](https://github.com/peaches)
-* share one Home Assistant poller across dashboard cards and roll back failed toggles ([d87d35d](https://github.com/nyabb/abbai-flow/commit/d87d35d511e4105373677fe58e8091cd5c700535)) — thanks [@MrMEEE](https://github.com/MrMEEE)
+* share one service poller across dashboard cards and roll back failed toggles ([d87d35d](https://github.com/nyabb/abbai-flow/commit/d87d35d511e4105373677fe58e8091cd5c700535)) — thanks [@MrMEEE](https://github.com/MrMEEE)
 
 
 ### Bug Fixes
 
 * fix hidden calendars in dashboard and sidebar ([c473544](https://github.com/nyabb/abbai-flow/commit/c47354427a32a912b16b2eb8c2d5a470717a8066)) — thanks [@barmorebd](https://github.com/barmorebd)
-* default HA_API_BASE to supervisor when not explicitly set ([b2549b8](https://github.com/nyabb/abbai-flow/commit/b2549b8fb18608e5898ecf62dbf7fdc6e4e05449)) — thanks [@peaches](https://github.com/peaches)
+* default SERVICE_API_BASE to the configured proxy when not explicitly set ([b2549b8](https://github.com/nyabb/abbai-flow/commit/b2549b8fb18608e5898ecf62dbf7fdc6e4e05449)) — thanks [@peaches](https://github.com/peaches)
 * improve calendar color selection ([2d79307](https://github.com/nyabb/abbai-flow/commit/2d793071eb27c5a153c08ca7a7ba8b50c05bb63f)) — thanks [@peaches](https://github.com/peaches)
 
 
@@ -1229,7 +1221,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Bug Fixes
 
-* restore calendar event update/delete after HA moved them to WS-only commands ([69bbedb](https://github.com/nyabb/abbai-flow/commit/69bbedba31bb28d2ecd56f039751ab0e4413ed3d))
+* restore calendar event update/delete after they moved to WebSocket-only commands ([69bbedb](https://github.com/nyabb/abbai-flow/commit/69bbedba31bb28d2ecd56f039751ab0e4413ed3d))
 
 ## [1.32.6](https://github.com/nyabb/abbai-flow/compare/v1.32.5...v1.32.6) (2026-08-09)
 
@@ -1416,7 +1408,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Features
 
-* photo screensaver with Google Photos (HA) + Immich support ([8049c79](https://github.com/nyabb/abbai-flow/commit/8049c79bea73e2a6af9ab82e70205f5135a35171))
+* photo screensaver with Google Photos + Immich support ([8049c79](https://github.com/nyabb/abbai-flow/commit/8049c79bea73e2a6af9ab82e70205f5135a35171))
 
 # [1.23.0](https://github.com/nyabb/abbai-flow/compare/v1.22.0...v1.23.0) (2026-04-04)
 
@@ -1658,7 +1650,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Features
 
-* voice control, MCP server, HA custom sentences + code cleanup ([03b7133](https://github.com/nyabb/abbai-flow/commit/03b7133d390cf8f8dee496a34cada8056f0e243d))
+* voice control, MCP server, custom intent sentences + code cleanup ([03b7133](https://github.com/nyabb/abbai-flow/commit/03b7133d390cf8f8dee496a34cada8056f0e243d))
 
 ## [1.9.0](https://github.com/nyabb/abbai-flow/compare/v1.8.1...v1.9.0) (2026-03-29)
 
@@ -1671,9 +1663,9 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Added
 
-* HA custom sentences and intent handlers for voice control of Abbai Flow features
+* custom voice sentences and intent handlers for app controls
 * Voice commands: add to lists, complete chores, check calendar, navigate views, set timers, query grocery/chore status
-* Auto-install of voice intents into HA config on add-on startup
+* Auto-install of voice intents into app configuration at startup
 * Install script at `scripts/install-voice-intents.sh` for manual deployment
 
 ## [1.8.1](https://github.com/nyabb/abbai-flow/compare/v1.8.0...v1.8.1) (2026-03-29)
@@ -1688,7 +1680,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Features
 
-* dashboard shows todo items from HA lists, music works via REST ([513f748](https://github.com/nyabb/abbai-flow/commit/513f748faed1f40a9eadbff7edfa7f591aacfcd1))
+* dashboard shows todo items from connected lists, music works via REST ([513f748](https://github.com/nyabb/abbai-flow/commit/513f748faed1f40a9eadbff7edfa7f591aacfcd1))
 
 ## [1.7.1](https://github.com/nyabb/abbai-flow/compare/v1.7.0...v1.7.1) (2026-03-29)
 
@@ -1751,7 +1743,7 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Features
 
-* add-on API proxy — zero-config HA connection ([e16dbf5](https://github.com/nyabb/abbai-flow/commit/e16dbf5c3e42d6d65db2e7cb0e04e4131aebec8e))
+* service API proxy — zero-config connection ([e16dbf5](https://github.com/nyabb/abbai-flow/commit/e16dbf5c3e42d6d65db2e7cb0e04e4131aebec8e))
 
 ## [1.3.1](https://github.com/nyabb/abbai-flow/compare/v1.3.0...v1.3.1) (2026-03-29)
 
@@ -1777,16 +1769,16 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 
 ### Bug Fixes
 
-* add the Home Assistant token field for reliable add-on authentication ([582bb46](https://github.com/nyabb/abbai-flow/commit/582bb46406c2b0d726fcfcea429cdb37d0461cf4))
+* add an integration token field for reliable authentication ([582bb46](https://github.com/nyabb/abbai-flow/commit/582bb46406c2b0d726fcfcea429cdb37d0461cf4))
 
 # Changelog
 
 ## Unreleased
 
 ### New
-- Built-in local task lists (To-Do, Shopping List) that work without any HA integration
+- Built-in local task lists (To-Do, Shopping List) that work without an external integration
 - Built-in local calendar ("Abbai Flow") for standalone event management
-- Both local and HA-powered lists/calendars can be used side by side
+- Both local and connected lists/calendars can be used side by side
 
 ### Fixed
 - Theme no longer flashes to the light default on page load — applied before first paint
@@ -1794,12 +1786,12 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 - Calendar events load reliably on startup (fixed stale closure in calendar fetch)
 - Leaderboard panel no longer peeks out when sidebar is positioned on the left
 - Dashboard now correctly shows today's all-day events (timezone normalization fix)
-- Grocery/todo lists show local lists immediately even without HA connection
+- Grocery/todo lists show local lists immediately when no service is connected
 
 ## 1.2.0
 
 ### New
-- Grocery lists now work with AnyList and HA Shopping List
+- Grocery lists now work with AnyList and connected list providers
 - Onboarding wizard for standalone app setup
 - Native iOS and Android app support via Capacitor
 - Keyboard shortcuts: press 1-9 to switch views
@@ -1815,8 +1807,8 @@ Thanks to our external contributors for this release: [@peaches](https://github.
 - Accessibility: respects reduced motion preferences
 
 ### Fixed
-- Grocery view now properly fetches items from HA
-- Connection handling in HA ingress mode
+- Grocery view now properly fetches items from connected providers
+- Connection handling in embedded deployment mode
 - Event text readable on all themes
 - Layout issues on mobile
 

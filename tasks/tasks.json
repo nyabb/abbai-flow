@@ -3,7 +3,7 @@
     {
       "id": 1,
       "title": "Phase 1: Zero-Config Standalone Mode",
-      "description": "Make Abbai Flow work out of the box without Home Assistant. Install → 2-minute setup wizard → working Calendar view.",
+      "description": "Make Abbai Flow work out of the box with a short setup wizard and a working Calendar view.",
       "status": "in-review",
       "priority": "high",
       "tags": ["phase-1", "standalone"],
@@ -19,7 +19,7 @@
         {
           "id": 102,
           "title": "OpenWeatherMap integration",
-          "description": "Free tier weather API integration. User enters zip code during setup, Abbai Flow fetches weather without HA. Needs API key management (built-in free key or user-provided).",
+          "description": "Free tier weather API integration. User enters zip code during setup, Abbai Flow fetches weather without requiring another service. Needs API key management (built-in free key or user-provided).",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-1"]
@@ -35,7 +35,7 @@
         {
           "id": 104,
           "title": "Default to standalone mode",
-          "description": "Local calendar, lists, and tasks should be the defaults. HA integration becomes an optional 'Connect Home Assistant' step in settings. Remove 'demo mode' messaging.",
+          "description": "Local calendar, lists, and tasks should be the defaults. Keep optional service connections in settings and remove 'demo mode' messaging.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-1"]
@@ -53,7 +53,7 @@
     {
       "id": 2,
       "title": "Phase 2: Direct Service Integrations",
-      "description": "Connect to the services families already use — Google, Spotify, Apple — without requiring Home Assistant.",
+      "description": "Connect directly to the services families already use — Google, Spotify, and Apple.",
       "status": "in-review",
       "priority": "high",
       "tags": ["phase-2", "integrations"],
@@ -61,7 +61,7 @@
         {
           "id": 201,
           "title": "Google Calendar OAuth integration",
-          "description": "Sign in with Google button, OAuth 2.0 flow, fetch all user calendars via Google Calendar API v3. Replace HA calendar dependency for standalone users.",
+          "description": "Sign in with Google button, OAuth 2.0 flow, fetch all user calendars via Google Calendar API v3. Offer direct calendar access for standalone users.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-2"]
@@ -69,7 +69,7 @@
         {
           "id": 202,
           "title": "Google Photos API integration",
-          "description": "OAuth sign-in, browse/select albums, fetch photos for slideshow. Replace HA media directory dependency.",
+          "description": "OAuth sign-in, browse/select albums, fetch photos for slideshow. Offer direct photo-source access.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-2"]
@@ -101,7 +101,7 @@
         {
           "id": 206,
           "title": "Todoist / Microsoft To-Do integration",
-          "description": "Direct API integrations for popular task management apps beyond HA todo entities.",
+          "description": "Direct API integrations for popular task management apps beyond the current task provider.",
           "status": "pending",
           "priority": "low",
           "tags": ["phase-2"]
@@ -150,8 +150,8 @@
         },
         {
           "id": 305,
-          "title": "Submit to official HA add-on repository",
-          "description": "Meet HA add-on store requirements, submit PR to community add-ons repo for wider visibility.",
+          "title": "Publish a supported container package",
+          "description": "Meet container registry requirements and publish installation instructions.",
           "status": "pending",
           "priority": "low",
           "tags": ["phase-3"]
@@ -251,7 +251,7 @@
         {
           "id": 503,
           "title": "Produce featurette 01 — Meet Abbai Flow",
-          "description": "Record screen footage using automation/01-meet-beacon.ts, generate voiceover from scripts/01-meet-beacon.md, composite with FFmpeg.",
+          "description": "Record screen footage using automation/01-introduction.ts, generate voiceover from scripts/01-introduction.md, composite with FFmpeg.",
           "status": "pending",
           "priority": "high",
           "tags": ["phase-5"]
@@ -323,7 +323,7 @@
         {
           "id": 512,
           "title": "Produce featurette 10 — Install",
-          "description": "Record HA add-on install flow using automation/10-install.ts, generate voiceover from scripts/10-install.md, composite with FFmpeg.",
+          "description": "Record the container installation flow using automation/10-install.ts, generate voiceover from scripts/10-install.md, composite with FFmpeg.",
           "status": "pending",
           "priority": "medium",
           "tags": ["phase-5"]

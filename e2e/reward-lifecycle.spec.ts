@@ -256,7 +256,7 @@ test('child splits points, parent approves payout, then reuse or delete', async 
   // 7. Both payouts are kept as history, and no pursuit is left active.
   const redemptions = await getData<Array<{ reward: string; state: string }>>(
     stack.appUrl,
-    'beacon-reward-redemptions',
+    'abbai-flow-reward-redemptions',
   );
   const byReward = new Map(
     (redemptions ?? []).map((redemption) => [redemption.reward, redemption.state]),

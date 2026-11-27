@@ -26,10 +26,8 @@ import './styles/responsive.css';
 import './styles/portrait-display.css';
 import { applyStoredTheme } from './hooks/useTheme';
 import { installDebugFetchCapture } from './api/debug-log';
-import { migrateLegacyStorageKeys } from './api/storage-migration';
 
 // Apply stored theme immediately (before first paint) to prevent flash
-migrateLegacyStorageKeys();
 applyStoredTheme();
 installDebugFetchCapture();
 

@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+# Release analysis and the release commit must run against one current main tip.
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
 permissions:
   contents: write
   issues: write
@@ -18,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: main
           fetch-depth: 0
 
       - uses: actions/setup-node@v5

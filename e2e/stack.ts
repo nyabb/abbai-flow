@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net';
 /**
  * One complete Abbai Flow deployment for the browser suite:
  *
- *   browser → server/app.cjs (SPA + /beacon-data + planner + local ChoresMan)
+ *   browser → server/app.cjs (SPA + Abbai Flow data + planner + local ChoresMan)
  *                    └── /abbai-flow/choresman → the real local JSON store
  *
  * Running the real backend (rather than intercepting fetch in the page) is what
@@ -70,7 +70,7 @@ export async function startStack(): Promise<E2EStack> {
 
 /** Write one persisted document the way the app's own `saveData` would. */
 export async function putData(appUrl: string, key: string, value: unknown): Promise<void> {
-  const res = await fetch(`${appUrl}/beacon-data/${key}`, {
+  const res = await fetch(`${appUrl}/abbai-flow/data/${key}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(value),
@@ -82,7 +82,7 @@ export async function putData(appUrl: string, key: string, value: unknown): Prom
 
 /** Read one persisted document, e.g. the redemption file the server wrote. */
 export async function getData<T>(appUrl: string, key: string): Promise<T | null> {
-  const res = await fetch(`${appUrl}/beacon-data/${key}`);
+  const res = await fetch(`${appUrl}/abbai-flow/data/${key}`);
   if (!res.ok) throw new Error(`Read ${key} failed: ${res.status}`);
   return (await res.json()) as T | null;
 }

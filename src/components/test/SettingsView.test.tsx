@@ -36,7 +36,7 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     groceryListIds: [],
     shoppingEntity: '',
     musicDefaultPlayer: '',
-    photoDirectory: '/media/beacon/photos',
+    photoDirectory: '/media/abbai-flow/photos',
     photoInterval: 30,
     photoTransition: 'fade',
     screenSaverEnabled: true,
