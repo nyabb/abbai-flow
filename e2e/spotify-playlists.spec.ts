@@ -147,7 +147,7 @@ async function openMusic(page: Page) {
     return;
   }
   await page
-    .locator('.sidebar--desktop')
+    .locator('.mobile-tab-bar')
     .getByRole('button', { name: 'Music', exact: true })
     .click();
 }

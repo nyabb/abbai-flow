@@ -5,16 +5,12 @@ import {
   Music,
   MoreHorizontal,
   ShoppingCart,
-  Settings,
   Timer as TimerIcon,
   CloudSun,
   Utensils,
-  Plus,
 } from 'lucide-react';
-import abbaiIcon from '../assets/abbai-flow-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { SettingsErrorBadge } from './SettingsErrorBadge';
 
 export type SidebarView =
   | 'calendar'
@@ -29,17 +25,13 @@ export type SidebarView =
 interface SidebarProps {
   activeView: SidebarView;
   onChangeView: (view: SidebarView) => void;
-  position?: 'left' | 'right' | 'bottom';
-  /** Opens quick-add from the desktop sidebar. Mobile uses the OmniAdd FAB. */
-  onQuickAdd?: () => void;
-  hasSettingsAttention?: boolean;
 }
 
 const ICON_SIZE = 24;
 const STROKE_WIDTH = 1.5;
 
 interface NavItem {
-  id: SidebarView;
+  id: Exclude<SidebarView, 'settings'>;
   icon: React.ReactNode;
   labelKey: TranslationKey;
 }
@@ -80,15 +72,10 @@ const NAV_ITEMS: NavItem[] = [
     icon: <CloudSun size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
     labelKey: 'nav.weather',
   },
-  {
-    id: 'settings',
-    icon: <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />,
-    labelKey: 'nav.settings',
-  },
 ];
 
-/** Keep the same page order in the desktop rail and full bottom bar. */
-const MOBILE_NAV_IDS: SidebarView[] = [
+/** The kiosk and desktop dock retain the same destination order. */
+const FULL_NAV_IDS: NavItem['id'][] = [
   'calendar',
   'meals',
   'grocery',
@@ -98,32 +85,20 @@ const MOBILE_NAV_IDS: SidebarView[] = [
   'timer',
 ];
 /** Narrow phones keep the four household destinations visible, with Chores centered. */
-const COMPACT_NAV_IDS: SidebarView[] = ['calendar', 'meals', 'chores', 'grocery'];
-const COMPACT_MORE_IDS: SidebarView[] = ['music', 'weather', 'timer'];
+const COMPACT_NAV_IDS: NavItem['id'][] = ['calendar', 'meals', 'chores', 'grocery'];
+const COMPACT_MORE_IDS: NavItem['id'][] = ['music', 'weather', 'timer'];
 
-export function Sidebar({
-  activeView,
-  onChangeView,
-  position = 'left',
-  onQuickAdd,
-  hasSettingsAttention = false,
-}: SidebarProps) {
+export function Sidebar({ activeView, onChangeView }: SidebarProps) {
   const { t } = useTranslation();
   const compactPhone = useMediaQuery('(max-width: 480px)');
-  const portraitDisplay = useMediaQuery(
-    '(min-width: 900px) and (min-height: 1200px) and (orientation: portrait)',
-  );
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRootRef = useRef<HTMLDivElement>(null);
   const moreButtonRef = useRef<HTMLButtonElement>(null);
-  const itemFor = (id: SidebarView) => NAV_ITEMS.find((item) => item.id === id)!;
-  const desktopNav = MOBILE_NAV_IDS.map(itemFor);
-  const mobileNavIds = compactPhone ? COMPACT_NAV_IDS : MOBILE_NAV_IDS;
-  const mobileNav = mobileNavIds.map(itemFor);
-  if (portraitDisplay && !compactPhone) mobileNav.push(itemFor('settings'));
-  const moreNav = COMPACT_MORE_IDS.map(itemFor);
-  const quickAddLabel = t('omniAdd.quickAdd');
-  const activeViewInMore = COMPACT_MORE_IDS.includes(activeView);
+  const itemFor = (id: NavItem['id']) => NAV_ITEMS.find((item) => item.id === id)!;
+  const navIds = compactPhone ? COMPACT_NAV_IDS : FULL_NAV_IDS;
+  const navItems = navIds.map(itemFor);
+  const moreItems = COMPACT_MORE_IDS.map(itemFor);
+  const activeViewInMore = COMPACT_MORE_IDS.includes(activeView as NavItem['id']);
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -150,130 +125,57 @@ export function Sidebar({
   }, [compactPhone]);
 
   return (
-    <>
-      {/* Desktop sidebar */}
-      <nav
-        className={`sidebar sidebar--desktop sidebar--${position}`}
-        aria-label={t('nav.mainNavigation')}
-        style={position === 'bottom' ? { display: 'none' } : undefined}
-      >
-        {/* Abbai Flow logo */}
-        <div className="sidebar-logo">
-          <img src={abbaiIcon} alt="Abbai Flow" width={32} height={32} />
-        </div>
-
-        {/* Page links use the same order as the bottom bar. */}
-        <div className="sidebar-nav-group">
-          {desktopNav.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={`sidebar-icon ${activeView === item.id ? 'sidebar-icon--active' : ''}`}
-              onClick={() => onChangeView(item.id)}
-              title={t(item.labelKey)}
-              aria-label={t(item.labelKey)}
-              aria-current={activeView === item.id ? 'page' : undefined}
-            >
-              {item.icon}
-            </button>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="sidebar-divider" />
-
-        {/* Quick Add and Settings stay in the utility area. */}
-        <div className="sidebar-nav-group sidebar-nav-group--bottom">
-          {onQuickAdd && (
-            <button
-              type="button"
-              className="sidebar-icon sidebar-icon--add"
-              onClick={onQuickAdd}
-              title={quickAddLabel}
-              aria-label={quickAddLabel}
-            >
-              <Plus size={ICON_SIZE} strokeWidth={2} />
-            </button>
+    <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
+      {navItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`mobile-tab ${activeView === item.id ? 'mobile-tab--active' : ''}`}
+          onClick={() => onChangeView(item.id)}
+          aria-label={t(item.labelKey)}
+          aria-current={activeView === item.id ? 'page' : undefined}
+        >
+          {item.icon}
+          <span className="mobile-tab-label">{t(item.labelKey)}</span>
+        </button>
+      ))}
+      {compactPhone && (
+        <div className="mobile-tab-more" ref={moreRootRef}>
+          <button
+            ref={moreButtonRef}
+            type="button"
+            className={`mobile-tab mobile-tab--more${activeViewInMore ? ' mobile-tab--active' : ''}`}
+            onClick={() => setMoreOpen((open) => !open)}
+            aria-label={t('nav.more')}
+            aria-haspopup="menu"
+            aria-expanded={moreOpen}
+            aria-current={activeViewInMore ? 'page' : undefined}
+          >
+            <MoreHorizontal size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
+            <span className="mobile-tab-label">{t('nav.more')}</span>
+          </button>
+          {moreOpen && (
+            <div className="mobile-more-menu" role="menu" aria-label={t('nav.more')}>
+              {moreItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="menuitem"
+                  className={`mobile-more-menu-item${activeView === item.id ? ' is-active' : ''}`}
+                  onClick={() => {
+                    onChangeView(item.id);
+                    setMoreOpen(false);
+                  }}
+                  aria-current={activeView === item.id ? 'page' : undefined}
+                >
+                  {item.icon}
+                  <span>{t(item.labelKey)}</span>
+                </button>
+              ))}
+            </div>
           )}
-          <button
-            type="button"
-            className={`sidebar-icon ${activeView === 'settings' ? 'sidebar-icon--active' : ''}`}
-            onClick={() => onChangeView('settings')}
-            title={t('nav.settings')}
-            aria-label={t('nav.settings')}
-            aria-current={activeView === 'settings' ? 'page' : undefined}
-          >
-            <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
-            {hasSettingsAttention && (
-              <SettingsErrorBadge
-                label={t('settings.integrations.needsAttention')}
-                className="settings-error-badge--floating"
-              />
-            )}
-          </button>
         </div>
-      </nav>
-
-      {/* Seven destinations stay visible on larger screens. Narrow phones use
-          four direct links and a compact More menu for the other three. */}
-      <nav className="mobile-tab-bar" aria-label={t('nav.mainNavigation')}>
-        {mobileNav.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={`mobile-tab ${activeView === item.id ? 'mobile-tab--active' : ''}`}
-            onClick={() => onChangeView(item.id)}
-            aria-label={t(item.labelKey)}
-            aria-current={activeView === item.id ? 'page' : undefined}
-          >
-            {item.icon}
-            {item.id === 'settings' && hasSettingsAttention && (
-              <SettingsErrorBadge
-                label={t('settings.integrations.needsAttention')}
-                className="settings-error-badge--floating"
-              />
-            )}
-            <span className="mobile-tab-label">{t(item.labelKey)}</span>
-          </button>
-        ))}
-        {compactPhone && (
-          <div className="mobile-tab-more" ref={moreRootRef}>
-            <button
-              ref={moreButtonRef}
-              type="button"
-              className={`mobile-tab mobile-tab--more${activeViewInMore ? ' mobile-tab--active' : ''}`}
-              onClick={() => setMoreOpen((open) => !open)}
-              aria-label={t('nav.more')}
-              aria-haspopup="menu"
-              aria-expanded={moreOpen}
-              aria-current={activeViewInMore ? 'page' : undefined}
-            >
-              <MoreHorizontal size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
-              <span className="mobile-tab-label">{t('nav.more')}</span>
-            </button>
-            {moreOpen && (
-              <div className="mobile-more-menu" role="menu" aria-label={t('nav.more')}>
-                {moreNav.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    role="menuitem"
-                    className={`mobile-more-menu-item${activeView === item.id ? ' is-active' : ''}`}
-                    onClick={() => {
-                      onChangeView(item.id);
-                      setMoreOpen(false);
-                    }}
-                    aria-current={activeView === item.id ? 'page' : undefined}
-                  >
-                    {item.icon}
-                    <span>{t(item.labelKey)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </nav>
-    </>
+      )}
+    </nav>
   );
 }

@@ -891,15 +891,14 @@
   }
 }
 
-/* Keep the routine editor above the persistent phone tab bar, like the shared
-   app dialogs, so the Save and Cancel buttons remain visible. */
+/* Keep the routine editor actions above the persistent bottom navigation. */
 .abbai-flow--compact .routine-editor-backdrop,
-.abbai-flow--sidebar-bottom .routine-editor-backdrop {
+.abbai-flow--bottom-nav .routine-editor-backdrop {
   padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
 }
 
 .abbai-flow--compact .routine-editor-dialog,
-.abbai-flow--sidebar-bottom .routine-editor-dialog {
+.abbai-flow--bottom-nav .routine-editor-dialog {
   max-height: calc(
     100vh - var(--mobile-tab-bar-height, 72px) - 24px - env(safe-area-inset-bottom, 0px)
   );

@@ -4,24 +4,12 @@
 
 .omni-add {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(var(--mobile-tab-bar-height, 72px) + 56px);
   right: 24px;
   z-index: 90;
   width: 56px;
-  height: 56px;
+  height: 112px;
   pointer-events: none;
-}
-
-/* Sidebar position adjustments */
-.omni-add--sidebar-left {
-  right: 24px;
-}
-.omni-add--sidebar-right {
-  right: calc(var(--sidebar-width, 72px) + 24px);
-}
-.omni-add--sidebar-bottom {
-  bottom: calc(var(--mobile-tab-bar-height, 72px) + 16px);
-  right: 24px;
 }
 
 /* ---- Backdrop ---- */
@@ -132,8 +120,8 @@
 /* ---- Main FAB ---- */
 .omni-add-fab {
   position: absolute;
+  top: 0;
   right: 0;
-  bottom: 0;
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -159,14 +147,16 @@
 /* Scale up FAB on large displays */
 @media (min-width: 1400px) {
   .omni-add {
+    bottom: calc(var(--mobile-tab-bar-height, 72px) + 64px);
     width: 72px;
-    height: 72px;
+    height: 144px;
   }
 
   .omni-add-fab {
     width: 72px;
     height: 72px;
   }
+
   .omni-add-fab-icon {
     font-size: 2.2rem;
   }
@@ -180,6 +170,48 @@
 
 .omni-add-fab:active {
   transform: scale(0.95);
+}
+
+.omni-add-settings {
+  position: absolute;
+  right: 4px;
+  bottom: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-subtle, var(--border));
+  border-radius: 50%;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
+  z-index: 1;
+}
+
+.omni-add-settings:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
+}
+
+.omni-add-settings:active {
+  transform: scale(0.94);
+}
+
+.omni-add-settings--active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+}
+
+@media (min-width: 1400px) {
+  .omni-add-settings {
+    right: 8px;
+    width: 56px;
+    height: 56px;
+  }
 }
 
 /* ---- Plus icon with rotate ---- */
@@ -201,8 +233,9 @@
 
 @media (max-width: 768px) {
   .omni-add {
-    bottom: calc(var(--mobile-tab-bar-height, 64px) + 16px);
+    bottom: calc(var(--mobile-tab-bar-height, 64px) + 52px);
     right: 16px;
+    height: 104px;
   }
 
   .omni-add-fab {
@@ -210,9 +243,15 @@
     height: 52px;
   }
 
+  .omni-add-settings {
+    right: 4px;
+    width: 44px;
+    height: 44px;
+  }
+
   .omni-add {
     width: 52px;
-    height: 52px;
+    height: 104px;
   }
 
   .omni-add-fab-icon {
@@ -227,8 +266,9 @@
 
 @media (max-width: 480px) {
   .omni-add {
-    bottom: calc(var(--mobile-tab-bar-height, 64px) + 12px);
+    bottom: calc(var(--mobile-tab-bar-height, 64px) + 52px);
     right: 12px;
+    height: 100px;
   }
 
   .omni-add-fab {
@@ -236,17 +276,15 @@
     height: 48px;
   }
 
+  .omni-add-settings {
+    right: 2px;
+    width: 44px;
+    height: 44px;
+  }
+
   .omni-add {
     width: 48px;
-    height: 48px;
-  }
-}
-
-/* Desktop keeps its sidebar quick-add trigger. The floating trigger is for
-   phone layouts, and for displays configured with a bottom sidebar. */
-@media (min-width: 769px) {
-  .omni-add:not(.omni-add--sidebar-bottom) .omni-add-fab {
-    display: none;
+    height: 100px;
   }
 }
 

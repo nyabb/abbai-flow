@@ -214,10 +214,6 @@ export const en = {
   'settings.appearance.fontNormal': 'Normal',
   'settings.appearance.fontLarge': 'Large',
   'settings.appearance.fontXL': 'XL',
-  'settings.appearance.sidebarPositionLabel': 'Sidebar Position',
-  'settings.appearance.left': 'Left',
-  'settings.appearance.right': 'Right',
-  'settings.appearance.bottom': 'Bottom',
 
   // ---- settings: family ----
   'settings.family.title': 'Family Members',

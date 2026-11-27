@@ -21,7 +21,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     darkModeStart: '21:00',
     darkModeEnd: '07:00',
     fontScale: 'normal',
-    sidebarPosition: 'left',
     ...overrides,
   } as AbbaiSettings;
 }
@@ -103,14 +102,12 @@ describe('AppearanceSection', () => {
     expect(onUpdateSettings).toHaveBeenCalledWith({ autoDarkMode: false });
   });
 
-  it('reports font scale and sidebar position picks', () => {
+  it('reports font scale picks', () => {
     const { onUpdateSettings, t } = renderSection();
 
     fireEvent.click(screen.getByText(t.t('settings.appearance.fontLarge')));
     expect(onUpdateSettings).toHaveBeenCalledWith({ fontScale: 'large' });
 
-    fireEvent.click(screen.getByText(t.t('settings.appearance.right')));
-    expect(onUpdateSettings).toHaveBeenCalledWith({ sidebarPosition: 'right' });
   });
 
 });

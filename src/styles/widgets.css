@@ -353,11 +353,11 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Timer Slide Panel (from sidebar) --- */
+/* --- Timer Slide Panel --- */
 .timer-panel {
   position: fixed;
   top: 0;
-  right: var(--sidebar-width, 64px);
+  right: 0;
   width: 320px;
   height: 100vh;
   background: var(--bg-surface);

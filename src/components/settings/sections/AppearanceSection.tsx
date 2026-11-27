@@ -1,6 +1,5 @@
 /**
- * Appearance settings: theme picker, automatic dark mode, font size, sidebar
- * position.
+ * Appearance settings: theme picker, automatic dark mode, and font size.
  */
 import { Check } from 'lucide-react';
 import { themes } from '../../../styles/themes';
@@ -118,18 +117,6 @@ export function AppearanceSection({ settings, onUpdateSettings, t }: SettingsSec
               { value: 'extra-large', label: t('settings.appearance.fontXL') },
             ]}
             onChange={(v) => onUpdateSettings({ fontScale: v })}
-          />
-        </div>
-        <div className="settings-row">
-          <div className="settings-row-label">{t('settings.appearance.sidebarPositionLabel')}</div>
-          <Segment
-            value={settings.sidebarPosition}
-            options={[
-              { value: 'left', label: t('settings.appearance.left') },
-              { value: 'right', label: t('settings.appearance.right') },
-              { value: 'bottom', label: t('settings.appearance.bottom') },
-            ]}
-            onChange={(v) => onUpdateSettings({ sidebarPosition: v })}
           />
         </div>
       </div>

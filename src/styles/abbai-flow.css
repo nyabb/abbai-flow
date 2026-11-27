@@ -128,70 +128,30 @@ a:focus:not(:focus-visible) {
   outline: none;
 }
 
-/* --- Sidebar width variable --- */
+/* Reserve room for the persistent bottom dock on every screen size. */
 :root {
-  --sidebar-width: 64px;
-  /* Include the device safe area in both the bar and the space reserved below
-     page content. */
   --mobile-tab-bar-content-height: 72px;
   --mobile-tab-bar-height: calc(
     var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
   );
 }
 
-/* --- Main Layout (sidebar + content grid) --- */
 .abbai-flow {
-  /* 100vh is taller than the visible area on phones (browser chrome), which
-     pushed the bottom tab bars off-screen. dvh tracks what is really visible. */
   height: 100vh;
   height: 100dvh;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-bottom: var(--mobile-tab-bar-height, 72px);
   overflow: hidden;
   background: var(--bg-primary);
 }
 
-/* Sidebar LEFT (default) */
-.abbai-flow--sidebar-left {
-  grid-template-columns: var(--sidebar-width) 1fr;
+.abbai-flow--bottom-nav {
+  grid-template-columns: minmax(0, 1fr);
 }
 
-.abbai-flow--sidebar-left .abbai-flow-main {
-  grid-column: 2;
-}
-
-.abbai-flow--sidebar-left .sidebar {
+.abbai-flow--bottom-nav .abbai-flow-main {
   grid-column: 1;
-  border-right: 1px solid var(--border-subtle);
-  border-left: none;
-}
-
-/* Sidebar RIGHT */
-.abbai-flow--sidebar-right {
-  grid-template-columns: 1fr var(--sidebar-width);
-}
-
-.abbai-flow--sidebar-right .abbai-flow-main {
-  grid-column: 1;
-}
-
-.abbai-flow--sidebar-right .sidebar {
-  grid-column: 2;
-  border-left: 1px solid var(--border-subtle);
-  border-right: none;
-}
-
-/* Sidebar BOTTOM */
-.abbai-flow--sidebar-bottom {
-  grid-template-columns: 1fr;
-  padding-bottom: var(--mobile-tab-bar-height, 72px);
-}
-
-.abbai-flow--sidebar-bottom .abbai-flow-main {
-  grid-column: 1;
-}
-
-.abbai-flow--sidebar-bottom .mobile-tab-bar {
-  display: flex;
 }
 
 .abbai-flow-main {
@@ -298,100 +258,6 @@ a:focus:not(:focus-visible) {
   }
 }
 
-/* --- Sidebar --- */
-.sidebar {
-  grid-row: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: var(--bg-sidebar, #f0eeeb);
-  padding: 12px 0;
-  height: 100vh;
-  height: 100dvh;
-  z-index: 15;
-}
-
-.sidebar-logo {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  flex-shrink: 0;
-}
-
-.sidebar-logo img {
-  width: 32px;
-  height: auto;
-}
-
-.sidebar-nav-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  padding: 0 8px;
-}
-
-.sidebar-nav-group--bottom {
-  margin-top: auto;
-}
-
-.sidebar-divider {
-  width: 32px;
-  height: 1px;
-  background: var(--border);
-  margin: 12px 0;
-  flex-shrink: 0;
-}
-
-.sidebar-icon {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  color: var(--text-muted);
-  transition: all var(--transition);
-  position: relative;
-  flex-shrink: 0;
-}
-
-.sidebar-icon:hover {
-  background: color-mix(in srgb, var(--accent, #3b82f6) 12%, transparent);
-  color: var(--text-primary);
-}
-
-.sidebar-icon--active {
-  background: color-mix(in srgb, var(--accent, #3b82f6) 15%, transparent);
-  color: var(--accent, #3b82f6);
-}
-
-.sidebar-icon--active::before {
-  content: '';
-  position: absolute;
-  top: 8px;
-  bottom: 8px;
-  width: 3px;
-  background: var(--color-blue-full);
-}
-
-/* Active indicator on the correct edge based on sidebar position */
-.abbai-flow--sidebar-left .sidebar-icon--active::before {
-  right: -8px;
-  left: auto;
-  border-radius: 3px 0 0 3px;
-}
-
-.abbai-flow--sidebar-right .sidebar-icon--active::before {
-  left: -8px;
-  right: auto;
-  border-radius: 0 3px 3px 0;
-}
-
 /* --- Filter Bar (above calendar) --- */
 .filter-bar {
   padding: 8px 16px 0;
@@ -405,7 +271,7 @@ a:focus:not(:focus-visible) {
   display: none;
 }
 
-/* --- Header (simplified — nav moved to sidebar) --- */
+/* --- Header (simplified; app navigation lives in the bottom dock) --- */
 .abbai-flow-header {
   flex-shrink: 0;
   height: var(--header-height);
@@ -525,7 +391,7 @@ a:focus:not(:focus-visible) {
   position: relative;
 }
 
-/* --- Two-column layout (calendar + sidebar) --- */
+/* --- Two-column layout (calendar + household sidebar) --- */
 .abbai-flow-body--two-col {
   flex-direction: row;
   gap: 0;
@@ -1536,16 +1402,6 @@ button.task-checklist-row:hover {
   bottom: 24px;
 }
 
-/* FAB position depends on sidebar side -- default right */
-.abbai-flow--sidebar-left .btn--fab,
-.abbai-flow--sidebar-bottom .btn--fab {
-  right: 24px;
-}
-
-.abbai-flow--sidebar-right .btn--fab {
-  right: 24px;
-}
-
 .btn--fab {
   right: 24px;
   width: 56px;
@@ -1633,17 +1489,15 @@ button.task-checklist-row:hover {
  * space -- a taller form (adding a task) keeps its footer, and therefore its Save
  * button, above the bar instead of underneath it.
  *
- * The tab bar is shown by `.abbai-flow--compact` (see the `.abbai-flow--compact
- * .mobile-tab-bar { display: flex }` rule), not by the sidebar position, so
- * matching on `abbai-flow--sidebar-bottom` alone never applied. Both are covered.
+ * The fixed dock reserves this space so dialog actions remain above it.
  */
 .abbai-flow--compact .modal-overlay,
-.abbai-flow--sidebar-bottom .modal-overlay {
+.abbai-flow--bottom-nav .modal-overlay {
   padding-bottom: calc(var(--mobile-tab-bar-height, 72px) + env(safe-area-inset-bottom, 0px));
 }
 
 .abbai-flow--compact .modal-overlay .modal,
-.abbai-flow--sidebar-bottom .modal-overlay .modal {
+.abbai-flow--bottom-nav .modal-overlay .modal {
   max-height: 100%;
 }
 
@@ -1937,9 +1791,9 @@ button.task-checklist-row:hover {
    Mobile Tab Bar (bottom navigation)
    ============================================================ */
 
-/* Hide mobile tab bar on desktop */
+/* Persistent bottom navigation across screen sizes */
 .mobile-tab-bar {
-  display: none;
+  display: flex;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -1977,17 +1831,6 @@ button.task-checklist-row:hover {
     color 160ms ease,
     background-color 160ms ease;
   -webkit-tap-highlight-color: transparent;
-}
-
-/* Quick add in the sidebar: a filled button that stands out from the icons. */
-.sidebar-icon--add {
-  color: var(--planner-on-accent, #fff);
-  background: var(--accent);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 38%, transparent);
-}
-
-.sidebar-icon--add:hover {
-  background: color-mix(in srgb, var(--accent) 86%, #000);
 }
 
 .mobile-tab--active {
@@ -2098,22 +1941,19 @@ button.task-checklist-row:hover {
   :root {
     --time-axis-width: 44px;
     --hour-height: 56px;
-    --sidebar-width: 0px;
     --mobile-tab-bar-content-height: 72px;
     --mobile-tab-bar-height: calc(
       var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
     );
   }
 
-  /* --- Layout: remove sidebar column, add bottom padding for tab bar --- */
+  /* Keep a single content column and reserve room for the fixed bottom dock. */
   .abbai-flow {
     grid-template-columns: 1fr !important;
     padding-bottom: var(--mobile-tab-bar-height);
   }
 
-  .abbai-flow .abbai-flow-main,
-  .abbai-flow--sidebar-left .abbai-flow-main,
-  .abbai-flow--sidebar-right .abbai-flow-main {
+  .abbai-flow .abbai-flow-main {
     grid-column: 1 !important;
   }
 
@@ -2136,17 +1976,7 @@ button.task-checklist-row:hover {
     min-height: 0;
   }
 
-  /* Hide desktop sidebar on mobile — show bottom tab bar instead */
-  .sidebar--desktop {
-    display: none !important;
-  }
-
-  /* The bar itself is styled at base scope (see `.mobile-tab-bar` below) so the
-     same bar also works when Settings > Sidebar Position is "Bottom" on a wide
-     screen. Here we only switch it on for phones. */
-  .mobile-tab-bar {
-    display: flex;
-  }
+  /* The shared bottom dock remains visible on every screen size. */
 
   /* --- Header: simplified on mobile --- */
   .abbai-flow-header {
@@ -2442,7 +2272,6 @@ button.task-checklist-row:hover {
 
 .abbai-flow--compact {
   grid-template-columns: 1fr !important;
-  --sidebar-width: 0px;
   padding-bottom: var(--mobile-tab-bar-height, 72px);
 }
 

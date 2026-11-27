@@ -23,7 +23,6 @@ export interface AbbaiSettings {
   darkModeStart: string; // "HH:mm"
   darkModeEnd: string; // "HH:mm"
   fontScale: 'normal' | 'large' | 'extra-large';
-  sidebarPosition: 'left' | 'right' | 'bottom';
 
   // Calendar
   defaultCalendar: string;
@@ -81,7 +80,6 @@ function buildDefaults(): AbbaiSettings {
     darkModeStart: '19:00',
     darkModeEnd: '06:00',
     fontScale: 'normal',
-    sidebarPosition: 'left',
 
     defaultCalendar: '',
     permanentlyHiddenCalendars: [],
@@ -151,6 +149,8 @@ type PersistedSettings = Omit<Partial<AbbaiSettings>, 'defaultView'> & {
 function normalizeSettings(defaults: AbbaiSettings, stored: PersistedSettings = {}): AbbaiSettings {
   const saved = { ...stored } as Record<string, unknown>;
   delete saved.dashboardLayout;
+  // Ignore the removed preference when loading older saved settings.
+  delete saved.sidebarPosition;
   delete saved.advancedDashboard;
   delete saved.displayWakeLock;
   delete saved.displayFullscreen;

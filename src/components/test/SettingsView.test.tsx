@@ -26,7 +26,6 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
     darkModeStart: '21:00',
     darkModeEnd: '07:00',
     fontScale: 'normal',
-    sidebarPosition: 'left',
     defaultCalendar: '',
     permanentlyHiddenCalendars: [],
     calendarColors: {},

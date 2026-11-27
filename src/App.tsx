@@ -661,7 +661,6 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleChangeView]);
 
-  const sidebarPos = settings.sidebarPosition || 'left';
   const withDebugConsole = (content: ReactNode) => (
     <I18nContext.Provider value={i18n}>
       <MusicDockContext.Provider value={musicDockContext}>
@@ -711,7 +710,7 @@ export function App() {
     <I18nContext.Provider value={i18n}>
       <MusicDockContext.Provider value={musicDockContext}>
       <div
-        className={`abbai-flow abbai-flow--sidebar-${sidebarPos} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
+        className={`abbai-flow abbai-flow--bottom-nav ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -721,13 +720,7 @@ export function App() {
             </button>
           </div>
         )}
-        <Sidebar
-          activeView={activeView}
-          onChangeView={handleChangeView}
-          position={sidebarPos}
-          onQuickAdd={() => setQuickAddOpen(true)}
-          hasSettingsAttention={hasSettingsAttention}
-        />
+        <Sidebar activeView={activeView} onChangeView={handleChangeView} />
 
         {/* A countdown belongs to the household, not to the timer page: the
             alarm rings and the dock shows what is left on every view, with
@@ -888,8 +881,8 @@ export function App() {
           onAddRoutine={() => requestChoreCreate('routine')}
           onNavigateTimer={() => handleChangeView('timer')}
           onNavigateSettings={() => handleChangeView('settings')}
-          sidebarPosition={sidebarPos}
           hasSettingsAttention={hasSettingsAttention}
+          settingsActive={activeView === 'settings'}
         />
 
         {/* Event Modal */}

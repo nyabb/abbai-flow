@@ -206,10 +206,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.appearance.fontNormal': '標準',
   'settings.appearance.fontLarge': '大',
   'settings.appearance.fontXL': 'XL',
-  'settings.appearance.sidebarPositionLabel': 'サイドバーの位置',
-  'settings.appearance.left': '左',
-  'settings.appearance.right': '右',
-  'settings.appearance.bottom': '下',
 
   // ---- settings: family ----
   'settings.family.title': '家族メンバー',

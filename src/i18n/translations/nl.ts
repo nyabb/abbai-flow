@@ -206,10 +206,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.appearance.fontNormal': 'Normaal',
   'settings.appearance.fontLarge': 'Groot',
   'settings.appearance.fontXL': 'XL',
-  'settings.appearance.sidebarPositionLabel': 'Positie zijbalk',
-  'settings.appearance.left': 'Links',
-  'settings.appearance.right': 'Rechts',
-  'settings.appearance.bottom': 'Onder',
 
   // ---- settings: family ----
   'settings.family.title': 'Gezinsleden',
