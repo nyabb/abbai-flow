@@ -1,3 +1,10 @@
+## [4.3.1](https://github.com/nyabb/abbai-flow/compare/v4.3.0...v4.3.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* pause scrolling during reminder section drag ([ea394d4](https://github.com/nyabb/abbai-flow/commit/ea394d43b7761971bf611caf2cc8cd836b8147d6))
+
 # [4.3.0](https://github.com/nyabb/abbai-flow/compare/v4.2.1...v4.3.0) (2026-11-27)
 
 
