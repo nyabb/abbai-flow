@@ -1,3 +1,10 @@
+# [3.1.0](https://github.com/nyabb/abbai-flow/compare/v3.0.0...v3.1.0) (2026-11-27)
+
+
+### Features
+
+* add Spotify browser playback output ([8859226](https://github.com/nyabb/abbai-flow/commit/88592266ed1deacb8586cfac180790bca26178d7))
+
 # [3.0.0](https://github.com/nyabb/abbai-flow/compare/v2.39.0...v3.0.0) (2026-11-27)
 
 
