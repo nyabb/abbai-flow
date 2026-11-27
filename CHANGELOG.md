@@ -1,3 +1,18 @@
+# [4.0.0](https://github.com/nyabb/abbai-flow/compare/v3.2.0...v4.0.0) (2026-11-27)
+
+
+* feat!: remove legacy integration compatibility ([b2b00f7](https://github.com/nyabb/abbai-flow/commit/b2b00f7f9677a74f3e753a2b80652ab7a281c563))
+
+
+### Bug Fixes
+
+* open music controls from header and play playlists ([2003054](https://github.com/nyabb/abbai-flow/commit/20030545cd692f2a0fa5c5137e11cfdc005ecc7f))
+
+
+### BREAKING CHANGES
+
+* Retired browser storage migrations, alternate data routes, and planner document aliases are removed. Data stored only under those identifiers will not be imported after upgrade.
+
 # [3.3.0](https://github.com/nyabb/abbai-flow/compare/v3.2.0...v3.3.0) (2026-11-27)
 
 
