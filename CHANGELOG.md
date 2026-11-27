@@ -1,3 +1,17 @@
+# [4.3.0](https://github.com/nyabb/abbai-flow/compare/v4.2.1...v4.3.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* remove swipe navigation and decode section assets ([d18e8ff](https://github.com/nyabb/abbai-flow/commit/d18e8ff99ecd684a46092c4a283ebd1bad27d08a))
+* resolve integration logging lint errors ([828cdb5](https://github.com/nyabb/abbai-flow/commit/828cdb5352969ce2fd4c760ba14f9c1003eb2296))
+* restore safe Spotify catalog failure log ([8843072](https://github.com/nyabb/abbai-flow/commit/884307297eaa232b249578f3c0737edc94c626c7))
+
+
+### Features
+
+* add Docker integration logs and tablet layout ([36d9b20](https://github.com/nyabb/abbai-flow/commit/36d9b20ab815448b0b9b8a5f8b251564fbc9a606))
+
 ## [4.2.1](https://github.com/nyabb/abbai-flow/compare/v4.2.0...v4.2.1) (2026-11-27)
 
 
