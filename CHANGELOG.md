@@ -1,3 +1,5 @@
+# [3.2.0](https://github.com/nyabb/abbai-flow/compare/v3.1.2...v3.2.0) (2026-11-27)
+
 ## [3.1.2](https://github.com/nyabb/abbai-flow/compare/v3.1.1...v3.1.2) (2026-11-27)
 
 ## [3.1.1](https://github.com/nyabb/abbai-flow/compare/v3.1.0...v3.1.1) (2026-11-27)
