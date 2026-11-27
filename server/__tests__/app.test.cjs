@@ -54,8 +54,6 @@ async function startBeacon(overrides = {}) {
   const { server } = createApp({
     distDir,
     dataDir,
-    encoreToken: overrides.encoreToken,
-    encoreUrl: overrides.encoreUrl,
     spotifyClientId: overrides.spotifyClientId,
     spotifyClientSecret: overrides.spotifyClientSecret,
     spotifyMarket: overrides.spotifyMarket,
@@ -718,16 +716,12 @@ test('ChoresMan serves and persists local chores', async (t) => {
 
 test('configFromEnv reads deployment settings, not integration credentials', () => {
   const config = configFromEnv({
-    ENCORE_URL: 'ws://encore.example.com',
-    ENCORE_TOKEN: 'encore-token',
     SPOTIFY_CLIENT_ID: 'client-id',
     SPOTIFY_CLIENT_SECRET: 'client-secret',
     SPOTIFY_MARKET: 'US',
     SPOTIFY_REDIRECT_URI: 'https://abbai.example/abbai-flow/music/oauth/callback',
     ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: 'unix:path=/run/dbus/system_bus_socket',
   });
-  assert.equal(config.encoreUrl, undefined);
-  assert.equal(config.encoreToken, undefined);
   assert.equal(config.spotifyClientId, undefined);
   assert.equal(config.spotifyClientSecret, undefined);
   assert.equal(config.spotifyMarket, undefined);

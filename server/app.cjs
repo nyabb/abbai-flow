@@ -18,8 +18,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const { randomBytes } = require('crypto');
-const { EncoreMusic, DEFAULT_ENCORE_URL } = require('./build/encore-music.js');
-const { handleEncoreMusicRequest } = require('./build/encore-http.js');
+const { handleMusicRequest } = require('./build/music-http.js');
 const { SpotifyCatalog } = require('./build/spotify-catalog.js');
 const { SpotifyPlaylistLibrary } = require('./build/spotify-playlists.js');
 const { BluetoothManager, handleBluetoothRequest } = require('./build/bluetooth-runtime-bundle.js');
@@ -515,8 +514,6 @@ const INTEGRATION_SETTING_KEYS = [
   'weatherApiKeyMode',
   'weatherApiKeyParameter',
   'weatherDataMapping',
-  'encoreToken',
-  'encoreUrl',
   'spotifyClientId',
   'spotifyClientSecret',
   'spotifyMarket',
@@ -631,8 +628,6 @@ function mergeIntegrationSettings(current, patch) {
     weatherApiKey: 'weatherApiKey',
     weatherApiKeyMode: 'weatherApiKeyMode',
     weatherApiKeyParameter: 'weatherApiKeyParameter',
-    encoreToken: 'encoreToken',
-    encoreUrl: 'encoreUrl',
     spotifyClientId: 'spotifyClientId',
     spotifyClientSecret: 'spotifyClientSecret',
     spotifyMarket: 'spotifyMarket',
@@ -660,7 +655,6 @@ function mergeIntegrationSettings(current, patch) {
   if (patch.weatherApiKeyMode === 'query' || patch.weatherApiKeyMode === 'bearer') {
     next.weatherApiKeyMode = patch.weatherApiKeyMode;
   }
-  if (patch.clearEncoreToken === true) next.encoreToken = '';
   if (patch.clearSpotifyClientSecret === true) next.spotifyClientSecret = '';
   if (patch.clearMealSourceToken === true) next.mealSourceToken = '';
   if (patch.clearIcloudPassword === true) next.icloudPassword = '';
@@ -784,19 +778,6 @@ function validateIntegrationSettings(settings) {
       return 'Custom weather mapping must include current, daily forecast, and hourly forecast paths.';
     }
   }
-  try {
-    const encoreUrl = new URL(settings.encoreUrl);
-    if (
-      !['ws:', 'wss:'].includes(encoreUrl.protocol) ||
-      !encoreUrl.hostname ||
-      encoreUrl.username ||
-      encoreUrl.password
-    ) {
-      return 'Enter a valid Encore WebSocket URL using ws or wss.';
-    }
-  } catch {
-    return 'Enter a valid Encore WebSocket URL using ws or wss.';
-  }
   if (!/^[A-Za-z]{2}$/.test(settings.spotifyMarket || '')) {
     return 'Spotify market must be a two-letter country code.';
   }
@@ -883,8 +864,6 @@ function publicIntegrationSettings(settings, icloudStatus = {}) {
     weatherApiKeyMode: settings.weatherApiKeyMode === 'bearer' ? 'bearer' : 'query',
     weatherApiKeyParameter: settings.weatherApiKeyParameter || 'apikey',
     weatherDataMapping: { ...DEFAULT_WEATHER_DATA_MAPPING, ...settings.weatherDataMapping },
-    encoreUrl: settings.encoreUrl,
-    encoreConfigured: Boolean(settings.encoreToken),
     spotifyClientId: settings.spotifyClientId,
     spotifyClientSecretConfigured: Boolean(settings.spotifyClientSecret),
     spotifyMarket: settings.spotifyMarket,
@@ -929,8 +908,6 @@ function createApp(options) {
     weatherApiKeyMode: 'query',
     weatherApiKeyParameter: 'apikey',
     weatherDataMapping: { ...DEFAULT_WEATHER_DATA_MAPPING },
-    encoreToken: options.encoreToken || '',
-    encoreUrl: options.encoreUrl || DEFAULT_ENCORE_URL,
     spotifyClientId: options.spotifyClientId || '',
     spotifyClientSecret: options.spotifyClientSecret || '',
     spotifyMarket: (options.spotifyMarket || 'NL').toUpperCase(),
@@ -955,7 +932,6 @@ function createApp(options) {
     });
   }
 
-  const createEncore = () => new EncoreMusic({ token: config.encoreToken, url: config.encoreUrl });
   const bluetooth =
     options.bluetooth || new BluetoothManager({ dbusAddress: options.bluetoothDbusAddress || '' });
   const createSpotifyCatalog = () =>
@@ -1006,7 +982,6 @@ function createApp(options) {
       createState: options.createSpotifyState,
     });
   const services = {
-    encore: options.encore || createEncore(),
     spotifyCatalog: options.spotifyCatalog || createSpotifyCatalog(),
     spotifyPlaylists: options.spotifyPlaylists || createSpotifyPlaylists(),
     choresman: options.choresman || new ChoresManStore({ dataDir: config.dataDir }),
@@ -1069,11 +1044,9 @@ function createApp(options) {
 
   server.on('close', () => {
     if (choresmanMaintenanceTimer) clearInterval(choresmanMaintenanceTimer);
-    services.encore.stop();
     bluetooth.stop();
     services.icloudReminders.stop?.();
   });
-  services.encore.start();
   bluetooth.start();
 
   async function updateIntegrations(patch) {
@@ -1091,8 +1064,6 @@ function createApp(options) {
       return { error: 'Could not save integration settings' };
     }
 
-    const encoreChanged =
-      next.encoreToken !== config.encoreToken || next.encoreUrl !== config.encoreUrl;
     const spotifySettingsChanged =
       next.spotifyClientId !== config.spotifyClientId ||
       next.spotifyClientSecret !== config.spotifyClientSecret ||
@@ -1110,11 +1081,6 @@ function createApp(options) {
     }
 
     Object.assign(config, next);
-    if (encoreChanged) {
-      services.encore.stop();
-      services.encore = createEncore();
-      services.encore.start();
-    }
     if (spotifySettingsChanged) {
       services.spotifyCatalog = createSpotifyCatalog();
       services.spotifyPlaylists = createSpotifyPlaylists();
@@ -1134,9 +1100,6 @@ function createApp(options) {
   return {
     server,
     config,
-    get encore() {
-      return services.encore;
-    },
     bluetooth,
     verifySpotifyCatalog,
     get spotifyPlaylists() {
@@ -1150,7 +1113,7 @@ function createApp(options) {
 async function route(req, res, config, services, bluetooth) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
-  const { encore, spotifyCatalog, spotifyPlaylists } = services;
+  const { spotifyCatalog, spotifyPlaylists } = services;
 
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
   // Every state-changing endpoint goes through the origin guard.
@@ -1609,10 +1572,9 @@ async function route(req, res, config, services, bluetooth) {
         res.end();
         return;
       }
-      await handleEncoreMusicRequest(
+      await handleMusicRequest(
         req,
         res,
-        encore,
         { sendJson, readJsonObject },
         spotifyCatalog,
         spotifyPlaylists,

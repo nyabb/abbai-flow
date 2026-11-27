@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { I18nContext, createI18n } from '../../i18n';
-import type { EncoreSnapshot } from '../../api/encore-music';
+import type { MusicSnapshot } from '../../api/music-player';
+import type { SpotifyCatalogTrack } from '../../api/spotify-catalog';
 import type { UseSpotifyPlaylistsResult } from '../../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from '../SpotifyMusicPanel';
 
@@ -17,6 +18,7 @@ function playlistLibrary(
       credentialsConfigured: false,
       authorized: false,
       redirectConfigured: false,
+      playbackAuthorized: false,
     },
     playlists: [],
     playlistsTotal: 0,
@@ -44,7 +46,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
+function snapshot(overrides: Partial<MusicSnapshot> = {}): MusicSnapshot {
   return {
     configured: true,
     connection: 'disconnected',
@@ -66,22 +68,20 @@ function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
 }
 
 function renderPanel(
-  state: EncoreSnapshot,
+  state: MusicSnapshot,
   loading = false,
-  onSearch = vi.fn(async () => ({ tracks: [] })),
+  onSearch: (query: string) => Promise<{ tracks: SpotifyCatalogTrack[] }> = vi.fn(async () => ({ tracks: [] })),
   library = playlistLibrary(),
+  onControl = vi.fn(async () => ({ ok: true })),
+  onConnectPlayback = vi.fn(async () => ({ ok: true })),
 ) {
   return render(
     <I18nContext.Provider value={EN}>
       <SpotifyMusicPanel
         snapshot={state}
         loading={loading}
-        output="encore"
-        browserLoading={false}
-        browserError={null}
-        onSelectBrowser={vi.fn(async () => ({ ok: true }))}
-        onSelectEncore={vi.fn(async () => ({ ok: true }))}
-        onControl={vi.fn(async () => ({ ok: true }))}
+        onConnectPlayback={onConnectPlayback}
+        onControl={onControl}
         onSearch={onSearch}
         library={library}
       />
@@ -89,23 +89,36 @@ function renderPanel(
   );
 }
 
-describe('SpotifyMusicPanel connection states', () => {
-  it('shows a connecting state while the initial server request is pending', () => {
+describe('SpotifyMusicPanel browser playback', () => {
+  it('shows a connecting state while the initial browser player request is pending', () => {
     renderPanel(snapshot({ configured: false }), true);
     expect(document.querySelector('.spotify-status')).toHaveTextContent('Connecting...');
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
   });
 
-  it('explains a disconnected Encore connection and disables playback controls', () => {
-    renderPanel(snapshot({ connection: 'disconnected', error: 'Encore connection lost' }));
+  it('explains a disconnected browser player and disables playback controls', () => {
+    renderPanel(
+      snapshot({ connection: 'disconnected', error: 'Browser player disconnected' }),
+      false,
+      undefined,
+      playlistLibrary({
+        status: {
+          configured: true,
+          credentialsConfigured: true,
+          authorized: true,
+          redirectConfigured: true,
+          playbackAuthorized: true,
+        },
+      }),
+    );
     expect(document.querySelector('.spotify-status')).toHaveTextContent('Abbai Flow unreachable');
     expect(screen.getByRole('alert')).toHaveTextContent(
-      'Encore is unavailable. Abbai Flow will reconnect automatically.',
+      'Spotify browser playback is unavailable. Refresh the Music page and try again.',
     );
     expect(screen.getByRole('button', { name: 'Play' })).toBeDisabled();
   });
 
-  it('asks only for the redirect URL when Spotify app credentials are already configured', () => {
+  it('shows the Spotify developer app setup when credentials are not configured', () => {
     renderPanel(
       snapshot(),
       false,
@@ -113,21 +126,16 @@ describe('SpotifyMusicPanel connection states', () => {
       playlistLibrary({
         status: {
           configured: false,
-          credentialsConfigured: true,
+          credentialsConfigured: false,
           authorized: false,
           redirectConfigured: false,
         },
       }),
     );
-    expect(
-      screen.getByText(/Register the OAuth redirect URL from Settings → Integrations/),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Add your Spotify developer app credentials and OAuth redirect URL/),
-    ).not.toBeInTheDocument();
+    expect(screen.getByText(/Configure Spotify developer app credentials/)).toBeInTheDocument();
   });
 
-  it('searches the catalog and plays a result through Encore', async () => {
+  it('plays a selected search result directly on the ready browser player', async () => {
     const onSearch = vi.fn(async () => ({
       tracks: [
         {
@@ -142,38 +150,35 @@ describe('SpotifyMusicPanel connection states', () => {
       ],
     }));
     const onControl = vi.fn(async () => ({ ok: true }));
-    const active = snapshot({
+    const connectedIdle = snapshot({
       connection: 'connected',
-      auth: { loggedIn: true, isActive: true, deviceName: 'Abbai Party' },
+      auth: { loggedIn: true, isActive: false, deviceName: 'This browser' },
     });
-    render(
-      <I18nContext.Provider value={EN}>
-        <SpotifyMusicPanel
-          snapshot={active}
-          loading={false}
-          output="encore"
-          browserLoading={false}
-          browserError={null}
-          onSelectBrowser={vi.fn(async () => ({ ok: true }))}
-          onSelectEncore={vi.fn(async () => ({ ok: true }))}
-          onSearch={onSearch}
-          onControl={onControl}
-          library={playlistLibrary()}
-        />
-      </I18nContext.Provider>,
+    renderPanel(
+      connectedIdle,
+      false,
+      onSearch,
+      playlistLibrary({
+        status: {
+          configured: true,
+          credentialsConfigured: true,
+          authorized: true,
+          redirectConfigured: true,
+          playbackAuthorized: true,
+        },
+      }),
+      onControl,
     );
 
+    expect(document.querySelector('.spotify-status')).toHaveTextContent('Browser player ready');
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Spotify' }), {
       target: { value: 'Sample Song' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    expect(await screen.findByText('Sample Song')).toBeInTheDocument();
-    expect(onSearch).toHaveBeenCalledWith('Sample Song');
-    fireEvent.click(screen.getByRole('button', { name: 'Play track: Sample Song' }));
-    await waitFor(() =>
-      expect(onControl).toHaveBeenCalledWith('playTrack', 'spotify:track:abc123'),
-    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Play track: Sample Song' }));
+    await waitFor(() => expect(onControl).toHaveBeenCalledWith('playTrack', 'spotify:track:abc123'));
+    expect(screen.queryByRole('button', { name: 'Activate device' })).not.toBeInTheDocument();
   });
 
   it('keeps search results visible but disables playback while disconnected', async () => {
@@ -198,6 +203,28 @@ describe('SpotifyMusicPanel connection states', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
     expect(await screen.findByRole('button', { name: 'Play track: Sample Song' })).toBeDisabled();
+  });
+
+  it('asks the user to reconnect Spotify when browser playback scopes are missing', async () => {
+    const onConnectPlayback = vi.fn(async () => ({ ok: true }));
+    renderPanel(
+      snapshot(),
+      false,
+      undefined,
+      playlistLibrary({
+        status: {
+          configured: true,
+          credentialsConfigured: true,
+          authorized: true,
+          redirectConfigured: true,
+          playbackAuthorized: false,
+        },
+      }),
+      undefined,
+      onConnectPlayback,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Enable browser playback' }));
+    await waitFor(() => expect(onConnectPlayback).toHaveBeenCalledOnce());
   });
 
   it('keeps mobile volume compact and exposes the slider when expanded', () => {
@@ -250,23 +277,7 @@ describe('SpotifyMusicPanel connection states', () => {
       ],
     }));
 
-    render(
-      <I18nContext.Provider value={EN}>
-        <SpotifyMusicPanel
-          snapshot={snapshot()}
-          loading={false}
-          output="encore"
-          browserLoading={false}
-          browserError={null}
-          onSelectBrowser={vi.fn(async () => ({ ok: true }))}
-          onSelectEncore={vi.fn(async () => ({ ok: true }))}
-          onControl={vi.fn(async () => ({ ok: true }))}
-          onSearch={onSearch}
-          library={library}
-        />
-      </I18nContext.Provider>,
-    );
-
+    renderPanel(snapshot(), false, onSearch, library);
     expect(screen.getByRole('heading', { name: 'Your Library' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Summer mix' })).toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Spotify' }), {
@@ -285,7 +296,6 @@ describe('SpotifyMusicPanel connection states', () => {
     ).toBeTruthy();
 
     fireEvent.click(within(menu).getByRole('button', { name: 'Summer mix' }));
-
     await waitFor(() => expect(addTrack).toHaveBeenCalledWith(playlist.id, 'spotify:track:abc123'));
   });
 

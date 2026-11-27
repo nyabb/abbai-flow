@@ -21,7 +21,7 @@ own server, with no required cloud account.
 - Weekly calendar with local events and connected CalDAV, ICS, or Google calendars
 - Chores, routines, rewards, points, and family profiles
 - iCloud Reminders and built-in task lists
-- Meal planning, weather, Spotify and Encore music playback
+- Meal planning, weather, and Spotify playback in the browser
 - Optional Bluetooth device management on Linux hosts
 - Uploaded screen saver photos, clock, or both
 - Responsive phone and tablet layouts with Kid Display profiles

@@ -25,10 +25,9 @@ try {
 }
 
 const app = createApp(config);
-const { server, encore, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
+const { server, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
 const integrationDiagnostics = startIntegrationDiagnostics(
   app.config,
-  encore,
   {
     verifySpotifyCatalog,
     verifySpotifyPlaylists,

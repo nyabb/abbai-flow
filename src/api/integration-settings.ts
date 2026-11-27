@@ -66,8 +66,6 @@ export interface IntegrationSettingsStatus {
   weatherApiKeyMode: WeatherApiKeyMode;
   weatherApiKeyParameter: string;
   weatherDataMapping: WeatherDataMapping;
-  encoreUrl: string;
-  encoreConfigured: boolean;
   spotifyClientId: string;
   spotifyClientSecretConfigured: boolean;
   spotifyMarket: string;
@@ -92,9 +90,6 @@ export interface IntegrationSettingsPatch {
   weatherApiKeyMode?: WeatherApiKeyMode;
   weatherApiKeyParameter?: string;
   weatherDataMapping?: Partial<WeatherDataMapping>;
-  encoreUrl?: string;
-  encoreToken?: string;
-  clearEncoreToken?: boolean;
   spotifyClientId?: string;
   spotifyClientSecret?: string;
   clearSpotifyClientSecret?: boolean;

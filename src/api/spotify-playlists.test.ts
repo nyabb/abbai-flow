@@ -295,10 +295,8 @@ describe('Spotify playlist library', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it('preserves Spotify transfer errors so unavailable browser devices are diagnosable', async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse({ error: { status: 404, message: 'Device not found' } }, 404));
+  it('starts a selected track directly on the browser player without a transfer step', async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(null, { status: 204 }));
     const service = library(
       fetcher,
       tokenStore({
@@ -313,19 +311,12 @@ describe('Spotify playlist library', () => {
       }),
     );
 
-    await expect(
-      service.controlPlayback('browser-device-id', 'activate'),
-    ).rejects.toMatchObject({
-      code: 'unavailable',
-      status: 502,
-      upstreamStatus: 404,
-      message: 'Spotify could not find the browser player. Refresh the Music page and try again.',
-    });
+    await service.controlPlayback('browser-device-id', 'playTrack', 'spotify:track:abc123');
     expect(fetcher).toHaveBeenCalledWith(
-      'https://api.spotify.com/v1/me/player',
+      'https://api.spotify.com/v1/me/player/play?device_id=browser-device-id',
       expect.objectContaining({
         method: 'PUT',
-        body: JSON.stringify({ device_ids: ['browser-device-id'], play: true }),
+        body: JSON.stringify({ uris: ['spotify:track:abc123'] }),
       }),
     );
   });
