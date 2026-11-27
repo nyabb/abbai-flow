@@ -56,6 +56,15 @@ export async function handleMusicRequest(
       helpers.sendJson(response, 200, { tracks });
     } catch (error) {
       if (error instanceof SpotifyCatalogError) {
+        if (error.code !== 'invalid_query') {
+          console.warn('[Spotify] ' + JSON.stringify({
+            event: 'operation_failed',
+            action: 'search_catalog',
+            ok: false,
+            error_code: error.code,
+            http_status: error.status,
+          }));
+        }
         helpers.sendJson(response, error.status, { code: error.code, error: error.message });
       } else {
         helpers.sendJson(response, 502, {
