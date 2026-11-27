@@ -111,6 +111,61 @@ export async function handleEncoreMusicRequest(
     return true;
   }
 
+  if (pathname === '/abbai-flow/music/library/playback-token') {
+    if (method !== 'GET') {
+      helpers.sendJson(response, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
+      return true;
+    }
+    if (!playlists) {
+      helpers.sendJson(response, 503, { error: 'Spotify playback is unavailable' });
+      return true;
+    }
+    try {
+      helpers.sendJson(
+        response,
+        200,
+        { accessToken: await playlists.getPlaybackAccessToken() },
+        { 'Cache-Control': 'no-store' },
+      );
+    } catch (error) {
+      sendPlaylistError(error, response, helpers);
+    }
+    return true;
+  }
+
+  if (pathname === '/abbai-flow/music/library/playback-control') {
+    if (method !== 'POST') {
+      helpers.sendJson(response, 405, { error: 'Method not allowed' }, { Allow: 'POST' });
+      return true;
+    }
+    if (!playlists) {
+      helpers.sendJson(response, 503, { error: 'Spotify playback is unavailable' });
+      return true;
+    }
+    const parsed = await helpers.readJsonObject(request);
+    if (parsed.error) {
+      helpers.sendJson(response, parsed.error.status, { error: parsed.error.message });
+      return true;
+    }
+    const body = parsed.value;
+    if (
+      !body ||
+      Object.keys(body).some((key) => !['action', 'value', 'deviceId'].includes(key)) ||
+      typeof body.action !== 'string' ||
+      typeof body.deviceId !== 'string'
+    ) {
+      helpers.sendJson(response, 400, { error: 'Invalid Spotify playback request' });
+      return true;
+    }
+    try {
+      await playlists.controlPlayback(body.deviceId, body.action, body.value);
+      helpers.sendJson(response, 202, { accepted: true });
+    } catch (error) {
+      sendPlaylistError(error, response, helpers);
+    }
+    return true;
+  }
+
   if (pathname === '/abbai-flow/music/library/playlists') {
     if (!playlists) {
       helpers.sendJson(response, 503, { error: 'Spotify playlist integration is unavailable' });

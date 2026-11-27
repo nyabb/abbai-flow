@@ -806,12 +806,16 @@ function validateIntegrationSettings(settings) {
       if (
         !['http:', 'https:'].includes(redirect.protocol) ||
         redirect.username ||
-        redirect.password
+        redirect.password ||
+        redirect.hostname === 'localhost' ||
+        (redirect.protocol === 'http:' &&
+          redirect.hostname !== '127.0.0.1' &&
+          redirect.hostname !== '[::1]')
       ) {
-        return 'Enter a valid Spotify redirect URL using http or https.';
+        return 'Use HTTPS or an explicit loopback IP address for the Spotify redirect URL.';
       }
     } catch {
-      return 'Enter a valid Spotify redirect URL using http or https.';
+      return 'Use HTTPS or an explicit loopback IP address for the Spotify redirect URL.';
     }
   }
   const mealDataMapping = settings.mealDataMapping || EMPTY_MEAL_DATA_MAPPING;

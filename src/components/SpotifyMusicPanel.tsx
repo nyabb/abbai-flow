@@ -15,17 +15,20 @@ import {
   VolumeX,
 } from 'lucide-react';
 import type { EncorePlayback, EncoreRepeat, EncoreSnapshot } from '../api/encore-music';
-import type { BluetoothControl, BluetoothSnapshot } from '../api/bluetooth-types';
 import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 import { SpotifyPlaylistLibrary } from './SpotifyPlaylistLibrary';
 import { LoadingPlaceholder } from './LoadingPlaceholder';
-import { BluetoothDevicesPanel } from './BluetoothDevicesPanel';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
 
 interface SpotifyMusicPanelProps {
   snapshot: EncoreSnapshot;
   loading: boolean;
+  output: 'encore' | 'browser';
+  browserLoading: boolean;
+  browserError: string | null;
+  onSelectBrowser: () => Promise<{ ok: boolean; error?: string }>;
+  onSelectEncore: () => Promise<{ ok: boolean; error?: string }>;
   onControl: (action: string, value?: unknown) => Promise<{ ok: boolean; error?: string }>;
   onSearch: (query: string) => Promise<{
     tracks: SpotifyCatalogTrack[];
@@ -33,11 +36,6 @@ interface SpotifyMusicPanelProps {
     error?: string;
   }>;
   library: UseSpotifyPlaylistsResult;
-  bluetooth: {
-    snapshot: BluetoothSnapshot;
-    loading: boolean;
-    control: (control: BluetoothControl) => Promise<{ ok: boolean; error?: string }>;
-  };
 }
 
 function formatTime(milliseconds: number | null | undefined): string {
@@ -58,10 +56,14 @@ function playbackPosition(playback: EncorePlayback): number {
 export function SpotifyMusicPanel({
   snapshot,
   loading,
+  output,
+  browserLoading,
+  browserError,
+  onSelectBrowser,
+  onSelectEncore,
   onControl,
   onSearch,
   library,
-  bluetooth,
 }: SpotifyMusicPanelProps) {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +89,23 @@ export function SpotifyMusicPanel({
     setControlError(null);
     const result = await onControl(action, value);
     if (!result.ok) setControlError(result.error || 'Control request failed');
+  };
+
+  const selectBrowser = async () => {
+    setControlError(null);
+    if (!library.status.playbackAuthorized) {
+      const result = await library.connect();
+      if (!result.ok) setControlError(result.error || t('music.spotifyBrowserEnableFailed'));
+      return;
+    }
+    const result = await onSelectBrowser();
+    if (!result.ok) setControlError(result.error || t('music.spotifyBrowserStartFailed'));
+  };
+
+  const selectEncore = async () => {
+    setControlError(null);
+    const result = await onSelectEncore();
+    if (!result.ok) setControlError(result.error || t('music.spotifyBrowserStartFailed'));
   };
 
   const submitSearch = async (event: FormEvent<HTMLFormElement>) => {
@@ -221,6 +240,37 @@ export function SpotifyMusicPanel({
         </span>
       </header>
 
+      <div className="spotify-output-picker" role="group" aria-label={t('music.spotifyOutput')}>
+        <span>{t('music.spotifyOutput')}</span>
+        <button
+          type="button"
+          className={output === 'encore' ? 'is-selected' : ''}
+          aria-pressed={output === 'encore'}
+          onClick={() => void selectEncore()}
+        >
+          {t('music.spotifyOutputEncore')}
+        </button>
+        <button
+          type="button"
+          className={output === 'browser' ? 'is-selected' : ''}
+          aria-pressed={output === 'browser'}
+          disabled={library.status.playbackAuthorized && browserLoading}
+          onClick={() => void selectBrowser()}
+        >
+          {!library.status.playbackAuthorized
+            ? t('music.spotifyBrowserEnable')
+            : browserLoading
+              ? t('music.spotifyBrowserConnecting')
+              : t('music.spotifyOutputBrowser')}
+        </button>
+      </div>
+
+      {browserError && library.status.playbackAuthorized && (
+        <div className="spotify-message" role="status">
+          <p>{browserError}</p>
+        </div>
+      )}
+
       {!snapshot.configured && !loading && (
         <div className="spotify-message">
           <p>{t('music.spotifyConfigure')}</p>
@@ -238,6 +288,12 @@ export function SpotifyMusicPanel({
       {snapshot.connection === 'connected' && snapshot.auth.loggedIn === false && (
         <div className="spotify-message">
           <p>{t('music.spotifyLoginHelp')}</p>
+        </div>
+      )}
+
+      {library.status.authorized && library.status.playbackAuthorized === false && (
+        <div className="spotify-message">
+          <p>{t('music.spotifyBrowserReconnectHelp')}</p>
         </div>
       )}
 
@@ -565,11 +621,6 @@ export function SpotifyMusicPanel({
         </aside>
       </div>
 
-      <BluetoothDevicesPanel
-        snapshot={bluetooth.snapshot}
-        loading={bluetooth.loading}
-        onControl={bluetooth.control}
-      />
     </section>
   );
 }
