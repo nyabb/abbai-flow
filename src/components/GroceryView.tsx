@@ -217,6 +217,7 @@ export function GroceryView({
     (value): value is boolean => typeof value === 'boolean',
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sectionDragActive, setSectionDragActive] = useState(false);
   const dragSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
@@ -726,8 +727,16 @@ export function GroceryView({
         </div>
       )}
 
-      <DndContext sensors={dragSensors} onDragEnd={handleSectionDrop}>
-      <div className="grocery-view-list">
+      <DndContext
+        sensors={dragSensors}
+        onDragStart={() => setSectionDragActive(true)}
+        onDragCancel={() => setSectionDragActive(false)}
+        onDragEnd={(event) => {
+          setSectionDragActive(false);
+          handleSectionDrop(event);
+        }}
+      >
+      <div className={`grocery-view-list${sectionDragActive ? ' is-drag-active' : ''}`}>
         {loading && items.length === 0 ? (
           <LoadingPlaceholder label={t('grocery.loadingItems')} lines={4} className="loading-placeholder--list grocery-view-loading" />
         ) : items.length === 0 && !loading ? (

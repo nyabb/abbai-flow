@@ -247,6 +247,11 @@
   scrollbar-width: thin;
 }
 
+.grocery-view-list.is-drag-active {
+  overflow-y: hidden;
+  overscroll-behavior: none;
+}
+
 /* Section headers */
 .grocery-view-section {
   margin-bottom: 8px;
@@ -385,7 +390,7 @@
 
 .grocery-view-item-row[aria-roledescription='draggable'] {
   cursor: grab;
-  touch-action: pan-y;
+  touch-action: none;
   user-select: none;
   -webkit-user-select: none;
 }
