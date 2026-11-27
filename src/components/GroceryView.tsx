@@ -1,5 +1,17 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronRight, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, GripVertical, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 import {
   createICloudReminder,
   deleteICloudReminder,
@@ -50,6 +62,47 @@ function isGroceryListSelections(value: unknown): value is GroceryListSelections
   if (!value || typeof value !== 'object') return false;
   const selections = value as Partial<GroceryListSelections>;
   return typeof selections.grocery === 'string' && typeof selections.tasks === 'string';
+}
+
+function GroceryDragHandle({ item, label }: { item: TodoItem; label: string }) {
+  const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
+    id: `reminder:${item.uid}`,
+    data: { itemUid: item.uid },
+  });
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      className={`grocery-view-drag-handle${isDragging ? ' is-dragging' : ''}`}
+      aria-label={label}
+      title={label}
+      style={{ transform: CSS.Translate.toString(transform) }}
+      {...attributes}
+      {...listeners}
+    >
+      <GripVertical size={17} aria-hidden="true" />
+    </button>
+  );
+}
+
+function GrocerySectionDropTarget({
+  sectionId,
+  children,
+}: {
+  sectionId: string;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `section:${sectionId}` });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`grocery-view-section-group${isOver ? ' is-drop-target' : ''}`}
+      data-section-id={sectionId}
+    >
+      {children}
+    </div>
+  );
 }
 
 const GROCERY_KEYWORDS = [
@@ -151,6 +204,11 @@ export function GroceryView({
     (value): value is boolean => typeof value === 'boolean',
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const dragSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
   const listRevisions = useRef<Record<string, number>>({});
   const {
     lists: localLists,
@@ -444,6 +502,20 @@ export function GroceryView({
     }
   };
 
+  const handleSectionDrop = (event: DragEndEvent) => {
+    const itemUid = event.active.data.current?.itemUid;
+    const overId = event.over?.id;
+    if (typeof itemUid !== 'string' || typeof overId !== 'string' || !overId.startsWith('section:')) {
+      return;
+    }
+    const item = icloudItems.find((candidate) => candidate.uid === itemUid);
+    if (!item) return;
+    const targetSectionId = overId.slice('section:'.length);
+    const nextSectionId = targetSectionId === '__none__' ? '' : targetSectionId;
+    if ((item.sectionID || '') === nextSectionId) return;
+    void handleSectionMove(item, nextSectionId);
+  };
+
   const handleDelete = async (item: TodoItem) => {
     if (item.source === 'local') {
       removeTask(item.uid);
@@ -461,11 +533,11 @@ export function GroceryView({
   };
 
   const groupedUnchecked = useMemo(
-    () => groupBySection(uncheckedItems, sections, t('grocery.otherSection')),
+    () => groupBySection(uncheckedItems, sections, t('grocery.otherSection'), t('grocery.noSection')),
     [uncheckedItems, sections, t],
   );
   const groupedChecked = useMemo(
-    () => groupBySection(checkedItems, sections, t('grocery.otherSection')),
+    () => groupBySection(checkedItems, sections, t('grocery.otherSection'), t('grocery.noSection')),
     [checkedItems, sections, t],
   );
 
@@ -487,17 +559,7 @@ export function GroceryView({
           <span className="grocery-view-item-name">{item.summary}</span>
         </button>
         {item.source === 'icloud' && sections.length > 0 && (
-          <select
-            className="grocery-view-section-select"
-            value={item.sectionID || ''}
-            onChange={(event) => void handleSectionMove(item, event.target.value)}
-            aria-label={t('grocery.moveSection')}
-          >
-            <option value="">{t('grocery.noSection')}</option>
-            {sections.map((section) => (
-              <option key={section.id} value={section.id}>{section.name || section.id}</option>
-            ))}
-          </select>
+          <GroceryDragHandle item={item} label={t('grocery.moveSection')} />
         )}
         {item.source === 'icloud' && (
           <button
@@ -641,6 +703,7 @@ export function GroceryView({
         </div>
       )}
 
+      <DndContext sensors={dragSensors} onDragEnd={handleSectionDrop}>
       <div className="grocery-view-list">
         {loading && items.length === 0 ? (
           <LoadingPlaceholder label={t('grocery.loadingItems')} lines={4} className="loading-placeholder--list grocery-view-loading" />
@@ -662,10 +725,10 @@ export function GroceryView({
               <div className="grocery-view-section">
                 <div className="grocery-view-section-header">{t('grocery.items', { count: uncheckedItems.length })}</div>
                 {groupedUnchecked.map((group) => (
-                  <div key={group.id} className="grocery-view-section-group">
+                  <GrocerySectionDropTarget key={group.id} sectionId={group.id}>
                     {group.name && <div className="grocery-view-section-name">{group.name}</div>}
                     {group.items.map((item) => renderItem(item))}
-                  </div>
+                  </GrocerySectionDropTarget>
                 ))}
               </div>
             )}
@@ -677,10 +740,10 @@ export function GroceryView({
                 </button>
                 <CollapsibleRegion open={!completedCollapsed} className="grocery-view-completed-items">
                   {groupedChecked.map((group) => (
-                    <div key={group.id} className="grocery-view-section-group">
+                    <GrocerySectionDropTarget key={group.id} sectionId={group.id}>
                       {group.name && <div className="grocery-view-section-name">{group.name}</div>}
                       {group.items.map((item) => renderItem(item, true))}
-                    </div>
+                    </GrocerySectionDropTarget>
                   ))}
                 </CollapsibleRegion>
               </div>
@@ -688,12 +751,27 @@ export function GroceryView({
           </>
         )}
       </div>
+      </DndContext>
     </div>
   );
 }
 
-function groupBySection(items: TodoItem[], sections: ICloudReminderSection[], otherSectionName: string) {
+function groupBySection(
+  items: TodoItem[],
+  sections: ICloudReminderSection[],
+  otherSectionName: string,
+  noSectionName: string,
+) {
   const groups = new Map<string, { id: string; name: string; order: number | null; items: TodoItem[] }>();
+  for (const section of sections) {
+    groups.set(section.id, {
+      id: section.id,
+      name: section.name || otherSectionName,
+      order: section.order,
+      items: [],
+    });
+  }
+  groups.set('__none__', { id: '__none__', name: noSectionName, order: null, items: [] });
   for (const item of items) {
     const section = sections.find((candidate) => candidate.id === item.sectionID);
     const id = item.sectionID || '__none__';

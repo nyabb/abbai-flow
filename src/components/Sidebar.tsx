@@ -14,6 +14,7 @@ import {
 import abbaiIcon from '../assets/abbai-flow-icon.svg';
 import { useTranslation, type TranslationKey } from '../i18n';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { SettingsErrorBadge } from './SettingsErrorBadge';
 
 export type SidebarView =
   | 'calendar'
@@ -31,6 +32,7 @@ interface SidebarProps {
   position?: 'left' | 'right' | 'bottom';
   /** Opens quick-add from the desktop sidebar. Mobile uses the OmniAdd FAB. */
   onQuickAdd?: () => void;
+  hasSettingsAttention?: boolean;
 }
 
 const ICON_SIZE = 24;
@@ -99,7 +101,13 @@ const MOBILE_NAV_IDS: SidebarView[] = [
 const COMPACT_NAV_IDS: SidebarView[] = ['calendar', 'meals', 'chores', 'grocery'];
 const COMPACT_MORE_IDS: SidebarView[] = ['music', 'weather', 'timer'];
 
-export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAdd }: SidebarProps) {
+export function Sidebar({
+  activeView,
+  onChangeView,
+  position = 'left',
+  onQuickAdd,
+  hasSettingsAttention = false,
+}: SidebarProps) {
   const { t } = useTranslation();
   const compactPhone = useMediaQuery('(max-width: 480px)');
   const portraitDisplay = useMediaQuery(
@@ -196,6 +204,12 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
             aria-current={activeView === 'settings' ? 'page' : undefined}
           >
             <Settings size={ICON_SIZE} strokeWidth={STROKE_WIDTH} />
+            {hasSettingsAttention && (
+              <SettingsErrorBadge
+                label={t('settings.integrations.needsAttention')}
+                className="settings-error-badge--floating"
+              />
+            )}
           </button>
         </div>
       </nav>
@@ -213,6 +227,12 @@ export function Sidebar({ activeView, onChangeView, position = 'left', onQuickAd
             aria-current={activeView === item.id ? 'page' : undefined}
           >
             {item.icon}
+            {item.id === 'settings' && hasSettingsAttention && (
+              <SettingsErrorBadge
+                label={t('settings.integrations.needsAttention')}
+                className="settings-error-badge--floating"
+              />
+            )}
             <span className="mobile-tab-label">{t(item.labelKey)}</span>
           </button>
         ))}

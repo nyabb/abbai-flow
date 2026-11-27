@@ -256,6 +256,20 @@
   margin-top: 8px;
 }
 
+.grocery-view-section-group {
+  min-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease;
+}
+
+.grocery-view-section-group.is-drop-target {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+
 .grocery-view-section-name {
   padding: 8px 4px 2px;
   color: var(--text-muted);
@@ -374,6 +388,32 @@
   min-width: 0;
 }
 
+.grocery-view-drag-handle {
+  display: grid;
+  width: 34px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.grocery-view-drag-handle:hover,
+.grocery-view-drag-handle.is-dragging {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.grocery-view-drag-handle:active {
+  cursor: grabbing;
+}
+
 .grocery-view-delete {
   display: flex;
   align-items: center;
@@ -407,7 +447,6 @@
   color: #e55;
 }
 
-.grocery-view-section-select,
 .grocery-view-add-section {
   min-width: 0;
   max-width: 210px;
@@ -419,10 +458,6 @@
   color: var(--text-secondary);
   font: inherit;
   font-size: 0.78rem;
-}
-
-.grocery-view-section-select {
-  flex: 0 1 150px;
 }
 
 .grocery-view-add-section {
@@ -494,11 +529,6 @@
 }
 
 @media (max-width: 560px) {
-  .grocery-view-section-select {
-    flex-basis: 96px;
-    max-width: 112px;
-  }
-
   .grocery-view-add {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 44px;

@@ -26,8 +26,10 @@ import { testWeatherConfiguration } from '../../../api/open-meteo';
 import { getRuntimeConfig } from '../../../config';
 import type { TranslationKey } from '../../../i18n';
 import { LoadingPlaceholder } from '../../LoadingPlaceholder';
+import { SettingsErrorBadge } from '../../SettingsErrorBadge';
 import { SecretInput } from '../SecretInput';
 import type { SettingsSectionContext } from './context';
+import type { SettingsAttention } from '../../../hooks/useIntegrationHealth';
 
 const EMPTY_MEAL_DATA_MAPPING: MealDataMapping = {
   itemsPath: '',
@@ -248,6 +250,9 @@ type ClearSecretField =
 
 export interface IntegrationsSectionProps extends SettingsSectionContext {
   onIntegrationSettingsSaved?: () => void;
+  attention?: SettingsAttention[];
+  onConnectSpotify?: () => Promise<{ ok: boolean; error?: string }>;
+  onSettingsErrorChange?: (hasError: boolean) => void;
 }
 
 export function IntegrationsSection({
@@ -255,6 +260,9 @@ export function IntegrationsSection({
   onUpdateSettings,
   t,
   onIntegrationSettingsSaved,
+  attention = [],
+  onConnectSpotify,
+  onSettingsErrorChange,
 }: IntegrationsSectionProps) {
   const serverBacked = Boolean(getRuntimeConfig());
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationSettingsStatus | null>(
@@ -314,6 +322,21 @@ export function IntegrationsSection({
   const [integrationNotice, setIntegrationNotice] = useState('');
   const [weatherTestError, setWeatherTestError] = useState('');
   const [weatherTestNotice, setWeatherTestNotice] = useState('');
+  const hasAttention = (field: string) => attention.some((item) => item.field === field);
+  const hasGroupAttention = (group: SettingsAttention['group']) =>
+    attention.some((item) => item.group === group);
+
+  const connectSpotify = async () => {
+    setIntegrationError('');
+    const result = await onConnectSpotify?.();
+    if (result && !result.ok) {
+      setIntegrationError(result.error || t('music.spotifyPlaylistConnectFailed'));
+    }
+  };
+
+  useEffect(() => {
+    onSettingsErrorChange?.(Boolean(integrationError || weatherTestError));
+  }, [integrationError, onSettingsErrorChange, weatherTestError]);
 
   const loadIcloudLists = useCallback(async () => {
     setIcloudListsAttempted(true);
@@ -646,10 +669,12 @@ export function IntegrationsSection({
     setIntegrationNotice('');
     try {
       applyIcloudAction(await action());
+      onIntegrationSettingsSaved?.();
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
       );
+      onIntegrationSettingsSaved?.();
     } finally {
       setIcloudBusyAction(null);
     }
@@ -798,8 +823,19 @@ export function IntegrationsSection({
 
   return (
     <div className="settings-integrations">
-      <h2 className="settings-section-title">{t('settings.integrations.title')}</h2>
+      <h2 className="settings-section-title">
+        {t('settings.integrations.title')}
+        {hasGroupAttention('transient') && (
+          <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+        )}
+      </h2>
       <p className="settings-section-desc">{t('settings.integrations.desc')}</p>
+      {hasGroupAttention('server') && (
+        <div className="settings-row-sublabel" role="alert">
+          <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+          {t('settings.integrations.statusUnavailable')}
+        </div>
+      )}
       {integrationStatusLoading && (
         <LoadingPlaceholder
           label={t('app.connecting')}
@@ -997,11 +1033,19 @@ export function IntegrationsSection({
       {serverBacked && (
         <>
           <div className="settings-group">
-            <div className="settings-group-title">{t('settings.integrations.spotifyTitle')}</div>
+            <div className="settings-group-title">
+              {t('settings.integrations.spotifyTitle')}
+              {hasGroupAttention('spotify') && (
+                <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+              )}
+            </div>
             <div className="settings-row settings-integration-field">
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyClientIdLabel')}
+                  {hasAttention('spotifyClientId') && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </div>
                 <div className="settings-row-sublabel">
                   {t('settings.integrations.spotifyClientHelp')}
@@ -1018,6 +1062,9 @@ export function IntegrationsSection({
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyClientSecretLabel')}
+                  {hasAttention('spotifyClientSecret') && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </div>
                 <div className="settings-row-sublabel">
                   {integrationStatus?.spotifyClientSecretConfigured
@@ -1056,6 +1103,9 @@ export function IntegrationsSection({
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.spotifyRedirectLabel')}
+                  {hasAttention('spotifyRedirectUri') && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </div>
                 <div className="settings-row-sublabel">
                   {t('settings.integrations.spotifyRedirectHelp')}
@@ -1068,6 +1118,34 @@ export function IntegrationsSection({
                 onChange={(event) => setSpotifyRedirectUri(event.target.value)}
                 placeholder="https://<host>/abbai-flow/music/oauth/callback"
               />
+            </div>
+            <div className="settings-row settings-integration-field">
+              <div>
+                <div className="settings-row-label">
+                  {t('settings.integrations.spotifyAccountLabel')}
+                  {(hasAttention('spotifyAccount') || hasAttention('spotifyPlayback')) && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
+                </div>
+                <div className="settings-row-sublabel">
+                  {hasAttention('spotifyPlayback')
+                    ? t('settings.integrations.spotifyPlaybackNeedsAuth')
+                    : hasAttention('spotifyAccount')
+                      ? t('settings.integrations.spotifyAccountNeedsAuth')
+                      : t('settings.integrations.spotifyAccountHelp')}
+                </div>
+              </div>
+              <button
+                type="button"
+                className="settings-btn"
+                onClick={() => void connectSpotify()}
+                disabled={!onConnectSpotify || integrationBusy || integrationStatusLoading}
+              >
+                {t('music.spotifyConnectAccount')}
+                {(hasAttention('spotifyAccount') || hasAttention('spotifyPlayback')) && (
+                  <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                )}
+              </button>
             </div>
             <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
               <button
@@ -1088,6 +1166,9 @@ export function IntegrationsSection({
       <div className="settings-group">
         <div className="settings-group-title">
           {t('settings.integrations.icloudRemindersTitle')}
+          {hasGroupAttention('icloud') && (
+            <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+          )}
         </div>
         <p className="settings-row-sublabel settings-integration-help">
           {t('settings.integrations.icloudRemindersSublabel')}
@@ -1098,6 +1179,9 @@ export function IntegrationsSection({
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.icloudAppleIdLabel')}
+                  {hasAttention('icloudAppleId') && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </div>
                 <div className="settings-row-sublabel">
                   {t('settings.integrations.icloudAppleIdHelp')}
@@ -1115,6 +1199,9 @@ export function IntegrationsSection({
               <div>
                 <div className="settings-row-label">
                   {t('settings.integrations.icloudPasswordLabel')}
+                  {hasAttention('icloudPassword') && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </div>
                 <div className="settings-row-sublabel">
                   {integrationStatus?.icloudPasswordConfigured
@@ -1159,6 +1246,9 @@ export function IntegrationsSection({
                   : icloudBusyAction === 'authenticate' || icloudAuthState === 'authenticating'
                     ? t('settings.integrations.icloudAuthenticating')
                     : t('settings.integrations.icloudAuthenticate')}
+                {hasAttention('icloudAuthentication') && (
+                  <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                )}
               </button>
             </div>
             {icloudAuthState === 'device_selection_required' && (
@@ -1370,6 +1460,9 @@ export function IntegrationsSection({
       <div className="settings-group">
         <div className="settings-group-title">
           {t('settings.integrations.calendarSourcesTitle')}
+          {hasGroupAttention('calendar') && (
+            <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+          )}
         </div>
         <p className="settings-row-sublabel settings-integration-help">
           {t('settings.integrations.calendarSourcesHelp')}
@@ -1396,6 +1489,9 @@ export function IntegrationsSection({
               >
                 <summary className="settings-calendar-source__summary">
                   {source.name.trim() || t('settings.integrations.calendarAddSource')}
+                  {hasAttention(`calendarSource:${source.id}`) && (
+                    <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                  )}
                 </summary>
                 <div className="settings-calendar-source__content">
                   <div className="settings-row settings-integration-field">
@@ -1437,6 +1533,9 @@ export function IntegrationsSection({
                       {source.provider === 'ics'
                         ? t('settings.integrations.calendarFeedUrlLabel')
                         : t('settings.integrations.calendarServerUrlLabel')}
+                      {hasAttention(`calendarSource:${source.id}`) && (
+                        <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                      )}
                     </div>
                     <input
                       type="url"

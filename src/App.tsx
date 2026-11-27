@@ -42,6 +42,11 @@ import { CalendarEvent } from './types';
 import type { ChoresManChore } from './types/choresman';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { I18nContext, createI18n } from './i18n';
+import { useSpotifyPlaylists } from './hooks/useSpotifyPlaylists';
+import { useSpotifyBrowserPlayer } from './hooks/useSpotifyBrowserPlayer';
+import { useSpotifyCatalog } from './hooks/useSpotifyCatalog';
+import { useIntegrationHealth } from './hooks/useIntegrationHealth';
+import { MusicDock } from './components/MusicDock';
 const EMPTY_CHORESMAN_CHORES: ChoresManChore[] = [];
 
 type ViewTransitionDocument = Document & {
@@ -60,6 +65,48 @@ type EventDialogState =
 export function App() {
   const compact = useMediaQuery('(max-width: 600px)');
   const [integrationSettingsRevision, setIntegrationSettingsRevision] = useState(0);
+  const [hasTransientSettingsError, setHasTransientSettingsError] = useState(false);
+  const spotifyPlaylists = useSpotifyPlaylists();
+  const refreshSpotifyPlaylists = spotifyPlaylists.refresh;
+  const spotifyCatalog = useSpotifyCatalog();
+  const spotifyBrowser = useSpotifyBrowserPlayer(
+    spotifyPlaylists.status.authorized,
+    spotifyPlaylists.status.playbackAuthorized === true,
+  );
+  const integrationAttention = useIntegrationHealth(
+    integrationSettingsRevision,
+    spotifyPlaylists.status,
+  );
+  const settingsAttention = useMemo(
+    () => {
+      const next = [...integrationAttention];
+      if (
+        spotifyPlaylists.error &&
+        !next.some((attention) => attention.field === 'spotifyAccount')
+      ) {
+        next.push({ id: 'spotify:spotifyAccountError', group: 'spotify', field: 'spotifyAccount' });
+      }
+      if (/reconnect spotify|premium is required/i.test(spotifyBrowser.snapshot.error || '')) {
+        const field = /premium is required/i.test(spotifyBrowser.snapshot.error || '')
+          ? 'spotifyPlayback'
+          : 'spotifyAccount';
+        if (!next.some((attention) => attention.field === field)) {
+          next.push({ id: `spotify:${field}Error`, group: 'spotify', field });
+        }
+      }
+      if (hasTransientSettingsError) {
+        next.push({ id: 'transient:settings', group: 'transient', field: 'transientError' });
+      }
+      return next;
+    },
+    [
+      hasTransientSettingsError,
+      integrationAttention,
+      spotifyBrowser.snapshot.error,
+      spotifyPlaylists.error,
+    ],
+  );
+  const hasSettingsAttention = settingsAttention.length > 0;
   const {
     settings,
     updateSettings,
@@ -106,7 +153,8 @@ export function App() {
 
   const handleIntegrationSettingsSaved = useCallback(() => {
     setIntegrationSettingsRevision((current) => current + 1);
-  }, []);
+    void refreshSpotifyPlaylists();
+  }, [refreshSpotifyPlaylists]);
 
   // Apply theme at App level so it stays active regardless of which view is shown
   const { setTheme } = useTheme(settings);
@@ -607,6 +655,11 @@ export function App() {
   const withDebugConsole = (content: ReactNode) => (
     <I18nContext.Provider value={i18n}>
       {content}
+      <MusicDock
+        snapshot={spotifyBrowser.snapshot}
+        onControl={spotifyBrowser.control}
+        onOpen={() => handleChangeView('music')}
+      />
       <DebugConsole enabled={settings.debugMode} />
     </I18nContext.Provider>
   );
@@ -658,6 +711,7 @@ export function App() {
           onChangeView={handleChangeView}
           position={sidebarPos}
           onQuickAdd={() => setQuickAddOpen(true)}
+          hasSettingsAttention={hasSettingsAttention}
         />
 
         {/* A countdown belongs to the household, not to the timer page: the
@@ -665,6 +719,11 @@ export function App() {
             pause/delete right there so the timer page is optional. */}
         <TimerAlarm />
         {activeView !== 'timer' && <TimerDock onOpen={() => handleChangeView('timer')} />}
+        <MusicDock
+          snapshot={spotifyBrowser.snapshot}
+          onControl={spotifyBrowser.control}
+          onOpen={() => handleChangeView('music')}
+        />
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
@@ -685,7 +744,14 @@ export function App() {
             <div className="view-page">
               <PageHeader title={t('nav.music')} />
               <div className="view-page-body">
-                <MusicView />
+                <MusicView
+                  playlists={spotifyPlaylists}
+                  snapshot={spotifyBrowser.snapshot}
+                  loading={spotifyBrowser.loading}
+                  onControl={spotifyBrowser.control}
+                  onSearch={spotifyCatalog.search}
+                  onConnectPlayback={spotifyPlaylists.connect}
+                />
               </div>
             </div>
           ) : activeView === 'meals' ? (
@@ -711,6 +777,9 @@ export function App() {
               onUpdateMember={updateMember}
               onRemoveMember={removeMember}
               onIntegrationSettingsSaved={handleIntegrationSettingsSaved}
+              settingsAttention={settingsAttention}
+              onConnectSpotify={spotifyPlaylists.connect}
+              onSettingsErrorChange={setHasTransientSettingsError}
               calendars={calendars}
               onEnterFocusMode={handleEnterFocusMode}
             />
@@ -810,6 +879,7 @@ export function App() {
           onNavigateTimer={() => handleChangeView('timer')}
           onNavigateSettings={() => handleChangeView('settings')}
           sidebarPosition={sidebarPos}
+          hasSettingsAttention={hasSettingsAttention}
         />
 
         {/* Event Modal */}
