@@ -170,7 +170,7 @@ describe('BluetoothManager', () => {
     expect(test.manager.getSnapshot().error).toBeNull();
   });
 
-  it('reports an unavailable speaker audio profile and logs a redacted BlueZ error', async () => {
+  it('reports an unavailable speaker audio profile without writing Bluetooth logs', async () => {
     const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     const test = createManager((platform) => {
       platform.connectDevice = vi
@@ -186,10 +186,7 @@ describe('BluetoothManager', () => {
       'The speaker Bluetooth audio profile is unavailable on the Raspberry Pi',
     );
 
-    expect(warning).toHaveBeenCalledWith(
-      '[Integration] Bluetooth connect failed: org.bluez.Error.Failed: br-connection-profile-unavailable.',
-    );
-    expect(warning.mock.calls.flat().join(' ')).not.toContain(ADDRESS);
+    expect(warning).not.toHaveBeenCalled();
   });
 
   it('rejects malformed device addresses and extra control fields', () => {

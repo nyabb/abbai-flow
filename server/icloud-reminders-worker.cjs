@@ -9,7 +9,15 @@ const AUTH_STATE_ACTIONS = new Set([
   'request_2sa_code',
   'verify_code',
 ]);
-const LOGGED_MUTATION_ACTIONS = new Set([
+const LOGGED_ACTIONS = new Set([
+  'reset',
+  'authenticate',
+  'list_lists',
+  'request_2sa_code',
+  'verify_code',
+  'fetch_preview',
+  'fetch_list',
+  'fetch_task_lists',
   'create_reminder',
   'update_reminder',
   'delete_reminder',
@@ -107,7 +115,7 @@ class ICloudRemindersWorker {
       !entry ||
       entry.service !== 'pyicloud-reminders' ||
       entry.event !== 'request_finished' ||
-      !LOGGED_MUTATION_ACTIONS.has(entry.action)
+      !LOGGED_ACTIONS.has(entry.action)
     ) {
       return;
     }

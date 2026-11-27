@@ -26,15 +26,10 @@ try {
 
 const app = createApp(config);
 const { server, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
-const integrationDiagnostics = startIntegrationDiagnostics(
-  app.config,
-  {
-    verifySpotifyCatalog,
-    verifySpotifyPlaylists,
-    bluetooth,
-  },
-);
-server.on('close', integrationDiagnostics.stop);
+startIntegrationDiagnostics(app.config, {
+  verifySpotifyCatalog,
+  verifySpotifyPlaylists,
+});
 
 server.listen(PORT, () => {
   console.log(`Abbai Flow server listening on port ${PORT}`);
