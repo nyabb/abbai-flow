@@ -211,10 +211,7 @@ function validRedirectUri(value: string): boolean {
       return false;
     }
     if (uri.protocol === 'https:') return true;
-    return (
-      uri.protocol === 'http:' &&
-      (uri.hostname === '127.0.0.1' || uri.hostname === '[::1]')
-    );
+    return uri.protocol === 'http:' && (uri.hostname === '127.0.0.1' || uri.hostname === '[::1]');
   } catch {
     return false;
   }
@@ -244,7 +241,7 @@ function tokenFromPayload(
     scopes:
       typeof value.scope === 'string'
         ? value.scope.split(/\s+/).filter(Boolean)
-        : (previous?.scopes || []),
+        : previous?.scopes || [],
   };
 }
 
@@ -326,7 +323,11 @@ export class SpotifyPlaylistLibrary {
     return this.getAccessToken();
   }
 
-  async controlPlayback(deviceIdValue: unknown, actionValue: unknown, value?: unknown): Promise<void> {
+  async controlPlayback(
+    deviceIdValue: unknown,
+    actionValue: unknown,
+    value?: unknown,
+  ): Promise<void> {
     await this.ensurePlaybackAuthorization();
     const deviceId = this.validateDeviceId(deviceIdValue);
     if (typeof actionValue !== 'string') {
@@ -339,10 +340,12 @@ export class SpotifyPlaylistLibrary {
     const request = (method: string, path: string, body?: unknown) =>
       this.spotifyRequest(path, {
         method,
-        ...(body === undefined ? {} : {
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        }),
+        ...(body === undefined
+          ? {}
+          : {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            }),
       });
 
     switch (actionValue) {
@@ -351,6 +354,12 @@ export class SpotifyPlaylistLibrary {
           throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify track URI');
         }
         await request('PUT', `/me/player/play${query({})}`, { uris: [value] });
+        return;
+      case 'playPlaylist':
+        if (typeof value !== 'string' || !/^spotify:playlist:[A-Za-z0-9]{1,64}$/.test(value)) {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify playlist URI');
+        }
+        await request('PUT', `/me/player/play${query({})}`, { context_uri: value });
         return;
       case 'play':
         await request('PUT', `/me/player/play${query({})}`);

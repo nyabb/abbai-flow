@@ -1147,6 +1147,28 @@
   white-space: nowrap;
 }
 
+.spotify-playlist-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: white;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.spotify-playlist-play:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .spotify-open-playlist {
   display: flex;
   align-items: center;
@@ -1877,12 +1899,17 @@
   }
 
   .spotify-open-playlist,
+  .spotify-playlist-play,
   .spotify-remove-playlist {
     width: 40px;
     flex: 0 0 auto;
     justify-content: center;
     padding: 0;
     font-size: 0;
+  }
+
+  .spotify-playlist-play span {
+    display: none;
   }
 
   .spotify-playlist-track-heading,
@@ -2189,70 +2216,14 @@
 /* Persistent browser playback controls, mounted at the app shell level. */
 .music-dock {
   position: fixed;
-  top: calc(var(--timer-dock-top, 92px) + 48px);
+  top: 88px;
   right: 16px;
   z-index: 59;
   display: flex;
   width: min(92vw, 340px);
   flex-direction: column;
   align-items: stretch;
-  gap: 7px;
-}
-
-.music-dock-summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 6px 5px 9px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg-surface) 82%, transparent);
-  color: var(--text-primary);
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-}
-
-.music-dock-toggle {
-  display: flex;
-  min-width: 0;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 8px;
-  padding: 3px 2px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.music-dock-artwork {
-  width: 24px;
-  height: 24px;
-  flex: 0 0 auto;
-  border-radius: 5px;
-  object-fit: cover;
-}
-
-.music-dock-track-title {
-  overflow: hidden;
-  flex: 1 1 auto;
-  font-size: 0.82rem;
-  font-weight: 650;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.music-dock-chevron {
-  flex: 0 0 auto;
-  color: var(--text-muted);
-  transition: transform 160ms ease;
-}
-
-.music-dock.is-open .music-dock-chevron {
-  transform: rotate(180deg);
+  gap: 0;
 }
 
 .music-dock-action {
@@ -2279,13 +2250,6 @@
   opacity: 0.48;
 }
 
-.music-dock-summary-play {
-  width: 32px;
-  height: 32px;
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
-}
-
 .music-dock-panel {
   padding: 0 12px;
   overflow: hidden;
@@ -2304,6 +2268,34 @@
 .music-dock-panel:not(.is-open) {
   padding-block: 0;
   border-color: transparent;
+}
+
+.music-dock-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 70px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.music-dock-open-view {
+  width: 100%;
+  min-height: 38px;
+  margin: 0 0 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.music-dock-open-view:hover {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .music-dock-track {
@@ -2408,6 +2400,7 @@
 
 @media (max-width: 600px) {
   .music-dock {
+    top: 72px;
     right: 10px;
     width: min(94vw, 340px);
   }

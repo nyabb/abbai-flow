@@ -65,14 +65,17 @@ function isGroceryListSelections(value: unknown): value is GroceryListSelections
 }
 
 function GroceryDragHandle({ item, label }: { item: TodoItem; label: string }) {
-  const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging, transform } = useDraggable({
     id: `reminder:${item.uid}`,
     data: { itemUid: item.uid },
   });
 
   return (
     <button
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        setActivatorNodeRef(node);
+      }}
       type="button"
       className={`grocery-view-drag-handle${isDragging ? ' is-dragging' : ''}`}
       aria-label={label}
@@ -80,6 +83,14 @@ function GroceryDragHandle({ item, label }: { item: TodoItem; label: string }) {
       style={{ transform: CSS.Translate.toString(transform) }}
       {...attributes}
       {...listeners}
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        listeners?.onPointerDown?.(event);
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
       <GripVertical size={17} aria-hidden="true" />
     </button>
@@ -558,9 +569,6 @@ export function GroceryView({
           </span>
           <span className="grocery-view-item-name">{item.summary}</span>
         </button>
-        {item.source === 'icloud' && sections.length > 0 && (
-          <GroceryDragHandle item={item} label={t('grocery.moveSection')} />
-        )}
         {item.source === 'icloud' && (
           <button
             type="button"
@@ -581,6 +589,9 @@ export function GroceryView({
         >
           <Trash2 size={14} />
         </button>
+        {item.source === 'icloud' && sections.length > 0 && (
+          <GroceryDragHandle item={item} label={t('grocery.moveSection')} />
+        )}
       </div>
       {editingItem?.uid === item.uid && (
         <form className="grocery-view-edit-panel" onSubmit={handleEdit}>

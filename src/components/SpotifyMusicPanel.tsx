@@ -212,9 +212,7 @@ export function SpotifyMusicPanel({
         <span
           className={
             'spotify-status spotify-status--' +
-            (!snapshot.error &&
-            snapshot.connection === 'connected' &&
-            snapshot.auth.loggedIn
+            (!snapshot.error && snapshot.connection === 'connected' && snapshot.auth.loggedIn
               ? 'ready'
               : snapshot.error
                 ? 'disconnected'
@@ -244,7 +242,11 @@ export function SpotifyMusicPanel({
       {library.status.authorized && library.status.playbackAuthorized === false && (
         <div className="spotify-message">
           <p>{t('music.spotifyBrowserReconnectHelp')}</p>
-          <button type="button" disabled={connectingPlayback} onClick={() => void connectPlayback()}>
+          <button
+            type="button"
+            disabled={connectingPlayback}
+            onClick={() => void connectPlayback()}
+          >
             {connectingPlayback ? t('music.spotifyConnecting') : t('music.spotifyBrowserEnable')}
           </button>
         </div>
@@ -372,6 +374,7 @@ export function SpotifyMusicPanel({
       <SpotifyPlaylistLibrary
         library={library}
         onPlayTrack={(uri) => void runControl('playTrack', uri)}
+        onPlayPlaylist={(uri) => void runControl('playPlaylist', uri)}
         canPlay={canStartPlayback}
       />
 
@@ -564,7 +567,6 @@ export function SpotifyMusicPanel({
           )}
         </aside>
       </div>
-
     </section>
   );
 }
