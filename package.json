@@ -1,6 +1,6 @@
 {
   "name": "abbai-flow",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "private": true,
   "type": "module",
   "description": "A self-hosted family organizer for calendars, routines, chores, rewards, and everyday family life.",

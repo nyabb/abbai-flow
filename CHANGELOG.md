@@ -1,3 +1,10 @@
+## [4.2.1](https://github.com/nyabb/abbai-flow/compare/v4.2.0...v4.2.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* expose safe iCloud section move diagnostics ([1bf4fe7](https://github.com/nyabb/abbai-flow/commit/1bf4fe7eca50944bb689af0c9f22e2d0acc19dad))
+
 # [4.2.0](https://github.com/nyabb/abbai-flow/compare/v4.1.0...v4.2.0) (2026-11-27)
 
 # [4.1.0](https://github.com/nyabb/abbai-flow/compare/v4.0.0...v4.1.0) (2026-11-27)
