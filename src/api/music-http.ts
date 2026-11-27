@@ -7,11 +7,8 @@ export interface MusicHttpRequest {
 }
 
 export interface MusicHttpResponse {
-  destroyed: boolean;
-  writableEnded: boolean;
   writeHead(status: number, headers?: Record<string, string>): unknown;
   write(chunk: string): unknown;
-  on(event: 'close', listener: () => void): unknown;
 }
 
 interface JsonObjectResult {
