@@ -339,7 +339,11 @@ function sendPlaylistError(
   helpers: EncoreHttpHelpers,
 ): void {
   if (error instanceof SpotifyPlaylistError) {
-    helpers.sendJson(response, error.status, { code: error.code, error: error.message });
+    helpers.sendJson(response, error.status, {
+      code: error.code,
+      error: error.message,
+      ...(error.upstreamStatus === undefined ? {} : { upstreamStatus: error.upstreamStatus }),
+    });
     return;
   }
   helpers.sendJson(response, 502, {

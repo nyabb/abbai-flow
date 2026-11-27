@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { EncoreMusic, type EncoreSnapshot } from './encore-music';
 import { SpotifyCatalog } from './spotify-catalog';
-import type { SpotifyPlaylistLibrary } from './spotify-playlists';
+import { SpotifyPlaylistError, type SpotifyPlaylistLibrary } from './spotify-playlists';
 import {
   handleEncoreMusicRequest,
   type EncoreHttpHelpers,
@@ -185,6 +185,37 @@ describe('Encore HTTP bridge', () => {
       items: [],
       total: 0,
       offset: 0,
+    });
+  });
+
+  it('includes Spotify upstream status for playback failures', async () => {
+    const encore = new EncoreMusic();
+    const playlistService = {
+      controlPlayback: vi.fn(async () => {
+        throw new SpotifyPlaylistError(
+          'unavailable',
+          502,
+          'Spotify could not find the browser player. Refresh the Music page and try again.',
+          404,
+        );
+      }),
+    } as unknown as SpotifyPlaylistLibrary;
+    const bridge = helpers({ action: 'activate', deviceId: 'browser-device-id' });
+
+    await handleEncoreMusicRequest(
+      request('/abbai-flow/music/library/playback-control', 'POST'),
+      bridge.response,
+      encore,
+      bridge,
+      new SpotifyCatalog(),
+      playlistService,
+    );
+
+    expect(bridge.response.status).toBe(502);
+    expect(JSON.parse(bridge.response.chunks.join(''))).toEqual({
+      code: 'unavailable',
+      error: 'Spotify could not find the browser player. Refresh the Music page and try again.',
+      upstreamStatus: 404,
     });
   });
 
