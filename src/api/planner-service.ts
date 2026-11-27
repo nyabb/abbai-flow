@@ -2,11 +2,11 @@
  * Planner mutations — the one entry point the UI uses to change routine
  * metadata and reward pursuits.
  *
- * In **add-on mode** the change is sent to the add-on server
+ * In **server-backed mode** the change is sent to the app server
  * (`POST /api/planner/mutate`), which owns the document: it reduces the
  * operation with the same shared rules, serialises concurrent mutations per
  * document, deduplicates retries by idempotency key and writes the file
- * atomically. In **standalone / dev** there is no server, so the identical
+ * atomically. In a **static / dev build** there is no server, so the identical
  * reducer runs locally and `abbai-flow-store` persists it.
  *
  * Either way the caller gets the resulting document back, so the UI renders what
@@ -41,11 +41,11 @@ export interface PlannerMutationResult<T> {
   error?: string;
 }
 
-function isAddOn(): boolean {
+function isServerBacked(): boolean {
   return Boolean(getRuntimeConfig());
 }
 
-function ingressBase(): string {
+function appBasePath(): string {
   return window.location.pathname.replace(/\/$/, '');
 }
 
@@ -66,9 +66,9 @@ async function postMutation(
   target: PlannerTarget,
   op: PlannerOp,
 ): Promise<PlannerMutationResult<unknown> | null> {
-  if (!isAddOn()) return null;
+  if (!isServerBacked()) return null;
 
-  const res = await fetch(`${ingressBase()}/api/planner/mutate`, {
+  const res = await fetch(`${appBasePath()}/api/planner/mutate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ target, op, key: idempotencyKey(target) }),

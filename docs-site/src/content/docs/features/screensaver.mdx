@@ -1,60 +1,14 @@
 ---
 title: 'Screen Saver'
-description: 'Configure idle dimming, a clock, family photos, or both.'
-order: 10
+description: 'Choose a clock, uploaded photos, or both for an idle display.'
+order: 8
 ---
 
 # Screen Saver
 
-Abbai Flow dims the app after inactivity and can replace it with a screen saver.
-The same screen saver appears in the main app and Kid Display.
+Enable the screen saver in **Settings → Display**. Choose **Clock only**,
+**Photos only**, or **Clock and pictures**. Adjust the idle timeout, dimming,
+photo interval, and transition style in Settings.
 
-## Choose what appears
-
-Open **Settings → Display** and enable the screen saver. Choose one of three
-contents:
-
-- **Clock only** — a clock and date move around the screen to reduce static
-  image retention.
-- **Photos only** — a full-screen slideshow from Home Assistant media.
-- **Clock + photos** — the slideshow with a clock and date over it.
-
-Photo source, interval, and transition style are configured in
-**Settings → Integrations → Photos**. See [Photos](/docs/features/photos/) for
-setup details. If the selected mode uses photos but none are available, the
-screen saver displays a hint instead of a blank screen.
-
-The clock follows the app's 12-hour or 24-hour time format. **Show seconds** in
-**Settings → Display** adds seconds to the screen saver clock.
-
-## Idle behavior
-
-The screen saver has three phases:
-
-| Phase | Trigger | What happens |
-| --- | --- | --- |
-| Awake | User interaction | The app is visible and usable. |
-| Dim | Configured dim delay | A dark translucent layer dims the app. |
-| Screen saver | Configured screen saver delay | The selected clock and/or photo slideshow covers the app. |
-
-Both delays can be changed under **Settings → Display**. Any user input wakes
-the app and resets the idle timer.
-
-The clock position changes every 30 seconds. In a photo mode, the image
-slideshow also changes periodically, which avoids leaving one static image on
-the screen.
-
-## Keep the device awake
-
-The **Always-On Display** option in **Settings → Display** asks the browser to
-keep the screen on while Abbai Flow is open. This uses the Screen Wake Lock API;
-browser or device power-saving rules can still refuse the request. A refusal
-does not interrupt the app.
-
-## Troubleshooting
-
-- If the screen dims too soon, increase **Dim After** in **Settings → Display**.
-- If no photos appear, check the configured local media path and confirm Home
-  Assistant can browse it.
-- If the device still sleeps, check the browser’s wake-lock support and the
-  device’s own battery or power-saving settings.
+Uploaded screen saver photos are resized and saved on the app server. Keep the
+`/data` volume mounted to preserve them across updates.

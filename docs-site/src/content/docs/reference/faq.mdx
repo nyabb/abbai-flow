@@ -1,204 +1,42 @@
 ---
-title: 'FAQ'
-description: 'Answers to 20+ common questions about Abbai Flow — calendar support, hardware, privacy, features, and troubleshooting.'
-order: 3
+title: 'Frequently Asked Questions'
+description: 'Common questions about installing and using Abbai Flow.'
+order: 1
 ---
 
 # Frequently Asked Questions
 
----
+## Do I need an account or subscription?
 
-## General
+No. Abbai Flow is open source and self-hosted. You can use local calendars,
+chores, and task lists without connecting an external service.
 
-### Does this work with Google Calendar?
+## What calendars are supported?
 
-**Yes.** Abbai Flow reads calendar data through Home Assistant's Google Calendar integration. Set up the integration once in HA, and Abbai Flow automatically discovers your calendars. See the [Getting Started guide](/docs/getting-started/installation/) for step-by-step instructions.
+Abbai Flow supports local events and configured CalDAV, ICS, and Google calendar
+sources. Add sources in **Settings → Integrations**.
 
-Abbai Flow also works with **any calendar source** Home Assistant supports, including CalDAV (Nextcloud, iCloud, Fastmail), ICS feeds, and the built-in Local Calendar.
+## Can I use it on a phone?
 
-### Can I create and edit events from the display?
+Yes. The app has a responsive phone layout with a bottom navigation bar.
 
-**Yes.** Abbai Flow supports full CRUD operations on calendar events. Tap the + button or a time slot to create events. Tap an existing event to edit or delete it. You can even drag events to reschedule them. See [Calendar](/docs/features/calendar/).
+## Can I show family photos?
 
-### Does Abbai Flow send my data anywhere?
+Yes. Upload up to 50 screen saver photos in **Settings → Photos**, then choose
+clock, photos, or both in **Settings → Display**.
 
-**No.** Abbai Flow runs on your local network and communicates with the services you configure, including Home Assistant and weather APIs. There is no telemetry or analytics.
+## Where is my data stored?
 
-Data flow: `Google/CalDAV -> Home Assistant -> Abbai Flow (local only)`
+In a Docker deployment, app data is stored in `/data`. Keep that volume mounted
+and back it up with your other household files.
 
-### Is there a subscription?
+## Can I back up my data?
 
-**No.** Abbai Flow is free and open-source under the MIT license. No subscriptions, no premium tiers, no free trial.
+Back up the Docker `/data` volume. A static development build also uses the
+browser's local storage, which is specific to that browser profile.
 
-### Can I use this without Home Assistant?
+## Does Abbai Flow send analytics?
 
-**Yes.** Abbai Flow runs in standalone mode without a Home Assistant connection. Local calendars, tasks, and shopping lists are available; integrated calendars and media players need a valid Home Assistant connection. Weather uses Open-Meteo by default and can use an optional custom JSON API. See [Getting Started](/docs/getting-started/installation/).
-
----
-
-## Hardware
-
-### What hardware do I need?
-
-1. **A Home Assistant instance** (HA OS on a Pi, NUC, or VM)
-2. **A display device** with a web browser (any tablet, old monitor + mini PC, etc.)
-
-The cheapest complete setup is a $35 Fire HD 8 with a $15 magnetic mount — under $50.
-
-See [Deployment](/docs/getting-started/deployment/) for detailed hardware recommendations with prices.
-
-### Does it work on a phone?
-
-**Yes, but it is not ideal.** Abbai Flow has a mobile-responsive layout with a bottom tab bar. It works on phones, but the experience is designed for landscape tablets and wall-mounted displays. On phones, the calendar week view is cramped and some features are behind the "More" menu.
-
-### Does it work in portrait mode?
-
-Abbai Flow is designed for **landscape displays** (16:9 or 16:10). In portrait mode, the layout works but some views (especially the week calendar) are not optimized for the narrower width.
-
-### What screen size works best?
-
-8" to 15" is the sweet spot. The UI is readable from across a room on a 10" display. Larger displays (15-24") work great with a Raspberry Pi or mini PC.
-
----
-
-## Features
-
-### Can I show family photos?
-
-**Yes.** Enable the screen saver in **Settings → Display**, then choose photos, clock, or both. Images come from Home Assistant’s media browser and the configured local media folder. See [Photos](/docs/features/photos/).
-
-### Does it have a dark mode?
-
-**Yes.** Abbai Flow ships with 7 themes, including 4 dark themes: Midnight, Dracula, Monokai, and (partially dark) Nord. There is also an "Auto" mode that switches between the light theme and Midnight (dark) based on time of day. See [Themes](/docs/customization/themes/).
-
-### Can multiple family members use it?
-
-**Yes.** Add up to 8 family members with custom avatars, colors, and roles. Each member's chores and streaks are tracked independently, and points per member are shown in the chore planner. See [Family Members](/docs/features/family/).
-
-### Can kids earn money for doing chores?
-
-**Yes.** Each chore can have a dollar value (e.g., $1.00). When a family member completes a chore, its points are added to their pot. See [Chores](/docs/features/chores/).
-
-### Can I control music from the display?
-
-**Yes.** Abbai Flow controls any media player entity in Home Assistant — Sonos, Google Home, Music Assistant, Chromecast, etc. You get play/pause, skip, volume, album art, and a progress bar. A "Now Playing" bar appears on all views when music is active. See [Music](/docs/features/music/).
-
-### Can I set timers?
-
-**Yes.** Abbai Flow has a built-in timer with countdown (1, 5, 10, 15, 30 minute presets) and stopwatch modes. The countdown plays an audio alert when finished. See [Timer](/docs/features/timer/).
-
-### Does it have a grocery list?
-
-**Yes.** Connect directly to Apple iCloud in **Settings → Integrations**. Abbai Flow can display your lists, add and edit reminders, set due dates and priorities, move items between sections, and mark reminders complete. See [Grocery](/docs/features/grocery/).
-
-### Does it send notifications?
-
-**Yes.** Abbai Flow monitors upcoming calendar events and sends notifications ahead of each event through two channels:
-
-1. **Browser push notifications** (requires one-time permission grant)
-2. **Home Assistant mobile app notifications** via `notify.notify`
-
-By default, notifications fire 10 minutes before timed events (not all-day events). You can customize the timing in **Settings > Calendar** to 5, 10, 15, or 30 minutes. Abbai Flow checks every minute and sends each notification once per event.
-
-See [Notifications](/docs/features/notifications/) for setup details, permission requirements, and troubleshooting.
-
-### Does it prevent screen burn-in?
-
-**Yes.** After 5 minutes of inactivity, the screen dims. After 10 minutes, a clock screensaver appears that repositions every 30 seconds to prevent burn-in. See [Screen Saver](/docs/features/screensaver/).
-
----
-
-## Setup and Configuration
-
-### How do I change the theme?
-
-Click the palette icon at the bottom of the sidebar. A dropdown shows all 7 themes plus Auto mode. Click to apply immediately. See [Themes](/docs/customization/themes/).
-
-### How do I change the family name?
-
-Change the family name in **Settings → General**. See [Configuration](/docs/customization/configuration/).
-
-### How do I configure the weather forecast?
-
-Set the Open-Meteo forecast URL in **Settings → Integrations → Weather forecast**. Include `latitude` and `longitude`; Abbai Flow adds the current, daily, and hourly fields it needs. To use another provider, add its JSON API URL, optional query or Bearer key, and map its response paths to Abbai Flow's current, daily, and hourly weather schema. Open-Meteo remains the backup. See [Configuration](/docs/customization/configuration/).
-
-### How do I connect multiple calendars?
-
-Add multiple calendar integrations in Home Assistant (Google Calendar, CalDAV, Local Calendar, etc.). Abbai Flow discovers all `calendar.*` entities automatically. Use the filter pills above the calendar to hide or restore events; the pills remain visible when a calendar is hidden. Use **Settings → Calendar** to hide a calendar from the view entirely.
-
-### How do I set up family members?
-
-Click the gear icon in the sidebar to open the Family Members modal. Click "+ Add Member" and fill in the name, avatar, color, role, and optional PIN. See [Family Members](/docs/features/family/).
-
-### Can I use Abbai Flow on a wall display?
-
-Yes. Use [Kid Display](/docs/features/kid-display/) to show one family member's routines and chores. For a full-screen browser, use the browser or device's own fullscreen settings; Abbai Flow's regular navigation remains available.
-
----
-
-## Updates and Maintenance
-
-### How do I update Abbai Flow?
-
-Pull the latest Docker image and recreate the container:
-
-```bash
-docker pull ghcr.io/nyabb/abbai-flow:latest
-docker stop abbai-flow && docker rm abbai-flow
-docker run -d --name abbai-flow ... ghcr.io/nyabb/abbai-flow:latest
-```
-
-### Is my data preserved across updates?
-
-**Yes.** Docker deployments preserve server data through the mounted `/data` volume. Browser-only data remains in localStorage and is preserved unless browser data is cleared.
-
-### Can I back up my data?
-
-The browser localStorage data is not easily backed up. For critical family and chore data, consider exporting the localStorage keys:
-
-- `beacon_family_members`
-- `beacon_chores`
-- `beacon_completions`
-- `beacon_streaks`
-
-You can view and copy these values in the browser's Developer Tools (F12 > Application > Local Storage).
-
----
-
-## Troubleshooting
-
-### Abbai Flow shows "Demo Mode"
-
-This means Abbai Flow cannot connect to Home Assistant. Check:
-
-1. In **Settings → Integrations**, verify the Home Assistant URL and token with **Test connection**.
-2. Home Assistant is reachable from the Abbai Flow server
-3. Home Assistant is running
-
-### Calendar is empty
-
-1. Verify calendar integrations are configured in HA
-2. Check that `calendar.*` entities exist in **Developer Tools > States**
-3. Wait up to 5 minutes for the initial data fetch, or reload the page
-
-### Everything is slow on my old tablet
-
-1. Use a dark theme (fewer bright pixels = less power on OLED/AMOLED)
-2. Close other apps and browser tabs
-3. Consider using a simpler browser like Chrome instead of a full-featured one
-4. Increase the photo interval and screen saver timeout to reduce UI updates
-
-### Something else is broken
-
-1. Check the browser console (F12) for error messages
-2. Check the container logs with `docker compose logs -f abbai-flow`
-3. Open a [GitHub issue](https://github.com/nyabb/abbai-flow/issues) with your HA version, browser, device, and relevant logs
-
----
-
-## More questions?
-
-- [Getting Started](/docs/getting-started/installation/) — installation walkthrough
-- [Configuration](/docs/customization/configuration/) — all settings explained
-- [Contributing](/docs/reference/contributing/) — help make Abbai Flow better
-- [API Reference](/docs/reference/api-reference/) — technical API details
+The app does not include telemetry. When you connect an external service, the
+app server sends requests to that provider to perform the requested sync or
+lookup.

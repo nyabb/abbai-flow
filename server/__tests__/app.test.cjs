@@ -2,39 +2,26 @@
  * Backend tests for the Abbai Flow server.
  *
  * Run with `npm run test:server` (node --test). These exercise the real
- * handlers from `server/app.cjs` against a fake Home Assistant, over both
- * HTTP and HTTPS, so the proxy/WS/security behaviour is covered without a
- * live HA installation.
+ * handlers from `server/app.cjs` over HTTP, including persistence and security.
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
-const https = require('node:https');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { PassThrough } = require('node:stream');
-const WebSocket = require('ws');
 
 const {
   createApp,
   collectBody,
   configFromEnv,
-  defaultPortFor,
   isAllowedOrigin,
-  isSafeIdentifier,
-  normaliseHaBaseUrl,
-  parseIntent,
   readDataFile,
-  resolveHaUrl,
   runtimeConfigFor,
-  transportFor,
   writeDataFile,
 } = require('../app.cjs');
 const { ICloudRemindersWorker } = require('../icloud-reminders-worker.cjs');
-
-const CERT = fs.readFileSync(path.join(__dirname, 'fixtures', 'test-cert.pem'));
-const KEY = fs.readFileSync(path.join(__dirname, 'fixtures', 'test-key.pem'));
 
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                           */
@@ -54,7 +41,6 @@ function close(server) {
   return new Promise((resolve) => {
     if (!server || !server.listening) return resolve();
     server.close(() => resolve());
-    // Sockets kept open by a WS pipe would otherwise hold the close.
     server.closeAllConnections?.();
   });
 }
@@ -68,9 +54,6 @@ async function startBeacon(overrides = {}) {
   const { server } = createApp({
     distDir,
     dataDir,
-    haToken: overrides.haToken ?? 'test-token',
-    haBaseUrl: overrides.haBaseUrl,
-    haWsUrl: overrides.haWsUrl,
     encoreToken: overrides.encoreToken,
     encoreUrl: overrides.encoreUrl,
     spotifyClientId: overrides.spotifyClientId,
@@ -78,7 +61,6 @@ async function startBeacon(overrides = {}) {
     spotifyMarket: overrides.spotifyMarket,
     spotifyRedirectUri: overrides.spotifyRedirectUri,
     allowedOrigins: overrides.allowedOrigins,
-    ca: overrides.ca,
     spotifyPlaylists: overrides.spotifyPlaylists,
     icloudReminders: overrides.icloudReminders,
     caldavCalendars: overrides.caldavCalendars,
@@ -91,7 +73,7 @@ async function startBeacon(overrides = {}) {
 
 /** Minimal HTTP(S) request helper. */
 function request(port, options = {}) {
-  const { method = 'GET', path: requestPath = '/', body, headers = {}, secure = false } = options;
+  const { method = 'GET', path: requestPath = '/', body, headers = {} } = options;
 
   return new Promise((resolve, reject) => {
     const payload =
@@ -99,8 +81,7 @@ function request(port, options = {}) {
         ? null
         : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
 
-    const transport = secure ? https : http;
-    const req = transport.request(
+    const req = http.request(
       {
         hostname: '127.0.0.1',
         port,
@@ -134,156 +115,9 @@ function request(port, options = {}) {
   });
 }
 
-/**
- * A fake Home Assistant: records every REST request and optionally speaks the
- * WebSocket API (auth handshake + echo/result).
- */
-async function startFakeHa({ secure = false, basePath = '' } = {}) {
-  const requests = [];
-  const handler = (req, res) => {
-    const chunks = [];
-    req.on('data', (chunk) => chunks.push(chunk));
-    req.on('end', () => {
-      const raw = Buffer.concat(chunks).toString('utf8');
-      requests.push({
-        method: req.method,
-        url: req.url,
-        headers: req.headers,
-        body: raw ? JSON.parse(raw) : null,
-      });
-
-      if (req.url.includes('explode')) {
-        res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ message: 'boom' }));
-        return;
-      }
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, echoed: raw ? JSON.parse(raw) : null }));
-    });
-  };
-
-  const server = secure
-    ? https.createServer({ key: KEY, cert: CERT }, handler)
-    : http.createServer(handler);
-
-  const wss = new WebSocket.Server({ server, path: `${basePath}/api/websocket` });
-  wss.on('connection', (socket, req) => {
-    requests.push({ upgrade: true, url: req.url, headers: req.headers });
-    socket.send(JSON.stringify({ type: 'auth_required' }));
-    socket.on('message', (raw) => {
-      const msg = JSON.parse(raw.toString('utf8'));
-      if (msg.type === 'auth') {
-        socket.send(JSON.stringify({ type: 'auth_ok', ha_version: 'test' }));
-        return;
-      }
-      if (msg.type === 'test/echo') {
-        socket.send(
-          JSON.stringify({ id: msg.id, type: 'result', success: true, result: msg.payload }),
-        );
-        return;
-      }
-      if (msg.type === 'test/fail') {
-        socket.send(
-          JSON.stringify({
-            id: msg.id,
-            type: 'result',
-            success: false,
-            error: { code: 'not_supported', message: 'nope' },
-          }),
-        );
-        return;
-      }
-    });
-  });
-
-  const port = await listen(server);
-  return {
-    port,
-    requests,
-    baseUrl: `${secure ? 'https' : 'http'}://127.0.0.1:${port}${basePath}`,
-    close: async () => {
-      for (const client of wss.clients) client.terminate();
-      await new Promise((resolve) => wss.close(resolve));
-      await close(server);
-    },
-  };
-}
-
-/** Open a WebSocket and resolve once it is open (messages are buffered). */
-function openSocket(url) {
-  return new Promise((resolve, reject) => {
-    const socket = new WebSocket(url, { rejectUnauthorized: false });
-    socket.received = [];
-    socket.on('message', (raw) => socket.received.push(JSON.parse(raw.toString('utf8'))));
-    const timer = setTimeout(() => {
-      socket.terminate();
-      reject(new Error('WebSocket did not open in time'));
-    }, 5000);
-    socket.once('open', () => {
-      clearTimeout(timer);
-      resolve(socket);
-    });
-    socket.once('error', (err) => {
-      clearTimeout(timer);
-      reject(err);
-    });
-  });
-}
-
-/** Next JSON message, written as a promise over the buffered queue. */
-function nextMessage(socket) {
-  return new Promise((resolve, reject) => {
-    const started = Date.now();
-    const poll = () => {
-      if (socket.received.length > 0) {
-        resolve(socket.received.shift());
-        return;
-      }
-      if (Date.now() - started > 5000) {
-        reject(new Error('No message received'));
-        return;
-      }
-      setTimeout(poll, 20);
-    };
-    poll();
-  });
-}
-
 /* ------------------------------------------------------------------ */
 /*  Pure helpers                                                      */
 /* ------------------------------------------------------------------ */
-
-test('URL helpers keep the configured base path', () => {
-  assert.equal(
-    resolveHaUrl('http://supervisor/core', '/api/states').toString(),
-    'http://supervisor/core/api/states',
-  );
-  assert.equal(
-    resolveHaUrl('http://ha.local:8123', '/api/states?x=1').toString(),
-    'http://ha.local:8123/api/states?x=1',
-  );
-  assert.equal(
-    resolveHaUrl('https://ha.example.com/', '/api/services/light/turn_on').toString(),
-    'https://ha.example.com/api/services/light/turn_on',
-  );
-});
-
-test('transport and default ports follow the protocol', () => {
-  assert.equal(transportFor('http:'), http);
-  assert.equal(transportFor('https:'), https);
-  assert.equal(defaultPortFor('http:'), 80);
-  assert.equal(defaultPortFor('https:'), 443);
-});
-
-test('identifier validation blocks path traversal', () => {
-  for (const valid of ['light', 'turn_on', 'homeassistant', 'notify_2']) {
-    assert.equal(isSafeIdentifier(valid), true, valid);
-  }
-  for (const invalid of ['../evil', 'a/b', '', ' ', 'light?x=1', 'li ght', null, undefined, 42]) {
-    assert.equal(isSafeIdentifier(invalid), false, String(invalid));
-  }
-});
 
 test('origin guard allows same-origin and native shells only', () => {
   const allowed = [];
@@ -332,13 +166,6 @@ test('collectBody enforces the size limit without hanging', async () => {
   assert.equal(errBody.error.status, 413);
 });
 
-test('intent parser still understands the documented phrases', () => {
-  assert.equal(parseIntent('add milk to the grocery list').domain, 'todo');
-  assert.equal(parseIntent('what is the weather').fetch, 'weather');
-  assert.equal(parseIntent('go to calendar').navigation, true);
-  assert.equal(parseIntent('gibberish nonsense'), null);
-});
-
 test('documents are written atomically and corrupt files are reported', async () => {
   const dir = tmpDir('atomic');
   const file = path.join(dir, 'family.json');
@@ -361,7 +188,7 @@ test('documents are written atomically and corrupt files are reported', async ()
 
 test('persisted data API round-trips, rejects bad payloads and hides corruption', async (t) => {
   const dataDir = tmpDir('api-data');
-  const beacon = await startBeacon({ dataDir, haBaseUrl: 'http://127.0.0.1:1' });
+  const beacon = await startBeacon({ dataDir });
   t.after(() => beacon.close());
 
   const empty = await request(beacon.port, { path: '/beacon-data/family' });
@@ -399,7 +226,7 @@ test('persisted data API round-trips, rejects bad payloads and hides corruption'
 });
 
 test('data API rejects oversized documents', async (t) => {
-  const beacon = await startBeacon({ haBaseUrl: 'http://127.0.0.1:1' });
+  const beacon = await startBeacon();
   t.after(() => beacon.close());
 
   const big = 'x'.repeat(1024 * 1024 + 64);
@@ -415,8 +242,6 @@ test('integration settings redact secrets and persist saved values across restar
   const dataDir = tmpDir('integration-settings');
   const legacy = {
     dataDir,
-    haToken: 'legacy-ha-secret',
-    haBaseUrl: 'http://127.0.0.1:1',
     spotifyClientId: 'legacy-client-id',
     spotifyClientSecret: 'legacy-client-secret',
     spotifyMarket: 'NL',
@@ -428,10 +253,9 @@ test('integration settings redact secrets and persist saved values across restar
   const initial = await request(app.port, { path: '/abbai-flow/settings/integrations' });
   assert.equal(initial.status, 200);
   assert.equal(initial.headers['cache-control'], 'no-store');
-  assert.equal(initial.json.haConfigured, true);
   assert.equal(initial.json.spotifyClientSecretConfigured, true);
   assert.equal(initial.json.spotifyClientId, 'legacy-client-id');
-  assert.doesNotMatch(JSON.stringify(initial.json), /legacy-ha-secret|legacy-client-secret/);
+  assert.doesNotMatch(JSON.stringify(initial.json), /legacy-client-secret/);
 
   const saved = await request(app.port, {
     method: 'PUT',
@@ -467,7 +291,7 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(saved.json.mealDataMapping.stepsPath, '$.instructions[].text');
   assert.doesNotMatch(
     JSON.stringify(saved.json),
-    /new-client-secret|legacy-ha-secret|meal-source-secret/,
+    /new-client-secret|meal-source-secret/,
   );
 
   const invalidMapping = await request(app.port, {
@@ -486,7 +310,6 @@ test('integration settings redact secrets and persist saved values across restar
 
   const settingsPath = path.join(dataDir, 'integration-settings.json');
   const persisted = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-  assert.equal(persisted.haToken, 'legacy-ha-secret');
   assert.equal(persisted.spotifyClientSecret, 'new-client-secret');
   assert.equal(persisted.mealSourceToken, 'meal-source-secret');
   assert.equal(persisted.mealDataMapping.itemsPath, '$.data.recipes');
@@ -513,33 +336,6 @@ test('integration settings redact secrets and persist saved values across restar
   assert.equal(cleared.status, 200);
   assert.equal(cleared.json.mealSourceTokenConfigured, false);
   assert.equal(JSON.parse(fs.readFileSync(settingsPath, 'utf8')).mealSourceToken, '');
-});
-
-test('integration settings test connection checks submitted Home Assistant credentials without saving', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-  const app = await startBeacon({ haBaseUrl: 'http://127.0.0.1:1', haToken: 'old-token' });
-  t.after(() => app.close());
-
-  const denied = await request(app.port, {
-    method: 'POST',
-    path: '/abbai-flow/settings/integrations',
-    body: { haUrl: ha.baseUrl, haToken: 'candidate-token' },
-    headers: { Origin: 'https://evil.example' },
-  });
-  assert.equal(denied.status, 403);
-
-  const tested = await request(app.port, {
-    method: 'POST',
-    path: '/abbai-flow/settings/integrations',
-    body: { haUrl: ha.baseUrl, haToken: 'candidate-token' },
-  });
-  assert.equal(tested.status, 200);
-  assert.deepEqual(tested.json, { ok: true });
-  assert.equal(ha.requests[0].headers.authorization, 'Bearer candidate-token');
-
-  const unchanged = await request(app.port, { path: '/abbai-flow/settings/integrations' });
-  assert.equal(unchanged.json.haUrl, 'http://127.0.0.1:1');
 });
 
 test('integration settings report the current iCloud authentication state', async (t) => {
@@ -744,141 +540,6 @@ test('iCloud worker logs only reminder mutations', () => {
   assert.doesNotMatch(logged[0], /must-not-be-logged/);
 });
 
-test('service bridge validates input and forwards to Home Assistant', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl });
-  t.after(() => beacon.close());
-
-  const get = await request(beacon.port, { path: '/beacon-action/service' });
-  assert.equal(get.status, 405);
-
-  const traversal = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/service',
-    body: { domain: '../evil', service: 'run' },
-  });
-  assert.equal(traversal.status, 400);
-
-  const wrongType = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/service',
-    body: { domain: 'light', service: 'turn_on' },
-    headers: { 'Content-Type': 'text/plain' },
-  });
-  assert.equal(wrongType.status, 415);
-
-  const crossOrigin = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/service',
-    body: { domain: 'light', service: 'turn_on' },
-    headers: { Origin: 'https://evil.example' },
-  });
-  assert.equal(crossOrigin.status, 403);
-
-  const ok = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/service',
-    body: {
-      domain: 'light',
-      service: 'turn_on',
-      data: { entity_id: 'light.kitchen' },
-      return_response: true,
-    },
-  });
-  assert.equal(ok.status, 200);
-  assert.equal(ok.json.ok, true);
-
-  const forwarded = ha.requests.at(-1);
-  assert.equal(forwarded.url, '/api/services/light/turn_on?return_response');
-  assert.equal(forwarded.headers.authorization, 'Bearer test-token');
-  assert.deepEqual(forwarded.body, { entity_id: 'light.kitchen' });
-
-  const failing = await request(beacon.port, {
-    method: 'POST',
-    path: '/beacon-action/service',
-    body: { domain: 'light', service: 'explode' },
-  });
-  assert.equal(failing.status, 500, 'HA status codes are passed through');
-});
-
-test('api proxy forwards the token and reports a missing token', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl });
-  t.after(() => beacon.close());
-
-  const res = await request(beacon.port, { path: '/api/states' });
-  assert.equal(res.status, 200);
-  const forwarded = ha.requests.at(-1);
-  assert.equal(forwarded.url, '/api/states');
-  assert.equal(forwarded.headers.authorization, 'Bearer test-token');
-
-  const noToken = await startBeacon({ haBaseUrl: ha.baseUrl, haToken: '' });
-  t.after(() => noToken.close());
-  const denied = await request(noToken.port, { path: '/api/states' });
-  assert.equal(denied.status, 503);
-});
-
-/* ------------------------------------------------------------------ */
-/*  WebSocket proxy — both protocols                                  */
-/* ------------------------------------------------------------------ */
-
-test('websocket proxy upgrades over plain HTTP', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl });
-  t.after(() => beacon.close());
-
-  const socket = await openSocket(`ws://127.0.0.1:${beacon.port}/api/websocket`);
-  t.after(() => socket.terminate());
-
-  const required = await nextMessage(socket);
-  assert.equal(required.type, 'auth_required');
-
-  socket.send(JSON.stringify({ type: 'auth', access_token: 'test-token' }));
-  const authOk = await nextMessage(socket);
-  assert.equal(authOk.type, 'auth_ok');
-
-  socket.send(JSON.stringify({ id: 7, type: 'test/echo', payload: { hello: 'world' } }));
-  const result = await nextMessage(socket);
-  assert.deepEqual(result.result, { hello: 'world' });
-});
-
-test('websocket proxy upgrades over HTTPS with a base path', async (t) => {
-  const ha = await startFakeHa({ secure: true, basePath: '/core' });
-  t.after(() => ha.close());
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl, ca: CERT.toString() });
-  t.after(() => beacon.close());
-
-  const socket = await openSocket(`ws://127.0.0.1:${beacon.port}/api/websocket`);
-  t.after(() => socket.terminate());
-
-  const required = await nextMessage(socket);
-  assert.equal(required.type, 'auth_required');
-
-  socket.send(JSON.stringify({ type: 'auth', access_token: 'test-token' }));
-  assert.equal((await nextMessage(socket)).type, 'auth_ok');
-
-  socket.send(JSON.stringify({ id: 9, type: 'test/echo', payload: 'secure' }));
-  assert.equal((await nextMessage(socket)).result, 'secure');
-
-  const upgrade = ha.requests.find((entry) => entry.upgrade);
-  assert.equal(upgrade.url, '/core/api/websocket', 'TLS + base path must be preserved');
-  assert.equal(upgrade.headers.upgrade, 'websocket');
-  assert.equal(upgrade.headers.cookie, undefined, 'browser cookies must not be forwarded');
-});
-
-test('websocket upgrade is refused without a token', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-  const beacon = await startBeacon({ haBaseUrl: ha.baseUrl, haToken: '' });
-  t.after(() => beacon.close());
-
-  await assert.rejects(() => openSocket(`ws://127.0.0.1:${beacon.port}/api/websocket`));
-});
-
 test('calendar catalog returns calendars discovered by the CalDAV service', async (t) => {
   const calendars = [{ id: 'caldav/source/family', name: 'Family', sourceId: 'source' }];
   let listCallCount = 0;
@@ -997,8 +658,8 @@ test('planner mutate rejects malformed requests without writing', async (t) => {
   assert.ok(stored.json === null || !stored.json.routines || stored.json.routines.length === 0);
 });
 
-test('ChoresMan serves and persists local chores without a Home Assistant token', async (t) => {
-  const app = await startBeacon({ haToken: '' });
+test('ChoresMan serves and persists local chores', async (t) => {
+  const app = await startBeacon();
   t.after(() => app.close());
 
   const initial = await request(app.port, { path: '/abbai-flow/choresman' });
@@ -1055,11 +716,8 @@ test('ChoresMan serves and persists local chores without a Home Assistant token'
 /*  Integration settings are persisted in /data, not container env        */
 /* ------------------------------------------------------------------ */
 
-test('configFromEnv ignores Home Assistant, Encore, and Spotify integration variables', () => {
+test('configFromEnv reads deployment settings, not integration credentials', () => {
   const config = configFromEnv({
-    HA_URL: 'https://ha.example.com',
-    HA_TOKEN: 'tok',
-    SUPERVISOR_TOKEN: 'supervisor-token',
     ENCORE_URL: 'ws://encore.example.com',
     ENCORE_TOKEN: 'encore-token',
     SPOTIFY_CLIENT_ID: 'client-id',
@@ -1068,8 +726,6 @@ test('configFromEnv ignores Home Assistant, Encore, and Spotify integration vari
     SPOTIFY_REDIRECT_URI: 'https://abbai.example/abbai-flow/music/oauth/callback',
     ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS: 'unix:path=/run/dbus/system_bus_socket',
   });
-  assert.equal(config.haBaseUrl, undefined);
-  assert.equal(config.haToken, undefined);
   assert.equal(config.encoreUrl, undefined);
   assert.equal(config.encoreToken, undefined);
   assert.equal(config.spotifyClientId, undefined);
@@ -1161,88 +817,17 @@ test('Bluetooth status is readable while Bluetooth controls remain same-origin g
   assert.deepEqual(calls, [{ action: 'scan' }]);
 });
 
-test('Home Assistant add-on environment variables are ignored in favor of saved settings', () => {
-  const config = configFromEnv({
-    SUPERVISOR_TOKEN: 'supervisor',
-    HA_API_BASE_OVERRIDE: 'http://supervisor/core',
-  });
-  assert.equal(config.haBaseUrl, undefined);
-  assert.equal(config.haToken, undefined);
-
-  // Nothing configured at all must not crash; the default URL can be set in
-  // Settings → Integrations.
-  const empty = configFromEnv({});
-  assert.equal(empty.haBaseUrl, undefined);
-  assert.equal(empty.haToken, undefined);
-});
-
-test('normaliseHaBaseUrl accepts what people actually type', () => {
-  assert.equal(normaliseHaBaseUrl('homeassistant.local:8123'), 'http://homeassistant.local:8123');
-  assert.equal(normaliseHaBaseUrl('http://ha.local:8123/'), 'http://ha.local:8123');
-  assert.equal(normaliseHaBaseUrl('https://ha.example.com/api/'), 'https://ha.example.com');
-  assert.equal(normaliseHaBaseUrl('  http://192.168.1.10:8123  '), 'http://192.168.1.10:8123');
-  assert.equal(normaliseHaBaseUrl(''), 'http://supervisor/core');
-  assert.equal(normaliseHaBaseUrl(undefined), 'http://supervisor/core');
-});
-
-test('runtime config tells the browser to use the proxy and never leaks the token', async (t) => {
-  const ha = await startFakeHa();
-  t.after(() => ha.close());
-
-  const dataDir = tmpDir('data');
-  const distDir = tmpDir('dist');
-  fs.writeFileSync(path.join(distDir, 'index.html'), '<!doctype html><title>Abbai Flow</title>');
-  fs.writeFileSync(path.join(distDir, 'runtime-config.js'), '/* static stub */');
-
-  const config = {
-    ...configFromEnv({}),
-    haBaseUrl: ha.baseUrl,
-    haToken: 'super-secret-token',
-    distDir,
-    dataDir,
-  };
-  const { server } = createApp(config);
-  const port = await listen(server);
-  t.after(() => close(server));
-
-  const served = await request(port, { path: '/runtime-config.js' });
-  assert.equal(served.status, 200);
-  assert.match(served.headers['content-type'], /javascript/);
-  assert.equal(served.headers['cache-control'], 'no-store');
-
-  // The SPA only needs to know it is proxied; the token stays server-side.
-  assert.match(served.raw, /window\.__ABBAI_FLOW_CONFIG__ = /);
-  assert.match(served.raw, /"deployment_mode":"standalone"/);
-  assert.match(
-    served.raw,
-    new RegExp(`"ha_url":"${ha.baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`),
-  );
-  assert.doesNotMatch(served.raw, /super-secret-token/);
-
-  // Proxied REST calls must reach HA_URL with the server-held token — this is
-  // the whole point of the container mode, and the regression being fixed.
-  const proxied = await request(port, { path: '/api/states' });
-  assert.equal(proxied.status, 200);
-  const lastCall = ha.requests[ha.requests.length - 1];
-  assert.equal(lastCall.url, '/api/states');
-  assert.equal(lastCall.headers.authorization, 'Bearer super-secret-token');
-});
-
 test('runtimeConfigFor maps optional appearance env vars', () => {
-  const payload = runtimeConfigFor(
-    { haBaseUrl: 'http://ha.local:8123' },
-    {
-      FAMILY_NAME: '  The Abbatis ',
-      THEME: 'midnight',
-      PHOTO_INTERVAL: '45',
-      SCREEN_SAVER_TIMEOUT: 'disaster',
-      WEATHER_ENTITY: '',
-    },
-  );
+  const payload = runtimeConfigFor({
+    FAMILY_NAME: '  The Abbatis ',
+    THEME: 'midnight',
+    PHOTO_INTERVAL: '45',
+    SCREEN_SAVER_TIMEOUT: 'disaster',
+    WEATHER_ENTITY: '',
+  });
   assert.equal(payload.family_name, 'The Abbatis');
   assert.equal(payload.theme, 'midnight');
   assert.equal(payload.photo_interval, 45);
   assert.equal(payload.screen_saver_timeout, undefined);
   assert.equal(payload.weather_entity, undefined);
-  assert.equal(payload.ha_token, undefined);
 });

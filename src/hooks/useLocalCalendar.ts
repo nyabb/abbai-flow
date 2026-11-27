@@ -4,7 +4,7 @@ import { loadData, loadDataSync, saveData } from '../api/abbai-flow-store';
 
 /**
  * Built-in local calendar synced via abbai-flow-store.
- * Server is source of truth in add-on mode; localStorage is offline cache.
+ * Server is source of truth in server-backed mode; localStorage is offline cache.
  */
 
 const EVENTS_KEY = 'abbai-flow-local-events';
@@ -34,7 +34,7 @@ export function useLocalCalendar() {
     refresh();
   }, [refresh]);
 
-  // Re-fetch when the app becomes visible (mirror ha-entity-store pattern)
+  // Re-fetch when the app becomes visible to refresh stale events.
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {

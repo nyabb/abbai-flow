@@ -4,14 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import type { AddressInfo } from 'node:net';
-import { FakeHa } from './fake-ha';
 
 /**
  * One complete Abbai Flow deployment for the browser suite:
  *
  *   browser → server/app.cjs (SPA + /beacon-data + planner + local ChoresMan)
- *                    ├── /abbai-flow/choresman → the real local JSON store
- *                    └── unrelated Home Assistant probes → FakeHa
+ *                    └── /abbai-flow/choresman → the real local JSON store
  *
  * Running the real backend (rather than intercepting fetch in the page) is what
  * makes the test cover the local chore store, planner reducer, idempotency keys
@@ -25,7 +23,6 @@ const { createApp } = require('../server/app.cjs') as {
 export interface E2EStack {
   appUrl: string;
   dataDir: string;
-  fakeHa: FakeHa;
   close: () => Promise<void>;
 }
 
@@ -52,14 +49,11 @@ export async function startStack(): Promise<E2EStack> {
     );
   }
 
-  const fakeHa = await FakeHa.start();
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'abbai-flow-e2e-'));
 
   const { server } = createApp({
     distDir,
     dataDir,
-    haToken: 'e2e-token',
-    haBaseUrl: fakeHa.url,
     allowedOrigins: [],
   });
   const port = await listen(server);
@@ -67,10 +61,8 @@ export async function startStack(): Promise<E2EStack> {
   return {
     appUrl: `http://127.0.0.1:${port}`,
     dataDir,
-    fakeHa,
     close: async () => {
       await close(server);
-      await fakeHa.close();
       fs.rmSync(dataDir, { recursive: true, force: true });
     },
   };

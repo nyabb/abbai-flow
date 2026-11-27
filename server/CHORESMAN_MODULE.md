@@ -2,7 +2,7 @@
 
 ChoresMan is Abbai Flow's local chore, reward, and family gamification store. The app uses it as
 the single source for chores, points, claims, rewards, and chore history. Its HTTP API is available
-at `/abbai-flow/choresman`; it does not require Home Assistant credentials.
+at `/abbai-flow/choresman`.
 
 ## Family profiles and ownership
 
@@ -48,4 +48,4 @@ on their due date.
 
 The server runs scheduled maintenance once at startup and every minute. It processes due
 boundaries, rotation skips, reminders, overdue rules, member unpauses, badge-cycle changes, and
-challenge expiry without Home Assistant automations.
+challenge expiry without external automations.

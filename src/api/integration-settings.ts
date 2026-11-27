@@ -60,8 +60,6 @@ export interface CalendarSourceSetting {
 }
 
 export interface IntegrationSettingsStatus {
-  haUrl: string;
-  haConfigured: boolean;
   openMeteoUrl: string;
   weatherApiUrl: string;
   weatherApiKeyConfigured: boolean;
@@ -87,9 +85,6 @@ export interface IntegrationSettingsStatus {
 }
 
 export interface IntegrationSettingsPatch {
-  haUrl?: string;
-  haToken?: string;
-  clearHaToken?: boolean;
   openMeteoUrl?: string;
   weatherApiUrl?: string;
   weatherApiKey?: string;
@@ -144,12 +139,6 @@ async function request<T>(
 
 export function loadIntegrationSettings(): Promise<IntegrationSettingsStatus> {
   return request<IntegrationSettingsStatus>('GET');
-}
-
-export function testHomeAssistantConnection(
-  values: Pick<IntegrationSettingsPatch, 'haUrl' | 'haToken' | 'clearHaToken'>,
-): Promise<{ ok: true }> {
-  return request<{ ok: true }>('POST', values);
 }
 
 export function saveIntegrationSettings(

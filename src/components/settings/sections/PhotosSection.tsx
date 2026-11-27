@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import { ImagePlus, Trash2 } from 'lucide-react';
+import { ImagePlus, LoaderCircle, Trash2 } from 'lucide-react';
 import {
   deleteScreenSaverPhotos,
   listScreenSaverPhotos,
@@ -21,6 +21,11 @@ export function PhotosSection({ settings, onUpdateSettings, t }: PhotosSectionPr
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{
+    current: number;
+    total: number;
+    name: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,10 +63,17 @@ export function PhotosSection({ settings, onUpdateSettings, t }: PhotosSectionPr
     setError(null);
     setBusy(true);
     try {
-      for (const file of files) {
-        const dataUrl = await imageFileToScreenSaverDataUrl(file);
-        const saved = await uploadScreenSaverPhoto(file.name, dataUrl);
-        setPhotos((current) => [...current, saved]);
+      for (const [index, file] of files.entries()) {
+        setUploadProgress({ current: index + 1, total: files.length, name: file.name });
+        try {
+          const dataUrl = await imageFileToScreenSaverDataUrl(file);
+          const saved = await uploadScreenSaverPhoto(file.name, dataUrl);
+          setPhotos((current) => [...current, saved]);
+        } catch (uploadError) {
+          const message =
+            uploadError instanceof Error ? uploadError.message : t('settings.photos.uploadError');
+          throw new Error(`${file.name}: ${message}`);
+        }
       }
       setSelectedIds([]);
     } catch (uploadError) {
@@ -69,6 +81,7 @@ export function PhotosSection({ settings, onUpdateSettings, t }: PhotosSectionPr
         uploadError instanceof Error ? uploadError.message : t('settings.photos.uploadError'),
       );
     } finally {
+      setUploadProgress(null);
       setBusy(false);
     }
   };
@@ -125,6 +138,18 @@ export function PhotosSection({ settings, onUpdateSettings, t }: PhotosSectionPr
             tabIndex={-1}
           />
         </div>
+
+        {uploadProgress && (
+          <div className="photos-library-progress" role="status" aria-live="polite">
+            <LoaderCircle className="photos-library-spinner" size={18} aria-hidden="true" />
+            <span>
+              <strong>{t('settings.photos.uploading')}</strong>
+              <span className="photos-library-progress-detail">
+                {uploadProgress.current} / {uploadProgress.total} · {uploadProgress.name}
+              </span>
+            </span>
+          </div>
+        )}
 
         {error && <p className="photos-library-error" role="alert">{error}</p>}
 

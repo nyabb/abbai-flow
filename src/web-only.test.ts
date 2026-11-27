@@ -30,7 +30,7 @@ describe('web-only packaging', () => {
     expect(native).toEqual([]);
   });
 
-  it('keeps the web, add-on and backend scripts intact', () => {
+  it('keeps the web app and backend scripts intact', () => {
     for (const script of ['dev', 'build', 'test', 'test:server', 'test:all', 'lint', 'format']) {
       expect(pkg.scripts?.[script], script).toBeTruthy();
     }

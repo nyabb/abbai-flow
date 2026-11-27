@@ -2,8 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { saveData, loadData, PersistenceError } from './abbai-flow-store';
 
 /**
- * Regression guard for a data-loss bug in proxy deployments (add-on and
- * standalone Docker).
+ * Regression guard for a data-loss bug in server-backed deployments.
  *
  * `loadData` is server-first, so anything that refreshes before the server has
  * the new document reads the OLD copy and writes it straight back over

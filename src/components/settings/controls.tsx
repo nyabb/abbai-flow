@@ -33,13 +33,15 @@ export function Segment<T extends string>({
   value,
   options,
   onChange,
+  className,
 }: {
   value: T;
   options: Array<{ value: T; label: string }>;
   onChange: (v: T) => void;
+  className?: string;
 }) {
   return (
-    <div className="settings-segment">
+    <div className={`settings-segment${className ? ` ${className}` : ''}`}>
       {options.map((opt) => (
         <button
           key={opt.value}

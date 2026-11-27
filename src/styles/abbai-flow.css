@@ -2440,25 +2440,6 @@ button.task-checklist-row:hover {
   .mobile-tab-label { font-size: 0.62rem; }
 }
 
-/* --- HA Ingress mode --- */
-/* Abbai Flow sidebar should show alongside HA's sidebar.
-   The ingress iframe already gets the space after HA's sidebar,
-   so Abbai Flow's sidebar just needs to be slightly narrower. */
-.abbai-flow--ingress {
-  --sidebar-width: 52px;
-}
-
-.abbai-flow--ingress.abbai-flow--sidebar-left {
-  grid-template-columns: 52px 1fr;
-}
-
-.abbai-flow--ingress.abbai-flow--sidebar-right {
-  grid-template-columns: 1fr 52px;
-}
-
-/* On very narrow viewports in ingress (phone), switch to bottom tabs */
-/* compact sidebar hiding is handled via inline style in component */
-
 .abbai-flow--compact {
   grid-template-columns: 1fr !important;
   --sidebar-width: 0px;

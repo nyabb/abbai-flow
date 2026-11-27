@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { startOfWeek, addDays, format } from 'date-fns';
-import { useHomeAssistant } from './hooks/useHomeAssistant';
 import { useMergedCalendars } from './hooks/useMergedCalendars';
 import { useFamily } from './hooks/useFamily';
 import { useChoresMan } from './hooks/useChoresMan';
@@ -22,8 +21,6 @@ import { DebugConsole } from './components/DebugConsole';
 import { Sidebar, SidebarView } from './components/Sidebar';
 import { MusicView } from './components/MusicView';
 import { MealsView } from './components/MealsView';
-import { NowPlayingBar } from './components/NowPlayingBar';
-import { useMusic } from './hooks/useMusic';
 import { useNotifications } from './hooks/useNotifications';
 import { ScreenSaver } from './components/ScreenSaver';
 import { GroceryView } from './components/GroceryView';
@@ -34,22 +31,17 @@ import { useConnectionStatus } from './hooks/useConnectionStatus';
 import { useScreenWakeLock } from './hooks/useScreenWakeLock';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
-import { useIngressDetect } from './hooks/useIngressDetect';
-import { useHaAuth } from './hooks/useHaAuth';
 import { useTheme } from './hooks/useTheme';
 import { useTouchPageSwipe } from './hooks/useTouchPageSwipe';
 import { isStringArray, usePersistentState } from './hooks/usePersistentState';
 import { TOUCH_NAV_ORDER } from './utils/touch-navigation';
 import { useTaskLists } from './hooks/useTaskLists';
-import OnboardingView from './components/OnboardingView';
 import { FocusView } from './components/focus/FocusView';
 import { getFocusMemberId, clearFocusMode, setDeviceFocusMember } from './focus';
 import { CalendarEvent } from './types';
 import type { ChoresManChore } from './types/choresman';
-import { getConfig, getRuntimeConfig, patchConfig } from './config';
+import { useMediaQuery } from './hooks/useMediaQuery';
 import { I18nContext, createI18n } from './i18n';
-
-const config = getConfig();
 const EMPTY_CHORESMAN_CHORES: ChoresManChore[] = [];
 
 type ViewTransitionDocument = Document & {
@@ -66,10 +58,8 @@ type EventDialogState =
   | { type: 'edit'; event: CalendarEvent };
 
 export function App() {
-  const auth = useHaAuth();
-  const { client, connected, reconnect: reconnectHomeAssistant } = useHomeAssistant();
-  const [haIntegrationRevision, setHaIntegrationRevision] = useState(0);
-  const { isIngress, compact } = useIngressDetect();
+  const compact = useMediaQuery('(max-width: 600px)');
+  const [integrationSettingsRevision, setIntegrationSettingsRevision] = useState(0);
   const {
     settings,
     updateSettings,
@@ -108,16 +98,14 @@ export function App() {
     deleteEvent,
   } = mergedCalendars;
 
-  const music = useMusic(client, connected);
-
   const taskLists = useTaskLists(
     settings.groceryListIds,
     settings.taskListIds ?? [],
-    haIntegrationRevision,
+    integrationSettingsRevision,
   );
 
   const handleIntegrationSettingsSaved = useCallback(() => {
-    setHaIntegrationRevision((current) => current + 1);
+    setIntegrationSettingsRevision((current) => current + 1);
   }, []);
 
   // Apply theme at App level so it stays active regardless of which view is shown
@@ -243,8 +231,8 @@ export function App() {
     [fetchEvents],
   );
 
-  // Event notifications (browser + HA mobile_app)
-  useNotifications(events, client, !focusMemberId, settings.notificationMinutes);
+  // Event notifications use the browser's notification API.
+  useNotifications(events, !focusMemberId, settings.notificationMinutes);
 
   // Fetch CalDAV calendar data when the app starts, or when the user navigates
   // to a different week or changes integration settings.
@@ -265,7 +253,7 @@ export function App() {
     );
 
     return () => clearInterval(interval);
-  }, [fetchCalendars, haIntegrationRevision, refetchEventsForWeek, visibleWeekStart]);
+  }, [fetchCalendars, integrationSettingsRevision, refetchEventsForWeek, visibleWeekStart]);
 
   // Re-fetch when calendar colors or family members change so colors update
   // immediately, without recreating the 5-minute polling interval above.
@@ -512,7 +500,7 @@ export function App() {
   // ---- Chore data ----
   // ChoresMan owns chores, points and rewards; family profiles stay in sync
   // with its local member records through the shared hook.
-  const { reconnected } = useConnectionStatus({ haConnected: connected });
+  const { reconnected, state: connectionState } = useConnectionStatus();
   useScreenWakeLock(settings.alwaysOnDisplay);
 
   // One refresh per recovery. Calendars and events are not polled, so nothing
@@ -583,40 +571,6 @@ export function App() {
     [choresManData, runChoresManAction],
   );
 
-  // Handle onboarding completion
-  const handleOnboardingComplete = useCallback(
-    async (haUrl: string, haToken: string) => {
-      await auth.saveManualToken(haUrl, haToken);
-      patchConfig({ ha_url: haUrl, ha_token: haToken });
-      window.location.reload();
-    },
-    [auth],
-  );
-
-  const handleSaveHomeAssistantSettings = useCallback(
-    async (haUrl: string, haToken: string) => {
-      const token = haToken || auth.state.haToken;
-      if (!token) throw new Error(t('settings.integrations.haTokenHelp'));
-      await auth.saveManualToken(haUrl, token);
-      patchConfig({ ha_url: haUrl, ha_token: token });
-      reconnectHomeAssistant();
-    },
-    [auth, reconnectHomeAssistant, t],
-  );
-
-  const handleRemoveHomeAssistantToken = useCallback(async () => {
-    await auth.clearToken();
-    patchConfig({ ha_token: '' });
-    reconnectHomeAssistant();
-  }, [auth, reconnectHomeAssistant]);
-
-  const handleOAuthStart = useCallback(
-    (haUrl: string) => {
-      auth.startOAuth(haUrl);
-    },
-    [auth],
-  );
-
   // Keyboard shortcuts for quick view switching
   useEffect(() => {
     const viewMap: Record<string, SidebarView> = {
@@ -657,41 +611,6 @@ export function App() {
     </I18nContext.Provider>
   );
 
-  // Show loading screen while checking stored credentials
-  if (auth.state.loading) {
-    return withDebugConsole(
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100vh',
-          background: 'var(--bg-primary)',
-        }}
-      >
-        <LoadingPlaceholder
-          label={t('app.connecting')}
-          lines={3}
-          className="loading-placeholder--screen"
-        />
-      </div>,
-    );
-  }
-
-  // Show onboarding ONLY when running as a standalone app with no HA connection configured.
-  // Skip if: the deployment injected a runtime config, already onboarded,
-  // or running in an iframe (HA ingress), or URL has /ingress/ path.
-  const isHaManaged = !!(
-    getRuntimeConfig() ||
-    window !== window.parent ||
-    window.location.pathname.includes('/ingress/')
-  );
-  if (!isHaManaged && !auth.state.isOnboarded) {
-    return withDebugConsole(
-      <OnboardingView onComplete={handleOnboardingComplete} onOAuthStart={handleOAuthStart} />,
-    );
-  }
-
   // Kid Display mode: replace the entire shell (same pattern as onboarding)
   if (focusMember) {
     return withDebugConsole(
@@ -724,7 +643,7 @@ export function App() {
   return (
     <I18nContext.Provider value={i18n}>
       <div
-        className={`abbai-flow abbai-flow--sidebar-${sidebarPos} ${isIngress ? 'abbai-flow--ingress' : ''} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
+        className={`abbai-flow abbai-flow--sidebar-${sidebarPos} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
       >
         {focusInvalid && (
           <div className="focus-invalid-banner">
@@ -791,11 +710,6 @@ export function App() {
               onAddMember={addMember}
               onUpdateMember={updateMember}
               onRemoveMember={removeMember}
-              connected={connected}
-              haUrl={auth.state.haUrl || config.ha_url}
-              haTokenConfigured={Boolean(auth.state.haToken)}
-              onSaveHomeAssistant={handleSaveHomeAssistantSettings}
-              onRemoveHomeAssistantToken={handleRemoveHomeAssistantToken}
               onIntegrationSettingsSaved={handleIntegrationSettingsSaved}
               calendars={calendars}
               onEnterFocusMode={handleEnterFocusMode}
@@ -826,7 +740,7 @@ export function App() {
               <PageHeader
                 title={settings.familyName}
                 actions={
-                  !connected ? (
+                  connectionState !== 'online' ? (
                     <div className="connection-status">
                       <span className="connection-dot" />
                       {t('app.connecting')}
@@ -914,19 +828,6 @@ export function App() {
 
         {/* GroceryView is now rendered as a full view above */}
 
-        {/* Now Playing Bar — shows when music is playing outside the music view. */}
-        {activeView !== 'music' && music.activePlayer?.state === 'playing' && (
-          <NowPlayingBar
-            player={music.activePlayer}
-            onPlay={() => music.play(music.activePlayer!.entity_id)}
-            onPause={() => music.pause(music.activePlayer!.entity_id)}
-            onNext={() => music.next(music.activePlayer!.entity_id)}
-            onPrevious={() => music.previous(music.activePlayer!.entity_id)}
-            onSetVolume={(v) => music.setVolume(v, music.activePlayer!.entity_id)}
-            onExpand={() => handleChangeView('music')}
-          />
-        )}
-
         {/* Screen saver / dim mode */}
         <ScreenSaver
           enabled={settings.screenSaverEnabled}
@@ -939,8 +840,6 @@ export function App() {
           photoTransition={settings.photoTransition}
         />
 
-        {/* Preview indicator — only show outside of add-on ingress */}
-        {!connected && !isHaManaged && <div className="preview-badge">{t('app.previewMode')}</div>}
       </div>
     </I18nContext.Provider>
   );

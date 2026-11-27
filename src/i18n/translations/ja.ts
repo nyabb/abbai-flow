@@ -193,10 +193,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.general.languageLabel': '言語 / 地域',
   'settings.general.debugModeLabel': 'デバッグモード',
   'settings.general.debugModeSublabel': 'API 呼び出し、応答、エラーの全体ログを表示します。',
-  'settings.display.ingressUrlUnavailable':
-    'Home Assistant 内では共有可能なディスプレイ URL を使用できません。表示先の画面で Abbai Flow を開き、「このデバイスで使用」を選択してください。',
-
-  // ---- settings: appearance ----
   'settings.appearance.title': '外観',
   'settings.appearance.desc': 'ディスプレイの見た目をカスタマイズします。',
   'settings.appearance.themeTitle': 'テーマ',
@@ -229,12 +225,8 @@ export const ja: Record<TranslationKey, string> = {
   'settings.family.photoHint': '家族メンバーのアバターで絵文字の代わりに表示されます。',
   'settings.family.photoUpload': '写真をアップロード',
   'settings.family.photoRemove': '写真を削除',
-  'settings.family.photoFromHa': 'Home Assistant の写真を使う',
   'settings.family.photoError':
     'このファイルは使用できません。PNG・JPEG・WebP の画像をお試しください。',
-  'settings.family.haMembersLabel': 'Home Assistant から',
-  'settings.family.haMembersEmpty':
-    'Home Assistant の人物が見つかりません。Abbai Flow が Home Assistant に接続できるか確認して再読み込みしてください。',
   'settings.family.avatarCategory.people': '人々',
   'settings.family.avatarCategory.skinTones': '肌の色',
   'settings.family.avatarCategory.faces': '顔',
@@ -304,8 +296,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- settings: integrations ----
   'settings.integrations.title': '連携',
-  'settings.integrations.desc': 'Home Assistantおよび他のサービスとの連携を管理します。',
-  'settings.integrations.homeAssistantTitle': 'Home Assistant',
+  'settings.integrations.desc': '対応サービスへの接続を管理します。',
   'settings.integrations.connectionStatusLabel': '接続状態',
   'settings.integrations.connected': '接続済み',
   'settings.integrations.disconnected': '未接続',
@@ -326,8 +317,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.integrations.defaultPlayerLabel': 'デフォルトのプレーヤー',
   'settings.integrations.defaultPlayerSublabel': '標準で使用するメディアプレーヤー',
   'settings.integrations.photosTitle': '写真',
-  'settings.integrations.sourceDirectoryLabel': '参照元ディレクトリ',
-  'settings.integrations.sourceDirectorySublabel': 'HA上の写真ディレクトリへのパス',
   'settings.integrations.slideshowIntervalLabel': 'スライドショーの間隔',
   'settings.integrations.slideshowIntervalSublabel': '写真切り替えまでの秒数',
   'settings.integrations.transitionStyleLabel': '切り替えのスタイル',
@@ -386,8 +375,6 @@ export const ja: Record<TranslationKey, string> = {
   'settings.about.title': '情報',
   'settings.about.desc': 'バージョン情報、デバッグツール、リンクです。',
   'settings.about.version': 'バージョン',
-  'settings.about.homeAssistant': 'Home Assistant',
-  'settings.about.haUrl': 'HAのURL',
   'settings.about.sourceCode': 'ソースコード',
   'settings.about.github': 'GitHub',
   'settings.about.license': 'ライセンス',
@@ -431,7 +418,7 @@ export const ja: Record<TranslationKey, string> = {
   'timer.lapN': 'ラップ {n}',
   'photoFrame.noPhotos': '利用可能な写真がありません',
   'photoFrame.loading': '写真を読み込み中…',
-  'photoFrame.addPhotosHint': 'Home Assistant のメディアディレクトリに写真を追加してください',
+  'photoFrame.addPhotosHint': '設定 → 写真から写真をアップロードしてください。',
   'photoFrame.photoAlt': '写真',
   // ---- chores view ----
   'chores.title': '家事',
@@ -508,8 +495,7 @@ export const ja: Record<TranslationKey, string> = {
 
   // ---- music view ----
   'music.noPlayers': 'メディアプレーヤーがありません',
-  'music.noPlayersDesc':
-    'Home Assistantでメディアプレーヤーを接続して、ここから音楽を制御してください。',
+  'music.noPlayersDesc': '音楽を再生するには、連携設定で音楽サービスを接続してください。',
   'music.selectPlayer': 'プレーヤーを選択',
   'music.nowPlaying': '再生中',
   'music.volume': '音量',
@@ -523,7 +509,6 @@ export const ja: Record<TranslationKey, string> = {
   'music.albumArt': 'アルバムアート',
   'music.sourceTabs': '音楽ソース',
   'music.spotify': 'Spotify',
-  'music.homeAssistant': 'Home Assistant',
   'music.spotifyStatusNotConfigured': '未設定',
   'music.spotifyStatusLoggedOut': 'Spotify に未ログイン',
   'music.spotifyStatusDeviceInactive': 'デバイスが非アクティブ',
@@ -598,34 +583,6 @@ export const ja: Record<TranslationKey, string> = {
   'viewName.name': '名前',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Abbai Flowへようこそ',
-  'onboarding.welcomeDesc': 'Home Assistantを接続して始めましょう。',
-  'onboarding.getStarted': '始める',
-  'onboarding.connectTitle': 'Home Assistantに接続',
-  'onboarding.connectDesc': 'Home AssistantインスタンスのURLを入力してください。',
-  'onboarding.haUrl': 'Home Assistant URL',
-  'onboarding.haUrlPlaceholder': 'https://homeassistant.local:8123',
-  'onboarding.connect': '接続',
-  'onboarding.connecting': '接続中...',
-  'onboarding.authTitle': '認証',
-  'onboarding.authDesc': 'Home Assistantへの認証方法を選択してください。',
-  'onboarding.tokenMethod': '長期アクセストークン',
-  'onboarding.tokenMethodDesc': 'Home Assistantプロファイルから生成されたトークンを使用します。',
-  'onboarding.tokenPlaceholder': 'トークンをここに貼り付けてください',
-  'onboarding.tokenHint': 'トークンの作成方法：',
-  'onboarding.tokenHintDetail': 'HAプロファイル → 長期トークン → トークンを作成',
-  'onboarding.oauthMethod': 'Home Assistantでサインイン',
-  'onboarding.oauthMethodDesc': 'OAuth2を介してHome Assistant認証情報を使用して認証します。',
-  'onboarding.openHA': 'Home Assistantを開く',
-  'onboarding.completeSetup': 'セットアップを完了',
-  'onboarding.urlError': 'URLはhttp://またはhttps://で始まる必要があります',
-  'onboarding.connectionFailed':
-    '接続に失敗しました（HTTP {status}）。URLを確認して再試行してください。',
-  'onboarding.notReachable':
-    'Home Assistantに到達できませんでした。URLを確認し、アクセス可能であることを確認してください。',
-  'onboarding.tokenRequired': 'アクセストークンを入力してください。',
-
-  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'お手伝いとルーティン',
   'planner.loading': 'お手伝いとルーティンを読み込み中...',
   'planner.shortTitle': 'お手伝い',

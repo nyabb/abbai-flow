@@ -23,7 +23,7 @@ function getAppVersion(override: string | undefined): string {
 }
 
 export default defineConfig(({ mode }) => {
-  // Home Assistant credentials and URLs come from the app's saved settings.
+  // Runtime integration settings are managed by the app server.
   const env = loadEnv(mode, process.cwd(), '');
 
   return {

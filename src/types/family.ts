@@ -4,8 +4,7 @@ export interface FamilyMember {
   id: string;
   name: string;
   avatar: string; // emoji or image URL
-  /** Photo shown instead of the emoji: a data URL from an upload, an absolute
-   *  URL, or an HA path like /api/image/serve/<id>/512x512. */
+  /** Photo shown instead of the emoji: a data URL or absolute image URL. */
   photo?: string;
   color: string; // hex color
   pin?: string; // 4-6 digit PIN

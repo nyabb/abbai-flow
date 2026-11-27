@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { CalendarEvent } from '../types';
-import { HomeAssistantClient } from '../api/homeassistant';
 import abbaiIcon from '../assets/abbai-flow-icon.svg';
 
 const CHECK_INTERVAL = 60 * 1000; // 1 minute
@@ -10,12 +9,10 @@ const DEFAULT_NOTIFY_BEFORE_MINUTES = 15;
  * Checks upcoming events every minute and fires browser notifications
  * notifyBeforeMinutes before each event (Settings > Calendar >
  * notificationTimingLabel — previously this was hardcoded to 15 minutes
- * regardless of that setting). Also sends HA mobile_app notifications if
- * the client is connected.
+ * regardless of that setting).
  */
 export function useNotifications(
   events: CalendarEvent[],
-  getClient: () => HomeAssistantClient | null,
   enabled = true,
   notifyBeforeMinutes: number = DEFAULT_NOTIFY_BEFORE_MINUTES,
 ) {
@@ -58,11 +55,6 @@ export function useNotifications(
           });
         }
 
-        // HA mobile app notification (best-effort)
-        const client = getClient();
-        if (client?.isConnected) {
-          sendHANotification(client, event.title, body);
-        }
       }
     }
 
@@ -73,7 +65,7 @@ export function useNotifications(
         notifiedRef.current.delete(id);
       }
     }
-  }, [events, getClient, notifyBeforeMs]);
+  }, [events, notifyBeforeMs]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -83,26 +75,4 @@ export function useNotifications(
     const interval = setInterval(checkUpcoming, CHECK_INTERVAL);
     return () => clearInterval(interval);
   }, [checkUpcoming, enabled]);
-}
-
-/**
- * Sends a notification through HA's notify.mobile_app service.
- * Discovers the first available mobile_app notify entity automatically.
- */
-async function sendHANotification(
-  client: HomeAssistantClient,
-  title: string,
-  message: string,
-) {
-  try {
-    // The notify.mobile_app_<name> service follows a convention.
-    // We call the generic notify.notify which fans out to all targets,
-    // or we try the mobile_app domain directly.
-    await client.callService('notify', 'notify', '', {
-      title: `Abbai Flow: ${title}`,
-      message,
-    });
-  } catch {
-    // Silently fail — the service may not be available
-  }
 }

@@ -197,10 +197,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.general.debugModeLabel': 'Modalità debug',
   'settings.general.debugModeSublabel':
     'Mostra un registro globale di chiamate API, risposte ed errori.',
-  'settings.display.ingressUrlUnavailable':
-    'Un URL display condivisibile non è disponibile in Home Assistant. Apri Abbai Flow sullo schermo di destinazione e scegli “Usa su questo dispositivo”.',
-
-  // ---- settings: appearance ----
   'settings.appearance.title': 'Aspetto',
   'settings.appearance.desc': "Personalizza l'aspetto del tuo display.",
   'settings.appearance.themeTitle': 'Tema',
@@ -235,12 +231,8 @@ export const it: Record<TranslationKey, string> = {
     'Mostrata al posto dell’emoji negli avatar dei membri della famiglia.',
   'settings.family.photoUpload': 'Carica foto',
   'settings.family.photoRemove': 'Rimuovi foto',
-  'settings.family.photoFromHa': 'Usa la foto di Home Assistant',
   'settings.family.photoError':
     'Impossibile usare questo file. Prova un’immagine PNG, JPEG o WebP.',
-  'settings.family.haMembersLabel': 'Da Home Assistant',
-  'settings.family.haMembersEmpty':
-    'Nessuna persona di Home Assistant trovata. Verifica che Abbai Flow raggiunga Home Assistant e ricarica.',
   'settings.family.avatarCategory.people': 'Persone',
   'settings.family.avatarCategory.skinTones': 'Carnagioni',
   'settings.family.avatarCategory.faces': 'Volti',
@@ -310,8 +302,7 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- settings: integrations ----
   'settings.integrations.title': 'Integrazioni',
-  'settings.integrations.desc': 'Gestisci le connessioni a Home Assistant e ad altri servizi.',
-  'settings.integrations.homeAssistantTitle': 'Home Assistant',
+  'settings.integrations.desc': 'Gestisci le connessioni ai servizi supportati.',
   'settings.integrations.connectionStatusLabel': 'Stato della connessione',
   'settings.integrations.connected': 'Connesso',
   'settings.integrations.disconnected': 'Disconnesso',
@@ -334,8 +325,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.integrations.defaultPlayerSublabel':
     'Player multimediale usato per impostazione predefinita',
   'settings.integrations.photosTitle': 'Foto',
-  'settings.integrations.sourceDirectoryLabel': 'Cartella di origine',
-  'settings.integrations.sourceDirectorySublabel': 'Percorso della cartella foto su HA',
   'settings.integrations.slideshowIntervalLabel': 'Intervallo presentazione',
   'settings.integrations.slideshowIntervalSublabel': 'Secondi tra i cambi di foto',
   'settings.integrations.transitionStyleLabel': 'Stile di transizione',
@@ -395,8 +384,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.about.title': 'Informazioni',
   'settings.about.desc': 'Informazioni sulla versione, strumenti di debug e link.',
   'settings.about.version': 'Versione',
-  'settings.about.homeAssistant': 'Home Assistant',
-  'settings.about.haUrl': 'URL HA',
   'settings.about.sourceCode': 'Codice sorgente',
   'settings.about.github': 'GitHub',
   'settings.about.license': 'Licenza',
@@ -440,7 +427,7 @@ export const it: Record<TranslationKey, string> = {
   'timer.lapN': 'Giro {n}',
   'photoFrame.noPhotos': 'Nessuna foto disponibile',
   'photoFrame.loading': 'Caricamento foto…',
-  'photoFrame.addPhotosHint': 'Aggiungi foto alla tua directory multimediale di Home Assistant',
+  'photoFrame.addPhotosHint': 'Carica le foto in Impostazioni → Foto.',
   'photoFrame.photoAlt': 'Foto',
   // ---- chores view ----
   'chores.title': 'Faccende',
@@ -518,8 +505,7 @@ export const it: Record<TranslationKey, string> = {
 
   // ---- music view ----
   'music.noPlayers': 'Nessun lettore multimediale',
-  'music.noPlayersDesc':
-    'Collega un lettore multimediale in Home Assistant per controllare la musica da qui.',
+  'music.noPlayersDesc': 'Collega un servizio musicale in Integrazioni per ascoltare musica qui.',
   'music.selectPlayer': 'Seleziona lettore',
   'music.nowPlaying': 'In riproduzione',
   'music.volume': 'Volume',
@@ -533,7 +519,6 @@ export const it: Record<TranslationKey, string> = {
   'music.albumArt': 'Copertina album',
   'music.sourceTabs': 'Sorgente musicale',
   'music.spotify': 'Spotify',
-  'music.homeAssistant': 'Home Assistant',
   'music.spotifyStatusNotConfigured': 'Non configurato',
   'music.spotifyStatusLoggedOut': 'Spotify disconnesso',
   'music.spotifyStatusDeviceInactive': 'Dispositivo inattivo',
@@ -610,34 +595,6 @@ export const it: Record<TranslationKey, string> = {
   'viewName.name': 'Nome',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Benvenuto su Abbai Flow',
-  'onboarding.welcomeDesc': 'Collega il tuo Home Assistant per iniziare.',
-  'onboarding.getStarted': 'Inizia',
-  'onboarding.connectTitle': 'Collega a Home Assistant',
-  'onboarding.connectDesc': "Inserisci l'URL della tua istanza Home Assistant.",
-  'onboarding.haUrl': 'URL di Home Assistant',
-  'onboarding.haUrlPlaceholder': 'https://homeassistant.local:8123',
-  'onboarding.connect': 'Collega',
-  'onboarding.connecting': 'Connessione in corso...',
-  'onboarding.authTitle': 'Autenticazione',
-  'onboarding.authDesc': 'Scegli come autenticarti con Home Assistant.',
-  'onboarding.tokenMethod': 'Token di accesso a lungo termine',
-  'onboarding.tokenMethodDesc': 'Usa un token generato dal tuo profilo Home Assistant.',
-  'onboarding.tokenPlaceholder': 'Incolla il tuo token qui',
-  'onboarding.tokenHint': 'Come creare un token:',
-  'onboarding.tokenHintDetail': 'Vai al tuo Profilo HA → Token a lungo termine → Crea token',
-  'onboarding.oauthMethod': 'Accedi con Home Assistant',
-  'onboarding.oauthMethodDesc':
-    'Autenticati utilizzando le tue credenziali Home Assistant tramite OAuth2.',
-  'onboarding.openHA': 'Apri Home Assistant',
-  'onboarding.completeSetup': 'Completa configurazione',
-  'onboarding.urlError': "L'URL deve iniziare con http:// o https://",
-  'onboarding.connectionFailed': "Connessione fallita (HTTP {status}). Controlla l'URL e riprova.",
-  'onboarding.notReachable':
-    "Impossibile raggiungere Home Assistant. Verifica l'URL e assicurati che sia accessibile.",
-  'onboarding.tokenRequired': 'Inserisci il tuo token di accesso.',
-
-  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Attività e routine',
   'planner.loading': 'Caricamento di attività e routine...',
   'planner.shortTitle': 'Attività',

@@ -54,7 +54,7 @@ describe('reward reservations', () => {
     // 60 points, 20 assigned → 40 left to play with.
     expect(spendablePoints(60, list, REWARDS, 'Zara')).toBe(40);
 
-    // A redeem made in Home Assistant also ends in a deduction on approval.
+    // An external claim also ends in a deduction on approval.
     const claimed = [
       { name: 'Filmavond', assignee: 'Zara', cost: 10, pendingClaims: 1 },
       ...REWARDS,

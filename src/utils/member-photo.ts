@@ -1,17 +1,8 @@
 /**
  * Family member photos.
  *
- * A member's `photo` is one of:
- *  - a data URL produced by uploading a file in Abbai Flow (`imageFileToDataUrl`),
- *  - an absolute URL (anywhere),
- *  - a Home Assistant relative path such as `/api/image/serve/<id>/512x512`
- *    imported from an HA `person` entity's `entity_picture`.
- *
- * Relative HA paths are resolved against the HA base (or the add-on ingress
- * server proxy, which attaches the token server-side), so an `<img src>` works
- * without the browser ever holding a bearer token.
+ * Member photos are saved as data URLs or explicit image URLs.
  */
-import { getHaResourceUrl } from '../api/ha-rest';
 
 /** Uploads are downscaled to this longest edge — plenty for a wall display. */
 const MAX_EDGE = 256;
@@ -63,6 +54,5 @@ export async function imageFileToDataUrl(file: File): Promise<string> {
 
 /** Turn a stored photo reference into something an `<img>` can load. */
 export function resolveMemberPhoto(photo: string): string {
-  if (photo.startsWith('data:') || photo.startsWith('blob:')) return photo;
-  return getHaResourceUrl(photo);
+  return photo;
 }

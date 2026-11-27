@@ -1,47 +1,16 @@
 ---
 title: 'Photos'
-description: 'Show a Home Assistant photo slideshow in Abbai Flow’s screen saver.'
-order: 7
+description: 'Upload and manage screen saver photos saved with Abbai Flow.'
+order: 6
 ---
 
-# Photos in the screen saver
+# Photos
 
-Photos appear as part of Abbai Flow’s screen saver, rather than as a separate
-page. In **Settings → Display**, enable the screen saver and choose one of
-three displays:
+Open **Settings → Photos** to upload and manage screen saver images. Select one
+or more images from your device; the app prepares and saves them to its photo
+library. The library supports up to 50 photos. Images are resized before upload
+to reduce storage and transfer time.
 
-- **Clock only** — the moving clock and date
-- **Photos only** — a full-screen photo slideshow
-- **Clock + photos** — the slideshow with a clock and date over it
-
-The screen saver is used in the main app and Kid Display. Any tap or other user
-input wakes the screen.
-
-## Photo sources
-
-Abbai Flow combines images from Home Assistant’s media browser and the local
-media folder configured under **Settings → Integrations → Photos**. The list is
-shuffled when the slideshow starts. Home Assistant must be connected for the
-photos to load.
-
-To add images, copy them into a folder Home Assistant can access under
-`/media`, then set that path in the Photos integration settings. Images visible
-in Home Assistant’s Media Browser are also available to Abbai Flow.
-
-## Slideshow settings
-
-Under **Settings → Integrations → Photos**, set:
-
-- **Slideshow interval** — how long each image remains on screen
-- **Transition style** — fade or slide
-
-The screen saver’s dim and activation delays are configurable under
-**Settings → Display**. Photos load only when the screen saver starts in a
-photo mode. If no images are available, the screen saver shows a message with
-the media-folder hint.
-
-## Troubleshooting
-
-If the screen saver says no photos are available, check that Home Assistant can
-browse the configured directory, confirm the path under **Settings →
-Integrations → Photos**, and make sure Home Assistant is connected.
+The photo library is stored with the app's server data. Keep `/data` mounted to
+preserve photos across container updates. Choose photos or a clock-and-photo
+slideshow in **Settings → Display**.

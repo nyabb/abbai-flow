@@ -37,8 +37,6 @@ export interface AbbaiSettings {
   groceryListIds: string[];
   /** Explicit iCloud Reminders list keys used by the Tasks view. */
   taskListIds?: string[];
-  musicDefaultPlayer: string;
-  photoDirectory: string;
   photoInterval: number;
   photoTransition: 'fade' | 'slide';
 
@@ -93,8 +91,6 @@ function buildDefaults(): AbbaiSettings {
 
     defaultGroceryList: '',
     groceryListIds: [],
-    musicDefaultPlayer: '',
-    photoDirectory: config.photo_directory,
     photoInterval: config.photo_interval,
     photoTransition: 'fade',
 
@@ -128,7 +124,7 @@ async function loadSettingsAsync(): Promise<AbbaiSettings> {
     (configAllowsBrowserStorage ? loadDataSync<PersistedSettings>(STORAGE_KEY, {}) : {});
   return {
     ...normalizeSettings(defaults, stored),
-    // The add-on configuration is authoritative: it can disable browser
+    // Runtime configuration is authoritative: it can disable browser
     // storage, while the user preference can opt out when config allows it.
     saveConfigInBrowser: configAllowsBrowserStorage && (stored.saveConfigInBrowser ?? true),
   };
@@ -216,7 +212,7 @@ export function useSettings() {
     refresh();
   }, [refresh]);
 
-  // Re-fetch when the app becomes visible (mirror ha-entity-store pattern)
+  // Re-fetch when the app becomes visible to refresh stale settings.
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {

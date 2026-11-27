@@ -1,6 +1,6 @@
 import type { TranslationKey } from '../i18n';
 
-/** Maps HA weather conditions to translation keys */
+/** Maps weather condition codes to translation keys. */
 const WEATHER_CONDITION_KEYS: Record<string, TranslationKey> = {
   'clear-night': 'weather.condition.clearNight',
   cloudy: 'weather.condition.cloudy',
@@ -19,7 +19,7 @@ const WEATHER_CONDITION_KEYS: Record<string, TranslationKey> = {
   exceptional: 'weather.condition.exceptional',
 };
 
-/** Maps HA weather conditions to emoji icons */
+/** Maps weather condition codes to emoji icons. */
 const WEATHER_ICONS: Record<string, string> = {
   'clear-night': '\u{1F319}',
   cloudy: '\u2601\uFE0F',

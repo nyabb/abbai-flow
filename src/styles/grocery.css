@@ -85,16 +85,25 @@
 }
 
 .grocery-view-selector {
-  position: relative;
-  display: inline-flex;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   max-width: 360px;
+}
+
+.grocery-view-select-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .grocery-view-select {
   appearance: none;
   -webkit-appearance: none;
+  display: block;
   width: 100%;
+  min-width: 0;
   padding: 12px 40px 12px 16px;
   font-size: 1rem;
   font-weight: 600;
@@ -106,10 +115,6 @@
   cursor: pointer;
   outline: none;
   transition: border-color 200ms ease;
-}
-
-.grocery-view-select--refreshable {
-  padding-right: 84px;
 }
 
 .grocery-view-select:focus {
@@ -126,26 +131,35 @@
 }
 
 .grocery-view-refresh {
-  position: absolute;
-  z-index: 1;
-  top: 50%;
-  right: 38px;
+  flex: 0 0 46px;
   display: grid;
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   place-items: center;
   padding: 0;
   color: var(--text-secondary);
   background: transparent;
   border: 0;
-  border-radius: 9px;
+  border-radius: 12px;
   cursor: pointer;
-  transform: translateY(-50%);
+  -webkit-tap-highlight-color: transparent;
 }
 
 .grocery-view-refresh:hover:not(:disabled) {
   color: var(--accent, var(--color-blue-full));
-  background: color-mix(in srgb, var(--accent, var(--color-blue-full)) 10%, transparent);
+}
+
+.grocery-view-refresh:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.grocery-view-refresh:focus-visible {
+  outline: 2px solid var(--accent, var(--color-blue-full));
+  outline-offset: 2px;
+}
+
+.grocery-view-refresh:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .grocery-view-refresh:disabled {
@@ -585,7 +599,7 @@
   }
 }
 
-/* A failed Home Assistant read must not read as "the list is empty". */
+/* A failed sync must not read as "the list is empty". */
 .grocery-view-error {
   display: flex;
   align-items: center;

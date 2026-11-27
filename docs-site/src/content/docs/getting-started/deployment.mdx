@@ -70,10 +70,6 @@ docker compose logs -f abbai-flow
 
 ## Troubleshooting
 
-### The container cannot connect to Home Assistant
-
-Use **Settings → Integrations → Test connection** to check the Home Assistant URL and token from the running container. If Home Assistant uses a private certificate authority, configure the server's CA trust before connecting.
-
 ### The page does not load through the reverse proxy
 
 Confirm the container is healthy at `http://<server-address>:3000` first, then check the proxy target and TLS configuration.

@@ -53,12 +53,7 @@ interface SettingsViewProps {
   onAddMember: (member: Omit<FamilyMember, 'id'>) => void;
   onUpdateMember: (id: string, data: Partial<Omit<FamilyMember, 'id'>>) => void;
   onRemoveMember: (id: string) => void;
-  // HA connection
-  connected: boolean;
-  haUrl: string;
-  haTokenConfigured?: boolean;
-  onSaveHomeAssistant?: (url: string, token: string) => Promise<void>;
-  onRemoveHomeAssistantToken?: () => Promise<void>;
+  // Integrations
   onIntegrationSettingsSaved?: () => void;
   // Calendars
   calendars: Array<{ id: string; name: string; color?: string; readOnly?: boolean }>;
@@ -103,11 +98,6 @@ export function SettingsView({
   onAddMember,
   onUpdateMember,
   onRemoveMember,
-  connected,
-  haUrl,
-  haTokenConfigured,
-  onSaveHomeAssistant,
-  onRemoveHomeAssistantToken,
   onIntegrationSettingsSaved,
   calendars,
   onEnterFocusMode,
@@ -209,11 +199,6 @@ export function SettingsView({
       settings={settings}
       onUpdateSettings={onUpdateSettings}
       t={t}
-      connected={connected}
-      haUrl={haUrl}
-      haTokenConfigured={haTokenConfigured}
-      onSaveHomeAssistant={onSaveHomeAssistant}
-      onRemoveHomeAssistantToken={onRemoveHomeAssistantToken}
       onIntegrationSettingsSaved={onIntegrationSettingsSaved}
     />
   );
@@ -241,8 +226,6 @@ export function SettingsView({
       settings={settings}
       onUpdateSettings={onUpdateSettings}
       t={t}
-      connected={connected}
-      haUrl={haUrl}
       onExport={handleExport}
       onImport={handleImport}
       onClearLocalStorage={onClearLocalStorage}

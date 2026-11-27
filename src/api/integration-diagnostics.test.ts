@@ -30,13 +30,10 @@ function snapshot(overrides: Partial<EncoreSnapshot> = {}): EncoreSnapshot {
 
 function config(overrides: Partial<IntegrationDiagnosticConfig> = {}): IntegrationDiagnosticConfig {
   return {
-    haBaseUrl: 'http://ha.test:8123',
-    haToken: 'server-ha-token',
     encoreToken: 'server-encore-token',
     spotifyClientId: 'server-client-id',
     spotifyClientSecret: 'server-client-secret',
     spotifyMarket: 'NL',
-    photoDirectory: '/media/photos',
     ...overrides,
   };
 }
@@ -51,7 +48,7 @@ function diagnosticsLogger() {
 }
 
 describe('integration startup diagnostics', () => {
-  it('logs Bluetooth connection changes without logging device addresses or credentials', async () => {
+  it('logs Bluetooth connection changes without logging device addresses', async () => {
     let onBluetoothSnapshot: ((value: BluetoothSnapshot) => void) | undefined;
     const unsubscribeBluetooth = vi.fn();
     const bluetooth = {
@@ -74,9 +71,9 @@ describe('integration startup diagnostics', () => {
     const encore = { subscribe: () => vi.fn() };
     const { entries, logger } = diagnosticsLogger();
     const handle = startIntegrationDiagnostics(
-      config({ haToken: '', encoreToken: '', spotifyClientId: '', spotifyClientSecret: '' }),
+      config({ encoreToken: '', spotifyClientId: '', spotifyClientSecret: '' }),
       encore as never,
-      { logger, fetcher: vi.fn<typeof fetch>(), bluetooth },
+      { logger, bluetooth },
     );
     await handle.ready;
     onBluetoothSnapshot?.({
@@ -115,7 +112,7 @@ describe('integration startup diagnostics', () => {
     expect(unsubscribeBluetooth).toHaveBeenCalledOnce();
   });
 
-  it('checks HA and Spotify credentials, reports discovered integrations, and never logs secrets', async () => {
+  it('checks Spotify credentials and logs playback state without exposing secrets', async () => {
     let onEncoreSnapshot: ((value: EncoreSnapshot) => void) | undefined;
     const unsubscribe = vi.fn();
     const encore = {
@@ -125,42 +122,16 @@ describe('integration startup diagnostics', () => {
         return unsubscribe;
       },
     };
-    const states = [
-      { entity_id: 'todo.groceries', state: '1' },
-      { entity_id: 'media_player.abbai', state: 'idle' },
-    ];
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ message: 'API running' }), { status: 200 }),
-      )
-      .mockResolvedValueOnce(new Response(JSON.stringify(states), { status: 200 }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ children: [{}, {}] }), { status: 200 }));
     const verifySpotifyCatalog = vi.fn(async () => ({ ok: true }));
     const { entries, logger } = diagnosticsLogger();
 
     const handle = startIntegrationDiagnostics(config(), encore as never, {
-      fetcher,
       logger,
       verifySpotifyCatalog,
     });
     await handle.ready;
 
-    expect(fetcher.mock.calls.map(([url]) => String(url))).toEqual([
-      'http://ha.test:8123/api/',
-      'http://ha.test:8123/api/states',
-      'http://ha.test:8123/api/media_source/browse_media',
-    ]);
-    expect(fetcher.mock.calls[0]?.[1]?.headers).toMatchObject({
-      Authorization: 'Bearer server-ha-token',
-    });
     expect(verifySpotifyCatalog).toHaveBeenCalledOnce();
-    expect(entries.join('\n')).toContain('Home Assistant API: connected and authenticated.');
-    expect(entries.join('\n')).toContain('media_players=1, todo_lists=1');
-    expect(entries.join('\n')).not.toContain('Home Assistant calendars');
-    expect(entries.join('\n')).toContain(
-      'Home Assistant media source: available (2 root item(s)).',
-    );
     expect(entries.join('\n')).toContain('Spotify catalog search: credentials accepted.');
 
     onEncoreSnapshot?.(
@@ -177,71 +148,10 @@ describe('integration startup diagnostics', () => {
     );
     expect(entries.join('\n')).toContain('Spotify session: logged in.');
     expect(entries.join('\n')).toContain('device "Abbai Party" is active for playback.');
-    expect(entries.join('\n')).not.toContain('server-ha-token');
     expect(entries.join('\n')).not.toContain('server-encore-token');
     expect(entries.join('\n')).not.toContain('server-client-secret');
 
     handle.stop();
     expect(unsubscribe).toHaveBeenCalledOnce();
-  });
-
-  it('explains missing integration configuration without making external requests', async () => {
-    let onEncoreSnapshot: ((value: EncoreSnapshot) => void) | undefined;
-    const encore = {
-      subscribe: (listener: (value: EncoreSnapshot) => void) => {
-        onEncoreSnapshot = listener;
-        listener(snapshot({ configured: false, connection: 'disconnected' }));
-        return vi.fn();
-      },
-    };
-    const fetcher = vi.fn<typeof fetch>();
-    const verifySpotifyCatalog = vi.fn(async () => ({ ok: true }));
-    const { entries, logger } = diagnosticsLogger();
-
-    const handle = startIntegrationDiagnostics(
-      config({
-        haToken: '',
-        encoreToken: '',
-        spotifyClientId: '',
-        spotifyClientSecret: '',
-      }),
-      encore as never,
-      { fetcher, logger, verifySpotifyCatalog },
-    );
-    await handle.ready;
-
-    expect(fetcher).not.toHaveBeenCalled();
-    expect(verifySpotifyCatalog).not.toHaveBeenCalled();
-    expect(entries.join('\n')).toContain('Home Assistant API: not checked');
-    expect(entries.join('\n')).toContain('Spotify playback (Encore): not configured');
-    expect(entries.join('\n')).toContain('Spotify catalog search: not configured');
-    expect(entries.join('\n')).toContain('add the connection in Settings → Integrations');
-    handle.stop();
-    expect(onEncoreSnapshot).toBeDefined();
-  });
-
-  it('reports HTTP failures by status without logging the HA token or response body', async () => {
-    const encore = {
-      subscribe: (listener: (value: EncoreSnapshot) => void) => {
-        listener(snapshot({ configured: false }));
-        return vi.fn();
-      },
-    };
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValue(new Response('sensitive response body', { status: 401 }));
-    const { entries, logger } = diagnosticsLogger();
-
-    const handle = startIntegrationDiagnostics(config(), encore as never, {
-      fetcher,
-      logger,
-      verifySpotifyCatalog: async () => ({ ok: true }),
-    });
-    await handle.ready;
-
-    expect(entries.join('\n')).toContain('Home Assistant API: unavailable (HTTP 401)');
-    expect(entries.join('\n')).not.toContain('sensitive response body');
-    expect(entries.join('\n')).not.toContain('server-ha-token');
-    handle.stop();
   });
 });

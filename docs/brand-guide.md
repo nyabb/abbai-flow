@@ -16,7 +16,7 @@
 
 ### Positioning
 
-Abbai Flow is an open-source, self-hosted family organizer designed for shared displays and personal devices. It runs on commodity hardware and integrates with Home Assistant and standard calendar protocols (CalDAV/ICS) to help families coordinate everyday life.
+Abbai Flow is an open-source, self-hosted family organizer designed for shared displays and personal devices. It runs on commodity hardware and connects to standard calendar protocols and optional family services to help households coordinate everyday life.
 
 ### Personality
 
@@ -67,8 +67,7 @@ part that touches the edge.
 
 ### Variation A: Icon Only
 
-The standalone mark. Used for favicons, app icons and contexts where the name
-appears separately (tab bars, system trays, Home Assistant sidebar).
+The standalone mark. Used for favicons, app icons, tab bars, and system trays.
 
 - Minimum size: 16x16px (drop the two thin currents below 24px if they muddy)
 - Preferred clear space: 25% of icon width on all sides
@@ -210,7 +209,7 @@ These sizes are calibrated for readability at approximately 6 feet (1.8 meters) 
 
 **Lucide Icons** (https://lucide.dev)
 
-Lucide is chosen for consistency with the Home Assistant ecosystem and its clean, minimal aesthetic. All icons in the Abbai Flow interface must come from Lucide unless a custom icon is specifically required.
+Lucide provides a clean, consistent icon set. All icons in the Abbai Flow interface must come from Lucide unless a custom icon is specifically required.
 
 ### Icon Specifications
 
@@ -422,24 +421,6 @@ This section provides exact specifications for generating all brand assets. Thes
 | Bottom bar | A 40px river-teal (`#0f6f6a`) band along the bottom edge. |
 | Border | None. |
 | Format | PNG or JPG (quality 90+). |
-
-### Home Assistant Add-on Assets
-
-**HA Add-on Icon:**
-
-| Property | Value |
-|----------|-------|
-| Size | 256x256px |
-| Format | PNG |
-| Content | Icon-only mark (Variation A) on river teal (`#0f6f6a`), fully rounded. Centered with 20% padding. **Legacy:** Abbai Flow no longer ships as a Home Assistant add-on; kept for reference only. |
-
-**HA Add-on Logo:**
-
-| Property | Value |
-|----------|-------|
-| Size | 256x256px (or 512x128px horizontal if HA supports it) |
-| Format | PNG |
-| Content | Icon + Wordmark (Variation B) on river teal. **Legacy:** see above. |
 
 ### Color Specification Reference
 

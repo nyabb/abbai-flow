@@ -4,7 +4,6 @@
  * page's header.
  */
 import { getConfig } from '../../../config';
-import { isAddOn } from '../../../utils/ha-env';
 import type { AbbaiSettings } from '../../../hooks/useSettings';
 import { Segment, Toggle } from '../controls';
 import type { SettingsSectionContext } from './context';
@@ -68,19 +67,16 @@ export function GeneralSection({ settings, onUpdateSettings, t }: SettingsSectio
             onChange={(v) => onUpdateSettings({ weekStartsOn: Number(v) as 0 | 1 })}
           />
         </div>
-        {isAddOn() && (
+        {getConfig().save_config_in_browser && (
           <div className="settings-row">
             <div>
               <div className="settings-row-label">Save Configuration in Browser</div>
               <div className="settings-row-sublabel">
-                {getConfig().save_config_in_browser
-                  ? 'Keep a local browser copy; Home Assistant remains the shared source.'
-                  : 'Disabled by the Home Assistant add-on configuration.'}
+                Keep a local browser copy of your settings and family data.
               </div>
             </div>
             <Toggle
               checked={settings.saveConfigInBrowser}
-              disabled={!getConfig().save_config_in_browser}
               onChange={(v) => onUpdateSettings({ saveConfigInBrowser: v })}
             />
           </div>

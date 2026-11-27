@@ -588,12 +588,14 @@ export function GroceryView({
           </button>
         </div>
         <div className="grocery-view-selector">
-          <select className={`grocery-view-select${tab === 'tasks' && selectedList?.source === 'icloud' ? ' grocery-view-select--refreshable' : ''}`} value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)}>
-            {allLists.length === 0 && <option value="">{t('grocery.noListsAvailable')}</option>}
-            {allLists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}
-          </select>
-          <ChevronDown size={16} className="grocery-view-select-icon" />
-          {tab === 'tasks' && selectedList?.source === 'icloud' && (
+          <div className="grocery-view-select-wrap">
+            <select className="grocery-view-select" value={selectedListId} onChange={(event) => setSelectedListId(event.target.value)}>
+              {allLists.length === 0 && <option value="">{t('grocery.noListsAvailable')}</option>}
+              {allLists.map((list) => <option key={list.id} value={list.id}>{list.name}</option>)}
+            </select>
+            <ChevronDown size={16} className="grocery-view-select-icon" />
+          </div>
+          {selectedList?.source === 'icloud' && (
             <button
               type="button"
               className="grocery-view-refresh"

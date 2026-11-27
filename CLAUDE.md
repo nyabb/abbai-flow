@@ -2,9 +2,9 @@
 
 ## Architecture
 
-- React 19 + TypeScript + Vite SPA (web only — no native shell)
-- Home Assistant add-on with ingress support
-- Docker for the server; the browser talks to HA directly
+- React 19 + TypeScript + Vite SPA
+- Node server for the SPA, household data, uploaded photos, and connected service APIs
+- Docker image for self-hosted deployments
 
 ## Display and Kid Display behavior
 
@@ -30,7 +30,7 @@ Commands:
 ```bash
 npm test               # Vitest (frontend)
 npm run test:server    # node --test server/__tests__/app.test.cjs (backend)
-npm run test:e2e       # Playwright browser suite (real server + fake HA; see e2e/)
+npm run test:e2e       # Playwright browser suite (real server; see e2e/)
 npm run test:all       # all three
 npm run test:coverage  # v8 coverage + threshold ratchet (src/api, src/utils)
 npm run lint           # ESLint 9 flat config (expect 0 errors)
@@ -57,10 +57,6 @@ fails to collect, and the suite reports "no tests" instead of failing loudly.
 
 Backend rules that are easy to break:
 
-- Proxy/HA transports must follow the configured protocol (`transportFor` /
-  `defaultPortFor`) — do not hard-code `http`/port 80, HA may be HTTPS.
-- `resolveHaUrl()` resolves the request path relatively so the Supervisor base
-  `http://supervisor/core` keeps its `/core` prefix.
 - Every mutating endpoint passes `isAllowedOrigin()` (CSRF guard); native shells
   (`capacitor://localhost`) are allowed explicitly, extra hosts via
   `ABBAI_FLOW_ALLOWED_ORIGINS`.
@@ -73,37 +69,21 @@ See `docs/engineering-review.md` for the full review, findings and open items.
 
 ### Deployment configuration (container)
 
-Configure Home Assistant, Encore, and Spotify credentials in **Settings →
-Integrations** after starting the image. The server stores these values in
-`/data/integration-settings.json` with owner-only permissions. Legacy
-integration environment variables remain initial defaults until the first
-settings save; saved values take precedence after that. New Compose examples
-must not require app credentials in environment variables.
+Configure connected services in **Settings → Integrations** after starting the
+image. The server stores credentials in `/data/integration-settings.json` with
+owner-only permissions. New Compose examples must not require app credentials
+in environment variables.
 
-Paths, the CSRF allow-list and a private CA use `ABBAI_FLOW_*` names
+Paths and the CSRF allow-list use `ABBAI_FLOW_*` names
 (`ABBAI_FLOW_DATA`, `ABBAI_FLOW_DIST`, `ABBAI_FLOW_ALLOWED_ORIGINS`,
-`ABBAI_FLOW_HA_CA`, `ABBAI_FLOW_PORT`). **Renamed in 2.0.0** — the old
+`ABBAI_FLOW_PORT`). **Renamed in 2.0.0** — the old
 `BEACON_*` spellings are not read any more, and `docs/upgrade-2.0.0.md` has the
 mapping. Do not add silent fallbacks for them: a stale data path would split a
 household's documents across two directories.
 
-`server/app.cjs` serves `/runtime-config.js` with the HA URL and other safe
-defaults. That file is what tells the SPA it sits behind the proxy (so it stops
-asking for a token) — it must never contain integration secrets. `index.html`
-loads it before the bundle; the copy in `public/` is an empty stub for
-`npm run dev`.
-
-### HA Todo Items: Service Call with `?return_response`
-
-Don't read `entity.attributes.items` — it doesn't exist. Use:
-
-```
-POST /api/services/todo/get_items?return_response
-Body: {"entity_id": "todo.xxx"}
-Response: { service_response: { "todo.xxx": { items: [...] } } }
-```
-
-Filter out `unavailable` entities during discovery. Calling get_items on unavailable entities returns HTTP 500.
+`server/app.cjs` serves `/runtime-config.js` with safe deployment settings.
+Never put integration secrets in that file. `index.html` loads it before the
+bundle; the copy in `public/` is an empty stub for `npm run dev`.
 
 ### Semantic Release
 

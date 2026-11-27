@@ -1,4 +1,4 @@
-export type PhotoSource = 'local' | 'google_photos' | 'ha_media' | 'uploaded';
+export type PhotoSource = 'uploaded';
 
 export interface Photo {
   url: string;

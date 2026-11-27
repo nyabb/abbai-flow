@@ -193,10 +193,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.general.debugModeLabel': 'Debugmodus',
   'settings.general.debugModeSublabel':
     'Toon een algemeen logboek van API-aanroepen, antwoorden en fouten.',
-  'settings.display.ingressUrlUnavailable':
-    'Een deelbare display-URL is niet beschikbaar binnen Home Assistant. Open Abbai Flow op het doelscherm en kies ‘Op dit apparaat gebruiken’.',
-
-  // ---- settings: appearance ----
   'settings.appearance.title': 'Weergave',
   'settings.appearance.desc': 'Pas het uiterlijk van je scherm aan.',
   'settings.appearance.themeTitle': 'Thema',
@@ -229,12 +225,8 @@ export const nl: Record<TranslationKey, string> = {
   'settings.family.photoHint': 'Wordt getoond in plaats van de emoji bij gezinsleden.',
   'settings.family.photoUpload': 'Foto uploaden',
   'settings.family.photoRemove': 'Foto verwijderen',
-  'settings.family.photoFromHa': 'Foto uit Home Assistant gebruiken',
   'settings.family.photoError':
     'Dat bestand kon niet worden gebruikt. Probeer een PNG-, JPEG- of WebP-afbeelding.',
-  'settings.family.haMembersLabel': 'Uit Home Assistant',
-  'settings.family.haMembersEmpty':
-    'Geen Home Assistant-personen gevonden. Controleer of Abbai Flow Home Assistant kan bereiken en herlaad de pagina.',
   'settings.family.avatarCategory.people': 'Personen',
   'settings.family.avatarCategory.skinTones': 'Huidtinten',
   'settings.family.avatarCategory.faces': 'Gezichten',
@@ -304,17 +296,11 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- settings: integrations ----
   'settings.integrations.title': 'Integraties',
-  'settings.integrations.desc': 'Beheer verbindingen met Home Assistant en andere diensten.',
-  'settings.integrations.homeAssistantTitle': 'Home Assistant',
+  'settings.integrations.desc': 'Beheer verbindingen met ondersteunde diensten.',
   'settings.integrations.connectionStatusLabel': 'Verbindingsstatus',
   'settings.integrations.connected': 'Verbonden',
   'settings.integrations.disconnected': 'Niet verbonden',
   'settings.integrations.configured': 'Ingesteld',
-  'settings.integrations.haUrlLabel': 'Home Assistant-URL',
-  'settings.integrations.haUrlHelp':
-    'Adres waarmee Abbai Flow verbinding maakt met Home Assistant.',
-  'settings.integrations.haTokenLabel': 'Langdurige toegangstoken',
-  'settings.integrations.haTokenHelp': 'Maak een token aan in je Home Assistant-profiel.',
   'settings.integrations.secretSaved': 'Er is een geheim opgeslagen.',
   'settings.integrations.clearSecret': 'Opgeslagen geheim verwijderen',
   'settings.integrations.secretRemoved': 'Opgeslagen geheim verwijderd.',
@@ -322,7 +308,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.hideSecret': 'Geheim verbergen',
   'settings.integrations.notConfigured': 'Niet ingesteld',
   'settings.integrations.testConnection': 'Verbinding testen',
-  'settings.integrations.testSuccess': 'Verbinding met Home Assistant is gelukt.',
   'settings.integrations.save': 'Integratie-instellingen opslaan',
   'settings.integrations.saving': 'Opslaan…',
   'settings.integrations.saved': 'Instellingen opgeslagen.',
@@ -386,8 +371,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.integrations.defaultPlayerLabel': 'Standaardspeler',
   'settings.integrations.defaultPlayerSublabel': 'Standaard gebruikte mediaspeler',
   'settings.integrations.photosTitle': "Foto's",
-  'settings.integrations.sourceDirectoryLabel': 'Bronmap',
-  'settings.integrations.sourceDirectorySublabel': 'Pad naar de fotomap op HA',
   'settings.integrations.slideshowIntervalLabel': 'Diavoorstellingsinterval',
   'settings.integrations.slideshowIntervalSublabel': 'Seconden tussen fotowisselingen',
   'settings.integrations.transitionStyleLabel': 'Overgangsstijl',
@@ -447,8 +430,6 @@ export const nl: Record<TranslationKey, string> = {
   'settings.about.title': 'Over',
   'settings.about.desc': 'Versie-informatie, debugtools en links.',
   'settings.about.version': 'Versie',
-  'settings.about.homeAssistant': 'Home Assistant',
-  'settings.about.haUrl': 'HA-URL',
   'settings.about.sourceCode': 'Broncode',
   'settings.about.github': 'GitHub',
   'settings.about.license': 'Licentie',
@@ -492,7 +473,7 @@ export const nl: Record<TranslationKey, string> = {
   'timer.lapN': 'Ronde {n}',
   'photoFrame.noPhotos': "Geen foto's beschikbaar",
   'photoFrame.loading': "Foto's laden…",
-  'photoFrame.addPhotosHint': "Voeg foto's toe aan je Home Assistant-mediamap",
+  'photoFrame.addPhotosHint': 'Upload foto’s via Instellingen → Foto’s.',
   'photoFrame.photoAlt': 'Foto',
   // ---- chores view ----
   'chores.title': 'Karweitjes',
@@ -570,7 +551,7 @@ export const nl: Record<TranslationKey, string> = {
 
   // ---- music view ----
   'music.noPlayers': 'Geen mediaspelers',
-  'music.noPlayersDesc': 'Verbind een mediaspeler in Home Assistant om hier muziek te bedienen.',
+  'music.noPlayersDesc': 'Koppel een muziekdienst bij Integraties om hier muziek af te spelen.',
   'music.selectPlayer': 'Speler selecteren',
   'music.nowPlaying': 'Nu bezig',
   'music.volume': 'Volume',
@@ -584,7 +565,6 @@ export const nl: Record<TranslationKey, string> = {
   'music.albumArt': 'Albumhoes',
   'music.sourceTabs': 'Muziekbron',
   'music.spotify': 'Spotify',
-  'music.homeAssistant': 'Home Assistant',
   'music.spotifyStatusNotConfigured': 'Niet ingesteld',
   'music.spotifyStatusLoggedOut': 'Spotify uitgelogd',
   'music.spotifyStatusDeviceInactive': 'Apparaat inactief',
@@ -738,34 +718,6 @@ export const nl: Record<TranslationKey, string> = {
   'viewName.name': 'Naam',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Welkom bij Abbai Flow',
-  'onboarding.welcomeDesc': 'Verbind je Home Assistant om te beginnen.',
-  'onboarding.getStarted': 'Aan de slag',
-  'onboarding.connectTitle': 'Verbinden met Home Assistant',
-  'onboarding.connectDesc': 'Voer de URL van je Home Assistant-instantie in.',
-  'onboarding.haUrl': 'Home Assistant URL',
-  'onboarding.haUrlPlaceholder': 'https://homeassistant.local:8123',
-  'onboarding.connect': 'Verbinden',
-  'onboarding.connecting': 'Verbinden...',
-  'onboarding.authTitle': 'Authenticatie',
-  'onboarding.authDesc': 'Kies hoe je wilt authenticeren met Home Assistant.',
-  'onboarding.tokenMethod': 'Langdurig toegangstoken',
-  'onboarding.tokenMethodDesc': 'Gebruik een token gegenereerd vanuit je Home Assistant-profiel.',
-  'onboarding.tokenPlaceholder': 'Plak je token hier',
-  'onboarding.tokenHint': 'Hoe maak je een token:',
-  'onboarding.tokenHintDetail': 'Ga naar je HA-profiel → Langdurige tokens → Token aanmaken',
-  'onboarding.oauthMethod': 'Inloggen met Home Assistant',
-  'onboarding.oauthMethodDesc': 'Authenticeer met je Home Assistant-referenties via OAuth2.',
-  'onboarding.openHA': 'Home Assistant openen',
-  'onboarding.completeSetup': 'Installatie voltooien',
-  'onboarding.urlError': 'URL moet beginnen met http:// of https://',
-  'onboarding.connectionFailed':
-    'Verbinding mislukt (HTTP {status}). Controleer de URL en probeer opnieuw.',
-  'onboarding.notReachable':
-    'Kan Home Assistant niet bereiken. Controleer de URL en zorg ervoor dat het toegankelijk is.',
-  'onboarding.tokenRequired': 'Voer je toegangstoken in.',
-
-  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': 'Taakjes & Routines',
   'planner.loading': 'Taakjes en routines laden...',
   'planner.shortTitle': 'Taakjes',

@@ -1,8 +1,7 @@
 # Abbai Flow — standalone container image.
 #
-# The application is a single Node process: it serves the built SPA and proxies
-# Home Assistant so the browser never needs a token. No add-on runtime, no
-# ingress path, no supervisor base URL.
+# The application runs as a single Node process that serves the built SPA and
+# its same-origin API.
 
 ARG BUILD_FROM=node:20-alpine
 
@@ -34,10 +33,7 @@ COPY server.js /app/server.js
 COPY server/ /app/server/
 # Compiled by `npm run build:server` in the builder stage (src/api/planner-rules.ts).
 COPY --from=builder /app/server/build /app/server/build
-COPY custom_sentences/ /app/custom_sentences/
-COPY custom_intents/ /app/custom_intents/
-
-# Home Assistant, Encore, and Spotify integration settings are stored in /data.
+# Integration settings are stored in /data.
 VOLUME ["/data"]
 EXPOSE 3000
 

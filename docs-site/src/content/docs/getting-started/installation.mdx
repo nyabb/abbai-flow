@@ -6,11 +6,7 @@ order: 3
 
 # Getting Started
 
-Abbai Flow runs as a Docker container alongside Home Assistant. It can also run without Home Assistant, using local calendars and lists. Apple Reminders can connect directly through iCloud.
-
 ## Docker
-
-Start the container, then open **Settings → Integrations** to add the Home Assistant URL and long-lived access token if you want calendars, media players, weather, or lists:
 
 ```bash
 docker run -d \
@@ -21,29 +17,27 @@ docker run -d \
   ghcr.io/nyabb/abbai-flow:latest
 ```
 
-Open `http://<server-address>:3000`. Images are available for `linux/amd64` and `linux/arm64`.
+Open `http://<server-address>:3000`. Keep the `/data` volume mounted so family
+records, integration settings, and screen saver photos persist across updates.
+Images are available for `linux/amd64` and `linux/arm64`.
 
-Without Home Assistant, local calendars, tasks, and shopping lists remain
-available. Connect to Apple iCloud in **Settings → Integrations** to sync your
-Reminders lists directly.
-
-### Docker Compose
+## Docker Compose
 
 ```yaml
 services:
   abbai-flow:
     image: ghcr.io/nyabb/abbai-flow:latest
     restart: unless-stopped
-    ports:
-      - '3000:3000'
-    volumes:
-      - abbai-flow-data:/data
+    ports: ['3000:3000']
+    volumes: ['abbai-flow-data:/data']
 
 volumes:
   abbai-flow-data:
 ```
 
-Integration settings are stored in the persistent `/data` volume.
+Open **Settings → Integrations** to connect the calendar, reminders, weather,
+music, or meal services your household uses. Local calendars and task lists
+work without external connections.
 
 ## Local development
 
@@ -54,8 +48,7 @@ npm ci
 npm run dev
 ```
 
-The development server runs at `http://localhost:5173`. Enter Home Assistant
-credentials in onboarding or **Settings → Integrations**. Home Assistant must
-allow requests from the development origin.
-
-See [Configuration](/docs/customization/configuration/) for the available environment variables and [Deployment](/docs/getting-started/deployment/) for reverse proxy and kiosk setup.
+The Vite development server runs at `http://localhost:3000` and uses browser
+storage. See [Configuration](/docs/customization/configuration/) for server
+environment variables and [Deployment](/docs/getting-started/deployment/) for
+reverse proxy and kiosk setup.

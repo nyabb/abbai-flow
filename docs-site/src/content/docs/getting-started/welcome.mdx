@@ -1,93 +1,25 @@
 ---
 title: "Abbai Flow — Your family's daily signal"
-description: 'An open-source, self-hosted family organizer for shared displays, routines, chores, calendars, and everyday family life.'
+description: 'A self-hosted family organizer for shared displays, calendars, chores, routines, and everyday family life.'
 order: 1
 ---
 
 # A better family organizer
 
-Abbai Flow is an open-source, self-hosted family organizer for shared displays, tablets, and phones. Keep calendars, chores, rewards, lists, music, and family routines together, with your data on your own network.
+Abbai Flow keeps family calendars, chores, rewards, meals, lists, and routines
+together on a shared display, tablet, or phone. The app and household data run
+on your own server.
 
-Abbai Flow runs as a **Docker container** alongside Home Assistant, or in standalone mode without a Home Assistant connection.
+## What you can do
 
----
-
-## Feature overview
-
-### Weekly calendar with drag-and-drop
-
-View the entire week at a glance. Create, edit, and delete events directly on the display. Drag events to reschedule them. Recurring events (daily, weekly, monthly) are supported out of the box. Each calendar gets its own color so you can tell family members apart from across the room.
-
-### Calendar, tasks, and chores
-
-The Calendar view shows the week at a glance, with today's schedule, open tasks, and chores alongside it. Tasks and chores can be checked off from the calendar, and event details stay close to the schedule.
-
-### Family members and chores
-
-Add up to 8 family members with custom avatars (55+ emoji options across 5 categories), colors, roles (parent or child), and optional PINs. Assign chores with points and group daily jobs into routines.
-
-### Grocery lists
-
-Connect directly to Apple iCloud in **Settings → Integrations** to manage Apple Reminders lists from Abbai Flow. Quick-add, edit, complete, delete, set due dates and priorities, and move reminders between sections.
-
-### Music controls
-
-Control any Music Assistant or media player entity in Home Assistant. See album art, track info, and a progress bar. Switch between multiple speakers. A persistent "Now Playing" bar appears at the bottom of any view when music is playing.
-
-### Photo screen saver
-
-Show photos when the screen saver starts. Choose photos only, clock only, or both in **Settings → Display**; configure the image folder and slideshow timing in **Settings → Integrations → Photos**.
-
-### Built-in themes
-
-Choose from Light, Midnight, Nord Ice, Dracula, Monokai, Rose, and Forest. An "Auto" mode switches between light and dark based on time of day (6 AM / 7 PM). Themes are applied via CSS custom properties, so creating your own is straightforward.
-
-### Timer and stopwatch
-
-A slide-out panel with countdown timer (1, 5, 10, 15, 30 minute presets) and stopwatch mode with lap tracking. Audio alerts sound when the countdown finishes.
-
-### Notifications
-
-Browser push notifications and Home Assistant mobile app notifications fire 15 minutes before calendar events. No configuration needed beyond granting browser permission.
-
-### Screen saver and burn-in protection
-
-After 5 minutes of inactivity the screen dims. After 10 minutes a clock screensaver appears with the time and date, repositioning every 30 seconds to prevent burn-in. Any touch or movement wakes the display.
-
-### Self-hosted and private
-
-Your family's data stays on your local network. No accounts, no cloud services, no telemetry. Calendar data flows from Google/CalDAV through Home Assistant to Abbai Flow — never to an external server.
-
-### Free forever
-
-Abbai Flow is open source under the MIT license. No subscriptions, no premium tiers, no "free trial" that expires.
-
----
+- Add local events or connect CalDAV, ICS, and Google calendar sources.
+- Manage chores, routines, rewards, points, and family profiles.
+- Connect iCloud Reminders or use built-in task lists.
+- Configure weather, music, and meal data sources from Settings.
+- Upload photos for a screen saver with a clock, photos, or both.
+- Use the responsive layout on a phone, tablet, or wall display.
 
 ## Get started
 
-Ready to set up Abbai Flow? Head to the [Getting Started guide](/docs/getting-started/installation/) to run the Docker container and connect your first calendar.
-
----
-
-## Documentation
-
-| Guide                                                   | Description                                                      |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| [Getting Started](/docs/getting-started/installation/)  | Installation, setup, and first-time configuration                |
-| [Calendar](/docs/features/calendar/)                    | Week view, creating events, recurring events, drag-to-reschedule |
-| [Family Members](/docs/features/family/)                | Adding members, avatars, colors, roles, PINs                     |
-| [Chores](/docs/features/chores/)                        | Creating chores, values, streaks, routines                       |
-| [Grocery](/docs/features/grocery/)                      | Apple Reminders lists connected directly through iCloud           |
-| [Music](/docs/features/music/)                          | Media player controls, Now Playing bar                           |
-| [Photos](/docs/features/photos/)                        | Photo screen saver and slideshow settings                         |
-| [Themes](/docs/customization/themes/)                   | All 7 themes, auto dark mode, custom themes                      |
-| [Timer](/docs/features/timer/)                          | Countdown and stopwatch modes                                    |
-| [Notifications](/docs/features/notifications/)          | Browser and mobile push notifications                            |
-| [Screen Saver](/docs/features/screensaver/)             | Dim mode, clock screensaver, anti-burn-in                        |
-| [Configuration](/docs/customization/configuration/)     | Complete options reference                                       |
-| [Deployment](/docs/getting-started/deployment/)         | Docker, reverse proxy, wall displays, and hardware                |
-| [FAQ](/docs/reference/faq/)                             | 20+ common questions answered                                    |
-| [AI and Voice Control](/docs/reference/ai-integration/) | Voice API, MCP server, HA Assist custom sentences                |
-| [API Reference](/docs/reference/api-reference/)         | WebSocket API, calendar, weather, media                          |
-| [Contributing](/docs/reference/contributing/)           | Architecture, development setup, adding features                 |
+Follow the [installation guide](/docs/getting-started/installation/) to start
+the Docker image and configure the services your household uses.
