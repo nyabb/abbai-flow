@@ -1,3 +1,5 @@
+# [4.2.0](https://github.com/nyabb/abbai-flow/compare/v4.1.0...v4.2.0) (2026-11-27)
+
 # [4.1.0](https://github.com/nyabb/abbai-flow/compare/v4.0.0...v4.1.0) (2026-11-27)
 
 
