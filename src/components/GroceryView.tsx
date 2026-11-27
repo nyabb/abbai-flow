@@ -205,6 +205,7 @@ export function GroceryView({
   const [newItemSectionID, setNewItemSectionID] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<TodoItem | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
@@ -231,6 +232,12 @@ export function GroceryView({
     toggleTask,
     removeTask,
   } = useLocalTasks();
+
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const timer = setTimeout(() => setConfirmingDelete(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmingDelete]);
 
   const groceryKey = groceryListIds.join('|');
   const taskKey = taskListIds.join('|');
@@ -531,6 +538,12 @@ export function GroceryView({
   };
 
   const handleDelete = async (item: TodoItem) => {
+    const deleteKey = `${selectedListId}:${item.uid}`;
+    if (confirmingDelete !== deleteKey) {
+      setConfirmingDelete(deleteKey);
+      return;
+    }
+    setConfirmingDelete(null);
     if (item.source === 'local') {
       removeTask(item.uid);
       setLocalItems((current) => current.filter((candidate) => candidate.uid !== item.uid));
@@ -585,12 +598,12 @@ export function GroceryView({
         )}
         <button
           type="button"
-          className="grocery-view-delete"
+          className={`grocery-view-delete${confirmingDelete === `${selectedListId}:${item.uid}` ? ' is-confirming' : ''}`}
           onClick={() => void handleDelete(item)}
-          aria-label={t('grocery.deleteItem')}
-          title={t('grocery.deleteItem')}
+          aria-label={confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : t('grocery.deleteItem')}
+          title={confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : t('grocery.deleteItem')}
         >
-          <Trash2 size={14} />
+          {confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : <Trash2 size={14} />}
         </button>
       </>
     );

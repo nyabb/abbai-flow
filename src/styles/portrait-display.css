@@ -1,6 +1,6 @@
-/* Qudoo reference treatment for tall wall displays and the separate phone
-   layout. These rules refine the existing components only; interactions stay
-   in their current React views. */
+/* Qudoo reference treatment for iPad-sized screens and tall wall displays.
+   The phone layout stays separate. These rules refine existing components;
+   interactions stay in their current React views. */
 
 .portrait-agenda {
   display: none;
@@ -29,7 +29,8 @@
   border-radius: var(--skin-pill, 999px);
 }
 
-@media (min-width: 900px) and (min-height: 1200px) and (orientation: portrait) {
+/* Full-height iPads and portrait wall displays use the Qudoo composition. */
+@media (min-width: 700px) and (min-height: 900px) and (orientation: portrait) {
   :root {
     --mobile-tab-bar-content-height: 86px;
     --mobile-tab-bar-height: calc(
@@ -773,7 +774,7 @@
   }
 }
 
-@media (min-width: 900px) and (min-height: 1200px) and (orientation: portrait) {
+@media (min-width: 700px) and (min-height: 900px) and (orientation: portrait) {
   .grocery-view {
     background: color-mix(in srgb, var(--accent) 4%, var(--bg-primary));
   }
@@ -1971,6 +1972,35 @@
   .planner-col--free .planner-col-body {
     display: flex;
     flex-direction: column;
+  }
+}
+
+/* Tablets and wall displays use rounded-square header controls with icons
+   centered in consistent hit areas. The header skin otherwise falls back to
+   pill-shaped controls, which read as circles for icon-only buttons. */
+@media (min-width: 700px) and (min-height: 700px) {
+  .abbai-flow {
+    --skin-pill: 16px;
+  }
+
+  .abbai-flow-header .icon-btn,
+  .page-header-sound-toggle {
+    box-sizing: border-box;
+    display: grid;
+    flex: 0 0 44px;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    border-radius: 16px;
+  }
+
+  .abbai-flow-header .icon-btn svg,
+  .page-header-sound-toggle svg {
+    display: block;
+    flex: 0 0 auto;
   }
 }
 

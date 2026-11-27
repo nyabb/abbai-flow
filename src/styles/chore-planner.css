@@ -1734,16 +1734,35 @@
   padding: 6px 0 0;
 }
 
-.planner-mobile-open-child {
-  flex: 1 1 auto;
+.planner-ghost.planner-mobile-open-child {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: flex-start;
-  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--planner-accent);
+  background: transparent;
+  box-shadow: none;
   font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.planner-mobile-open-child svg {
-  width: 16px;
-  height: 16px;
+.planner-ghost.planner-mobile-open-child:hover {
+  color: var(--planner-ink);
+  background: transparent;
+}
+
+.planner-ghost.planner-mobile-open-child:focus-visible {
+  outline: 2px solid var(--planner-accent);
+  outline-offset: 3px;
 }
 
 .planner-mobile-tab {

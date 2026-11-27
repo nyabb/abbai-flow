@@ -6,7 +6,7 @@
  * and row renderers), so the board has no ChoresMan knowledge of its own.
  */
 import { useEffect } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -159,7 +159,6 @@ export function ChoreBoard({
               className="planner-ghost planner-mobile-open-child"
               onClick={() => onOpenChild(member.id)}
             >
-              <ChevronRight aria-hidden="true" />
               {c.openChild}
             </button>
             {!parentMode && (
