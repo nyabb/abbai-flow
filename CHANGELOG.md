@@ -1,3 +1,10 @@
+## [3.1.1](https://github.com/nyabb/abbai-flow/compare/v3.1.0...v3.1.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* surface Spotify playback transfer errors ([84f5bfa](https://github.com/nyabb/abbai-flow/commit/84f5bfae85ae3721cb1703643fc56c84eb37b69b))
+
 # [3.1.0](https://github.com/nyabb/abbai-flow/compare/v3.0.0...v3.1.0) (2026-11-27)
 
 
