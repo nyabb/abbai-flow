@@ -64,36 +64,38 @@ function isGroceryListSelections(value: unknown): value is GroceryListSelections
   return typeof selections.grocery === 'string' && typeof selections.tasks === 'string';
 }
 
-function GroceryDragHandle({ item, label }: { item: TodoItem; label: string }) {
+function GroceryDraggableItemRow({
+  item,
+  label,
+  children,
+}: {
+  item: TodoItem;
+  label: string;
+  children: React.ReactNode;
+}) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, isDragging, transform } = useDraggable({
     id: `reminder:${item.uid}`,
     data: { itemUid: item.uid },
   });
 
   return (
-    <button
+    <div
       ref={(node) => {
         setNodeRef(node);
         setActivatorNodeRef(node);
       }}
-      type="button"
-      className={`grocery-view-drag-handle${isDragging ? ' is-dragging' : ''}`}
-      aria-label={label}
-      title={label}
+      className={`grocery-view-item-row${isDragging ? ' is-dragging' : ''}`}
       style={{ transform: CSS.Translate.toString(transform) }}
       {...attributes}
       {...listeners}
-      onPointerDown={(event) => {
-        event.stopPropagation();
-        listeners?.onPointerDown?.(event);
-      }}
-      onClick={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-      }}
+      role="group"
+      aria-label={`${item.summary}: ${label}`}
     >
-      <GripVertical size={17} aria-hidden="true" />
-    </button>
+      {children}
+      <span className="grocery-view-drag-indicator" aria-hidden="true">
+        <GripVertical size={17} />
+      </span>
+    </div>
   );
 }
 
@@ -544,17 +546,17 @@ export function GroceryView({
   };
 
   const groupedUnchecked = useMemo(
-    () => groupBySection(uncheckedItems, sections, t('grocery.otherSection'), t('grocery.noSection')),
+    () => groupBySection(uncheckedItems, sections, t('grocery.otherSection')),
     [uncheckedItems, sections, t],
   );
   const groupedChecked = useMemo(
-    () => groupBySection(checkedItems, sections, t('grocery.otherSection'), t('grocery.noSection')),
+    () => groupBySection(checkedItems, sections, t('grocery.otherSection')),
     [checkedItems, sections, t],
   );
 
-  const renderItem = (item: TodoItem, checked = false) => (
-    <div key={item.uid} className="grocery-view-item-row-wrap">
-      <div className="grocery-view-item-row">
+  const renderItem = (item: TodoItem, checked = false) => {
+    const controls = (
+      <>
         <button
           type="button"
           className={`grocery-view-item${checked ? ' grocery-view-item--checked' : ''}`}
@@ -589,60 +591,70 @@ export function GroceryView({
         >
           <Trash2 size={14} />
         </button>
-        {item.source === 'icloud' && sections.length > 0 && (
-          <GroceryDragHandle item={item} label={t('grocery.moveSection')} />
+      </>
+    );
+    const canMoveSection = item.source === 'icloud' && sections.length > 0;
+
+    return (
+      <div key={item.uid} className="grocery-view-item-row-wrap">
+        {canMoveSection ? (
+          <GroceryDraggableItemRow item={item} label={t('grocery.moveSection')}>
+            {controls}
+          </GroceryDraggableItemRow>
+        ) : (
+          <div className="grocery-view-item-row">{controls}</div>
+        )}
+        {editingItem?.uid === item.uid && (
+          <form className="grocery-view-edit-panel" onSubmit={handleEdit}>
+            <input
+              className="grocery-view-input"
+              value={editTitle}
+              onChange={(event) => setEditTitle(event.target.value)}
+              aria-label={t('grocery.itemTitle')}
+              required
+            />
+            <textarea
+              className="grocery-view-edit-notes"
+              value={editNotes}
+              onChange={(event) => setEditNotes(event.target.value)}
+              placeholder={t('grocery.notes')}
+              aria-label={t('grocery.notes')}
+              rows={2}
+            />
+            <label className="grocery-view-edit-field">
+              <span>{t('grocery.dueDate')}</span>
+              <input type="datetime-local" value={editDueDate} onChange={(event) => setEditDueDate(event.target.value)} />
+            </label>
+            <label className="grocery-view-edit-field">
+              <span>{t('grocery.priority')}</span>
+              <select value={editPriority} onChange={(event) => setEditPriority(Number(event.target.value))}>
+                <option value={0}>{t('grocery.priorityNone')}</option>
+                <option value={1}>{t('grocery.priorityHigh')}</option>
+                <option value={5}>{t('grocery.priorityMedium')}</option>
+                <option value={9}>{t('grocery.priorityLow')}</option>
+              </select>
+            </label>
+            <label className="grocery-view-edit-flag">
+              <input type="checkbox" checked={editFlagged} onChange={(event) => setEditFlagged(event.target.checked)} />
+              <span>{t('grocery.flagged')}</span>
+            </label>
+            <label className="grocery-view-edit-flag">
+              <input type="checkbox" checked={editAllDay} onChange={(event) => setEditAllDay(event.target.checked)} />
+              <span>{t('grocery.allDay')}</span>
+            </label>
+            <div className="grocery-view-edit-actions">
+              <button type="button" className="settings-btn" onClick={() => setEditingItem(null)}>
+                {t('common.cancel')}
+              </button>
+              <button type="submit" className="settings-btn settings-btn--primary" disabled={submitting || !editTitle.trim()}>
+                {submitting ? <ActivitySpinner /> : t('grocery.saveReminder')}
+              </button>
+            </div>
+          </form>
         )}
       </div>
-      {editingItem?.uid === item.uid && (
-        <form className="grocery-view-edit-panel" onSubmit={handleEdit}>
-          <input
-            className="grocery-view-input"
-            value={editTitle}
-            onChange={(event) => setEditTitle(event.target.value)}
-            aria-label={t('grocery.itemTitle')}
-            required
-          />
-          <textarea
-            className="grocery-view-edit-notes"
-            value={editNotes}
-            onChange={(event) => setEditNotes(event.target.value)}
-            placeholder={t('grocery.notes')}
-            aria-label={t('grocery.notes')}
-            rows={2}
-          />
-          <label className="grocery-view-edit-field">
-            <span>{t('grocery.dueDate')}</span>
-            <input type="datetime-local" value={editDueDate} onChange={(event) => setEditDueDate(event.target.value)} />
-          </label>
-          <label className="grocery-view-edit-field">
-            <span>{t('grocery.priority')}</span>
-            <select value={editPriority} onChange={(event) => setEditPriority(Number(event.target.value))}>
-              <option value={0}>{t('grocery.priorityNone')}</option>
-              <option value={1}>{t('grocery.priorityHigh')}</option>
-              <option value={5}>{t('grocery.priorityMedium')}</option>
-              <option value={9}>{t('grocery.priorityLow')}</option>
-            </select>
-          </label>
-          <label className="grocery-view-edit-flag">
-            <input type="checkbox" checked={editFlagged} onChange={(event) => setEditFlagged(event.target.checked)} />
-            <span>{t('grocery.flagged')}</span>
-          </label>
-          <label className="grocery-view-edit-flag">
-            <input type="checkbox" checked={editAllDay} onChange={(event) => setEditAllDay(event.target.checked)} />
-            <span>{t('grocery.allDay')}</span>
-          </label>
-          <div className="grocery-view-edit-actions">
-            <button type="button" className="settings-btn" onClick={() => setEditingItem(null)}>
-              {t('common.cancel')}
-            </button>
-            <button type="submit" className="settings-btn settings-btn--primary" disabled={submitting || !editTitle.trim()}>
-              {submitting ? <ActivitySpinner /> : t('grocery.saveReminder')}
-            </button>
-          </div>
-        </form>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="grocery-view" data-grocery-view>
@@ -771,35 +783,27 @@ function groupBySection(
   items: TodoItem[],
   sections: ICloudReminderSection[],
   otherSectionName: string,
-  noSectionName: string,
 ) {
   const groups = new Map<string, { id: string; name: string; order: number | null; items: TodoItem[] }>();
-  for (const section of sections) {
-    groups.set(section.id, {
-      id: section.id,
-      name: section.name || otherSectionName,
-      order: section.order,
-      items: [],
-    });
-  }
-  groups.set('__none__', { id: '__none__', name: noSectionName, order: null, items: [] });
   for (const item of items) {
     const section = sections.find((candidate) => candidate.id === item.sectionID);
     const id = item.sectionID || '__none__';
     const name = section?.name || item.sectionName || '';
     const group = groups.get(id) || {
       id,
-      name: name || (id === '__none__' ? '' : otherSectionName),
+      name: name || otherSectionName,
       order: section?.order ?? null,
       items: [],
     };
     group.items.push(item);
     groups.set(id, group);
   }
-  return [...groups.values()].sort((a, b) => {
-    if (a.order == null && b.order == null) return a.name.localeCompare(b.name);
-    if (a.order == null) return 1;
-    if (b.order == null) return -1;
-    return a.order - b.order;
-  });
+  return [...groups.values()]
+    .filter((group) => group.items.length > 0)
+    .sort((a, b) => {
+      if (a.order == null && b.order == null) return a.name.localeCompare(b.name);
+      if (a.order == null) return 1;
+      if (b.order == null) return -1;
+      return a.order - b.order;
+    });
 }
