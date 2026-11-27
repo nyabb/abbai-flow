@@ -531,6 +531,42 @@
   margin-bottom: 22px;
 }
 
+.spotify-output-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 18px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.spotify-output-picker > span {
+  margin-right: 3px;
+  font-weight: 600;
+}
+
+.spotify-output-picker button {
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.spotify-output-picker button.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.spotify-output-picker button:disabled {
+  opacity: 0.58;
+  cursor: wait;
+}
+
 .spotify-panel-brand {
   gap: 12px;
   min-width: 0;

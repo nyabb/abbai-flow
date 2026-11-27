@@ -6,7 +6,19 @@ const PLAYLIST_SCOPES = [
   'playlist-read-collaborative',
   'playlist-modify-private',
   'playlist-modify-public',
+  'streaming',
+  'user-read-email',
+  'user-read-private',
+  'user-read-playback-state',
+  'user-modify-playback-state',
 ].join(' ');
+const PLAYBACK_SCOPES = [
+  'streaming',
+  'user-read-email',
+  'user-read-private',
+  'user-read-playback-state',
+  'user-modify-playback-state',
+];
 const AUTH_STATE_TTL_MS = 10 * 60 * 1000;
 
 export interface SpotifyPlaylist {
@@ -41,6 +53,7 @@ export interface SpotifyPlaylistStatus {
   credentialsConfigured: boolean;
   authorized: boolean;
   redirectConfigured: boolean;
+  playbackAuthorized?: boolean;
 }
 
 export type SpotifyPlaylistErrorCode =
@@ -76,7 +89,12 @@ export interface SpotifyPlaylistLibraryOptions {
 
 export interface SpotifyPlaylistTokenStore {
   load(): Promise<unknown | null>;
-  save(token: { accessToken: string; refreshToken: string; expiresAt: number }): Promise<void>;
+  save(token: {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+    scopes: string[];
+  }): Promise<void>;
   clear?(): Promise<void>;
 }
 
@@ -84,6 +102,7 @@ interface StoredSpotifyToken {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
+  scopes: string[];
 }
 
 interface JsonRecord {
@@ -180,13 +199,20 @@ function normalizeTrack(value: unknown): SpotifyPlaylistTrack | null {
 function validRedirectUri(value: string): boolean {
   try {
     const uri = new URL(value);
-    if (uri.search || uri.hash || !uri.pathname.endsWith('/abbai-flow/music/oauth/callback')) {
+    if (
+      uri.search ||
+      uri.hash ||
+      uri.username ||
+      uri.password ||
+      uri.hostname === 'localhost' ||
+      !uri.pathname.endsWith('/abbai-flow/music/oauth/callback')
+    ) {
       return false;
     }
     if (uri.protocol === 'https:') return true;
     return (
       uri.protocol === 'http:' &&
-      (uri.hostname === 'localhost' || uri.hostname === '127.0.0.1' || uri.hostname === '[::1]')
+      (uri.hostname === '127.0.0.1' || uri.hostname === '[::1]')
     );
   } catch {
     return false;
@@ -214,6 +240,10 @@ function tokenFromPayload(
     accessToken,
     refreshToken,
     expiresAt: now + Math.max(0, expiresIn) * 1000,
+    scopes:
+      typeof value.scope === 'string'
+        ? value.scope.split(/\s+/).filter(Boolean)
+        : (previous?.scopes || []),
   };
 }
 
@@ -257,6 +287,13 @@ export class SpotifyPlaylistLibrary {
       credentialsConfigured,
       authorized: Boolean(this.token?.refreshToken),
       redirectConfigured,
+      ...(this.token
+        ? {
+            playbackAuthorized: PLAYBACK_SCOPES.every(
+              (scope) => this.token?.scopes.includes(scope) === true,
+            ),
+          }
+        : {}),
     };
   }
 
@@ -279,7 +316,83 @@ export class SpotifyPlaylistLibrary {
     url.searchParams.set('redirect_uri', this.redirectUri);
     url.searchParams.set('scope', PLAYLIST_SCOPES);
     url.searchParams.set('state', state);
+    url.searchParams.set('show_dialog', 'true');
     return url.toString();
+  }
+
+  async getPlaybackAccessToken(): Promise<string> {
+    await this.ensurePlaybackAuthorization();
+    return this.getAccessToken();
+  }
+
+  async controlPlayback(deviceIdValue: unknown, actionValue: unknown, value?: unknown): Promise<void> {
+    await this.ensurePlaybackAuthorization();
+    const deviceId = this.validateDeviceId(deviceIdValue);
+    if (typeof actionValue !== 'string') {
+      throw new SpotifyPlaylistError('invalid_request', 400, 'Unsupported playback control');
+    }
+    const query = (values: Record<string, string>) => {
+      const parameters = new URLSearchParams({ ...values, device_id: deviceId });
+      return `?${parameters.toString()}`;
+    };
+    const request = (method: string, path: string, body?: unknown) =>
+      this.spotifyRequest(path, {
+        method,
+        ...(body === undefined ? {} : {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+      });
+
+    switch (actionValue) {
+      case 'activate':
+        await request('PUT', '/me/player', { device_ids: [deviceId], play: true });
+        return;
+      case 'playTrack':
+        if (typeof value !== 'string' || !/^spotify:track:[A-Za-z0-9]{1,64}$/.test(value)) {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify track URI');
+        }
+        await request('PUT', `/me/player/play${query({})}`, { uris: [value] });
+        return;
+      case 'play':
+        await request('PUT', `/me/player/play${query({})}`);
+        return;
+      case 'pause':
+        await request('PUT', `/me/player/pause${query({})}`);
+        return;
+      case 'previous':
+        await request('POST', `/me/player/previous${query({})}`);
+        return;
+      case 'next':
+        await request('POST', `/me/player/next${query({})}`);
+        return;
+      case 'seek':
+        if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid playback position');
+        }
+        await request('PUT', `/me/player/seek${query({ position_ms: String(value) })}`);
+        return;
+      case 'volume':
+        if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 100) {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid playback volume');
+        }
+        await request('PUT', `/me/player/volume${query({ volume_percent: String(value) })}`);
+        return;
+      case 'shuffle':
+        if (typeof value !== 'boolean') {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid shuffle setting');
+        }
+        await request('PUT', `/me/player/shuffle${query({ state: String(value) })}`);
+        return;
+      case 'repeat':
+        if (value !== 'off' && value !== 'context' && value !== 'track') {
+          throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid repeat setting');
+        }
+        await request('PUT', `/me/player/repeat${query({ state: value })}`);
+        return;
+      default:
+        throw new SpotifyPlaylistError('invalid_request', 400, 'Unsupported playback control');
+    }
   }
 
   async completeAuthorization(
@@ -473,6 +586,25 @@ export class SpotifyPlaylistLibrary {
     }
   }
 
+  private async ensurePlaybackAuthorization(): Promise<void> {
+    this.ensureConfigured();
+    await this.loadToken();
+    if (!this.token?.refreshToken) {
+      throw new SpotifyPlaylistError(
+        'not_authorized',
+        401,
+        'Connect a Spotify account to enable browser playback',
+      );
+    }
+    if (!PLAYBACK_SCOPES.every((scope) => this.token?.scopes.includes(scope) === true)) {
+      throw new SpotifyPlaylistError(
+        'forbidden',
+        403,
+        'Reconnect Spotify to enable browser playback',
+      );
+    }
+  }
+
   private async loadToken(): Promise<void> {
     if (!this.tokenStore || this.token || this.loadingToken) {
       await this.loadingToken;
@@ -491,6 +623,9 @@ export class SpotifyPlaylistLibrary {
             accessToken: value.accessToken,
             refreshToken: value.refreshToken,
             expiresAt: value.expiresAt,
+            scopes: Array.isArray(value.scopes)
+              ? value.scopes.filter((scope): scope is string => typeof scope === 'string')
+              : [],
           };
         }
       })
@@ -537,6 +672,13 @@ export class SpotifyPlaylistLibrary {
     const id = spotifyId(value);
     if (!id) throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify playlist ID');
     return id;
+  }
+
+  private validateDeviceId(value: unknown): string {
+    if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
+      throw new SpotifyPlaylistError('invalid_request', 400, 'Invalid Spotify device ID');
+    }
+    return value;
   }
 
   private async getAccessToken(forceRefresh = false): Promise<string> {
@@ -631,7 +773,7 @@ export class SpotifyPlaylistLibrary {
     if (status === 401)
       return new SpotifyPlaylistError('not_authorized', 401, 'Reconnect your Spotify account');
     if (status === 403)
-      return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied playlist access');
+      return new SpotifyPlaylistError('forbidden', 403, 'Spotify denied this request');
     if (status === 429)
       return new SpotifyPlaylistError('rate_limited', 429, 'Spotify is busy; try again shortly');
     return new SpotifyPlaylistError('unavailable', 502, 'Spotify is temporarily unavailable');

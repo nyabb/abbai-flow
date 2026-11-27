@@ -3,22 +3,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { waitFor } from '@testing-library/react';
 import { I18nContext, createI18n } from '../../i18n';
 import type { EncoreSnapshot } from '../../api/encore-music';
-import type { BluetoothSnapshot } from '../../api/bluetooth-types';
 import type { UseSpotifyPlaylistsResult } from '../../hooks/useSpotifyPlaylists';
 import { SpotifyMusicPanel } from '../SpotifyMusicPanel';
 
 const EN = createI18n('en-US');
-const BLUETOOTH: BluetoothSnapshot = {
-  configured: false,
-  connection: 'disabled',
-  adapter: null,
-  scanning: false,
-  devices: [],
-  challenge: null,
-  notice: null,
-  error: null,
-  updatedAt: 1,
-};
 
 function playlistLibrary(
   overrides: Partial<UseSpotifyPlaylistsResult> = {},
@@ -88,14 +76,14 @@ function renderPanel(
       <SpotifyMusicPanel
         snapshot={state}
         loading={loading}
+        output="encore"
+        browserLoading={false}
+        browserError={null}
+        onSelectBrowser={vi.fn(async () => ({ ok: true }))}
+        onSelectEncore={vi.fn(async () => ({ ok: true }))}
         onControl={vi.fn(async () => ({ ok: true }))}
         onSearch={onSearch}
         library={library}
-        bluetooth={{
-          snapshot: BLUETOOTH,
-          loading: false,
-          control: vi.fn(async () => ({ ok: true })),
-        }}
       />
     </I18nContext.Provider>,
   );
@@ -163,14 +151,14 @@ describe('SpotifyMusicPanel connection states', () => {
         <SpotifyMusicPanel
           snapshot={active}
           loading={false}
+          output="encore"
+          browserLoading={false}
+          browserError={null}
+          onSelectBrowser={vi.fn(async () => ({ ok: true }))}
+          onSelectEncore={vi.fn(async () => ({ ok: true }))}
           onSearch={onSearch}
           onControl={onControl}
           library={playlistLibrary()}
-          bluetooth={{
-            snapshot: BLUETOOTH,
-            loading: false,
-            control: vi.fn(async () => ({ ok: true })),
-          }}
         />
       </I18nContext.Provider>,
     );
@@ -267,14 +255,14 @@ describe('SpotifyMusicPanel connection states', () => {
         <SpotifyMusicPanel
           snapshot={snapshot()}
           loading={false}
+          output="encore"
+          browserLoading={false}
+          browserError={null}
+          onSelectBrowser={vi.fn(async () => ({ ok: true }))}
+          onSelectEncore={vi.fn(async () => ({ ok: true }))}
           onControl={vi.fn(async () => ({ ok: true }))}
           onSearch={onSearch}
           library={library}
-          bluetooth={{
-            snapshot: BLUETOOTH,
-            loading: false,
-            control: vi.fn(async () => ({ ok: true })),
-          }}
         />
       </I18nContext.Provider>,
     );

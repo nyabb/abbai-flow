@@ -1,23 +1,24 @@
 ---
 title: 'Music'
-description: 'Use supported music services and optional Bluetooth controls.'
+description: 'Search Spotify, manage playlists, and play music through Encore or the browser.'
 order: 5
 ---
 
 # Music
 
-The Music page supports Spotify catalog and playlist features, Encore playback,
-and optional Bluetooth device management when the app server can access the
-host's D-Bus socket.
+The Music page supports Spotify catalog and playlist features, with playback
+through Encore or the current browser.
 
 ## Connect services
 
 Configure supported music connections in **Settings → Integrations**. Spotify
-playlist management also requires connecting a Spotify account from the Music
-page after configuring the developer app credentials and redirect URI.
+playlist management and browser playback also require connecting a Spotify
+account from the Music page after configuring the developer app credentials
+and redirect URI. Browser playback requires Spotify Premium and plays through
+the audio output selected by the computer running the browser. Reconnect
+Spotify to grant browser playback permissions if the account was previously
+connected only for playlists.
 
-## Bluetooth
-
-On a Linux host, mount the host D-Bus socket into the container and configure
-`ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS`. Bluetooth access is optional; it is not
-needed for other Music page features.
+Register the exact HTTPS callback URL configured under **Settings →
+Integrations** in the Spotify Developer Dashboard. For local development, use
+an explicit loopback address such as `http://127.0.0.1` rather than `localhost`.
