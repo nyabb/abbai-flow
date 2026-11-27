@@ -127,6 +127,16 @@ def _section_asset_cache_key(asset: Any) -> str | None:
     return f"url:{_short_hash(url)}" if isinstance(url, str) and url else None
 
 
+def _section_asset_download_url(asset: Any) -> str | None:
+    """Resolve CloudKit's filename placeholder before requesting an asset."""
+    if not isinstance(asset, dict):
+        return None
+    url = asset.get("downloadURL")
+    if not isinstance(url, str):
+        return None
+    return url.replace("${f}", "file")
+
+
 def _summarize_section_asset_payload(payload: bytes) -> dict[str, Any]:
     summary: dict[str, Any] = {
         "state": "downloaded",
@@ -167,7 +177,7 @@ def _download_section_asset(
     """Download and safely summarize a CloudKit section metadata asset."""
     if not isinstance(asset, dict):
         return {"state": "unavailable", "reason": "asset_metadata_missing"}
-    url = asset.get("downloadURL")
+    url = _section_asset_download_url(asset)
     if not isinstance(url, str):
         return {"state": "unavailable", "reason": "download_url_missing"}
     try:
@@ -216,7 +226,7 @@ def _download_section_asset_bytes(
     """Fetch a section asset for a read/modify/write operation."""
     if not isinstance(asset, dict):
         raise ValueError("The section membership asset is missing.")
-    url = asset.get("downloadURL")
+    url = _section_asset_download_url(asset)
     if not isinstance(url, str):
         raise ValueError("The section membership asset URL is missing.")
     parsed_url = urlsplit(url)
