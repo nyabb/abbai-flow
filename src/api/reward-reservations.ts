@@ -125,8 +125,7 @@ export function reservedPoints(
 
 /**
  * Points that are already spoken for: Abbai Flow allocations plus claims made
- * outside Abbai Flow (a redeem in Home Assistant also ends in a deduction when a
- * parent approves, so it must not look spendable in the meantime).
+ * outside Abbai Flow, so it must not look spendable in the meantime.
  */
 export function committedPoints(
   reservations: RewardReservation[],

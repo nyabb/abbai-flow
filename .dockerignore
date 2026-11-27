@@ -14,15 +14,11 @@
 node_modules
 dist
 
-# Duplicated add-on mirror of src/ (the root tree is authoritative)
-beacon
-
 # Not needed at image build time
 android
 ios
 docs
 docs-site
-claude-plugin
 
 # Compiled inside the builder stage by `npm run build:server`
 server/build

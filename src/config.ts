@@ -3,18 +3,14 @@
  *
  * A deployment that runs Abbai Flow's own server serves `/runtime-config.js`,
  * which defines window.__ABBAI_FLOW_CONFIG__ (see server/app.cjs). During local
- * development non-integration values can fall back to VITE_* variables.
+ * development values can fall back to VITE_* variables.
  */
 
 export interface AbbaiConfig {
-  deployment_mode?: 'addon' | 'standalone';
-  ha_url: string;
-  ha_token: string;
   family_name: string;
   save_config_in_browser: boolean;
   theme: string;
   auto_dark_mode: boolean;
-  photo_directory: string;
   photo_interval: number;
   screen_saver_timeout: number;
 }
@@ -28,8 +24,7 @@ declare global {
 /**
  * The runtime configuration injected by the deployment, if any.
  *
- * Returns `undefined` for a plain static build (no server), which is what puts
- * the app into direct-HA mode with browser-side onboarding.
+ * Returns `undefined` for a plain static build (no app server).
  */
 export function getRuntimeConfig(): Partial<AbbaiConfig> | undefined {
   return window.__ABBAI_FLOW_CONFIG__;
@@ -38,20 +33,16 @@ export function getRuntimeConfig(): Partial<AbbaiConfig> | undefined {
 let cached: AbbaiConfig | null = null;
 
 export function getConfig(): AbbaiConfig {
-  if (cached?.ha_token && cached?.ha_url) return cached;
+  if (cached) return cached;
 
   const runtime = getRuntimeConfig() ?? {};
 
   cached = {
-    ha_url: runtime.ha_url ?? '',
-    ha_token: runtime.ha_token || '',
     family_name: runtime.family_name || import.meta.env.VITE_FAMILY_NAME || 'My Family',
     save_config_in_browser:
       runtime.save_config_in_browser ?? import.meta.env.VITE_SAVE_CONFIG_IN_BROWSER !== 'false',
     theme: runtime.theme || import.meta.env.VITE_THEME || 'skylight',
     auto_dark_mode: runtime.auto_dark_mode ?? import.meta.env.VITE_AUTO_DARK_MODE !== 'false',
-    photo_directory:
-      runtime.photo_directory || import.meta.env.VITE_PHOTO_DIRECTORY || '/media/beacon/photos',
     photo_interval: runtime.photo_interval ?? (Number(import.meta.env.VITE_PHOTO_INTERVAL) || 30),
     screen_saver_timeout:
       runtime.screen_saver_timeout ?? (Number(import.meta.env.VITE_SCREEN_SAVER_TIMEOUT) || 5),
@@ -61,9 +52,7 @@ export function getConfig(): AbbaiConfig {
 }
 
 /**
- * Override the cached config with dynamic credentials (from onboarding/OAuth).
- * Call this after the user completes setup to inject the HA URL + token
- * without requiring a page reload.
+ * Override cached deployment values without requiring a page reload.
  */
 export function patchConfig(patch: Partial<AbbaiConfig>): void {
   const current = getConfig();

@@ -389,6 +389,26 @@
   font-weight: 500;
 }
 
+@media (max-width: 600px) {
+  .settings-display-mode-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-display-mode {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+  }
+
+  .settings-display-mode .settings-segment-btn {
+    min-width: 0;
+    padding-inline: 6px;
+    white-space: normal;
+  }
+}
+
 .settings-weekday-selector {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -1332,6 +1352,42 @@
 
 .photos-library-error {
   color: var(--color-error, #ef4444);
+}
+
+.photos-library-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 20px 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.photos-library-progress > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.photos-library-progress-detail {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.photos-library-spinner {
+  flex: 0 0 auto;
+  color: var(--accent);
+  animation: photos-library-spin 0.9s linear infinite;
+}
+
+@keyframes photos-library-spin {
+  to { transform: rotate(360deg); }
 }
 
 .photos-library-grid {

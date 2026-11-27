@@ -6,7 +6,7 @@ First off, thank you for considering contributing to Abbai Flow! This is a famil
 
 ### Reporting Bugs
 
-Found something broken? Please [open an issue](https://github.com/nyabb/abbai-flow/issues/new?template=bug_report.md) using the bug report template. Include as much detail as you can -- your Home Assistant version, browser, and device type all help narrow things down.
+Found something broken? Please [open an issue](https://github.com/nyabb/abbai-flow/issues/new?template=bug_report.md) using the bug report template. Include as much detail as you can — browser, connected service, and device type all help narrow things down.
 
 ### Suggesting Features
 
@@ -59,7 +59,7 @@ The built files land in the `dist/` directory.
 
 ```
 src/
-  api/           # External API integrations (Home Assistant and HA to-do lists)
+  api/           # App APIs and connected service integrations
   components/    # React components
   hooks/         # Custom React hooks
   styles/        # CSS and theme definitions

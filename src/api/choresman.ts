@@ -17,8 +17,7 @@ export interface ChoresManResponse<T = unknown> {
 }
 
 function appBasePath(): string {
-  // Add-on requests must stay beneath the current ingress route. Standalone
-  // server installs serve this API at the app origin root.
+  // Keep API requests beneath the current app path when reverse proxied.
   return getRuntimeConfig() ? window.location.pathname.replace(/\/$/, '') : '';
 }
 

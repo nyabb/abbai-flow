@@ -25,7 +25,7 @@ afterEach(() => {
 
 describe('iCloud Reminders settings requests', () => {
   it('posts authentication to the server endpoint under the current base path', async () => {
-    window.__ABBAI_FLOW_CONFIG__ = { deployment_mode: 'standalone' };
+    window.__ABBAI_FLOW_CONFIG__ = {};
     window.history.replaceState({}, '', '/household/');
     const fetcher = vi
       .fn<typeof fetch>()

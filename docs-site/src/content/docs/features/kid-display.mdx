@@ -33,7 +33,7 @@ There are two ways to put a device into Kid Display Mode.
 
 ### URL parameter
 
-Append `?display=<memberId>` to Abbai Flow's URL. This is bookmarkable and is the best option for kiosk browsers (like Fully Kiosk Browser) or Home Assistant wallpanel apps, since it survives reboots and takes precedence over any device-level setting.
+Append `?display=<memberId>` to Abbai Flow's URL. This is bookmarkable and works well in kiosk browsers because it survives reboots and takes precedence over any device-level setting.
 
 ### Settings > Display
 
@@ -90,10 +90,6 @@ Exiting clears the device's Kid Display assignment and strips the `?display=` pa
 - Kid displays do **not** fire event push notifications and do not prompt for notification permission. See [Notifications](/docs/features/notifications/) for how that works in the full app.
 
 ---
-
-## Using ingress URLs for kiosk setups
-
-If you copy a Kid Display URL while accessing Abbai Flow through Home Assistant ingress, the kiosk device will need an authenticated HA session for that URL to keep working. For dedicated kiosk browsers, it's simpler to use a direct (non-ingress) Abbai Flow URL instead of the ingress path.
 
 ---
 

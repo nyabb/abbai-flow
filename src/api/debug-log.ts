@@ -78,7 +78,6 @@ export function stringifyDebugValue(value: unknown): string {
 export function sanitizeDebugUrl(value: string): string {
   try {
     const url = new URL(value, window.location.href);
-    url.pathname = url.pathname.replace(/(\/api\/hassio_ingress\/)[^/]+/i, '$1[redacted]');
     for (const key of Array.from(url.searchParams.keys())) {
       if (SECRET_KEY.test(key) || /^(token|key)$/i.test(key)) {
         url.searchParams.set(key, '[redacted]');

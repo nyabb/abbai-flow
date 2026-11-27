@@ -45,7 +45,7 @@ function cleanLegacyFamilyLinks(members: FamilyMember[]): FamilyMember[] {
 /**
  * Family data store.
  *
- * Server (/abbai-flow/data/) is the source of truth in add-on mode.
+ * Server (/abbai-flow/data/) is the source of truth in server-backed mode.
  * localStorage is used as a sync cache and as the primary store
  * during local development.
  *

@@ -7,7 +7,6 @@
  */
 import { useState } from 'react';
 import { buildFocusUrl } from '../../../focus';
-import { isIngress } from '../../../utils/ha-env';
 import type { AbbaiSettings } from '../../../hooks/useSettings';
 import type { FamilyMember } from '../../../types/family';
 import { Segment, Slider, Toggle } from '../controls';
@@ -60,7 +59,7 @@ export function DisplaySection({
         </div>
         {settings.screenSaverEnabled && (
           <>
-            <div className="settings-row">
+            <div className="settings-row settings-display-mode-row">
               <div>
                 <div className="settings-row-label">
                   {t('settings.display.screenSaverModeLabel')}
@@ -71,6 +70,7 @@ export function DisplaySection({
               </div>
               <Segment
                 value={settings.screenSaverMode}
+                className="settings-display-mode"
                 options={[
                   { value: 'clock', label: t('settings.display.screenSaverClock') },
                   { value: 'photos', label: t('settings.display.screenSaverPhotos') },
@@ -206,7 +206,7 @@ export function DisplaySection({
                 {t('common.start')}
               </button>
             </div>
-            {!isIngress() ? <div className="settings-row">
+            <div className="settings-row">
               <div>
                 <div className="settings-row-label">{t('settings.display.displayUrlLabel')}</div>
                 <div className="settings-row-sublabel">
@@ -216,7 +216,7 @@ export function DisplaySection({
               <button type="button" className="settings-btn" onClick={copyFocusUrl}>
                 {copiedFocusUrl ? t('settings.display.copied') : t('settings.display.copyUrl')}
               </button>
-            </div> : <div className="settings-row-sublabel">{t('settings.display.ingressUrlUnavailable')}</div>}
+            </div>
           </>
         )}
       </div>

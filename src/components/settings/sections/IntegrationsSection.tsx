@@ -1,6 +1,5 @@
 /**
- * Integrations settings: Home Assistant connection status, iCloud Reminders,
- * grocery lists, Music Assistant and other external services.
+ * Integrations settings: iCloud Reminders, calendars, weather, music, and meals.
  *
  * The iCloud list lookup feeds the grocery and task list selectors below.
  */
@@ -9,7 +8,6 @@ import { Check, Copy, Trash2 } from 'lucide-react';
 import {
   loadIntegrationSettings,
   saveIntegrationSettings,
-  testHomeAssistantConnection,
   authenticateICloudReminders,
   loadICloudRemindersLists,
   requestICloudRemindersVerificationCode,
@@ -243,7 +241,6 @@ function SavedSecretControl({
 }
 
 type ClearSecretField =
-  | 'clearHaToken'
   | 'clearWeatherApiKey'
   | 'clearEncoreToken'
   | 'clearSpotifyClientSecret'
@@ -251,11 +248,6 @@ type ClearSecretField =
   | 'clearIcloudPassword';
 
 export interface IntegrationsSectionProps extends SettingsSectionContext {
-  connected: boolean;
-  haUrl: string;
-  haTokenConfigured?: boolean;
-  onSaveHomeAssistant?: (url: string, token: string) => Promise<void>;
-  onRemoveHomeAssistantToken?: () => Promise<void>;
   onIntegrationSettingsSaved?: () => void;
 }
 
@@ -263,11 +255,6 @@ export function IntegrationsSection({
   settings,
   onUpdateSettings,
   t,
-  connected,
-  haUrl: initialHaUrl,
-  haTokenConfigured,
-  onSaveHomeAssistant,
-  onRemoveHomeAssistantToken,
   onIntegrationSettingsSaved,
 }: IntegrationsSectionProps) {
   const serverBacked = Boolean(getRuntimeConfig());
@@ -275,8 +262,6 @@ export function IntegrationsSection({
     null,
   );
   const [integrationStatusLoading, setIntegrationStatusLoading] = useState(serverBacked);
-  const [haUrl, setHaUrl] = useState(initialHaUrl);
-  const [haToken, setHaToken] = useState('');
   const [openMeteoUrl, setOpenMeteoUrl] = useState('');
   const [weatherApiUrl, setWeatherApiUrl] = useState('');
   const [weatherApiKey, setWeatherApiKey] = useState('');
@@ -319,7 +304,6 @@ export function IntegrationsSection({
   const [icloudBusyAction, setIcloudBusyAction] = useState<
     'authenticate' | 'request_code' | 'verify_code' | 'fetch_preview' | null
   >(null);
-  const [haTesting, setHaTesting] = useState(false);
   const [weatherTesting, setWeatherTesting] = useState(false);
   const integrationBusy =
     settingsSaving ||
@@ -328,7 +312,6 @@ export function IntegrationsSection({
     mealSaving ||
     icloudSaving ||
     icloudBusyAction !== null ||
-    haTesting ||
     weatherTesting;
   const [integrationError, setIntegrationError] = useState('');
   const [integrationNotice, setIntegrationNotice] = useState('');
@@ -353,8 +336,6 @@ export function IntegrationsSection({
     }
   }, [t]);
 
-  useEffect(() => setHaUrl(initialHaUrl), [initialHaUrl]);
-
   useEffect(() => {
     if (!serverBacked) return;
     let cancelled = false;
@@ -362,7 +343,6 @@ export function IntegrationsSection({
       .then((status) => {
         if (cancelled) return;
         setIntegrationStatus(status);
-        setHaUrl(status.haUrl);
         setOpenMeteoUrl(status.openMeteoUrl);
         setWeatherApiUrl(status.weatherApiUrl);
         setWeatherApiKeyMode(status.weatherApiKeyMode);
@@ -502,25 +482,6 @@ export function IntegrationsSection({
     loadIcloudLists,
   ]);
 
-  const testHa = async () => {
-    setHaTesting(true);
-    setIntegrationError('');
-    setIntegrationNotice('');
-    try {
-      await testHomeAssistantConnection({
-        haUrl,
-        ...(haToken.trim() ? { haToken: haToken.trim() } : {}),
-      });
-      setIntegrationNotice(t('settings.integrations.testSuccess'));
-    } catch (error) {
-      setIntegrationError(
-        error instanceof Error ? error.message : t('settings.integrations.saveError'),
-      );
-    } finally {
-      setHaTesting(false);
-    }
-  };
-
   const testWeather = async () => {
     setWeatherTesting(true);
     setWeatherTestError('');
@@ -570,8 +531,6 @@ export function IntegrationsSection({
     setIntegrationNotice('');
     try {
       const status = await saveIntegrationSettings({
-        haUrl,
-        ...(haToken.trim() ? { haToken: haToken.trim() } : {}),
         openMeteoUrl,
         weatherApiUrl,
         ...(weatherApiKey.trim() ? { weatherApiKey: weatherApiKey.trim() } : {}),
@@ -604,7 +563,6 @@ export function IntegrationsSection({
       setIcloudAuthState(status.icloudAuthState);
       setIcloudDevices(status.icloudDevices);
       setIcloudSecurityKeys(status.icloudSecurityKeyNames);
-      setHaToken('');
       setWeatherApiKey('');
       setEncoreToken('');
       setSpotifyClientSecret('');
@@ -791,24 +749,6 @@ export function IntegrationsSection({
     }
   };
 
-  const saveBrowserHomeAssistant = async () => {
-    if (!onSaveHomeAssistant) return;
-    setSettingsSaving(true);
-    setIntegrationError('');
-    setIntegrationNotice('');
-    try {
-      await onSaveHomeAssistant(haUrl, haToken);
-      setHaToken('');
-      setIntegrationNotice(t('settings.integrations.saved'));
-    } catch (error) {
-      setIntegrationError(
-        error instanceof Error ? error.message : t('settings.integrations.saveError'),
-      );
-    } finally {
-      setSettingsSaving(false);
-    }
-  };
-
   const removeSavedSecret = async (clearField: ClearSecretField) => {
     const setSaving = clearField === 'clearIcloudPassword' ? setIcloudSaving : setSettingsSaving;
     setSaving(true);
@@ -830,7 +770,7 @@ export function IntegrationsSection({
         setIcloudListsAttempted(false);
       }
       setIntegrationNotice(t('settings.integrations.secretRemoved'));
-      if (clearField === 'clearHaToken') onIntegrationSettingsSaved?.();
+      onIntegrationSettingsSaved?.();
     } catch (error) {
       setIntegrationError(
         error instanceof Error ? error.message : t('settings.integrations.saveError'),
@@ -840,10 +780,6 @@ export function IntegrationsSection({
     }
   };
 
-  const haConfigured = serverBacked ? integrationStatus?.haConfigured : connected;
-  const haSecretConfigured = serverBacked
-    ? Boolean(integrationStatus?.haConfigured)
-    : (haTokenConfigured ?? connected);
   const activeIcloudLists = icloudLists.filter((list) => !list.deleted && !list.isGroup);
   const activeIcloudListIds = new Set(activeIcloudLists.map((list) => list.key));
   const configuredGroceryListIds = settings.groceryListIds.filter((id) =>
@@ -878,117 +814,16 @@ export function IntegrationsSection({
           className="loading-placeholder--compact"
         />
       )}
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.homeAssistantTitle')}</div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">{t('settings.integrations.haUrlLabel')}</div>
-            <div className="settings-row-sublabel">{t('settings.integrations.haUrlHelp')}</div>
-          </div>
-          <input
-            type="url"
-            className="settings-input settings-input--wide"
-            value={haUrl}
-            onChange={(event) => setHaUrl(event.target.value)}
-            placeholder="http://homeassistant.local:8123"
-          />
+      {integrationError && (
+        <div className="settings-row-sublabel" role="alert">
+          {integrationError}
         </div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">{t('settings.integrations.haTokenLabel')}</div>
-            <div className="settings-row-sublabel">
-              {haConfigured
-                ? t('settings.integrations.secretSaved')
-                : t('settings.integrations.haTokenHelp')}
-            </div>
-          </div>
-          <SavedSecretControl
-            label={t('settings.integrations.haTokenLabel')}
-            value={haToken}
-            onChange={setHaToken}
-            configured={haSecretConfigured}
-            disabled={serverBacked && integrationStatusLoading}
-            busy={integrationBusy}
-            removeLabel={t('settings.integrations.clearSecret')}
-            onRemove={
-              serverBacked && integrationStatus?.haConfigured
-                ? () => void removeSavedSecret('clearHaToken')
-                : !serverBacked && haSecretConfigured && onRemoveHomeAssistantToken
-                  ? () => void onRemoveHomeAssistantToken()
-                  : undefined
-            }
-          />
+      )}
+      {integrationNotice && (
+        <div className="settings-row-sublabel" role="status">
+          {integrationNotice}
         </div>
-        <div className="settings-row">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span
-              className={`settings-status-dot ${haConfigured ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-            />
-            <div>
-              <div className="settings-row-label">
-                {t('settings.integrations.connectionStatusLabel')}
-              </div>
-              <div className="settings-row-sublabel">
-                {serverBacked
-                  ? haConfigured
-                    ? t('settings.integrations.configured')
-                    : t('settings.integrations.disconnected')
-                  : connected
-                    ? t('settings.integrations.connected')
-                    : t('settings.integrations.disconnected')}{' '}
-                &middot; {haUrl || t('settings.integrations.notConfigured')}
-              </div>
-            </div>
-          </div>
-        </div>
-        {serverBacked ? (
-          <div className="settings-row" style={{ justifyContent: 'flex-end', gap: 8 }}>
-            <button
-              type="button"
-              className="settings-btn"
-              onClick={() => void testHa()}
-              disabled={integrationBusy || integrationStatusLoading}
-            >
-              {t('settings.integrations.testConnection')}
-            </button>
-            <button
-              type="button"
-              className="settings-btn settings-btn--primary"
-              onClick={() => void saveServerIntegrations()}
-              disabled={integrationBusy || integrationStatusLoading}
-            >
-              {settingsSaving ? t('settings.integrations.saving') : t('settings.integrations.save')}
-            </button>
-          </div>
-        ) : (
-          <div className="settings-row" style={{ justifyContent: 'flex-end' }}>
-            <button
-              type="button"
-              className="settings-btn settings-btn--primary"
-              onClick={() => void saveBrowserHomeAssistant()}
-              disabled={
-                integrationBusy ||
-                !onSaveHomeAssistant ||
-                !haUrl.trim() ||
-                (!haToken.trim() && !connected)
-              }
-            >
-              {t('settings.integrations.save')}
-            </button>
-          </div>
-        )}
-        {integrationError && (
-          <div className="settings-row-sublabel" role="alert">
-            {integrationError}
-          </div>
-        )}
-        {integrationNotice && (
-          <div className="settings-row-sublabel" role="status">
-            {integrationNotice}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="settings-group">
         <div className="settings-group-title">{t('settings.integrations.weatherTitle')}</div>
@@ -2000,27 +1835,6 @@ export function IntegrationsSection({
               </option>
             ))}
           </select>
-        </div>
-      </div>
-
-      <div className="settings-group">
-        <div className="settings-group-title">{t('settings.integrations.musicAssistantTitle')}</div>
-        <div className="settings-row settings-integration-field">
-          <div>
-            <div className="settings-row-label">
-              {t('settings.integrations.defaultPlayerLabel')}
-            </div>
-            <div className="settings-row-sublabel">
-              {t('settings.integrations.defaultPlayerSublabel')}
-            </div>
-          </div>
-          <input
-            type="text"
-            className="settings-input"
-            value={settings.musicDefaultPlayer}
-            onChange={(e) => onUpdateSettings({ musicDefaultPlayer: e.target.value })}
-            placeholder="media_player.living_room"
-          />
         </div>
       </div>
 

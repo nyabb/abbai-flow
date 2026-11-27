@@ -42,7 +42,7 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
-      // `any` shows up in a few HA payload shapes; warn instead of failing the
+      // `any` shows up in a few provider payload shapes; warn instead of failing the
       // build, but never let it pass silently.
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-unused-vars': [

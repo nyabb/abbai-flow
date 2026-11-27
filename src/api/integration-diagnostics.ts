@@ -2,15 +2,11 @@ import type { EncoreMusic, EncoreSnapshot } from './encore-music';
 import type { BluetoothSnapshot } from './bluetooth-types';
 
 export interface IntegrationDiagnosticConfig {
-  haBaseUrl: string;
-  haToken: string;
   encoreToken: string;
   spotifyClientId: string;
   spotifyClientSecret: string;
   spotifyMarket: string;
   spotifyRedirectUri?: string;
-  photoDirectory?: string;
-  customHaCaConfigured?: boolean;
 }
 
 export interface IntegrationDiagnosticLogger {
@@ -19,7 +15,6 @@ export interface IntegrationDiagnosticLogger {
 }
 
 export interface IntegrationDiagnosticsOptions {
-  fetcher?: typeof fetch;
   logger?: IntegrationDiagnosticLogger;
   verifySpotifyCatalog?: () => Promise<{ ok: boolean; code?: string }>;
   verifySpotifyPlaylists?: () => Promise<{
@@ -37,32 +32,13 @@ export interface IntegrationDiagnosticsHandle {
   stop(): void;
 }
 
-interface HaState {
-  entity_id: string;
-  state: string;
-}
-
-const CHECK_TIMEOUT_MS = 8_000;
-
 function cleanLabel(value: string | null | undefined): string {
-  // Remove control characters so configured labels cannot forge log lines.
   const normalized = value || '';
-  return (
-    normalized
-      // eslint-disable-next-line no-control-regex
-      .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
-      .trim()
-      .slice(0, 100)
-  );
-}
-
-function availableCount(states: HaState[], domain: string): number {
-  return states.filter(
-    (entity) =>
-      entity.entity_id.startsWith(domain + '.') &&
-      entity.state !== 'unavailable' &&
-      entity.state !== 'unknown',
-  ).length;
+  return normalized
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\r\n\u0000-\u001f\u007f]/g, ' ')
+    .trim()
+    .slice(0, 100);
 }
 
 function logEncoreStateChanges(
@@ -181,136 +157,6 @@ function logBluetoothStateChanges(
   });
 }
 
-async function checkHomeAssistant(
-  config: IntegrationDiagnosticConfig,
-  fetcher: typeof fetch,
-  logger: IntegrationDiagnosticLogger,
-): Promise<void> {
-  if (!config.haToken) {
-    logger.warn(
-      '[Integration] Home Assistant API: not checked because credentials are not configured in Settings → Integrations.',
-    );
-    return;
-  }
-  if (config.customHaCaConfigured) {
-    logger.warn(
-      '[Integration] Home Assistant API: connectivity check skipped because ABBAI_FLOW_HA_CA is configured; the application proxy still uses that CA.',
-    );
-    return;
-  }
-
-  const baseUrl = config.haBaseUrl.replace(/\/$/, '');
-  const headers = {
-    Accept: 'application/json',
-    Authorization: 'Bearer ' + config.haToken,
-  };
-  const request = (path: string) =>
-    fetcher(baseUrl + path, {
-      headers,
-      signal: AbortSignal.timeout(CHECK_TIMEOUT_MS),
-    });
-
-  logger.info('[Integration] Home Assistant API: checking connectivity and installed entities.');
-  let apiResponse: Response;
-  try {
-    apiResponse = await request('/api/');
-  } catch (error) {
-    const timedOut = error instanceof Error && error.name === 'TimeoutError';
-    logger.warn(
-      '[Integration] Home Assistant API: connection ' +
-        (timedOut
-          ? `timed out after ${CHECK_TIMEOUT_MS} ms.`
-          : 'failed; check the Home Assistant URL saved in Settings → Integrations and network access.'),
-    );
-    return;
-  }
-  if (!apiResponse.ok) {
-    logger.warn(
-      `[Integration] Home Assistant API: unavailable (HTTP ${apiResponse.status}); check the URL and token.`,
-    );
-    return;
-  }
-
-  logger.info('[Integration] Home Assistant API: connected and authenticated.');
-
-  let statesResponse: Response;
-  try {
-    statesResponse = await request('/api/states');
-  } catch {
-    logger.warn(
-      '[Integration] Home Assistant entities: state request failed after API connection.',
-    );
-    return;
-  }
-  if (!statesResponse.ok) {
-    logger.warn(
-      `[Integration] Home Assistant entities: unavailable (HTTP ${statesResponse.status}).`,
-    );
-    return;
-  }
-
-  let payload: unknown;
-  try {
-    payload = await statesResponse.json();
-  } catch {
-    logger.warn('[Integration] Home Assistant entities: the state response was not valid JSON.');
-    return;
-  }
-  if (!Array.isArray(payload)) {
-    logger.warn('[Integration] Home Assistant entities: the state response was not a list.');
-    return;
-  }
-
-  const states = payload.filter(
-    (value): value is HaState =>
-      value !== null &&
-      typeof value === 'object' &&
-      typeof value.entity_id === 'string' &&
-      typeof value.state === 'string',
-  );
-  const mediaPlayers = availableCount(states, 'media_player');
-  const todoLists = states.filter(
-    (entity) => entity.entity_id.startsWith('todo.') && entity.state !== 'unavailable',
-  ).length;
-
-  logger.info(
-    `[Integration] Home Assistant entities: ${states.length} total; media_players=${mediaPlayers}, todo_lists=${todoLists}.`,
-  );
-
-  logger.info(
-    `[Integration] Home Assistant to-do lists: ${todoLists} available entity/entities detected.`,
-  );
-  logger.info(`[Integration] Home Assistant media players: ${mediaPlayers} available.`);
-
-  const photoDirectoryConfigured = Boolean(config.photoDirectory?.trim());
-  logger.info(
-    `[Integration] Photos local directory: ${photoDirectoryConfigured ? 'configured' : 'using the application default'}.`,
-  );
-
-  let mediaResponse: Response;
-  try {
-    mediaResponse = await request('/api/media_source/browse_media');
-  } catch {
-    logger.warn('[Integration] Home Assistant media source: connectivity check failed.');
-    return;
-  }
-  if (!mediaResponse.ok) {
-    logger.warn(
-      `[Integration] Home Assistant media source: unavailable (HTTP ${mediaResponse.status}).`,
-    );
-    return;
-  }
-  try {
-    const media = (await mediaResponse.json()) as { children?: unknown };
-    const rootItems = Array.isArray(media.children) ? media.children.length : 0;
-    logger.info(
-      `[Integration] Home Assistant media source: available (${rootItems} root item(s)).`,
-    );
-  } catch {
-    logger.warn('[Integration] Home Assistant media source: invalid response.');
-  }
-}
-
 async function checkSpotifyCatalog(
   config: IntegrationDiagnosticConfig,
   verifier: IntegrationDiagnosticsOptions['verifySpotifyCatalog'],
@@ -382,25 +228,16 @@ export function startIntegrationDiagnostics(
   options: IntegrationDiagnosticsOptions = {},
 ): IntegrationDiagnosticsHandle {
   const logger = options.logger || console;
-  const fetcher = options.fetcher || fetch;
-
-  logger.info(
-    `[Integration] Home Assistant: ${config.haToken ? 'token configured' : 'token missing'}; base URL is ${config.haBaseUrl}.`,
-  );
   logger.info(
     `[Integration] Spotify playback (Encore): ${config.encoreToken ? 'token configured; connection status follows' : 'not configured; add connection details in Settings → Integrations'}.`,
   );
   logger.info(`[Integration] Spotify catalog market: ${cleanLabel(config.spotifyMarket) || 'NL'}.`);
-  logger.info(
-    `[Integration] Google Photos: not connected; Google Photos OAuth is not implemented in this build.`,
-  );
 
   const unsubscribeEncore = logEncoreStateChanges(logger, encore);
   const unsubscribeBluetooth = options.bluetooth
     ? logBluetoothStateChanges(logger, options.bluetooth)
     : () => undefined;
   const ready = Promise.all([
-    checkHomeAssistant(config, fetcher, logger),
     checkSpotifyCatalog(config, options.verifySpotifyCatalog, logger),
     checkSpotifyPlaylists(options.verifySpotifyPlaylists, logger),
   ]).then(() => undefined);

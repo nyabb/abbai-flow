@@ -1,9 +1,9 @@
 /**
  * Unified read/write helper for Abbai Flow data persistence.
  *
- * Server (/abbai-flow/data/:key) is the source of truth when running as an
- * HA add-on.  localStorage serves as an offline cache and as the primary
- * store during local development (no add-on server).
+ * Server (/abbai-flow/data/:key) is the source of truth in a server-backed
+ * deployment. localStorage is an offline cache and the primary store in static
+ * development builds.
  */
 import { getRuntimeConfig } from '../config';
 
@@ -41,22 +41,22 @@ export interface PersistenceResult {
  */
 const writeQueues = new Map<string, Promise<unknown>>();
 
-function isAddOn(): boolean {
+function isServerBacked(): boolean {
   return !!getRuntimeConfig();
 }
 
-function getIngressBasePath(): string {
+function appBasePath(): string {
   return window.location.pathname.replace(/\/$/, '');
 }
 
 /**
  * Read from server first, fall back to localStorage.
- * In non-add-on mode, reads from localStorage only.
+ * Static builds read from localStorage only.
  */
 export async function loadData<T>(key: string, fallback: T): Promise<T> {
-  if (isAddOn()) {
+  if (isServerBacked()) {
     try {
-      const base = getIngressBasePath();
+      const base = appBasePath();
       const res = await fetch(`${base}/abbai-flow/data/${key}`);
       if (res.ok) {
         const data = await res.json();
@@ -99,11 +99,11 @@ export function loadDataSync<T>(key: string, fallback: T): T {
   return fallback;
 }
 
-/** Read from the add-on server without consulting or updating localStorage. */
+/** Read from the app server without consulting or updating localStorage. */
 export async function loadServerData<T>(key: string): Promise<T | null> {
-  if (!isAddOn()) return null;
+  if (!isServerBacked()) return null;
   try {
-    const base = getIngressBasePath();
+    const base = appBasePath();
     const res = await fetch(`${base}/abbai-flow/data/${key}`);
     if (!res.ok) return null;
     const data = await res.json();
@@ -114,7 +114,7 @@ export async function loadServerData<T>(key: string): Promise<T | null> {
 }
 
 /**
- * Write to localStorage AND the add-on server.
+ * Write to localStorage and the app server.
  *
  * The returned promise resolves once the write has finished — including the
  * server PUT — and reports what actually happened. It never rejects: callers
@@ -160,12 +160,12 @@ async function writeNow<T>(
     }
   }
 
-  if (!isAddOn()) {
-    // localStorage *is* the store outside the add-on.
+  if (!isServerBacked()) {
+    // localStorage is the store in a static build.
     return { cached, persisted: cached };
   }
 
-  const base = getIngressBasePath();
+  const base = appBasePath();
   // Awaited on purpose: `loadData` is server-first, so any refresh that runs
   // before this PUT lands reads the OLD document and writes it back over
   // localStorage. That silently reverted fresh edits — a parent's PIN never

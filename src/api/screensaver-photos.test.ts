@@ -25,7 +25,7 @@ describe('screen saver photo requests', () => {
     const photos: SavedScreenSaverPhoto[] = [
       { id: 'photo-1', name: 'Family.jpg', createdAt: '2026-11-26T12:00:00.000Z' },
     ];
-    window.__ABBAI_FLOW_CONFIG__ = { deployment_mode: 'standalone' };
+    window.__ABBAI_FLOW_CONFIG__ = {};
     window.history.replaceState({}, '', '/household/');
     const fetcher = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ photos }));
     vi.stubGlobal('fetch', fetcher);

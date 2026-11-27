@@ -2,8 +2,8 @@
  * Reward redemption state: what each child is saving for, what is waiting for a
  * parent, and what has been given.
  *
- * Storage is `abbai-flow-store`, i.e. the add-on server when running as an add-on
- * and localStorage in dev — so progress is shared across devices instead of
+ * Storage is `abbai-flow-store`, which uses the app server when available and
+ * localStorage in static builds — so progress is shared across devices instead of
  * living on one phone. A save that never reached the server is reported.
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -21,7 +21,7 @@ export interface UseRewardRedemptionsResult {
   redemptions: Redemption[];
   update: (change: (current: Redemption[]) => Redemption[]) => void;
   /**
-   * Apply one reward operation. Reduced by the add-on server when there is one
+   * Apply one reward operation. Reduced by the app server when there is one
    * (so allocations and fulfilments are serialised and idempotent), otherwise by
    * the same shared rules locally.
    */

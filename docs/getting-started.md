@@ -1,256 +1,47 @@
-# Getting Started with Abbai Flow
+# Getting Started
 
-A visual walkthrough of Abbai Flow — your family's daily signal. This guide shows you what to expect after installation, with annotated screenshots of every major view at both desktop and mobile sizes.
+Abbai Flow is a self-hosted family organizer for calendars, chores, routines,
+rewards, meals, and shared displays.
 
-> **Looking for installation instructions?** See the [README](../README.md) for quick-start steps, or the [full Getting Started guide](./README.md) on the docs site for detailed setup (Google Calendar, Docker, development, tablet mounting, and more).
+## Start with Docker
 
----
+```bash
+docker run -d \
+  --name abbai-flow \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  -v abbai-flow-data:/data \
+  ghcr.io/nyabb/abbai-flow:latest
+```
 
-## Table of Contents
+Open `http://<server-address>:3000`. Keep the `/data` volume mounted so family
+records, integration settings, and uploaded screen saver photos persist across
+container updates.
 
-- [Calendar](#calendar)
-- [Chores](#chores)
-- [Lists (Grocery / Shopping)](#lists-grocery--shopping)
-- [Meal Planning Integration](#meal-planning-integration)
-- [Tasks](#tasks)
-- [Music Controls](#music-controls)
-- [Weather](#weather)
-- [Settings](#settings)
-- [Navigation: Desktop vs. Mobile](#navigation-desktop-vs-mobile)
-- [Family Member Setup](#family-member-setup)
-- [Theme Selection](#theme-selection)
+## Connect services
 
----
+Open **Settings → Integrations** to configure supported calendar sources,
+iCloud Reminders, weather, music, or meal data. These connections are optional;
+local calendars and task lists work without an external service.
 
-## Calendar
+For calendar sources, add a CalDAV account, an ICS feed URL, or a Google
+calendar connection. For Apple Reminders, enter the Apple Account details and
+complete any verification steps shown in Settings.
 
-The calendar shows a full week view with color-coded events from every connected calendar entity in Home Assistant.
+## Configure the display
 
-**Key features:**
+In **Settings → Display**, enable the screen saver and choose clock, photos, or
+both. Upload images in **Settings → Photos**. The app resizes uploads before
+saving them in `/data`. The same Display page includes the Kid Display launcher
+for a family member's focused view.
 
-- **Calendar filter pills** -- toggle individual calendars on/off. Each pill shows the calendar name and its color.
-- **Inline weather** -- high/low temperatures and condition icons appear in each day's header.
-- **All-day events** -- displayed in a banner row at the top of each day.
-- **Timed events** -- positioned on a time grid (7 AM -- 8 PM visible by default).
-- **Quick add** -- tap any empty time slot to create a new event on that calendar.
+## Run locally
 
-### Desktop
+```bash
+npm ci
+npm run dev
+```
 
-![Calendar — desktop](images/calendar-desktop.png)
-
-All seven days of the week are visible simultaneously with timed events placed on the grid.
-
-### Mobile
-
-![Calendar — mobile](images/calendar-mobile.png)
-
-On mobile, the calendar shows a scrollable 3-day view with page navigation dots. Swipe or tap the arrow buttons to move between day groups. Calendar filter pills scroll horizontally.
-
----
-
-## Chores
-
-The chores view lets you assign recurring or one-off tasks to family members and track completion.
-
-**Key features:**
-
-- **Per-member cards** -- each family member shows their avatar, name, and assigned chores.
-- **Add Chore button** -- create new chores with assignee, frequency, and optional allowance value.
-- **Completion tracking** -- tap a chore to mark it done; completed chores add their points to that child's pot.
-
-### Desktop
-
-![Chores — desktop](images/chores-desktop.png)
-
-On desktop the chores planner takes over the full content column, with the app sidebar still visible next to it.
-
----
-
-## Lists (Grocery / Shopping)
-
-The lists view connects directly to iCloud Reminders for grocery and task lists. Sign in to your Apple Account in **Settings → Integrations** and choose which lists appear in each tab.
-
-**Key features:**
-
-- **List selector dropdown** -- switch between selected grocery lists and task lists.
-- **Quick add** -- type an item name and tap Add to append it to the active list.
-- **Check off items** -- tap items to mark them as purchased/completed.
-- **iCloud Reminders** -- add, edit, complete, and delete reminders, set due dates and priorities, and move items between list sections.
-
-### Desktop
-
-![Lists — desktop](images/lists-desktop.png)
-
-### Mobile
-
-![Lists — mobile](images/lists-mobile.png)
-
-On mobile the list selector is a full-width dropdown at the top, with the add-item input directly below it.
-
----
-
-## Meal Plan
-
-Meal plan entries remain available through the AnyList sync script and Abbai
-Flow's MCP tools. Removing the Dashboard Menu card does not remove those
-records or integrations. See the [Meal Plan Data guide](/docs/features/meal-planning/)
-for the record format and sync details.
-
----
-
-## Tasks
-
-The Tasks view shows reminders from selected iCloud Reminders lists alongside
-tasks from Abbai Flow's built-in local task list.
-
-**Key features:**
-
-- **Task list selector** -- switch between selected iCloud Reminders lists.
-- **Add tasks** -- type a task and press Enter or tap Add.
-- **Mark complete** -- check off tasks to remove them from the active list.
-- **Calendar summary** -- today's open tasks appear beside the week view.
-
-### Desktop
-
-![Tasks — desktop](images/tasks-desktop.png)
-
-### Mobile
-
-![Tasks — mobile](images/tasks-mobile.png)
-
----
-
-## Music Controls
-
-Control your Home Assistant media players directly from Abbai Flow.
-
-**Key features:**
-
-- **Player selector** -- choose which media player to control (e.g., Kitchen, Living Room).
-- **Now playing** -- shows the current track, artist, and album art.
-- **Transport controls** -- play/pause, previous, next.
-- **Volume slider** -- adjust volume with a drag slider.
-- **Mute button** -- quick mute toggle.
-
-### Desktop
-
-![Music — desktop](images/music-desktop.png)
-
-### Mobile
-
-![Music — mobile](images/music-mobile.png)
-
-Music is accessible directly from the mobile bottom tab bar (no need to open the More menu).
-
----
-
-## Weather
-
-Current conditions and forecasts from Open-Meteo or an optional custom JSON API.
-Configure the Open-Meteo URL with latitude and longitude in
-**Settings → Integrations**. It remains the default and backup when a custom
-API is configured. Custom APIs can use an optional query or Bearer key and a
-JSON path mapping for the current, daily, and hourly fields.
-
-**Key features:**
-
-- **Current conditions** -- large temperature display with condition icon and description.
-- **Detail cards** -- humidity, wind speed, and barometric pressure.
-- **7-day forecast** -- each day shows the condition icon, high, and low temperatures.
-- **Refresh button** -- manually re-fetch weather data from the configured source.
-
-### Desktop
-
-![Weather — desktop](images/weather-desktop.png)
-
-### Mobile
-
-![Weather — mobile](images/weather-mobile.png)
-
-The 7-day forecast stacks vertically on mobile for easy scrolling.
-
----
-
-## Settings
-
-The settings view is where you configure Abbai Flow's behavior, appearance, and integrations.
-
-**Key sections:**
-
-- **Theme** -- choose from 8+ themes (Light, Midnight, Nord, Dracula, Monokai, Rose, Forest, and more). Auto dark mode switches between light and dark variants based on time of day.
-- **Family Members** -- add, edit, or remove family members with custom avatars (55+ options), colors, and optional PINs.
-- **Calendar Sources** -- manage which HA calendar entities appear in Abbai Flow.
-- **iCloud Reminders** -- authenticate with Apple, select grocery and task lists, and choose the default grocery list.
-- **Weather APIs** -- set Open-Meteo as the default and backup, then optionally
-  add a custom API with a key and JSON field mapping.
-- **Display** -- screen saver timeout, photo slideshow interval, auto-refresh settings.
-
-### Desktop
-
-![Settings — desktop](images/settings-desktop.png)
-
-### Mobile
-
-![Settings — mobile](images/settings-mobile.png)
-
----
-
-## Navigation: Desktop vs. Mobile
-
-|                   | Desktop                                 | Mobile                                                    |
-| ----------------- | --------------------------------------- | --------------------------------------------------------- |
-| **Layout**        | Vertical icon sidebar on the left       | Bottom tab bar with 4 tabs + More                         |
-| **Primary tabs**  | All views visible at once               | Calendar, Chores, Lists, Music                            |
-| **Overflow**      | N/A (all visible)                       | More menu: Lists, Tasks, Photos, Timer, Weather, Settings |
-| **Chore planner** | Full content column next to the sidebar | Scrolls below the header, own tab bar at the bottom       |
-
----
-
-## Family Member Setup
-
-1. Open **Settings** (gear icon at the bottom of the sidebar, or via More > Settings on mobile).
-2. Find the **Family Members** section.
-3. Tap **+ Add Member**.
-4. Fill in:
-   - **Name** -- the family member's display name
-   - **Avatar** -- choose from 55+ emoji options across 5 categories (People, Animals, Nature, Fun, Food)
-   - **Color** -- pick from 8 colors (blue, green, purple, orange, pink, teal, yellow, red)
-   - **Role** -- Parent or Child
-   - **PIN** (optional) -- a 4-6 digit numeric code
-5. Tap **Add Member**.
-6. Repeat for each family member.
-
-Family members appear in the Calendar task and chore summary, the Chore planner and Calendar color-coding.
-
----
-
-## Theme Selection
-
-Abbai Flow ships with 8+ built-in themes:
-
-| Theme          | Style                                         |
-| -------------- | --------------------------------------------- |
-| Light          | Clean, bright, modern (default)               |
-| Midnight       | Dark blue with warm accents                   |
-| Midnight Light | Light variant of Midnight                     |
-| Nord           | Cool arctic tones from the Nord palette       |
-| Dracula        | Dark purple with vibrant accents              |
-| Monokai        | Dark with syntax-highlighting-inspired colors |
-| Rose           | Soft pink and warm tones                      |
-| Forest         | Deep green nature-inspired palette            |
-
-To change themes:
-
-1. Go to **Settings**.
-2. Find the **Theme** selector.
-3. Pick a theme -- the change applies immediately.
-4. Enable **Auto Dark Mode** to automatically switch between light and dark variants based on time of day.
-
----
-
-## Next Steps
-
-- **[README](../README.md)** -- installation, features overview, and project info
-- **[Changelog](../CHANGELOG.md)** -- release history
-- **[Contributing](../CONTRIBUTING.md)** -- how to contribute to Abbai Flow
-- **[Docs Site](./)** -- full documentation with detailed guides for every feature
+The development server uses local browser storage. To run the server-backed
+app locally, build it and run `npm start` with `ABBAI_FLOW_DATA` and
+`ABBAI_FLOW_DIST` configured as needed.

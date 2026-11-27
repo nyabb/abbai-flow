@@ -15,7 +15,7 @@ export interface PlannerMember {
   name: string;
   avatar: string;
   role?: 'parent' | 'child';
-  /** Abbai Flow family photo (data URL or HA path); emoji is the fallback. */
+  /** Abbai Flow family photo (data URL or image URL); emoji is the fallback. */
   photo?: string;
   color: string;
   savings: number;

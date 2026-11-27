@@ -117,7 +117,7 @@ describe('EventModal', () => {
 
   it('surfaces an error from a rejected onSave instead of failing silently', async () => {
     const user = userEvent.setup();
-    const onSave = vi.fn().mockRejectedValue(new Error('HA rejected the update'));
+    const onSave = vi.fn().mockRejectedValue(new Error('Calendar provider rejected the update'));
     render(
       <EventModal
         event={makeEvent()}
@@ -129,12 +129,12 @@ describe('EventModal', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Save' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('HA rejected the update');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Calendar provider rejected the update');
   });
 
   it('surfaces an error from a rejected onDelete instead of failing silently', async () => {
     const user = userEvent.setup();
-    const onDelete = vi.fn().mockRejectedValue(new Error('HA rejected the delete'));
+    const onDelete = vi.fn().mockRejectedValue(new Error('Calendar provider rejected the delete'));
     render(
       <EventModal
         event={makeEvent()}
@@ -146,6 +146,6 @@ describe('EventModal', () => {
     );
 
     await user.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('HA rejected the delete');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Calendar provider rejected the delete');
   });
 });

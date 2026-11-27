@@ -24,6 +24,18 @@ export function migrateLegacyStorageKeys(storage?: Storage) {
         if (value !== null) target.setItem(newKey, value);
       }
     }
+    for (const obsoleteKey of [
+      'abbai_flow_ha_url',
+      'abbai_flow_ha_token',
+      'abbai_flow_ha_refresh_token',
+      'abbai_flow_onboarded',
+      'beacon_ha_url',
+      'beacon_ha_token',
+      'beacon_ha_refresh_token',
+      'beacon_onboarded',
+    ]) {
+      target.removeItem(obsoleteKey);
+    }
   } catch {
     // Private browsing and constrained webviews may not allow storage access.
   }

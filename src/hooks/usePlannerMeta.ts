@@ -2,7 +2,7 @@
  * Planner metadata hook: routines, step order and mission progress.
  *
  * Hydrates synchronously from the local cache so the board never flashes empty,
- * then replaces it with the server copy (authoritative in add-on mode). Every
+ * then replaces it with the server copy (authoritative in server-backed mode). Every
  * write goes through `savePlannerMeta`, and a save that only reached
  * localStorage is surfaced instead of being reported as stored.
  */
@@ -23,8 +23,8 @@ export interface UsePlannerMetaResult {
   /**
    * Apply one planner operation.
    *
-   * In add-on mode the server reduces it (shared rules, serialised, idempotent)
-   * and the state is replaced with what was actually stored; standalone reduces
+   * In server-backed mode the server reduces it (shared rules, serialised, idempotent)
+   * and the state is replaced with what was actually stored; static builds reduce
    * the same rules locally. Returns whatever the operation produced.
    */
   runOp: (op: PlannerOp) => Promise<unknown>;

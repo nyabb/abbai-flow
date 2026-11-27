@@ -26,9 +26,8 @@ try {
 
 const app = createApp(config);
 const { server, encore, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
-const effectiveConfig = app.config;
 const integrationDiagnostics = startIntegrationDiagnostics(
-  { ...effectiveConfig, customHaCaConfigured: Boolean(effectiveConfig.ca) },
+  app.config,
   encore,
   {
     verifySpotifyCatalog,
@@ -40,18 +39,7 @@ server.on('close', integrationDiagnostics.stop);
 
 server.listen(PORT, () => {
   console.log(`Abbai Flow server listening on port ${PORT}`);
-  console.log(`Home Assistant base: ${effectiveConfig.haBaseUrl}`);
-  console.log(`Home Assistant token: ${effectiveConfig.haToken ? 'available' : 'not configured'}`);
-  console.log(`Data directory: ${effectiveConfig.dataDir}`);
-
-  // Misconfiguration used to fail silently: the SPA loaded, then every /api/*
-  // call answered 503 (no token) or hung against the Supervisor address that
-  // does not exist outside the add-on sandbox. Say it plainly instead.
-  if (!effectiveConfig.haToken) {
-    console.warn(
-      'Home Assistant is not configured yet. Open Settings → Integrations to add your URL and access token.',
-    );
-  }
+  console.log(`Data directory: ${app.config.dataDir}`);
 });
 
 // Container shutdown should drain quickly instead of waiting for keep-alives.

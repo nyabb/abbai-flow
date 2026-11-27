@@ -1,4 +1,3 @@
-import { HomeAssistantServiceError } from '../../api/ha-rest';
 import { normaliseName } from '../../api/planner-meta';
 
 export function sameMinute(left: string | null | undefined, right: string | null | undefined) {
@@ -23,7 +22,6 @@ export function sameDays(left: string[] | undefined, right: string[]) {
 }
 
 export function errorDiagnosticText(error: unknown): string {
-  if (error instanceof HomeAssistantServiceError) return error.details;
   if (error instanceof Error) {
     const attachedDetails = (error as Error & { details?: unknown }).details;
     if (typeof attachedDetails === 'string') return attachedDetails;

@@ -2,8 +2,6 @@
 import type { SettingsSectionContext } from './context';
 
 export interface AboutSectionProps extends SettingsSectionContext {
-  connected: boolean;
-  haUrl: string;
   onExport: () => void;
   onImport: () => void;
   onClearLocalStorage: () => void;
@@ -11,8 +9,6 @@ export interface AboutSectionProps extends SettingsSectionContext {
 }
 
 export function AboutSection({
-  connected,
-  haUrl,
   onExport,
   onImport,
   onClearLocalStorage,
@@ -28,22 +24,6 @@ export function AboutSection({
         <div className="settings-about-row">
           <span className="settings-about-label">{t('settings.about.version')}</span>
           <span className="settings-about-value">{__APP_VERSION__}</span>
-        </div>
-        <div className="settings-about-row">
-          <span className="settings-about-label">{t('settings.about.homeAssistant')}</span>
-          <span className="settings-about-value">
-            <span
-              className={`settings-status-dot ${connected ? 'settings-status-dot--connected' : 'settings-status-dot--disconnected'}`}
-              style={{ display: 'inline-block', marginRight: 6, verticalAlign: 'middle' }}
-            />
-            {connected
-              ? t('settings.integrations.connected')
-              : t('settings.integrations.disconnected')}
-          </span>
-        </div>
-        <div className="settings-about-row">
-          <span className="settings-about-label">{t('settings.about.haUrl')}</span>
-          <span className="settings-about-value">{haUrl}</span>
         </div>
         <div className="settings-about-row">
           <span className="settings-about-label">{t('settings.about.sourceCode')}</span>

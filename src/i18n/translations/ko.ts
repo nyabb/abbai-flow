@@ -191,10 +191,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.general.languageLabel': '언어 / 지역',
   'settings.general.debugModeLabel': '디버그 모드',
   'settings.general.debugModeSublabel': 'API 호출, 응답, 오류의 전체 로그를 표시합니다.',
-  'settings.display.ingressUrlUnavailable':
-    'Home Assistant 내에서는 공유 가능한 디스플레이 URL을 사용할 수 없습니다. 대상 화면에서 Abbai Flow를 열고 “이 기기에서 사용”을 선택하세요.',
-
-  // ---- settings: appearance ----
   'settings.appearance.title': '화면',
   'settings.appearance.desc': '디스플레이의 모양을 사용자 지정합니다.',
   'settings.appearance.themeTitle': '테마',
@@ -227,12 +223,8 @@ export const ko: Record<TranslationKey, string> = {
   'settings.family.photoHint': '가족 구성원 아바타에서 이모지 대신 표시됩니다.',
   'settings.family.photoUpload': '사진 업로드',
   'settings.family.photoRemove': '사진 삭제',
-  'settings.family.photoFromHa': 'Home Assistant 사진 사용',
   'settings.family.photoError':
     '이 파일을 사용할 수 없습니다. PNG, JPEG 또는 WebP 이미지를 사용해 보세요.',
-  'settings.family.haMembersLabel': 'Home Assistant에서',
-  'settings.family.haMembersEmpty':
-    'Home Assistant 사람을 찾을 수 없습니다. Abbai Flow이 Home Assistant에 연결되는지 확인한 후 다시 로드하세요.',
   'settings.family.avatarCategory.people': '사람',
   'settings.family.avatarCategory.skinTones': '피부톤',
   'settings.family.avatarCategory.faces': '표정',
@@ -300,8 +292,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- settings: integrations ----
   'settings.integrations.title': '연동',
-  'settings.integrations.desc': 'Home Assistant 및 기타 서비스와의 연결을 관리합니다.',
-  'settings.integrations.homeAssistantTitle': 'Home Assistant',
+  'settings.integrations.desc': '지원되는 서비스 연결을 관리합니다.',
   'settings.integrations.connectionStatusLabel': '연결 상태',
   'settings.integrations.connected': '연결됨',
   'settings.integrations.disconnected': '연결 안 됨',
@@ -322,8 +313,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.integrations.defaultPlayerLabel': '기본 재생기',
   'settings.integrations.defaultPlayerSublabel': '기본으로 사용되는 미디어 재생기',
   'settings.integrations.photosTitle': '사진',
-  'settings.integrations.sourceDirectoryLabel': '소스 디렉터리',
-  'settings.integrations.sourceDirectorySublabel': 'HA의 사진 디렉터리 경로',
   'settings.integrations.slideshowIntervalLabel': '슬라이드쇼 간격',
   'settings.integrations.slideshowIntervalSublabel': '사진 전환 사이의 초 수',
   'settings.integrations.transitionStyleLabel': '전환 스타일',
@@ -381,8 +370,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.about.title': '정보',
   'settings.about.desc': '버전 정보, 디버그 도구, 링크입니다.',
   'settings.about.version': '버전',
-  'settings.about.homeAssistant': 'Home Assistant',
-  'settings.about.haUrl': 'HA URL',
   'settings.about.sourceCode': '소스 코드',
   'settings.about.github': 'GitHub',
   'settings.about.license': '라이선스',
@@ -426,7 +413,7 @@ export const ko: Record<TranslationKey, string> = {
   'timer.lapN': '랩 {n}',
   'photoFrame.noPhotos': '사용 가능한 사진이 없습니다',
   'photoFrame.loading': '사진을 불러오는 중…',
-  'photoFrame.addPhotosHint': 'Home Assistant 미디어 디렉터리에 사진을 추가하세요',
+  'photoFrame.addPhotosHint': '설정 → 사진에서 사진을 업로드하세요.',
   'photoFrame.photoAlt': '사진',
   // ---- chores view ----
   'chores.title': '집안일',
@@ -503,8 +490,7 @@ export const ko: Record<TranslationKey, string> = {
 
   // ---- music view ----
   'music.noPlayers': '미디어 플레이어 없음',
-  'music.noPlayersDesc':
-    'Home Assistant에서 미디어 플레이어를 연결하여 여기에서 음악을 제어하세요.',
+  'music.noPlayersDesc': '여기서 음악을 재생하려면 통합 설정에서 음악 서비스를 연결하세요.',
   'music.selectPlayer': '플레이어 선택',
   'music.nowPlaying': '재생 중',
   'music.volume': '볼륨',
@@ -518,7 +504,6 @@ export const ko: Record<TranslationKey, string> = {
   'music.albumArt': '앨범 아트',
   'music.sourceTabs': '음악 소스',
   'music.spotify': 'Spotify',
-  'music.homeAssistant': 'Home Assistant',
   'music.spotifyStatusNotConfigured': '설정되지 않음',
   'music.spotifyStatusLoggedOut': 'Spotify 로그아웃됨',
   'music.spotifyStatusDeviceInactive': '기기 비활성',
@@ -592,33 +577,6 @@ export const ko: Record<TranslationKey, string> = {
   'viewName.name': '이름',
 
   // ---- onboarding ----
-  'onboarding.welcome': 'Abbai Flow에 오신 것을 환영합니다',
-  'onboarding.welcomeDesc': 'Home Assistant를 연결하여 시작하세요.',
-  'onboarding.getStarted': '시작하기',
-  'onboarding.connectTitle': 'Home Assistant에 연결',
-  'onboarding.connectDesc': 'Home Assistant 인스턴스의 URL을 입력하세요.',
-  'onboarding.haUrl': 'Home Assistant URL',
-  'onboarding.haUrlPlaceholder': 'https://homeassistant.local:8123',
-  'onboarding.connect': '연결',
-  'onboarding.connecting': '연결 중...',
-  'onboarding.authTitle': '인증',
-  'onboarding.authDesc': 'Home Assistant 인증 방법을 선택하세요.',
-  'onboarding.tokenMethod': '장기 액세스 토큰',
-  'onboarding.tokenMethodDesc': 'Home Assistant 프로필에서 생성된 토큰을 사용하세요.',
-  'onboarding.tokenPlaceholder': '여기에 토큰을 붙여넣으세요',
-  'onboarding.tokenHint': '토큰 생성 방법:',
-  'onboarding.tokenHintDetail': 'HA 프로필 → 장기 토큰 → 토큰 생성',
-  'onboarding.oauthMethod': 'Home Assistant로 로그인',
-  'onboarding.oauthMethodDesc': 'OAuth2를 통해 Home Assistant 자격 증명을 사용하여 인증하세요.',
-  'onboarding.openHA': 'Home Assistant 열기',
-  'onboarding.completeSetup': '설정 완료',
-  'onboarding.urlError': 'URL은 http:// 또는 https://로 시작해야 합니다',
-  'onboarding.connectionFailed': '연결 실패 (HTTP {status}). URL을 확인하고 다시 시도하세요.',
-  'onboarding.notReachable':
-    'Home Assistant에 연결할 수 없습니다. URL을 확인하고 접근 가능한지 확인하세요.',
-  'onboarding.tokenRequired': '액세스 토큰을 입력하세요.',
-
-  // ---- chores planner (Abbai Flow chores screen) ----
   'planner.title': '집안일과 루틴',
   'planner.loading': '집안일과 루틴을 불러오는 중...',
   'planner.shortTitle': '집안일',

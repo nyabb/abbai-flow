@@ -1,22 +1,19 @@
 /**
  * Abbai Flow backend — request handling.
  *
- * This module is deliberately CommonJS (`*.cjs`) so it can be started by the
- * add-on image (which has no package.json and therefore treats `.js` as CJS)
- * *and* loaded by `node --test` here, where the root package.json declares
+ * This module is deliberately CommonJS (`*.cjs`) so it can be loaded by
+ * `node --test` here, where the root package.json declares
  * `"type": "module"`.
  *
  * Responsibilities:
  *  - serve the built SPA from ABBAI_FLOW_DIST
- *  - proxy `/api/*` (REST) and `/api/websocket` (upgrade) to Home Assistant
  *  - persist JSON documents under ABBAI_FLOW_DATA
  *
  * Everything is created by `createApp(options)` so tests can drive the real
- * handlers against a fake Home Assistant without touching global state.
+ * handlers without touching global state.
  */
 
 const http = require('http');
-const https = require('https');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
@@ -42,10 +39,7 @@ const { createCaldavCalendarService } = require('./build/caldav-calendar-bundle.
 /** Default request body limit (1 MiB) — matches the previous behaviour. */
 const MAX_BODY_SIZE = 1024 * 1024;
 const PHOTO_UPLOAD_BODY_SIZE = 9 * 1024 * 1024;
-/** Proxied REST requests are abandoned after this long. */
-const PROXY_TIMEOUT_MS = 30000;
-/** A WebSocket upgrade must be established within this window. */
-const UPGRADE_TIMEOUT_MS = 15000;
+const REQUEST_BODY_TIMEOUT_MS = 30_000;
 
 /**
  * Origins that the native shells (Capacitor iOS/Android) send. They are
@@ -74,36 +68,6 @@ const MIME_TYPES = {
   '.webmanifest': 'application/manifest+json',
 };
 
-/** Transport + default port for a URL protocol. */
-function transportFor(protocol) {
-  return protocol === 'https:' ? https : http;
-}
-
-function defaultPortFor(protocol) {
-  return protocol === 'https:' ? 443 : 80;
-}
-
-/**
- * Join a configured base URL with a request path.
- *
- * The base may carry a path (`http://supervisor/core`), so the request path is
- * resolved relatively — `new URL('/api/x', base)` would drop `/core`.
- * Throws when the base URL is not parseable so callers can answer 500/400
- * instead of silently proxying to the wrong host.
- */
-function resolveHaUrl(base, requestPath) {
-  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
-  return new URL(String(requestPath).replace(/^\//, ''), normalizedBase);
-}
-
-/**
- * HA identifiers are lowercase `domain` / `service` names. They are spliced
- * into a proxied path, so anything else must be rejected rather than escaped.
- */
-function isSafeIdentifier(value) {
-  return typeof value === 'string' && /^[a-z_][a-z0-9_]*$/i.test(value) && value.length <= 64;
-}
-
 function sendJson(res, status, payload, extraHeaders = {}) {
   if (res.headersSent) return;
   const body = JSON.stringify(payload);
@@ -113,15 +77,6 @@ function sendJson(res, status, payload, extraHeaders = {}) {
     ...extraHeaders,
   });
   res.end(body);
-}
-
-function safeDestroy(target) {
-  if (!target) return;
-  try {
-    target.destroy();
-  } catch {
-    /* already gone */
-  }
 }
 
 /**
@@ -173,9 +128,9 @@ function collectBody(req, maxSize = MAX_BODY_SIZE) {
     // A stalled upload must not pin the connection forever.
     drainTimer = setTimeout(() => {
       if (settled) return;
-      safeDestroy(req);
+      req.resume();
       finish({ error: { status: 408, message: 'Request body timed out' } });
-    }, PROXY_TIMEOUT_MS);
+    }, REQUEST_BODY_TIMEOUT_MS);
     if (typeof drainTimer.unref === 'function') drainTimer.unref();
   });
 }
@@ -202,7 +157,8 @@ async function readJsonObject(req, maxSize = MAX_BODY_SIZE) {
  * served the app (or a native shell / explicitly allowed origin).
  *
  * Browsers always attach `Origin` to cross-origin requests, so a page on
- * another site can no longer drive `/beacon-action/*` or `/beacon-data/*`
+ * another site can no longer drive state-changing endpoints against the app
+ * server from a wall display's browser.
  * against a wall display that is reachable on the LAN.
  */
 function isAllowedOrigin(req, allowedOrigins = []) {
@@ -225,7 +181,7 @@ function isAllowedOrigin(req, allowedOrigins = []) {
 /** Only tolerate JSON-ish bodies on the mutating bridge endpoints. */
 function hasJsonContentType(req) {
   const type = String(req.headers['content-type'] || '').toLowerCase();
-  // A missing Content-Type is tolerated: HA ingress and some WebViews drop it.
+  // A missing Content-Type is tolerated for native and embedded browsers.
   return type === '' || type.startsWith('application/json');
 }
 
@@ -256,277 +212,6 @@ async function serveStatic(req, res, distDir) {
     res.end(data);
   } catch {
     sendJson(res, 404, { error: 'Not found' });
-  }
-}
-
-/** One authenticated REST call to Home Assistant. */
-function haRequest(config, method, apiPath, body, timeoutMs = PROXY_TIMEOUT_MS) {
-  return new Promise((resolve, reject) => {
-    let target;
-    try {
-      target = resolveHaUrl(config.haBaseUrl, apiPath);
-    } catch (err) {
-      reject(err);
-      return;
-    }
-
-    const bodyBuf = body ? Buffer.from(JSON.stringify(body), 'utf8') : null;
-    const transport = transportFor(target.protocol);
-    const options = {
-      hostname: target.hostname,
-      port: target.port || defaultPortFor(target.protocol),
-      path: target.pathname + target.search,
-      method,
-      headers: {
-        Authorization: `Bearer ${config.haToken}`,
-        'Content-Type': 'application/json',
-      },
-    };
-    if (bodyBuf) options.headers['Content-Length'] = bodyBuf.length;
-    if (config.ca) options.ca = config.ca;
-
-    const request = transport.request(options, (resp) => {
-      const chunks = [];
-      resp.on('data', (chunk) => chunks.push(chunk));
-      resp.on('end', () => {
-        const raw = Buffer.concat(chunks).toString('utf8');
-        try {
-          resolve({ status: resp.statusCode, data: JSON.parse(raw) });
-        } catch {
-          resolve({ status: resp.statusCode, data: raw });
-        }
-      });
-      resp.on('error', reject);
-    });
-
-    request.setTimeout(timeoutMs, () => {
-      request.destroy(new Error('Home Assistant request timed out'));
-    });
-    request.on('error', reject);
-    if (bodyBuf) request.write(bodyBuf);
-    request.end();
-  });
-}
-
-/** Proxy `/api/*` to HA, preserving method, query and body. */
-async function proxyToHA(req, res, config) {
-  const { body, error } = await collectBody(req);
-  if (error) {
-    sendJson(res, error.status, { error: error.message });
-    return;
-  }
-
-  let target;
-  try {
-    target = resolveHaUrl(config.haBaseUrl, req.url);
-  } catch {
-    sendJson(res, 500, { error: 'Home Assistant URL is misconfigured' });
-    return;
-  }
-
-  const transport = transportFor(target.protocol);
-  const options = {
-    hostname: target.hostname,
-    port: target.port || defaultPortFor(target.protocol),
-    path: target.pathname + target.search,
-    method: req.method,
-    headers: {
-      Authorization: `Bearer ${config.haToken}`,
-      'Content-Type': req.headers['content-type'] || 'application/json',
-    },
-  };
-  if (body) options.headers['Content-Length'] = body.length;
-  if (config.ca) options.ca = config.ca;
-
-  let settled = false;
-  const proxyReq = transport.request(options, (proxyRes) => {
-    if (settled) return;
-    settled = true;
-    res.writeHead(proxyRes.statusCode || 502, proxyRes.headers);
-    proxyRes.pipe(res);
-    proxyRes.on('error', () => safeDestroy(res));
-  });
-
-  proxyReq.setTimeout(PROXY_TIMEOUT_MS, () => {
-    proxyReq.destroy(new Error('timed out'));
-  });
-
-  proxyReq.on('error', (err) => {
-    if (settled) return;
-    settled = true;
-    console.error('Proxy error:', err.message);
-    sendJson(res, 502, { error: 'Failed to reach Home Assistant' });
-  });
-
-  // The client going away must not leave the upstream request hanging.
-  res.on('close', () => {
-    if (!res.writableEnded) proxyReq.destroy();
-  });
-
-  if (body) proxyReq.write(body);
-  proxyReq.end();
-}
-
-/* ------------------------------------------------------------------ */
-/*  Voice / natural-language intent parser (keyword-based, no LLM)    */
-/* ------------------------------------------------------------------ */
-
-const INTENT_PATTERNS = [
-  {
-    name: 'add_item',
-    patterns: [/add\s+(.+?)\s+to\s+(?:the\s+)?(.+)/i],
-    handler: (m) => ({
-      domain: 'todo',
-      service: 'add_item',
-      data: { item: m[1].trim() },
-      entityHint: m[2].trim(),
-      response: `Added ${m[1].trim()} to ${m[2].trim()}`,
-    }),
-  },
-  {
-    name: 'complete_item',
-    patterns: [
-      /(?:check off|mark)\s+(.+?)\s+(?:as\s+)?(?:done|complete|completed)/i,
-      /(?:complete|finish)\s+(.+)/i,
-    ],
-    handler: (m) => ({
-      domain: 'todo',
-      service: 'update_item',
-      data: { item: m[1].trim(), status: 'completed' },
-      entityHint: null,
-      response: `Marked ${m[1].trim()} as done`,
-    }),
-  },
-  {
-    name: 'play_music',
-    patterns: [/\b(?:play\s+music|resume\s+music|resume\s+playback|play)\b/i],
-    handler: () => ({
-      domain: 'media_player',
-      service: 'media_play',
-      data: {},
-      entityHint: null,
-      response: 'Playing music',
-    }),
-  },
-  {
-    name: 'pause_music',
-    patterns: [/\b(?:pause|stop\s+music|pause\s+music|stop\s+playback)\b/i],
-    handler: () => ({
-      domain: 'media_player',
-      service: 'media_pause',
-      data: {},
-      entityHint: null,
-      response: 'Paused music',
-    }),
-  },
-  {
-    name: 'next_track',
-    patterns: [/\b(?:next\s+(?:song|track)|skip)\b/i],
-    handler: () => ({
-      domain: 'media_player',
-      service: 'media_next_track',
-      data: {},
-      entityHint: null,
-      response: 'Skipping to next track',
-    }),
-  },
-  {
-    name: 'set_volume',
-    patterns: [/set\s+volume\s+(?:to\s+)?(\d+)/i, /volume\s+(\d+)/i],
-    handler: (m) => {
-      const level = Math.min(100, Math.max(0, parseInt(m[1], 10)));
-      return {
-        domain: 'media_player',
-        service: 'volume_set',
-        data: { volume_level: level / 100 },
-        entityHint: null,
-        response: `Volume set to ${level}%`,
-      };
-    },
-  },
-  {
-    name: 'navigate',
-    patterns: [/(?:show|go\s+to|open|navigate\s+to)\s+(?:the\s+)?(.+)/i],
-    handler: (m) => ({
-      navigation: true,
-      view: m[1].trim().toLowerCase(),
-      response: `Navigating to ${m[1].trim()}`,
-    }),
-  },
-  {
-    name: 'calendar',
-    patterns: [
-      /\b(?:what(?:'s| is)\s+on\s+(?:today|my\s+calendar|my\s+schedule)|today(?:'s)?\s+(?:schedule|events|calendar|agenda))\b/i,
-    ],
-    handler: () => ({
-      fetch: 'calendar',
-      response: null,
-    }),
-  },
-  {
-    name: 'weather',
-    patterns: [/\b(?:what(?:'s| is)\s+the\s+weather|weather\s+(?:today|now|forecast))\b/i],
-    handler: () => ({
-      fetch: 'weather',
-      response: null,
-    }),
-  },
-];
-
-function parseIntent(text) {
-  for (const intent of INTENT_PATTERNS) {
-    for (const pat of intent.patterns) {
-      const match = text.match(pat);
-      if (match) {
-        return { name: intent.name, ...intent.handler(match) };
-      }
-    }
-  }
-  return null;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Endpoint handlers                                                 */
-/* ------------------------------------------------------------------ */
-
-/** POST /beacon-action/service { domain, service, data, return_response } */
-async function handleServiceCall(req, res, config) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'Method not allowed' });
-    return;
-  }
-  if (!hasJsonContentType(req)) {
-    sendJson(res, 415, { error: 'Expected application/json' });
-    return;
-  }
-
-  const { value, error } = await readJsonObject(req);
-  if (error) {
-    sendJson(res, error.status, { error: error.message });
-    return;
-  }
-
-  const { domain, service, data, return_response } = value;
-  if (!isSafeIdentifier(domain) || !isSafeIdentifier(service)) {
-    sendJson(res, 400, { error: 'Invalid domain or service' });
-    return;
-  }
-  if (data != null && (typeof data !== 'object' || Array.isArray(data))) {
-    sendJson(res, 400, { error: 'Invalid data payload' });
-    return;
-  }
-
-  const qs = return_response ? '?return_response' : '';
-  try {
-    const result = await haRequest(
-      config,
-      'POST',
-      `/api/services/${domain}/${service}${qs}`,
-      data || {},
-    );
-    sendJson(res, result.status, result.data ?? {});
-  } catch (err) {
-    sendJson(res, 502, { error: err.message });
   }
 }
 
@@ -572,7 +257,7 @@ async function writeDataFile(filePath, contents) {
 }
 
 /**
- * Persistent data API — stores JSON in ABBAI_FLOW_DATA (survives add-on rebuilds).
+ * Persistent data API — stores JSON in ABBAI_FLOW_DATA across app restarts.
  *
  * GET  /beacon-data/:key  → read stored JSON (`null` when absent)
  * PUT  /beacon-data/:key  → write JSON body to storage
@@ -806,353 +491,6 @@ function loadPlannerRules() {
   return plannerRules;
 }
 
-/**
- * POST /beacon-action/voice
- * Body: { "text": "add milk to the grocery list" }
- */
-async function handleVoiceAction(req, res, config, caldavCalendars, weatherService) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'Method not allowed' });
-    return;
-  }
-  if (!hasJsonContentType(req)) {
-    sendJson(res, 415, { error: 'Expected application/json' });
-    return;
-  }
-
-  const { value, error } = await readJsonObject(req);
-  if (error) {
-    sendJson(res, error.status, { error: error.message });
-    return;
-  }
-
-  const { text } = value;
-  if (!text || typeof text !== 'string') {
-    sendJson(res, 400, { error: 'Missing or invalid "text" field' });
-    return;
-  }
-
-  const intent = parseIntent(text.trim());
-
-  let cachedStates = null;
-  async function getStates() {
-    if (!cachedStates) {
-      cachedStates = haRequest(config, 'GET', '/api/states').then((r) => r.data || []);
-    }
-    return cachedStates;
-  }
-
-  if (!intent) {
-    sendJson(res, 200, {
-      response: "Sorry, I didn't understand that.",
-      action: null,
-      success: false,
-    });
-    return;
-  }
-
-  if (intent.navigation) {
-    sendJson(res, 200, {
-      response: intent.response,
-      action: 'navigate',
-      view: intent.view,
-      success: true,
-    });
-    return;
-  }
-
-  if (intent.fetch === 'calendar') {
-    try {
-      const calendars = await caldavCalendars.listCalendars();
-      const now = new Date();
-      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-      const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-
-      const calResults = await Promise.all(
-        calendars.map(async (cal) => {
-          try {
-            const events = await caldavCalendars.fetchEvents(cal.id, startOfDay, endOfDay);
-            return events.map((event) => ({
-              calendar: cal.name,
-              summary: event.title,
-              start: event.start,
-              end: event.end,
-              description: event.description,
-              location: event.location,
-            }));
-          } catch {
-            return [];
-          }
-        }),
-      );
-      const allEvents = calResults.flat();
-
-      const summary =
-        allEvents.length === 0
-          ? 'No events on your calendar today.'
-          : `You have ${allEvents.length} event${allEvents.length > 1 ? 's' : ''} today: ${allEvents
-              .map((e) => e.summary || 'Untitled')
-              .join(', ')}.`;
-
-      sendJson(res, 200, {
-        response: summary,
-        action: 'calendar',
-        events: allEvents,
-        success: true,
-      });
-    } catch (err) {
-      sendJson(res, 200, {
-        response: 'Failed to fetch calendar.',
-        action: 'calendar',
-        success: false,
-        error: err.message,
-      });
-    }
-    return;
-  }
-
-  if (intent.fetch === 'weather') {
-    try {
-      const weather = await weatherService.getForecast(config);
-      const current = weather.current;
-      const temp = `${current.temperature}${current.temperatureUnit}`;
-      const condition = current.condition || 'unknown';
-      const summary = `Currently ${condition}, ${temp}.`;
-
-      sendJson(res, 200, {
-        response: summary,
-        action: 'weather',
-        entity: weather.sourceName || 'weather-provider',
-        state: condition,
-        attributes: current,
-        success: true,
-      });
-    } catch (err) {
-      sendJson(res, 200, {
-        response: 'Failed to fetch weather.',
-        action: 'weather',
-        success: false,
-        error: err instanceof Error ? err.message : 'Weather forecast request failed.',
-      });
-    }
-    return;
-  }
-
-  let entityId = null;
-  if (intent.domain === 'todo' && intent.entityHint) {
-    try {
-      const states = await getStates();
-      const todoEntities = states.filter(
-        (e) => typeof e.entity_id === 'string' && e.entity_id.startsWith('todo.'),
-      );
-      const hint = intent.entityHint.toLowerCase();
-      const match = todoEntities.find((e) => {
-        const name = (e.attributes?.friendly_name || '').toLowerCase();
-        return name === hint || name.includes(hint) || e.entity_id.toLowerCase().includes(hint);
-      });
-      if (match) entityId = match.entity_id;
-    } catch {
-      /* proceed without entity */
-    }
-  }
-
-  if (intent.domain === 'media_player' && !entityId) {
-    try {
-      const states = await getStates();
-      const players = states.filter(
-        (e) => typeof e.entity_id === 'string' && e.entity_id.startsWith('media_player.'),
-      );
-      const playing = players.find((e) => e.state === 'playing');
-      const paused = players.find((e) => e.state === 'paused');
-      entityId = (playing || paused || players[0])?.entity_id || null;
-    } catch {
-      /* proceed without entity */
-    }
-  }
-
-  const serviceData = { ...intent.data };
-  if (entityId) serviceData.entity_id = entityId;
-
-  try {
-    const qs = intent.domain === 'todo' ? '?return_response' : '';
-    let resp = await haRequest(
-      config,
-      'POST',
-      `/api/services/${intent.domain}/${intent.service}${qs}`,
-      serviceData,
-    );
-
-    if (
-      resp.status >= 400 &&
-      intent.domain === 'media_player' &&
-      ['media_play', 'media_pause', 'media_next_track'].includes(intent.service)
-    ) {
-      resp = await haRequest(
-        config,
-        'POST',
-        '/api/services/media_player/media_play_pause',
-        serviceData,
-      );
-      if (resp.status >= 400) {
-        resp = await haRequest(config, 'POST', '/api/services/media_player/toggle', serviceData);
-      }
-    }
-
-    const ok = resp.status >= 200 && resp.status < 300;
-    sendJson(res, 200, {
-      response: ok ? intent.response : `Action failed (${resp.status}).`,
-      action: intent.name,
-      entity_id: entityId,
-      success: ok,
-    });
-  } catch (err) {
-    sendJson(res, 200, {
-      response: `Action failed: ${err.message}`,
-      action: intent.name,
-      success: false,
-    });
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/*  WebSocket proxy                                                   */
-/* ------------------------------------------------------------------ */
-
-/**
- * Proxy the browser's `/api/websocket` upgrade to Home Assistant.
- *
- * The transport follows the configured HA URL: `https://` bases are proxied
- * with TLS and default to port 443, `http://` bases use plain HTTP on port 80.
- * (Before this, the transport was hard-coded to `http` with port 80, so an
- * HA instance served over HTTPS could never be reached.)
- */
-function handleUpgrade(req, socket, head, config) {
-  const reject = () => safeDestroy(socket);
-
-  if (!config.haToken || !req.url || !req.url.startsWith('/api/websocket')) {
-    reject();
-    return;
-  }
-
-  let target;
-  try {
-    target = resolveHaUrl(config.haBaseUrl, '/api/websocket');
-  } catch {
-    reject();
-    return;
-  }
-
-  const secure = target.protocol === 'https:';
-  const transport = transportFor(target.protocol);
-
-  const headers = {
-    connection: 'Upgrade',
-    upgrade: 'websocket',
-    host: target.host,
-    'sec-websocket-version': req.headers['sec-websocket-version'] || '13',
-  };
-  // Only forward the handshake headers HA needs — never the browser's
-  // cookies or authorization header.
-  for (const key of ['sec-websocket-key', 'sec-websocket-protocol', 'sec-websocket-extensions']) {
-    if (req.headers[key]) headers[key] = req.headers[key];
-  }
-
-  const options = {
-    hostname: target.hostname,
-    port: target.port || defaultPortFor(target.protocol),
-    path: target.pathname + target.search,
-    method: 'GET',
-    headers,
-    servername: secure ? target.hostname : undefined,
-    // One upstream socket per browser socket; nothing to reuse or leak.
-    agent: false,
-  };
-  if (config.ca) options.ca = config.ca;
-
-  let closed = false;
-  const cleanup = () => {
-    if (closed) return;
-    closed = true;
-    clearTimeout(timer);
-    safeDestroy(proxyReq);
-    safeDestroy(proxySocket);
-    safeDestroy(socket);
-  };
-
-  const proxyReq = transport.request(options);
-
-  const timer = setTimeout(() => {
-    console.error('WebSocket proxy upgrade timed out');
-    cleanup();
-  }, config.upgradeTimeoutMs || UPGRADE_TIMEOUT_MS);
-  if (typeof timer.unref === 'function') timer.unref();
-
-  let proxySocket = null;
-
-  proxyReq.on('upgrade', (proxyRes, upstream, upstreamHead) => {
-    if (closed) {
-      safeDestroy(upstream);
-      return;
-    }
-    clearTimeout(timer);
-    proxySocket = upstream;
-
-    if (proxyRes.statusCode !== 101) {
-      cleanup();
-      return;
-    }
-
-    const responseHeaders = Object.entries(proxyRes.headers)
-      .filter(([, value]) => value !== undefined)
-      .map(([key, value]) => `${key}: ${value}`)
-      .join('\r\n');
-
-    try {
-      socket.write(`HTTP/1.1 101 Switching Protocols\r\n${responseHeaders}\r\n\r\n`);
-      if (upstreamHead && upstreamHead.length > 0) socket.write(upstreamHead);
-    } catch {
-      cleanup();
-      return;
-    }
-
-    socket.setNoDelay(true);
-    upstream.setNoDelay(true);
-
-    upstream.on('error', cleanup);
-    socket.on('error', cleanup);
-    upstream.on('close', cleanup);
-    socket.on('close', cleanup);
-
-    upstream.pipe(socket);
-    socket.pipe(upstream);
-  });
-
-  proxyReq.on('response', (proxyRes) => {
-    // A non-101 answer means HA refused the upgrade; pass the status through
-    // and close instead of leaving the browser hanging.
-    if (closed) return;
-    try {
-      socket.write(`HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage || ''}\r\n\r\n`);
-    } catch {
-      /* ignore */
-    }
-    cleanup();
-  });
-
-  proxyReq.on('error', (err) => {
-    if (!closed) console.error('WebSocket proxy error:', err.message);
-    cleanup();
-  });
-
-  // The browser socket dropping mid-handshake must abort the upstream attempt.
-  socket.on('error', cleanup);
-  socket.on('close', cleanup);
-
-  if (head && head.length > 0) proxyReq.write(head);
-  proxyReq.end();
-}
-
-/* ------------------------------------------------------------------ */
 /*  Application factory                                               */
 /* ------------------------------------------------------------------ */
 
@@ -1171,9 +509,6 @@ const MEAL_DATA_MAPPING_KEYS = [
 const EMPTY_MEAL_DATA_MAPPING = Object.fromEntries(MEAL_DATA_MAPPING_KEYS.map((key) => [key, '']));
 const DEFAULT_WEATHER_DATA_MAPPING = { ...DEFAULT_WEATHER_MAPPING };
 const INTEGRATION_SETTING_KEYS = [
-  'haToken',
-  'haBaseUrl',
-  'haWsUrlOverride',
   'openMeteoUrl',
   'weatherApiUrl',
   'weatherApiKey',
@@ -1198,6 +533,20 @@ const CALENDAR_PROVIDERS = new Set(['caldav', 'ics', 'google']);
 
 function integrationSettingsPath(dataDir) {
   return path.join(dataDir, INTEGRATION_SETTINGS_FILE);
+}
+
+function hasObsoleteIntegrationSettings(dataDir) {
+  try {
+    const stored = JSON.parse(fs.readFileSync(integrationSettingsPath(dataDir), 'utf8'));
+    return (
+      stored &&
+      typeof stored === 'object' &&
+      !Array.isArray(stored) &&
+      Object.keys(stored).some((key) => !INTEGRATION_SETTING_KEYS.includes(key))
+    );
+  } catch {
+    return false;
+  }
 }
 
 function readIntegrationSettings(dataDir, fallback) {
@@ -1277,8 +626,6 @@ async function writeIntegrationSettings(dataDir, settings) {
 function mergeIntegrationSettings(current, patch) {
   const next = Object.fromEntries(INTEGRATION_SETTING_KEYS.map((key) => [key, current[key]]));
   const fields = {
-    haUrl: 'haBaseUrl',
-    haToken: 'haToken',
     weatherApiUrl: 'weatherApiUrl',
     openMeteoUrl: 'openMeteoUrl',
     weatherApiKey: 'weatherApiKey',
@@ -1306,11 +653,9 @@ function mergeIntegrationSettings(current, patch) {
             : patch[input].trim();
     }
   }
-  if (typeof patch.haUrl === 'string') next.haBaseUrl = normaliseHaBaseUrl(patch.haUrl);
   if (typeof next.icloudRemindersListKey === 'string') {
     next.icloudRemindersListKey = next.icloudRemindersListKey.trim();
   }
-  if (patch.clearHaToken === true) next.haToken = '';
   if (patch.clearWeatherApiKey === true) next.weatherApiKey = '';
   if (patch.weatherApiKeyMode === 'query' || patch.weatherApiKeyMode === 'bearer') {
     next.weatherApiKeyMode = patch.weatherApiKeyMode;
@@ -1392,19 +737,6 @@ function isValidMealMappingPath(value) {
 }
 
 function validateIntegrationSettings(settings) {
-  try {
-    const haUrl = new URL(settings.haBaseUrl);
-    if (
-      !['http:', 'https:'].includes(haUrl.protocol) ||
-      !haUrl.hostname ||
-      haUrl.username ||
-      haUrl.password
-    ) {
-      return 'Enter a valid Home Assistant URL using http or https.';
-    }
-  } catch {
-    return 'Enter a valid Home Assistant URL using http or https.';
-  }
   if (settings.openMeteoUrl) {
     try {
       prepareForecastUrl(settings.openMeteoUrl);
@@ -1541,11 +873,6 @@ function validateIntegrationSettings(settings) {
 
 function publicIntegrationSettings(settings, icloudStatus = {}) {
   return {
-    haUrl:
-      !settings.haToken && settings.haBaseUrl === 'http://supervisor/core'
-        ? ''
-        : settings.haBaseUrl,
-    haConfigured: Boolean(settings.haToken),
     openMeteoUrl: settings.openMeteoUrl || '',
     weatherApiUrl: settings.weatherApiUrl || '',
     weatherApiKeyConfigured: Boolean(settings.weatherApiKey),
@@ -1582,38 +909,16 @@ function publicIntegrationSettings(settings, icloudStatus = {}) {
   };
 }
 
-function updateHaWebSocketUrl(config) {
-  if (config.haWsUrlOverride) {
-    config.haWsUrl = config.haWsUrlOverride;
-    return;
-  }
-  try {
-    const url = new URL(config.haBaseUrl);
-    url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-    url.pathname = `${url.pathname.replace(/\/$/, '')}/api/websocket`;
-    config.haWsUrl = url.toString();
-  } catch {
-    config.haWsUrl = '';
-  }
-}
-
 /**
  * Build the HTTP server.
  *
  * @param {object} options
  * @param {string} options.distDir      directory with the built SPA
  * @param {string} options.dataDir      directory for persisted JSON
- * @param {string} options.haToken      long-lived HA token (empty = disabled)
- * @param {string} options.haBaseUrl    e.g. http://supervisor/core
- * @param {string} options.haWsUrl      e.g. ws://supervisor/core/api/websocket
  * @param {string[]} [options.allowedOrigins] extra allowed CORS origins
- * @param {string} [options.ca]         extra CA (PEM) for private HA certs
  */
 function createApp(options) {
   const initialIntegrationSettings = {
-    haToken: options.haToken || '',
-    haBaseUrl: (options.haBaseUrl || 'http://supervisor/core').replace(/\/$/, ''),
-    haWsUrlOverride: options.haWsUrl || '',
     openMeteoUrl: '',
     weatherApiUrl: '',
     weatherApiKey: '',
@@ -1638,11 +943,13 @@ function createApp(options) {
     distDir: options.distDir,
     dataDir: options.dataDir,
     allowedOrigins: options.allowedOrigins || [],
-    ca: options.ca,
-    upgradeTimeoutMs: options.upgradeTimeoutMs || UPGRADE_TIMEOUT_MS,
     ...readIntegrationSettings(options.dataDir, initialIntegrationSettings),
   };
-  updateHaWebSocketUrl(config);
+  if (hasObsoleteIntegrationSettings(options.dataDir)) {
+    void writeIntegrationSettings(options.dataDir, config).catch(() => {
+      console.warn('Could not remove obsolete integration settings.');
+    });
+  }
 
   const createEncore = () => new EncoreMusic({ token: config.encoreToken, url: config.encoreUrl });
   const bluetooth =
@@ -1756,9 +1063,6 @@ function createApp(options) {
     void services.choresman.call('run_scheduled_maintenance', {}).catch(() => undefined);
   }
 
-  server.on('upgrade', (req, socket, head) => {
-    handleUpgrade(req, socket, head, config);
-  });
   server.on('close', () => {
     if (choresmanMaintenanceTimer) clearInterval(choresmanMaintenanceTimer);
     services.encore.stop();
@@ -1777,18 +1081,6 @@ function createApp(options) {
       next.icloudAppleId !== config.icloudAppleId || next.icloudPassword !== config.icloudPassword;
     if (icloudCredentialsChanged) next.icloudRemindersListKey = '';
 
-    const haConnectionChanged =
-      next.haBaseUrl !== config.haBaseUrl || next.haToken !== config.haToken;
-    if (haConnectionChanged && next.haToken) {
-      try {
-        const result = await haRequest({ ...config, ...next }, 'GET', '/api/', null, 10000);
-        if (result.status !== 200) {
-          return { error: `Home Assistant rejected the connection (HTTP ${result.status})` };
-        }
-      } catch {
-        return { error: 'Could not reach Home Assistant at that address' };
-      }
-    }
     try {
       await writeIntegrationSettings(config.dataDir, next);
     } catch {
@@ -1814,7 +1106,6 @@ function createApp(options) {
     }
 
     Object.assign(config, next);
-    updateHaWebSocketUrl(config);
     if (encoreChanged) {
       services.encore.stop();
       services.encore = createEncore();
@@ -1856,19 +1147,10 @@ async function route(req, res, config, services, bluetooth) {
   const url = req.url || '/';
   const pathname = url.split('?')[0];
   const { encore, spotifyCatalog, spotifyPlaylists } = services;
-  const actionPath =
-    {
-      '/abbai-flow/action/voice': '/beacon-action/voice',
-      '/abbai-flow/action/service': '/beacon-action/service',
-    }[pathname] || pathname;
 
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
-  // Every state-changing endpoint goes through the origin guard — including
-  // the generic `/api/*` proxy, which carries the server-side HA token and can
-  // call arbitrary services.
+  // Every state-changing endpoint goes through the origin guard.
   const guarded =
-    actionPath === '/beacon-action/voice' ||
-    actionPath === '/beacon-action/service' ||
     pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname.startsWith('/abbai-flow/photos') ||
@@ -1881,7 +1163,7 @@ async function route(req, res, config, services, bluetooth) {
     pathname.startsWith('/abbai-flow/music/library/') ||
     pathname.startsWith('/abbai-flow/bluetooth/control') ||
     pathname === '/abbai-flow/choresman' ||
-    url.startsWith('/api/');
+    url === '/api/planner/mutate';
 
   if (guarded && isMutation && !isAllowedOrigin(req, config.allowedOrigins)) {
     sendJson(res, 403, { error: 'Cross-origin request rejected' });
@@ -2149,30 +1431,13 @@ async function route(req, res, config, services, bluetooth) {
         });
         return;
       }
+      if (req.method !== 'PUT') {
+        sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, PUT' });
+        return;
+      }
       const { value, error } = await readJsonObject(req);
       if (error) {
         sendJson(res, error.status, { error: error.message });
-        return;
-      }
-      if (req.method === 'POST') {
-        const candidate = { ...config, ...mergeIntegrationSettings(config, value) };
-        const validation = validateIntegrationSettings(candidate);
-        if (validation) {
-          sendJson(res, 400, { error: validation });
-          return;
-        }
-        try {
-          const result = await haRequest(candidate, 'GET', '/api/', null, 10000);
-          if (result.status !== 200) {
-            sendJson(res, 400, {
-              error: `Home Assistant rejected the connection (HTTP ${result.status})`,
-            });
-            return;
-          }
-          sendJson(res, 200, { ok: true });
-        } catch {
-          sendJson(res, 502, { error: 'Could not reach Home Assistant at that address' });
-        }
         return;
       }
       if (req.method === 'PUT') {
@@ -2184,8 +1449,6 @@ async function route(req, res, config, services, bluetooth) {
         sendJson(res, 200, result.settings, { 'Cache-Control': 'no-store' });
         return;
       }
-      sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET, POST, PUT' });
-      return;
     }
     if (pathname === '/abbai-flow/weather/forecast') {
       if (req.method !== 'POST') {
@@ -2352,22 +1615,14 @@ async function route(req, res, config, services, bluetooth) {
       );
       return;
     }
-    if (actionPath === '/beacon-action/voice') {
-      await handleVoiceAction(req, res, config, services.caldavCalendars, services.weather);
-      return;
-    }
-    if (actionPath === '/beacon-action/service') {
-      await handleServiceCall(req, res, config);
-      return;
-    }
     if (pathname.startsWith('/beacon-data/') || pathname.startsWith('/abbai-flow/data/')) {
       await handleDataApi(req, res, config);
       return;
     }
     if (url === '/runtime-config.js') {
-      // Served dynamically, never cached: the browser must pick up the current
-      // HA address after a redeploy without a hard refresh.
-      const body = `window.__ABBAI_FLOW_CONFIG__ = ${JSON.stringify(runtimeConfigFor(config))};\n`;
+      // Served dynamically, never cached, so deployment settings can change
+      // without a hard refresh.
+      const body = `window.__ABBAI_FLOW_CONFIG__ = ${JSON.stringify(runtimeConfigFor())};\n`;
       res.writeHead(200, {
         'Content-Type': 'application/javascript; charset=utf-8',
         'Content-Length': Buffer.byteLength(body),
@@ -2381,11 +1636,7 @@ async function route(req, res, config, services, bluetooth) {
       return;
     }
     if (url.startsWith('/api/')) {
-      if (!config.haToken) {
-        sendJson(res, 503, { error: 'No Home Assistant token available' });
-        return;
-      }
-      await proxyToHA(req, res, config);
+      sendJson(res, 404, { error: 'API route not found' });
       return;
     }
     await serveStatic(req, res, config.distDir);
@@ -2395,41 +1646,13 @@ async function route(req, res, config, services, bluetooth) {
   }
 }
 
-/**
- * Normalise the configured Home Assistant address.
- *
- * People type `homeassistant.local:8123` into a container UI, paste
- * `https://ha.example.com/api`, or leave a trailing slash. All three must send
- * requests to the same place, otherwise the proxy 404s on `/api/api/...`.
- */
-function normaliseHaBaseUrl(value) {
-  let base = String(value || '').trim();
-  if (!base) return 'http://supervisor/core';
-  if (!/^https?:\/\//i.test(base)) base = `http://${base}`;
-  base = base.replace(/\/+$/, '');
-  base = base.replace(/\/api$/i, '');
-  return base || 'http://supervisor/core';
-}
-
-/**
- * Runtime configuration for the browser, served at `/runtime-config.js`.
- *
- * The SPA has to know it sits behind Abbai Flow's proxy — that is what stops it
- * asking the household for a long-lived token and makes every request go
- * same-origin. The token itself is deliberately **never** included: the server
- * injects it for each proxied call.
- */
-function runtimeConfigFor(config, env = process.env) {
-  const payload = {
-    deployment_mode: 'standalone',
-    // Display/reference only; requests are always proxied in this mode.
-    ha_url: config.haBaseUrl,
-  };
+/** Runtime configuration for the browser, served at `/runtime-config.js`. */
+function runtimeConfigFor(env = process.env) {
+  const payload = {};
 
   const passThrough = {
     family_name: env.FAMILY_NAME,
     theme: env.THEME,
-    photo_directory: env.PHOTO_DIRECTORY,
   };
   for (const [key, value] of Object.entries(passThrough)) {
     if (typeof value === 'string' && value.trim()) payload[key] = value.trim();
@@ -2448,11 +1671,10 @@ function runtimeConfigFor(config, env = process.env) {
 }
 
 /**
- * Read deployment configuration. Home Assistant, Encore, and Spotify
- * integration values are managed in Settings → Integrations and persisted in
- * the data directory, not read from environment variables.
+ * Read deployment configuration. Integration values are managed in Settings
+ * and persisted in the data directory, not read from environment variables.
  *
- * Paths, the CSRF allow-list and the extra CA all use `ABBAI_FLOW_*` names.
+ * Paths and the CSRF allow-list use `ABBAI_FLOW_*` names.
  * The pre-2.0 spelling of those variables is deliberately not accepted any
  * more: silently falling back to an old data path would split a household's
  * documents in two. `docs/upgrade-2.0.0.md` lists the rename.
@@ -2462,12 +1684,10 @@ function configFromEnv(env = process.env) {
     distDir: env.ABBAI_FLOW_DIST || '/app/dist',
     dataDir: env.ABBAI_FLOW_DATA || '/data',
     bluetoothDbusAddress: env.ABBAI_FLOW_BLUETOOTH_DBUS_ADDRESS || '',
-    photoDirectory: env.PHOTO_DIRECTORY || '',
     allowedOrigins: (env.ABBAI_FLOW_ALLOWED_ORIGINS || '')
       .split(',')
       .map((value) => value.trim())
       .filter(Boolean),
-    ca: env.ABBAI_FLOW_HA_CA || undefined,
   };
 }
 
@@ -2475,16 +1695,9 @@ module.exports = {
   MAX_BODY_SIZE,
   createApp,
   configFromEnv,
-  normaliseHaBaseUrl,
   runtimeConfigFor,
   collectBody,
   isAllowedOrigin,
-  isSafeIdentifier,
-  parseIntent,
-  defaultPortFor,
-  resolveHaUrl,
-  transportFor,
-  handleUpgrade,
   writeDataFile,
   readDataFile,
   handlePlannerMutate,

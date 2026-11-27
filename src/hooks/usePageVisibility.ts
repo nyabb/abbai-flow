@@ -2,8 +2,8 @@
  * Pause work while the page is hidden.
  *
  * A display that sits in a kiosk for weeks spends most of its life behind a
- * screensaver, a switched input or a sleeping screen. Polling Home Assistant
- * every 60 seconds and re-rendering a clock every second during those hours
+ * screensaver, a switched input or a sleeping screen. Polling every 60 seconds
+ * and re-rendering a clock every second during those hours
  * costs CPU, network and battery for output nobody can see.
  *
  * The refresh on becoming visible again is not an optimisation detail: without

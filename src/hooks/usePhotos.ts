@@ -10,9 +10,8 @@ interface UsePhotosReturn {
 const DEFAULT_INTERVAL = 30; // seconds
 
 export function usePhotos(
-  sources: PhotoSource[] = ['ha_media', 'local'],
+  sources: PhotoSource[] = ['uploaded'],
   intervalSeconds: number = DEFAULT_INTERVAL,
-  photoDirectory?: string,
 ): UsePhotosReturn {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +22,7 @@ export function usePhotos(
     let cancelled = false;
     setLoading(true);
 
-    void getPhotos(sources, photoDirectory)
+    void getPhotos(sources)
       .then((result) => {
         if (!cancelled) {
           setPhotos(result);
@@ -42,7 +41,7 @@ export function usePhotos(
     return () => {
       cancelled = true;
     };
-  }, [sources.join(','), photoDirectory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sources.join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Preload the next photo for smooth transitions
   useEffect(() => {

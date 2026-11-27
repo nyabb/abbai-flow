@@ -2,7 +2,7 @@
  * Run an async mapper over a list with a bounded number of parallel calls.
  *
  * Calendar and chore views can span multiple server-backed data sources.
- * Firing all of them at once floods weak HA installs (and the wall display's
+ * Firing all of them at once floods weak servers (and the wall display's
  * connection limit); doing them one by one makes a fifteen-calendar household
  * feel broken. This keeps the fan-out predictable.
  *

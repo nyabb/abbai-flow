@@ -5,21 +5,18 @@
  *
  *   offline      the device itself has no network (router, wifi, DNS)
  *   app-down     the device has network but Abbai Flow's own server does not answer
- *   ha-down      Abbai Flow is up but Home Assistant is not reachable
  *   online       everything answered
  *
- * The Abbai Flow probe is a cheap same-origin request for a static asset: it says
- * nothing about Home Assistant, only whether this app's own origin responds.
+ * The probe is a cheap same-origin request for a static asset, so it reports
+ * whether this app's own origin responds.
  * It is only re-probed while something is wrong, or when the browser tells us
  * the connectivity changed — probing on every render would defeat the point.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-export type ConnectionState = 'online' | 'app-down' | 'ha-down' | 'offline';
+export type ConnectionState = 'online' | 'app-down' | 'offline';
 
 export interface UseConnectionStatusOptions {
-  /** Home Assistant reachability, as reported by the HA client. */
-  haConnected: boolean;
   /** Re-probe cadence while degraded. */
   probeIntervalMs?: number;
   /** Injected for tests; defaults to `fetch`. */
@@ -50,10 +47,9 @@ export function browserOffline(): boolean {
 }
 
 export function useConnectionStatus({
-  haConnected,
   probeIntervalMs = 15_000,
   probe = defaultProbe,
-}: UseConnectionStatusOptions): ConnectionStatus {
+}: UseConnectionStatusOptions = {}): ConnectionStatus {
   const [appReachable, setAbbaiReachable] = useState(true);
   const [offline, setOffline] = useState(browserOffline);
   const [tick, setTick] = useState(0);
@@ -117,9 +113,7 @@ export function useConnectionStatus({
     ? 'offline'
     : !appReachable
       ? 'app-down'
-      : !haConnected
-        ? 'ha-down'
-        : 'online';
+      : 'online';
 
   // One-shot flag so callers can refresh data exactly once per recovery.
   useEffect(() => {
