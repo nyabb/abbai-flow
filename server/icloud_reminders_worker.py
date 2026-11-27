@@ -1139,17 +1139,46 @@ def inspect_cloudkit_responses(
             http.post = original_post
 
 
-def safe_error(exc: Exception) -> dict[str, str]:
+def safe_error(exc: Exception) -> dict[str, Any]:
     name = type(exc).__name__
     if isinstance(exc, PyiCloudFailedLoginException):
-        return {"errorCode": "invalid_credentials", "error": "Apple rejected the Apple ID or password."}
-    if "Connection" in name or "Timeout" in name:
-        return {"errorCode": "apple_unreachable", "error": "Could not reach Apple iCloud."}
-    if "AccountLocked" in name:
-        return {"errorCode": "account_locked", "error": "Apple temporarily locked this account. Try again later."}
-    if "AcceptTerms" in name:
-        return {"errorCode": "terms_required", "error": "Apple requires updated iCloud terms to be accepted."}
-    return {"errorCode": "icloud_request_failed", "error": "PyICloud could not complete the request."}
+        result: dict[str, Any] = {
+            "errorCode": "invalid_credentials",
+            "error": "Apple rejected the Apple ID or password.",
+        }
+    elif "Connection" in name or "Timeout" in name:
+        result = {"errorCode": "apple_unreachable", "error": "Could not reach Apple iCloud."}
+    elif "AccountLocked" in name:
+        result = {
+            "errorCode": "account_locked",
+            "error": "Apple temporarily locked this account. Try again later.",
+        }
+    elif "AcceptTerms" in name:
+        result = {
+            "errorCode": "terms_required",
+            "error": "Apple requires updated iCloud terms to be accepted.",
+        }
+    else:
+        result = {
+            "errorCode": "icloud_request_failed",
+            "error": "PyICloud could not complete the request.",
+        }
+
+    # Exception class, Apple code, and HTTP status are safe diagnostics; never
+    # expose exception text, which may contain account or request data.
+    detail = _safe_cloudkit_error_code(name)
+    if detail:
+        result["failureDetail"] = detail
+    code = _safe_cloudkit_error_code(getattr(exc, "code", None))
+    if code:
+        result["appleErrorCode"] = code
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    if status is None:
+        status = getattr(exc, "status_code", None)
+    if isinstance(status, int) and 100 <= status <= 599:
+        result["httpStatus"] = status
+    return result
 
 
 def object_fields(value: Any) -> list[str]:
@@ -2059,6 +2088,7 @@ def delete_reminder(request: dict[str, Any]) -> dict[str, Any]:
 def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
     if api is None:
         return {"ok": False, "errorCode": "authentication_required", "error": "Authenticate with Apple first."}
+    failure_stage = "list_section_context"
     try:
         reminders_service = api.reminders
         list_key = str(request.get("listKey") or "")
@@ -2073,9 +2103,11 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
             list_key,
             str(request.get("requestId") or "")[:100],
         )
+        failure_stage = "reminder_lookup"
         reminder = reminders_service.get(reminder_id, list_context=reminder_list)
         if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
             raise ValueError("That reminder does not belong to the selected list.")
+        failure_stage = "section_mutation"
         _move_reminder_section(
             reminders_service,
             reminder_list,
@@ -2084,6 +2116,7 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
             reminder_id,
             section_id,
         )
+        failure_stage = "cache_update"
         cache = _REMINDER_LIST_CACHE.get(list_key)
         response = cache.get("response") if isinstance(cache, dict) else None
         cached_lists = response.get("lists", []) if isinstance(response, dict) else []
@@ -2121,7 +2154,9 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
     except SectionMutationError as exc:
         return _section_mutation_failure(exc)
     except Exception as exc:
-        return {"ok": False, **safe_error(exc)}
+        result = {"ok": False, **safe_error(exc)}
+        result["failureStage"] = failure_stage
+        return result
 
 
 def handle(request: dict[str, Any]) -> dict[str, Any]:
