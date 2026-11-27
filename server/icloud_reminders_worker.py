@@ -301,11 +301,16 @@ def _section_mutation_error(exc: Exception, stage: str) -> SectionMutationError:
     if status is None:
         status = getattr(exc, "status_code", None)
     code = getattr(exc, "code", None)
+    failure_detail = getattr(exc, "diagnostic_code", None)
+    if failure_detail is None and stage in {"membership_asset_decode", "membership_asset_encode"}:
+        # Keep asset conversion failures actionable without logging exception text or asset contents.
+        phase = "decode" if stage == "membership_asset_decode" else "encode"
+        failure_detail = f"section_asset_{phase}_{type(exc).__name__.lower()}"
     return SectionMutationError(
         stage,
         apple_error_code=_safe_cloudkit_error_code(code),
         http_status=status,
-        failure_detail=getattr(exc, "diagnostic_code", None),
+        failure_detail=failure_detail,
     )
 
 
@@ -397,6 +402,22 @@ def _decode_section_memberships(payload: bytes) -> dict[str, Any]:
         schema_error = SectionAssetDecodeError("unsupported_membership_schema")
 
     raise schema_error
+
+
+def _json_compatible_section_value(value: Any) -> Any:
+    """Normalize plist-only values before writing the membership asset as JSON."""
+    if isinstance(value, dt.datetime):
+        normalized = value.replace(tzinfo=dt.timezone.utc) if value.tzinfo is None else value.astimezone(dt.timezone.utc)
+        return normalized.timestamp() - 978307200
+    if isinstance(value, bytes):
+        return base64.b64encode(value).decode("ascii")
+    if isinstance(value, plistlib.UID):
+        return value.data
+    if isinstance(value, dict):
+        return {key: _json_compatible_section_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_compatible_section_value(item) for item in value]
+    return value
 
 
 def _full_section_value(
@@ -784,7 +805,12 @@ def _move_reminder_section_impl(
         })
     document["memberships"] = memberships
     document.setdefault("minimumSupportedVersion", 20230430)
-    updated_payload = json.dumps(document, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+    selected_list_ref["section_mutation_stage"] = "membership_asset_encode"
+    updated_payload = json.dumps(
+        _json_compatible_section_value(document),
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
 
     cloudkit_client = getattr(raw_client, "_client", None)
     http = getattr(cloudkit_client, "_http", None)
