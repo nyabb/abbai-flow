@@ -38,14 +38,14 @@ describe('useNotifications', () => {
     // window this would already have notified; with the user's actual
     // 5-minute setting it must not have, yet.
     const event = eventIn(10);
-    renderHook(() => useNotifications([event], () => null, true, 5));
+    renderHook(() => useNotifications([event], true, 5));
 
     expect(notificationSpy).not.toHaveBeenCalled();
   });
 
   it('fires once the event falls inside the configured window', () => {
     const event = eventIn(10);
-    renderHook(() => useNotifications([event], () => null, true, 15));
+    renderHook(() => useNotifications([event], true, 15));
 
     expect(notificationSpy).toHaveBeenCalledTimes(1);
     expect(notificationSpy).toHaveBeenCalledWith(
@@ -56,7 +56,7 @@ describe('useNotifications', () => {
 
   it('defaults to 15 minutes when no setting is passed, matching prior behavior', () => {
     const event = eventIn(10);
-    renderHook(() => useNotifications([event], () => null, true));
+    renderHook(() => useNotifications([event], true));
 
     expect(notificationSpy).toHaveBeenCalledTimes(1);
   });
