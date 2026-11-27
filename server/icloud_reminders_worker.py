@@ -341,10 +341,12 @@ class SectionAssetDecodeError(ValueError):
         self.diagnostic_code = detail
 
 
-def _decode_section_asset_json(payload: bytes) -> Any:
-    """Decode a JSON asset, accepting plain, zlib, and gzip encoded bytes."""
+def _section_asset_payload_candidates(payload: bytes) -> list[bytes]:
+    """Return the plain asset plus bounded zlib, gzip, and raw-deflate variants."""
+    if not payload:
+        raise SectionAssetDecodeError("empty_asset")
     candidates = [payload]
-    for window_bits in (zlib.MAX_WBITS, zlib.MAX_WBITS | 16):
+    for window_bits in (zlib.MAX_WBITS, zlib.MAX_WBITS | 16, -zlib.MAX_WBITS):
         try:
             decompressor = zlib.decompressobj(window_bits)
             decoded = decompressor.decompress(payload, _MAX_SECTION_ASSET_BYTES + 1)
@@ -355,12 +357,16 @@ def _decode_section_asset_json(payload: bytes) -> Any:
                 candidates.append(decoded)
         except zlib.error:
             continue
-    if not payload:
-        raise SectionAssetDecodeError("empty_asset")
+    return candidates
+
+
+def _decode_section_asset_json(payload: bytes) -> Any:
+    """Decode JSON assets, including bounded compressed payloads."""
+    candidates = _section_asset_payload_candidates(payload)
     last_detail = "invalid_json"
     for candidate in candidates:
         try:
-            document = json.loads(candidate.decode("utf-8"))
+            document = json.loads(candidate.decode("utf-8-sig"))
         except UnicodeDecodeError:
             last_detail = "invalid_utf8"
             continue
@@ -371,11 +377,26 @@ def _decode_section_asset_json(payload: bytes) -> Any:
 
 
 def _decode_section_memberships(payload: bytes) -> dict[str, Any]:
-    """Decode the JSON membership asset, including compressed CloudKit payloads."""
-    document = _decode_section_asset_json(payload)
-    if not isinstance(document, dict) or not isinstance(document.get("memberships"), list):
-        raise SectionAssetDecodeError("unsupported_membership_schema")
-    return document
+    """Decode section memberships from JSON or property-list CloudKit assets."""
+    try:
+        document = _decode_section_asset_json(payload)
+    except SectionAssetDecodeError as exc:
+        schema_error = exc
+    else:
+        if isinstance(document, dict) and isinstance(document.get("memberships"), list):
+            return document
+        schema_error = SectionAssetDecodeError("unsupported_membership_schema")
+
+    for candidate in _section_asset_payload_candidates(payload):
+        try:
+            document = plistlib.loads(candidate)
+        except Exception:
+            continue
+        if isinstance(document, dict) and isinstance(document.get("memberships"), list):
+            return document
+        schema_error = SectionAssetDecodeError("unsupported_membership_schema")
+
+    raise schema_error
 
 
 def _full_section_value(
