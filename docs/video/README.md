@@ -61,9 +61,9 @@ Before recording, the Abbai Flow instance needs realistic demo data:
 ## File Naming Convention
 
 ```
-beacon-01-meet-beacon-1080p.mp4
-beacon-01-meet-beacon-voice.wav
-beacon-01-meet-beacon-final.mp4
+abbai-flow-01-introduction-1080p.mp4
+abbai-flow-01-introduction-voice.wav
+abbai-flow-01-introduction-final.mp4
 ```
 
 ## Compositing with FFmpeg
@@ -90,7 +90,7 @@ ffmpeg -i input.mp4 \
 
 | # | Script | Duration | Topic |
 |---|--------|----------|-------|
-| 01 | `scripts/01-meet-beacon.md` | ~45s | Introduction |
+| 01 | `scripts/01-introduction.md` | ~45s | Introduction |
 | 02 | `scripts/02-family-calendar.md` | ~45s | Calendar |
 | 03 | `scripts/03-lists-that-work.md` | ~40s | Lists |
 | 04 | `scripts/04-chore-tracking.md` | ~45s | Chores |

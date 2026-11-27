@@ -258,13 +258,12 @@ async function writeDataFile(filePath, contents) {
 /**
  * Persistent data API — stores JSON in ABBAI_FLOW_DATA across app restarts.
  *
- * GET  /beacon-data/:key  → read stored JSON (`null` when absent)
- * PUT  /beacon-data/:key  → write JSON body to storage
+ * GET  /abbai-flow/data/:key  → read stored JSON (`null` when absent)
+ * PUT  /abbai-flow/data/:key  → write JSON body to storage
  */
 async function handleDataApi(req, res, config) {
   const pathname = (req.url || '').split('?')[0];
-  const canonical = pathname.startsWith('/abbai-flow/data/');
-  const prefix = canonical ? '/abbai-flow/data/' : '/beacon-data/';
+  const prefix = '/abbai-flow/data/';
   const key = pathname.startsWith(prefix)
     ? pathname.slice(prefix.length).replace(/[^a-zA-Z0-9_-]/g, '')
     : '';
@@ -277,26 +276,7 @@ async function handleDataApi(req, res, config) {
 
   if (req.method === 'GET') {
     try {
-      let data = await readDataFile(filePath);
-      if (data === null && canonical) {
-        const legacyKey = key.startsWith('abbai-flow-')
-          ? key.replace(/^abbai-flow-/, 'beacon-')
-          : key.startsWith('abbai_flow_')
-            ? key.replace(/^abbai_flow_/, 'beacon_')
-            : null;
-        if (legacyKey) {
-          data = await readDataFile(path.join(config.dataDir, legacyKey + '.json'));
-          if (data !== null) {
-            try {
-              await fsp.mkdir(config.dataDir, { recursive: true });
-              await writeDataFile(filePath, JSON.stringify(data));
-            } catch {
-              // Keep serving the legacy document if copying it fails.
-            }
-          }
-        }
-      }
-      sendJson(res, 200, data, { 'Cache-Control': 'no-store' });
+      sendJson(res, 200, await readDataFile(filePath), { 'Cache-Control': 'no-store' });
     } catch (err) {
       sendJson(res, 500, {
         error: err.code === 'CORRUPT_STORE' ? 'Stored document is corrupt' : 'Read failed',
@@ -346,12 +326,12 @@ async function handleDataApi(req, res, config) {
  * allocation or a reward fulfilment.
  */
 const PLANNER_DOCUMENTS = {
-  meta: 'beacon-planner-meta',
-  redemptions: 'beacon-reward-redemptions',
+  meta: 'abbai-flow-planner-meta',
+  redemptions: 'abbai-flow-reward-redemptions',
 };
 
 /** Recently applied idempotency keys, persisted so a restart keeps them. */
-const PLANNER_KEY_LOG = 'beacon-planner-ops';
+const PLANNER_KEY_LOG = 'abbai-flow-planner-ops';
 const PLANNER_KEY_LOG_LIMIT = 500;
 
 /** Per-document queue: read-modify-write must not interleave. */
@@ -1118,7 +1098,6 @@ async function route(req, res, config, services, bluetooth) {
   const isMutation = req.method !== 'GET' && req.method !== 'HEAD';
   // Every state-changing endpoint goes through the origin guard.
   const guarded =
-    pathname.startsWith('/beacon-data/') ||
     pathname.startsWith('/abbai-flow/data/') ||
     pathname.startsWith('/abbai-flow/photos') ||
     pathname === '/abbai-flow/settings/integrations' ||
@@ -1581,7 +1560,7 @@ async function route(req, res, config, services, bluetooth) {
       );
       return;
     }
-    if (pathname.startsWith('/beacon-data/') || pathname.startsWith('/abbai-flow/data/')) {
+    if (pathname.startsWith('/abbai-flow/data/')) {
       await handleDataApi(req, res, config);
       return;
     }
@@ -1643,7 +1622,7 @@ function runtimeConfigFor(env = process.env) {
  * Paths and the CSRF allow-list use `ABBAI_FLOW_*` names.
  * The pre-2.0 spelling of those variables is deliberately not accepted any
  * more: silently falling back to an old data path would split a household's
- * documents in two. `docs/upgrade-2.0.0.md` lists the rename.
+ * documents in two.
  */
 function configFromEnv(env = process.env) {
   return {

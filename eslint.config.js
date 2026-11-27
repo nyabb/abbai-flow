@@ -17,7 +17,6 @@ export default tseslint.config(
       'dist/**',
       'server/build/**',
       '.history/**',
-      'beacon/**',
       'android/**',
       'ios/**',
       'node_modules/**',

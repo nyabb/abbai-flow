@@ -131,15 +131,15 @@ Streaks reset to 1 when a member misses a day. There is no grace period — if n
 
 ## Data storage
 
-Chore data is stored in the browser's localStorage:
+Chore data is stored through the app data store and cached in the browser:
 
-| Key                  | Contents                                     |
-| -------------------- | -------------------------------------------- |
-| `beacon_chores`      | List of chore definitions                    |
-| `beacon_completions` | Log of all chore completions with timestamps |
-| `beacon_streaks`     | Streak records per member                    |
+| Key                      | Contents                                     |
+| ------------------------ | -------------------------------------------- |
+| `abbai_flow_chores`      | List of chore definitions                    |
+| `abbai_flow_completions` | Log of all chore completions with timestamps |
+| `abbai_flow_streaks`     | Streak records per member                    |
 
-This data persists across page reloads but is tied to the specific browser/device.
+In container-backed deployments the server is authoritative; browser storage is the offline cache.
 
 ---
 

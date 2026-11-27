@@ -269,12 +269,7 @@ export function useSettings() {
       const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (
-          key?.startsWith('abbai-flow-') ||
-          key?.startsWith('abbai_flow_') ||
-          key?.startsWith('beacon-') ||
-          key?.startsWith('beacon_')
-        ) {
+        if (key?.startsWith('abbai-flow-') || key?.startsWith('abbai_flow_')) {
           keysToRemove.push(key);
         }
       }

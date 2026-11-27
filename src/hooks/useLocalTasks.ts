@@ -29,31 +29,12 @@ const DEFAULT_LISTS: LocalTaskList[] = [
   { id: 'abbai-flow-shopping', name: 'Shopping List' },
 ];
 
-function canonicalListId(id: string): string {
-  return id.startsWith('beacon-') ? id.replace(/^beacon-/, 'abbai-flow-') : id;
-}
-
-/** Migrate identifiers embedded in older local task documents. */
-export function migrateLegacyLocalTaskIds(
-  lists: LocalTaskList[],
-  tasks: LocalTask[],
-): { lists: LocalTaskList[]; tasks: LocalTask[] } {
-  return {
-    lists: lists.map((list) => ({ ...list, id: canonicalListId(list.id) })),
-    tasks: tasks.map((task) => ({ ...task, listId: canonicalListId(task.listId) })),
-  };
-}
-
 export function useLocalTasks() {
   // Initialize with localStorage data immediately
-  const [initial] = useState(() =>
-    migrateLegacyLocalTaskIds(
-      loadDataSync<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS),
-      loadDataSync<LocalTask[]>(STORAGE_KEY, []),
-    ),
+  const [lists, setLists] = useState<LocalTaskList[]>(() =>
+    loadDataSync<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS),
   );
-  const [lists, setLists] = useState<LocalTaskList[]>(initial.lists);
-  const [tasks, setTasks] = useState<LocalTask[]>(initial.tasks);
+  const [tasks, setTasks] = useState<LocalTask[]>(() => loadDataSync<LocalTask[]>(STORAGE_KEY, []));
 
   /** Re-fetch tasks and lists from server. */
   const refresh = useCallback(async () => {
@@ -61,9 +42,8 @@ export function useLocalTasks() {
       loadData<LocalTaskList[]>(LISTS_KEY, DEFAULT_LISTS),
       loadData<LocalTask[]>(STORAGE_KEY, []),
     ]);
-    const migrated = migrateLegacyLocalTaskIds(serverLists, serverTasks);
-    setLists(migrated.lists);
-    setTasks(migrated.tasks);
+    setLists(serverLists);
+    setTasks(serverTasks);
   }, []);
 
   // Fetch from server on mount

@@ -17,8 +17,7 @@ export default defineConfig({
       reporter: ['text', 'text-summary', 'html'],
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/main.tsx', 'src/test/**', 'src/styles/themes/*.ts'],
-      // Thresholds are set from measured values (see docs/engineering-review.md)
-      // as a ratchet: they must not go down, and should be raised as coverage
+      // Thresholds are a ratchet: they must not go down, and should be raised as coverage
       // grows. Only the modules with real enforcement today are listed — the
       // presentational components are tracked but not yet gated.
       thresholds: {
