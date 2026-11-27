@@ -12,12 +12,12 @@ interface OmniAddProps {
   onAddRoutine?: () => void;
   onNavigateTimer: () => void;
   onNavigateSettings: () => void;
-  sidebarPosition?: 'left' | 'right' | 'bottom';
   /** Controlled mode: the trigger can live elsewhere (e.g. the bottom tab bar). */
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
   hasSettingsAttention?: boolean;
+  settingsActive?: boolean;
 }
 
 interface ActionDef {
@@ -34,11 +34,11 @@ export function OmniAdd({
   onAddRoutine,
   onNavigateTimer,
   onNavigateSettings,
-  sidebarPosition = 'left',
   open,
   onOpenChange,
   showTrigger = true,
   hasSettingsAttention = false,
+  settingsActive = false,
 }: OmniAddProps) {
   const { t } = useTranslation();
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -82,12 +82,6 @@ export function OmniAdd({
       label: t('omniAdd.event'),
       icon: <CalendarPlus size={22} />,
       handler: onAddEvent,
-    },
-    {
-      id: 'settings',
-      label: t('nav.settings'),
-      icon: <Settings size={22} />,
-      handler: onNavigateSettings,
     },
   ];
 
@@ -138,7 +132,7 @@ export function OmniAdd({
   return (
     <div
       ref={containerRef}
-      className={`omni-add omni-add--sidebar-${sidebarPosition} ${expanded ? 'omni-add--expanded' : ''}`}
+      className={`omni-add ${expanded ? 'omni-add--expanded' : ''}`}
     >
       {/* Backdrop blur overlay */}
       {expanded && <div className="omni-add-backdrop" onClick={() => setExpanded(false)} />}
@@ -161,12 +155,6 @@ export function OmniAdd({
           >
             <span className="omni-add-action-icon">
               {action.icon}
-              {action.id === 'settings' && hasSettingsAttention && (
-                <SettingsErrorBadge
-                  label={t('settings.integrations.needsAttention')}
-                  className="settings-error-badge--floating"
-                />
-              )}
             </span>
             <span className="omni-add-action-label">{action.label}</span>
           </button>
@@ -185,10 +173,24 @@ export function OmniAdd({
           <span className={`omni-add-fab-icon ${expanded ? 'omni-add-fab-icon--open' : ''}`}>
             +
           </span>
+        </button>
+      )}
+      {showTrigger && (
+        <button
+          type="button"
+          className={`omni-add-settings${settingsActive ? ' omni-add-settings--active' : ''}`}
+          onClick={() => {
+            setExpanded(false);
+            onNavigateSettings();
+          }}
+          aria-label={t('nav.settings')}
+          aria-current={settingsActive ? 'page' : undefined}
+        >
+          <Settings size={22} strokeWidth={1.8} />
           {hasSettingsAttention && (
             <SettingsErrorBadge
               label={t('settings.integrations.needsAttention')}
-              className="settings-error-badge--floating settings-error-badge--fab"
+              className="settings-error-badge--floating"
             />
           )}
         </button>

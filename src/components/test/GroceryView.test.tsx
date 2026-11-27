@@ -95,4 +95,74 @@ describe('GroceryView task refresh', () => {
 
     await waitFor(() => expect(mocks.fetchList).toHaveBeenLastCalledWith('task-list', 12));
   }, 10_000);
+
+  it('shows only task-backed sections and makes the full reminder row draggable', async () => {
+    localStorage.setItem('abbai-flow-filter-grocery-tab', JSON.stringify('tasks'));
+    localStorage.setItem('abbai-flow-filter-grocery-lists', JSON.stringify({
+      grocery: 'grocery-list',
+      tasks: 'task-list',
+    }));
+    mocks.loadLists.mockResolvedValue({
+      ok: true,
+      state: 'fetched',
+      lists: [
+        { key: 'grocery-list', title: 'Shopping', deleted: false, isGroup: false },
+        { key: 'task-list', title: 'Tasks', deleted: false, isGroup: false },
+      ],
+    });
+    mocks.fetchList.mockResolvedValue({
+      ok: true,
+      state: 'fetched',
+      changed: true,
+      revision: 1,
+      lists: [{
+        key: 'task-list',
+        sections: [
+          { id: 'top', name: 'Top', order: 0 },
+          { id: 'produce', name: 'Produce', order: 1 },
+          { id: 'below', name: 'Below', order: 2 },
+          { id: 'empty', name: 'Unused', order: 3 },
+        ],
+        reminders: [
+          {
+            id: 'milk', list_id: 'task-list', title: 'Milk', desc: '', completed: false,
+            completed_date: null, due_date: null, start_date: null, priority: 0,
+            flagged: false, all_day: false, deleted: false,
+            sectionID: 'produce', sectionName: 'Produce', sectionOrder: 1,
+          },
+          {
+            id: 'bread', list_id: 'task-list', title: 'Bread', desc: '', completed: false,
+            completed_date: null, due_date: null, start_date: null, priority: 0,
+            flagged: false, all_day: false, deleted: false,
+            sectionID: null, sectionName: null, sectionOrder: null,
+          },
+        ],
+      }],
+    });
+
+    const { container } = render(
+      <I18nContext.Provider value={i18n}>
+        <GroceryView />
+      </I18nContext.Provider>,
+    );
+
+    await screen.findByText('Milk');
+    await screen.findByText('Bread');
+
+    const list = container.querySelector('.grocery-view-list')!;
+    const sectionNames = Array.from(list.querySelectorAll('.grocery-view-section-name'))
+      .map((section) => section.textContent);
+    expect(sectionNames).toEqual(['Produce', 'Other']);
+    expect(list.textContent).not.toContain('Top');
+    expect(list.textContent).not.toContain('Below');
+    expect(list.textContent).not.toContain('Unused');
+
+    const milkRow = list.querySelector<HTMLElement>(
+      '.grocery-view-item-row[aria-label^="Milk:"]',
+    )!;
+    expect(milkRow).toHaveAttribute('tabindex', '0');
+    expect(milkRow).toHaveAttribute('aria-roledescription', 'draggable');
+    expect(milkRow.querySelector('.grocery-view-drag-indicator')).not.toBeNull();
+  });
+
 });

@@ -81,7 +81,7 @@ function zaraColumn(page: Page) {
 
 async function gotoChores(page: Page) {
   await page
-    .locator('.sidebar--desktop')
+    .locator('.mobile-tab-bar')
     .getByRole('button', { name: 'Chores', exact: true })
     .click();
   await expect(page.locator('.planner-board')).toBeVisible();

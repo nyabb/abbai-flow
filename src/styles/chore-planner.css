@@ -1,6 +1,4 @@
-/* Chores planner: the app sidebar stays visible, so the planner fills only the
-   content column. No grid-template-columns or grid-column override here — the
-   sidebar layout in abbai-flow.css owns those, and this file loads last. */
+/* The chores planner fills the content column above the fixed bottom dock. */
 .abbai-flow--chores .abbai-flow-main {
   width: 100%;
   min-width: 0;
@@ -12,8 +10,7 @@
   display: none !important;
 }
 
-/* The planner fills the grid row instead of forcing a full viewport height, so
-   the bottom tab bar / sidebar padding cannot push it out of view. */
+/* The planner fills its grid row while the fixed navigation stays visible. */
 .abbai-flow--chores .chore-planner {
   min-height: 0;
 }

@@ -43,14 +43,8 @@
     padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
   }
 
-  .abbai-flow--sidebar-left .abbai-flow-main,
-  .abbai-flow--sidebar-right .abbai-flow-main,
-  .abbai-flow--sidebar-bottom .abbai-flow-main {
+  .abbai-flow--bottom-nav .abbai-flow-main {
     grid-column: 1;
-  }
-
-  .abbai-flow .sidebar--desktop {
-    display: none !important;
   }
 
   .mobile-tab-bar {
@@ -66,6 +60,10 @@
     background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
     box-shadow: 0 10px 32px rgba(24, 38, 34, 0.14);
     transform: translateX(-50%);
+  }
+
+  .omni-add {
+    bottom: calc(var(--mobile-tab-bar-height) + 68px);
   }
 
   .mobile-tab {
@@ -1692,5 +1690,292 @@
     .portrait-agenda-event-meta {
       font-size: 0.76rem;
     }
+  }
+}
+
+/* Landscape desktop and kiosk screens use the same Abbai Flow design tokens
+   and rounded card language as the 960 × 1440 display. The phone rules above
+   remain separate and continue to own narrow layouts. */
+@media (min-width: 769px) and (orientation: landscape) {
+  :root {
+    --mobile-tab-bar-content-height: 76px;
+    --mobile-tab-bar-height: calc(
+      var(--mobile-tab-bar-content-height) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  .abbai-flow {
+    --skin-card-radius: 22px;
+    --skin-card-shadow: 0 8px 24px color-mix(in srgb, var(--text-primary) 8%, transparent);
+    padding-bottom: calc(var(--mobile-tab-bar-height) + 32px);
+  }
+
+  .mobile-tab-bar {
+    left: 50%;
+    right: auto;
+    bottom: 16px;
+    width: min(1080px, calc(100vw - 64px));
+    height: var(--mobile-tab-bar-height);
+    padding: 8px 14px;
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 28px;
+    background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+    box-shadow: 0 10px 32px color-mix(in srgb, var(--text-primary) 12%, transparent);
+    transform: translateX(-50%);
+  }
+
+  .mobile-tab {
+    flex: 1 1 0;
+    min-width: 76px;
+    min-height: 58px;
+    border-radius: 18px;
+  }
+
+  .mobile-tab-label {
+    font-size: 0.76rem;
+  }
+
+  .mobile-tab--active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, transparent);
+  }
+
+  .omni-add {
+    bottom: calc(var(--mobile-tab-bar-height) + 72px);
+  }
+
+  .view-page > .view-page-body,
+  .view-page > .meals-page-body {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: clamp(22px, 2.4vw, 42px);
+  }
+
+  .abbai-flow-body {
+    padding: 16px clamp(24px, 2.3vw, 44px) 24px;
+  }
+
+  .abbai-flow-body--two-col {
+    gap: clamp(18px, 2vw, 32px);
+  }
+
+  .abbai-flow-body--two-col .abbai-flow-body-calendar {
+    min-width: 0;
+  }
+
+  .calendar-sidebar {
+    width: clamp(300px, 25vw, 400px);
+    padding: 20px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--skin-card-radius);
+    background: var(--bg-surface);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .week-calendar {
+    min-width: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--skin-card-radius);
+    background: var(--bg-surface);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .grocery-view {
+    background: color-mix(in srgb, var(--accent) 4%, var(--bg-primary));
+  }
+
+  .grocery-view-header {
+    padding: 24px clamp(28px, 3vw, 52px) 20px;
+    border-radius: 0 0 30px 30px;
+    background: linear-gradient(
+      125deg,
+      color-mix(in srgb, var(--accent) 28%, var(--bg-surface)),
+      color-mix(in srgb, var(--accent) 10%, var(--bg-surface))
+    );
+  }
+
+  .grocery-view-hero {
+    min-height: 108px;
+  }
+
+  .grocery-view-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 18px;
+    padding: 12px clamp(28px, 3vw, 52px) 32px;
+  }
+
+  .grocery-view-section,
+  .grocery-view-empty {
+    min-width: 0;
+    padding: 16px 18px;
+    border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border-subtle));
+    border-radius: var(--skin-card-radius);
+    background: var(--bg-surface);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .grocery-view-empty {
+    grid-column: 1 / -1;
+  }
+
+  .meals-view {
+    width: min(1680px, 100%);
+    gap: 22px;
+  }
+
+  .meals-week {
+    grid-template-columns: repeat(7, minmax(128px, 1fr));
+    gap: 16px;
+    overflow-x: auto;
+  }
+
+  .meal-day-card {
+    min-height: 220px;
+    padding: 18px;
+  }
+
+  .meal-day-heading h2 {
+    font-size: 1.06rem;
+  }
+
+  .meals-recipe-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+
+  .meal-card {
+    overflow: hidden;
+    border-radius: var(--skin-card-radius);
+    background: var(--bg-surface);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .meal-card-image {
+    height: clamp(190px, 19vw, 280px);
+  }
+
+  .music-page {
+    width: min(1680px, 100%);
+    padding: 24px clamp(24px, 3vw, 52px) 36px;
+  }
+
+  .spotify-panel {
+    max-width: 1500px;
+    padding: clamp(24px, 2.6vw, 40px);
+    border-radius: var(--skin-card-radius);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .weather-view {
+    width: min(1680px, 100%);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    grid-auto-rows: min-content;
+    align-content: start;
+    gap: 22px;
+    padding: 0;
+  }
+
+  .weather-current {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    min-height: 320px;
+    justify-content: center;
+    padding: clamp(26px, 3vw, 48px);
+    border-radius: var(--skin-card-radius);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .weather-forecast,
+  .weather-hourly-region {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .weather-forecast-scroll {
+    gap: 12px;
+  }
+
+  .weather-forecast-card {
+    min-width: 96px;
+  }
+
+  .weather-attribution {
+    grid-column: 1 / -1;
+  }
+
+  .chore-planner {
+    height: 100%;
+    min-height: 0;
+    --planner-band-1: color-mix(in srgb, var(--accent) 16%, var(--bg-surface));
+    --planner-band-2: color-mix(in srgb, var(--accent) 30%, var(--bg-surface));
+  }
+
+  .chore-planner .planner-header {
+    min-height: 168px;
+    border-radius: 0 0 30px 30px;
+    color: var(--text-primary);
+    background: linear-gradient(125deg, var(--planner-band-1), var(--planner-band-2));
+    box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 12%, transparent);
+  }
+
+  .chore-planner .planner-header .page-header-title,
+  .chore-planner .planner-header .page-header-weekday,
+  .chore-planner .planner-header .page-header-month,
+  .chore-planner .planner-header .page-header-day,
+  .chore-planner .planner-header .clock-mini {
+    color: var(--text-primary);
+  }
+
+  .chore-planner[data-screen='board'] {
+    background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary));
+  }
+
+  .chore-planner[data-screen='board'] .planner-board {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    align-content: start;
+    gap: 18px;
+    padding: 20px clamp(22px, 2.5vw, 44px) 32px;
+    background: transparent;
+  }
+
+  .planner-col {
+    min-height: 220px;
+    padding: 16px;
+    border-color: color-mix(in srgb, var(--accent) 12%, var(--border-subtle));
+    border-radius: var(--skin-card-radius);
+    background: var(--bg-surface);
+    box-shadow: var(--skin-card-shadow);
+  }
+
+  .planner-col--free {
+    grid-column: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    border-color: color-mix(in srgb, var(--accent) 28%, var(--border-subtle));
+    background: color-mix(in srgb, var(--accent) 5%, var(--bg-surface));
+  }
+
+  .planner-col--free .planner-col-head,
+  .planner-col--free .planner-col-body,
+  .planner-col--free > .planner-col-start {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .planner-col--free .planner-col-body {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (min-width: 1400px) and (orientation: landscape) {
+  .omni-add {
+    bottom: calc(var(--mobile-tab-bar-height) + 80px);
   }
 }

@@ -211,10 +211,6 @@ export const it: Record<TranslationKey, string> = {
   'settings.appearance.fontNormal': 'Normale',
   'settings.appearance.fontLarge': 'Grande',
   'settings.appearance.fontXL': 'XL',
-  'settings.appearance.sidebarPositionLabel': 'Posizione barra laterale',
-  'settings.appearance.left': 'Sinistra',
-  'settings.appearance.right': 'Destra',
-  'settings.appearance.bottom': 'In basso',
 
   // ---- settings: family ----
   'settings.family.title': 'Membri della famiglia',

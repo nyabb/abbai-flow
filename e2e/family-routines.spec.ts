@@ -32,10 +32,7 @@ test.afterAll(async () => {
 });
 
 async function openFamilySettings(page: Page) {
-  await page
-    .locator('.sidebar--desktop')
-    .getByRole('button', { name: 'Settings', exact: true })
-    .click();
+  await page.locator('.omni-add-settings').click();
   await page.getByRole('button', { name: 'Family Members', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Family Members', exact: true })).toBeVisible();
 }
@@ -123,7 +120,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
       }),
     ]);
 
-  await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
+  await page.locator('.mobile-tab-bar').getByRole('button', { name: 'Chores' }).click();
   const zara = page
     .locator('.planner-col')
     .filter({ has: page.locator('.planner-col-head strong', { hasText: 'Zara' }) });
@@ -152,10 +149,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await expect(papa.locator('.planner-row-start')).toHaveCount(0);
 
   // The Omni Add routine shortcut opens the shared routine editor directly.
-  await page
-    .locator('.sidebar--desktop')
-    .getByRole('button', { name: 'Quick add', exact: true })
-    .click();
+  await page.locator('.omni-add-fab').click();
   await page.getByRole('button', { name: 'Routine', exact: true }).click();
   const omniDialog = page.getByRole('dialog');
   await expect(omniDialog).toBeVisible();
@@ -168,7 +162,7 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
     .toContainEqual(expect.objectContaining({ name: 'Weekend prep', member_id: 'child-1' }));
 
   // Chores page quick add reaches that same editor, without creating a chore.
-  await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
+  await page.locator('.mobile-tab-bar').getByRole('button', { name: 'Chores' }).click();
   await page.locator('.planner-add').click();
   await page.getByRole('button', { name: 'New routine', exact: true }).click();
   const choresDialog = page.getByRole('dialog');
@@ -252,7 +246,7 @@ test('starts one routine mission at a time and only enables routines in their ti
     { members: FAMILY, familyRoutines: routines },
   );
   await page.goto(stack.appUrl);
-  await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
+  await page.locator('.mobile-tab-bar').getByRole('button', { name: 'Chores' }).click();
 
   const zara = page
     .locator('.planner-col')
@@ -277,7 +271,7 @@ test('starts one routine mission at a time and only enables routines in their ti
   await page.getByRole('button', { name: 'Pass the board', exact: true }).click();
   await page.clock.setFixedTime(new Date(2024, 0, 1, 20, 0));
   await page.reload();
-  await page.locator('.sidebar--desktop').getByRole('button', { name: 'Chores' }).click();
+  await page.locator('.mobile-tab-bar').getByRole('button', { name: 'Chores' }).click();
 
   const lateZara = page
     .locator('.planner-col')

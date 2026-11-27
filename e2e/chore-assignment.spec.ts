@@ -63,7 +63,7 @@ test('moves a free shared chore to both children through ChoresMan create', asyn
 
   await page.goto(stack.appUrl);
   await page
-    .locator('.sidebar--desktop')
+    .locator('.mobile-tab-bar')
     .getByRole('button', { name: 'Chores', exact: true })
     .click();
 

@@ -204,10 +204,6 @@ export const ko: Record<TranslationKey, string> = {
   'settings.appearance.fontNormal': '보통',
   'settings.appearance.fontLarge': '크게',
   'settings.appearance.fontXL': 'XL',
-  'settings.appearance.sidebarPositionLabel': '사이드바 위치',
-  'settings.appearance.left': '왼쪽',
-  'settings.appearance.right': '오른쪽',
-  'settings.appearance.bottom': '아래쪽',
 
   // ---- settings: family ----
   'settings.family.title': '가족 구성원',
