@@ -57,9 +57,13 @@ export async function handleMusicRequest(
     } catch (error) {
       if (error instanceof SpotifyCatalogError) {
         if (error.code !== 'invalid_query') {
-          console.warn(
-            `[Integration] Spotify catalog search failed (${error.code}, HTTP ${error.status}).`,
-          );
+          console.warn('[Spotify] ' + JSON.stringify({
+            event: 'operation_failed',
+            action: 'search_catalog',
+            ok: false,
+            error_code: error.code,
+            http_status: error.status,
+          }));
         }
         helpers.sendJson(response, error.status, { code: error.code, error: error.message });
       } else {

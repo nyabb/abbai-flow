@@ -32,7 +32,6 @@ import { useScreenWakeLock } from './hooks/useScreenWakeLock';
 import { WeatherView } from './components/WeatherView';
 import { PageHeader } from './components/PageHeader';
 import { useTheme } from './hooks/useTheme';
-import { useTouchPageSwipe } from './hooks/useTouchPageSwipe';
 import { isStringArray, usePersistentState } from './hooks/usePersistentState';
 import { TOUCH_NAV_ORDER } from './utils/touch-navigation';
 import { useTaskLists } from './hooks/useTaskLists';
@@ -537,12 +536,6 @@ export function App() {
     [activeView, settings.reducedMotion],
   );
 
-  const pageSwipeHandlers = useTouchPageSwipe({
-    activeView,
-    navigationOrder: TOUCH_NAV_ORDER,
-    onNavigate: handleChangeView,
-  });
-
   /* Quick add lives at the lower right on mobile. Routines use the same
      Abbai Flow editor from whichever view opens them. */
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -730,12 +723,7 @@ export function App() {
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
-        <div
-          className="abbai-flow-main"
-          onTouchStart={pageSwipeHandlers.onTouchStart}
-          onTouchEnd={pageSwipeHandlers.onTouchEnd}
-          onTouchCancel={pageSwipeHandlers.onTouchCancel}
-        >
+        <div className="abbai-flow-main">
           {activeView === 'chores' ? (
             <ChorePlanner
               members={members}

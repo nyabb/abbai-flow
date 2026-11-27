@@ -119,7 +119,16 @@ describe('Spotify music HTTP routes', () => {
     );
     expect(failed.response.status).toBe(502);
     expect(payload(failed.response)).toMatchObject({ code: 'unavailable' });
-    expect(warning).toHaveBeenCalledOnce();
+    expect(warning).toHaveBeenCalledWith(
+      '[Spotify] ' +
+        JSON.stringify({
+          event: 'operation_failed',
+          action: 'search_catalog',
+          ok: false,
+          error_code: 'unavailable',
+          http_status: 502,
+        }),
+    );
 
     (catalog.search as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new SpotifyCatalogError('invalid_query', 400, 'Invalid query'),

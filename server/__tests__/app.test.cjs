@@ -486,7 +486,7 @@ test('iCloud worker retains safe authentication status between requests', () => 
   assert.equal(worker.status().state, 'disconnected');
 });
 
-test('iCloud worker logs only reminder mutations', () => {
+test('iCloud worker logs setup and mutation actions without private content', () => {
   const worker = new ICloudRemindersWorker({ dataDir: tmpDir('icloud-logs') });
   const logged = [];
   const originalInfo = console.info;
@@ -529,13 +529,14 @@ test('iCloud worker logs only reminder mutations', () => {
     console.info = originalInfo;
   }
 
-  assert.equal(logged.length, 1);
-  assert.match(logged[0], /"action":"move_reminder_section"/);
-  assert.match(logged[0], /"failure_stage":"list_record_update"/);
-  assert.match(logged[0], /"apple_error_code":"CONFLICT"/);
-  assert.match(logged[0], /"partial":true/);
-  assert.doesNotMatch(logged[0], /private reminder text/);
-  assert.doesNotMatch(logged[0], /must-not-be-logged/);
+  assert.equal(logged.length, 2);
+  assert.match(logged[0], /"action":"fetch_task_lists"/);
+  assert.match(logged[0], /"list_count":8/);
+  assert.match(logged[1], /"action":"move_reminder_section"/);
+  assert.match(logged[1], /"failure_stage":"list_record_update"/);
+  assert.match(logged[1], /"apple_error_code":"CONFLICT"/);
+  assert.match(logged[1], /"partial":true/);
+  assert.doesNotMatch(logged.join('\n'), /private reminder text|must-not-be-logged/);
 });
 
 test('calendar catalog returns calendars discovered by the CalDAV service', async (t) => {

@@ -36,7 +36,7 @@ const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR
 
 /** Number of days to show in mobile 3-day view */
 const MOBILE_DAYS = 3;
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 600;
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(
@@ -111,9 +111,6 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
     if (weekOffset !== 0) setMobileGroupIndex(0);
   }, [weekOffset]);
 
-  // Swipe state
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-
   const allDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -137,28 +134,6 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
     }
     return map;
   }, [forecast]);
-
-  // Swipe handlers for mobile day navigation
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (!isMobile) return;
-    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-  }, [isMobile]);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (!isMobile || !touchStartRef.current) return;
-    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
-    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
-    touchStartRef.current = null;
-
-    // Only trigger if horizontal swipe is dominant and long enough
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0 && mobileGroupIndex < maxMobileGroup) {
-        setMobileGroupIndex((prev) => prev + 1);
-      } else if (dx > 0 && mobileGroupIndex > 0) {
-        setMobileGroupIndex((prev) => prev - 1);
-      }
-    }
-  }, [isMobile, mobileGroupIndex, maxMobileGroup]);
 
   const visibleEvents = useMemo(() => {
     return events.filter(e => !hiddenCalendars.has(e.calendarId));
@@ -415,12 +390,7 @@ export function WeekCalendar({ events, hiddenCalendars, onEventClick, onSlotClic
   const gridCols = `var(--time-axis-width) repeat(${dayCount}, 1fr)`;
 
   return (
-    <div
-      className="week-calendar"
-      data-page-swipe-ignore
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className="week-calendar">
       {/* Week navigation header */}
       <div className="week-nav">
         <div className="week-nav-controls">
