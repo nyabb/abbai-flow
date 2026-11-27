@@ -1,24 +1,37 @@
-import { useSpotifyPlaylists } from '../hooks/useSpotifyPlaylists';
-import { useSpotifyBrowserPlayer } from '../hooks/useSpotifyBrowserPlayer';
-import { useSpotifyCatalog } from '../hooks/useSpotifyCatalog';
+import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
+import type { MusicSnapshot } from '../api/music-player';
+import type { SpotifyCatalogTrack } from '../api/spotify-catalog';
 import { SpotifyMusicPanel } from './SpotifyMusicPanel';
 
-export function MusicView() {
-  const playlists = useSpotifyPlaylists();
-  const catalog = useSpotifyCatalog();
-  const browser = useSpotifyBrowserPlayer(
-    playlists.status.authorized,
-    playlists.status.playbackAuthorized === true,
-  );
+interface MusicViewProps {
+  playlists: UseSpotifyPlaylistsResult;
+  snapshot: MusicSnapshot;
+  loading: boolean;
+  onControl: (action: string, value?: unknown) => Promise<{ ok: boolean; error?: string }>;
+  onSearch: (query: string) => Promise<{
+    tracks: SpotifyCatalogTrack[];
+    code?: string;
+    error?: string;
+  }>;
+  onConnectPlayback: () => Promise<{ ok: boolean; error?: string }>;
+}
 
+export function MusicView({
+  playlists,
+  snapshot,
+  loading,
+  onControl,
+  onSearch,
+  onConnectPlayback,
+}: MusicViewProps) {
   return (
     <div className="music-page">
       <SpotifyMusicPanel
-        snapshot={browser.snapshot}
-        loading={browser.loading}
-        onControl={browser.control}
-        onSearch={catalog.search}
-        onConnectPlayback={playlists.connect}
+        snapshot={snapshot}
+        loading={loading}
+        onControl={onControl}
+        onSearch={onSearch}
+        onConnectPlayback={onConnectPlayback}
         library={playlists}
       />
     </div>

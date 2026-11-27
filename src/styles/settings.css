@@ -51,6 +51,35 @@
   border-left: 3px solid transparent;
 }
 
+.settings-error-badge {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-inline-start: 7px;
+  border: 1px solid var(--bg-surface);
+  border-radius: 50%;
+  background: var(--color-danger, #dc2626);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-danger, #dc2626) 25%, transparent);
+  vertical-align: middle;
+}
+
+.settings-error-badge--floating {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  margin: 0;
+  border: 2px solid var(--bg-surface);
+}
+
+.settings-error-badge--fab {
+  top: 2px;
+  right: 2px;
+  width: 11px;
+  height: 11px;
+  border-color: var(--bg-primary);
+}
+
 .settings-nav-item:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -106,6 +135,9 @@
 }
 
 .settings-group-title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   font-family: var(--font-display);
   font-size: 0.75rem;
   font-weight: 600;

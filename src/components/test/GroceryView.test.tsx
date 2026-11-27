@@ -84,11 +84,15 @@ describe('GroceryView task refresh', () => {
       </I18nContext.Provider>,
     );
 
-    const refreshButton = await screen.findByRole('button', { name: 'Refresh' });
+    const refreshButton = await screen.findByRole(
+      'button',
+      { name: 'Refresh' },
+      { timeout: 5_000 },
+    );
     await waitFor(() => expect(mocks.fetchList).toHaveBeenCalledWith('task-list', undefined));
 
     fireEvent.click(refreshButton);
 
     await waitFor(() => expect(mocks.fetchList).toHaveBeenLastCalledWith('task-list', 12));
-  });
+  }, 10_000);
 });

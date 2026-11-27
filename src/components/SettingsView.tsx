@@ -23,6 +23,8 @@ import { PhotosSection } from './settings/sections/PhotosSection';
 import { CalendarSection } from './settings/sections/CalendarSection';
 import { IntegrationsSection } from './settings/sections/IntegrationsSection';
 import { useTranslation, type TranslationKey } from '../i18n';
+import { SettingsErrorBadge } from './SettingsErrorBadge';
+import type { SettingsAttention } from '../hooks/useIntegrationHealth';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,6 +57,9 @@ interface SettingsViewProps {
   onRemoveMember: (id: string) => void;
   // Integrations
   onIntegrationSettingsSaved?: () => void;
+  settingsAttention?: SettingsAttention[];
+  onConnectSpotify?: () => Promise<{ ok: boolean; error?: string }>;
+  onSettingsErrorChange?: (hasError: boolean) => void;
   // Calendars
   calendars: Array<{ id: string; name: string; color?: string; readOnly?: boolean }>;
   // Kid Display
@@ -99,6 +104,9 @@ export function SettingsView({
   onUpdateMember,
   onRemoveMember,
   onIntegrationSettingsSaved,
+  settingsAttention = [],
+  onConnectSpotify,
+  onSettingsErrorChange,
   calendars,
   onEnterFocusMode,
 }: SettingsViewProps) {
@@ -200,6 +208,9 @@ export function SettingsView({
       onUpdateSettings={onUpdateSettings}
       t={t}
       onIntegrationSettingsSaved={onIntegrationSettingsSaved}
+      attention={settingsAttention}
+      onConnectSpotify={onConnectSpotify}
+      onSettingsErrorChange={onSettingsErrorChange}
     />
   );
   // ==== DISPLAY ====
@@ -247,6 +258,9 @@ export function SettingsView({
               >
                 {item.icon}
                 {t(item.labelKey)}
+                {item.id === 'integrations' && settingsAttention.length > 0 && (
+                  <SettingsErrorBadge label={t('settings.integrations.needsAttention')} />
+                )}
               </button>
             ))}
           </nav>

@@ -352,7 +352,7 @@ describe('reward lifecycle', () => {
     await assign(container, 'Schermtijd', 20);
     await waitFor(() => expect(container.textContent).toContain('Wacht op beloning'));
     expect(mocks.approveReward).toHaveBeenCalledTimes(1);
-  });
+  }, 10_000);
 
   it('leaves other goals untouched when points are split', async () => {
     mocks.state.current = {

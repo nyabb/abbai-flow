@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { CalendarPlus, ShoppingCart, CheckSquare, Timer, Repeat, Settings } from 'lucide-react';
 import { hapticTap } from '../hooks/useHaptics';
 import { useTranslation } from '../i18n';
+import { SettingsErrorBadge } from './SettingsErrorBadge';
 
 interface OmniAddProps {
   onAddEvent: () => void;
@@ -16,6 +17,7 @@ interface OmniAddProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   showTrigger?: boolean;
+  hasSettingsAttention?: boolean;
 }
 
 interface ActionDef {
@@ -36,6 +38,7 @@ export function OmniAdd({
   open,
   onOpenChange,
   showTrigger = true,
+  hasSettingsAttention = false,
 }: OmniAddProps) {
   const { t } = useTranslation();
   const [internalExpanded, setInternalExpanded] = useState(false);
@@ -156,7 +159,15 @@ export function OmniAdd({
             tabIndex={expanded ? 0 : -1}
             aria-label={action.label}
           >
-            <span className="omni-add-action-icon">{action.icon}</span>
+            <span className="omni-add-action-icon">
+              {action.icon}
+              {action.id === 'settings' && hasSettingsAttention && (
+                <SettingsErrorBadge
+                  label={t('settings.integrations.needsAttention')}
+                  className="settings-error-badge--floating"
+                />
+              )}
+            </span>
             <span className="omni-add-action-label">{action.label}</span>
           </button>
         ))}
@@ -174,6 +185,12 @@ export function OmniAdd({
           <span className={`omni-add-fab-icon ${expanded ? 'omni-add-fab-icon--open' : ''}`}>
             +
           </span>
+          {hasSettingsAttention && (
+            <SettingsErrorBadge
+              label={t('settings.integrations.needsAttention')}
+              className="settings-error-badge--floating settings-error-badge--fab"
+            />
+          )}
         </button>
       )}
     </div>
