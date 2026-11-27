@@ -1,3 +1,15 @@
+# [4.1.0](https://github.com/nyabb/abbai-flow/compare/v4.0.0...v4.1.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* hide empty reminder sections and drag full rows ([a89d58d](https://github.com/nyabb/abbai-flow/commit/a89d58de3df218e8fb0b29814c8868d7452133a9))
+
+
+### Features
+
+* use bottom navigation across displays ([0fef300](https://github.com/nyabb/abbai-flow/commit/0fef30080f255a476fd4886a425b6ef8e0012599))
+
 # [4.0.0](https://github.com/nyabb/abbai-flow/compare/v3.2.0...v4.0.0) (2026-11-27)
 
 
