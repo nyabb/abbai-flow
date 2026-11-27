@@ -1,3 +1,19 @@
+# [3.0.0](https://github.com/nyabb/abbai-flow/compare/v2.39.0...v3.0.0) (2026-11-27)
+
+
+* feat!: remove Home Assistant dependencies ([76bfa91](https://github.com/nyabb/abbai-flow/commit/76bfa91b0da0f7a032212737457786b87725ec5e))
+
+
+### Bug Fixes
+
+* correct notifications tests and docs build ([c57e1b8](https://github.com/nyabb/abbai-flow/commit/c57e1b8dd2d39857620e94780f0941c26a85c344))
+* restore integration diagnostic label sanitizer ([c3d168b](https://github.com/nyabb/abbai-flow/commit/c3d168bc08a218b35042ac29b6fbe86bc4330414))
+
+
+### BREAKING CHANGES
+
+* Home Assistant integration and deployment support have been removed. Configure supported integrations directly in Abbai Flow.
+
 # [2.39.0](https://github.com/nyabb/abbai-flow/compare/v2.38.1...v2.39.0) (2026-11-26)
 
 
