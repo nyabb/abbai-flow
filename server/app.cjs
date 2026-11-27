@@ -1725,7 +1725,7 @@ async function route(req, res, config, services, bluetooth) {
       return;
     }
     await serveStatic(req, res, config.distDir);
-  } catch (err) {
+  } catch {
     console.error('[Server] ' + JSON.stringify({ event: 'request_failed', ok: false }));
     sendJson(res, 500, { error: 'Internal server error' });
   }

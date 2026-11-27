@@ -25,7 +25,7 @@ try {
 }
 
 const app = createApp(config);
-const { server, bluetooth, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
+const { server, verifySpotifyCatalog, verifySpotifyPlaylists } = app;
 startIntegrationDiagnostics(app.config, {
   verifySpotifyCatalog,
   verifySpotifyPlaylists,
