@@ -11,11 +11,11 @@
  */
 import type { ReactNode } from 'react';
 import { format } from 'date-fns';
-import { ChevronLeft, Volume2, VolumeX } from 'lucide-react';
+import { ChevronLeft, Volume2 } from 'lucide-react';
 import { useTranslation } from '../i18n';
 import { Clock } from './Clock';
 import { LanguageSwitcher } from './LanguageSwitcher';
-import { useSoundPreference } from '../hooks/useSoundPreference';
+import { useMusicDockContext } from './MusicDockContext';
 
 export interface PageHeaderProps {
   title: ReactNode;
@@ -52,7 +52,7 @@ export function PageHeaderActions({
   clock,
 }: PageHeaderActionsProps) {
   const { t } = useTranslation();
-  const [soundEnabled, setSoundEnabled] = useSoundPreference();
+  const musicDock = useMusicDockContext();
 
   return (
     <div className={className}>
@@ -65,16 +65,21 @@ export function PageHeaderActions({
         ) : (
           <Clock />
         )
-      ) : clock}
+      ) : (
+        clock
+      )}
       <button
         type="button"
-        className="page-header-sound-toggle"
-        aria-label={t('planner.sound')}
-        aria-pressed={soundEnabled}
-        title={t('planner.sound')}
-        onClick={() => setSoundEnabled(!soundEnabled)}
+        className={`page-header-sound-toggle${musicDock?.playing ? ' is-playing' : ''}`}
+        aria-label={t('music.nowPlaying')}
+        aria-pressed={musicDock?.open ?? false}
+        aria-expanded={musicDock?.open ?? false}
+        aria-controls="music-dock-panel"
+        title={t('music.openMusicView')}
+        data-music-dock-trigger="true"
+        onClick={() => musicDock?.toggle()}
       >
-        {soundEnabled ? <Volume2 aria-hidden="true" /> : <VolumeX aria-hidden="true" />}
+        <Volume2 aria-hidden="true" />
       </button>
       <LanguageSwitcher />
     </div>

@@ -182,6 +182,11 @@ body {
   background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
 }
 
+.page-header-sound-toggle.is-playing {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
 .page-header-sound-toggle svg {
   width: 19px;
   height: 19px;

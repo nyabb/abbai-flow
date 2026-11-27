@@ -35,7 +35,10 @@ interface SpotifyBrowserState {
 interface SpotifyBrowserPlayer {
   connect(): Promise<boolean>;
   disconnect(): void;
-  addListener(event: 'ready' | 'not_ready', listener: (payload: { device_id: string }) => void): boolean;
+  addListener(
+    event: 'ready' | 'not_ready',
+    listener: (payload: { device_id: string }) => void,
+  ): boolean;
   addListener(
     event: 'player_state_changed',
     listener: (payload: SpotifyBrowserState | null) => void,
@@ -426,14 +429,17 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
       const player = playerRef.current;
       if (!player || !deviceId) return { ok: false, error: 'Browser player is not ready yet' };
       try {
-        if (action === 'playTrack') void player.activateElement().catch(() => undefined);
+        if (action === 'playTrack' || action === 'playPlaylist') {
+          void player.activateElement().catch(() => undefined);
+        }
         switch (action) {
           case 'playTrack':
+          case 'playPlaylist':
           case 'shuffle':
           case 'repeat': {
             const result = await sendSpotifyControl(action, value);
             if (!result.ok) return result;
-            if (action === 'playTrack') {
+            if (action === 'playTrack' || action === 'playPlaylist') {
               setSnapshot((current) => ({
                 ...current,
                 auth: { ...current.auth, isActive: true },

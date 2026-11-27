@@ -70,7 +70,9 @@ function snapshot(overrides: Partial<MusicSnapshot> = {}): MusicSnapshot {
 function renderPanel(
   state: MusicSnapshot,
   loading = false,
-  onSearch: (query: string) => Promise<{ tracks: SpotifyCatalogTrack[] }> = vi.fn(async () => ({ tracks: [] })),
+  onSearch: (query: string) => Promise<{ tracks: SpotifyCatalogTrack[] }> = vi.fn(async () => ({
+    tracks: [],
+  })),
   library = playlistLibrary(),
   onControl = vi.fn(async () => ({ ok: true })),
   onConnectPlayback = vi.fn(async () => ({ ok: true })),
@@ -177,8 +179,43 @@ describe('SpotifyMusicPanel browser playback', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
     fireEvent.click(await screen.findByRole('button', { name: 'Play track: Sample Song' }));
-    await waitFor(() => expect(onControl).toHaveBeenCalledWith('playTrack', 'spotify:track:abc123'));
+    await waitFor(() =>
+      expect(onControl).toHaveBeenCalledWith('playTrack', 'spotify:track:abc123'),
+    );
     expect(screen.queryByRole('button', { name: 'Activate device' })).not.toBeInTheDocument();
+  });
+
+  it('starts the selected playlist instead of only its first track', async () => {
+    const playlist = {
+      id: '4q3zB8nVYk9m2H6wX1cR0P',
+      uri: 'spotify:playlist:4q3zB8nVYk9m2H6wX1cR0P',
+      name: 'Summer mix',
+      artworkUrl: null,
+      spotifyUrl: null,
+      ownerName: 'Abbai',
+      trackCount: 12,
+      isPublic: false,
+    };
+    const onControl = vi.fn(async () => ({ ok: true }));
+    const library = playlistLibrary({
+      playlists: [playlist],
+      playlistsTotal: 1,
+      selectedPlaylist: playlist,
+      selectedPlaylistId: playlist.id,
+    });
+    renderPanel(
+      snapshot({
+        connection: 'connected',
+        auth: { loggedIn: true, isActive: false, deviceName: 'This browser' },
+      }),
+      false,
+      undefined,
+      library,
+      onControl,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Play: Summer mix' }));
+    await waitFor(() => expect(onControl).toHaveBeenCalledWith('playPlaylist', playlist.uri));
   });
 
   it('keeps search results visible but disables playback while disconnected', async () => {

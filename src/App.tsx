@@ -47,6 +47,7 @@ import { useSpotifyBrowserPlayer } from './hooks/useSpotifyBrowserPlayer';
 import { useSpotifyCatalog } from './hooks/useSpotifyCatalog';
 import { useIntegrationHealth } from './hooks/useIntegrationHealth';
 import { MusicDock } from './components/MusicDock';
+import { MusicDockContext } from './components/MusicDockContext';
 const EMPTY_CHORESMAN_CHORES: ChoresManChore[] = [];
 
 type ViewTransitionDocument = Document & {
@@ -72,6 +73,15 @@ export function App() {
   const spotifyBrowser = useSpotifyBrowserPlayer(
     spotifyPlaylists.status.authorized,
     spotifyPlaylists.status.playbackAuthorized === true,
+  );
+  const [musicDockOpen, setMusicDockOpen] = useState(false);
+  const musicDockContext = useMemo(
+    () => ({
+      open: musicDockOpen,
+      playing: spotifyBrowser.snapshot.playback.status === 'playing',
+      toggle: () => setMusicDockOpen((current) => !current),
+    }),
+    [musicDockOpen, spotifyBrowser.snapshot.playback.status],
   );
   const integrationAttention = useIntegrationHealth(
     integrationSettingsRevision,
@@ -654,12 +664,16 @@ export function App() {
   const sidebarPos = settings.sidebarPosition || 'left';
   const withDebugConsole = (content: ReactNode) => (
     <I18nContext.Provider value={i18n}>
-      {content}
-      <MusicDock
-        snapshot={spotifyBrowser.snapshot}
-        onControl={spotifyBrowser.control}
-        onOpen={() => handleChangeView('music')}
-      />
+      <MusicDockContext.Provider value={musicDockContext}>
+        {content}
+        <MusicDock
+          open={musicDockOpen}
+          onClose={() => setMusicDockOpen(false)}
+          snapshot={spotifyBrowser.snapshot}
+          onControl={spotifyBrowser.control}
+          onOpen={() => handleChangeView('music')}
+        />
+      </MusicDockContext.Provider>
       <DebugConsole enabled={settings.debugMode} />
     </I18nContext.Provider>
   );
@@ -695,6 +709,7 @@ export function App() {
 
   return (
     <I18nContext.Provider value={i18n}>
+      <MusicDockContext.Provider value={musicDockContext}>
       <div
         className={`abbai-flow abbai-flow--sidebar-${sidebarPos} ${compact ? 'abbai-flow--compact' : ''} ${activeView === 'chores' ? 'abbai-flow--chores' : ''} ${settings.reducedMotion ? ' abbai-flow--reduce-motion' : ''} ${supportsNativeViewTransitions ? ' abbai-flow--view-transition-supported' : ''}`}
       >
@@ -719,11 +734,6 @@ export function App() {
             pause/delete right there so the timer page is optional. */}
         <TimerAlarm />
         {activeView !== 'timer' && <TimerDock onOpen={() => handleChangeView('timer')} />}
-        <MusicDock
-          snapshot={spotifyBrowser.snapshot}
-          onControl={spotifyBrowser.control}
-          onOpen={() => handleChangeView('music')}
-        />
         <DebugConsole enabled={settings.debugMode} />
 
         {/* Main content area */}
@@ -910,7 +920,16 @@ export function App() {
           photoTransition={settings.photoTransition}
         />
 
+        <MusicDock
+          open={musicDockOpen}
+          onClose={() => setMusicDockOpen(false)}
+          snapshot={spotifyBrowser.snapshot}
+          onControl={spotifyBrowser.control}
+          onOpen={() => handleChangeView('music')}
+        />
+
       </div>
+      </MusicDockContext.Provider>
     </I18nContext.Provider>
   );
 }

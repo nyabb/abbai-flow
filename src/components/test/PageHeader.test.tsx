@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PageHeader } from '../PageHeader';
+import { MusicDockContext } from '../MusicDockContext';
 import { I18nContext, createI18n } from '../../i18n';
 
 const NL = createI18n('nl');
@@ -36,7 +37,7 @@ describe('PageHeader', () => {
   it('only offers a back button when a handler is passed', () => {
     const { container, rerender } = renderHeader({ title: 'Timer' });
     expect(container.querySelector('.page-header-back')).toBeNull();
-    expect(screen.getByRole('button', { name: NL.t('planner.sound') })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: NL.t('music.nowPlaying') })).toBeInTheDocument();
 
     const onBack = vi.fn();
     rerender(
@@ -47,6 +48,24 @@ describe('PageHeader', () => {
 
     fireEvent.click(screen.getByRole('button', { name: NL.t('common.back') }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens the music dock from the header sound control and marks active playback', () => {
+    const toggle = vi.fn();
+    const { container } = render(
+      <I18nContext.Provider value={NL}>
+        <MusicDockContext.Provider value={{ open: false, playing: true, toggle }}>
+          <PageHeader title="Music" />
+        </MusicDockContext.Provider>
+      </I18nContext.Provider>,
+    );
+
+    const control = screen.getByRole('button', { name: NL.t('music.nowPlaying') });
+    expect(control).toHaveAttribute('aria-expanded', 'false');
+    expect(control).toHaveClass('is-playing');
+    fireEvent.click(control);
+    expect(toggle).toHaveBeenCalledOnce();
+    expect(container.querySelector('[data-music-dock-trigger="true"]')).not.toBeNull();
   });
 
   it('renders right-hand actions', () => {

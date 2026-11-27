@@ -1,12 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import {
-  ExternalLink,
-  ListMusic,
-  Music2,
-  Plus,
-  Sparkles,
-  Trash2,
-} from 'lucide-react';
+import { ExternalLink, ListMusic, Music2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 import type { SpotifyPlaylist, SpotifyPlaylistTrack } from '../api/spotify-playlists';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
@@ -16,6 +9,7 @@ interface SpotifyPlaylistLibraryProps {
   library: UseSpotifyPlaylistsResult;
   canPlay: boolean;
   onPlayTrack: (uri: string) => void;
+  onPlayPlaylist: (uri: string) => void;
 }
 
 function SpotifyArtwork({
@@ -36,7 +30,12 @@ function SpotifyArtwork({
   );
 }
 
-export function SpotifyPlaylistLibrary({ library, canPlay, onPlayTrack }: SpotifyPlaylistLibraryProps) {
+export function SpotifyPlaylistLibrary({
+  library,
+  canPlay,
+  onPlayTrack,
+  onPlayPlaylist,
+}: SpotifyPlaylistLibraryProps) {
   const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
@@ -282,6 +281,16 @@ export function SpotifyPlaylistLibrary({ library, canPlay, onPlayTrack }: Spotif
                     : ''}
                 </p>
               </div>
+              <button
+                type="button"
+                className="spotify-playlist-play"
+                aria-label={`${t('music.play')}: ${library.selectedPlaylist.name}`}
+                disabled={!canPlay || library.selectedPlaylist.trackCount === 0}
+                onClick={() => onPlayPlaylist(library.selectedPlaylist!.uri)}
+              >
+                <Play size={17} fill="currentColor" />
+                <span>{t('music.play')}</span>
+              </button>
               {library.selectedPlaylist.spotifyUrl && (
                 <a
                   className="spotify-open-playlist"

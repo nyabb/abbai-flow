@@ -296,7 +296,9 @@ describe('Spotify playlist library', () => {
   });
 
   it('starts a selected track directly on the browser player without a transfer step', async () => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
     const service = library(
       fetcher,
       tokenStore({
@@ -317,6 +319,38 @@ describe('Spotify playlist library', () => {
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({ uris: ['spotify:track:abc123'] }),
+      }),
+    );
+  });
+
+  it('starts the full playlist context on the selected browser player', async () => {
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    const service = library(
+      fetcher,
+      tokenStore({
+        ...storedToken(),
+        scopes: [
+          'streaming',
+          'user-read-email',
+          'user-read-private',
+          'user-read-playback-state',
+          'user-modify-playback-state',
+        ],
+      }),
+    );
+
+    await service.controlPlayback(
+      'browser-device-id',
+      'playPlaylist',
+      `spotify:playlist:${PLAYLIST_ID}`,
+    );
+    expect(fetcher).toHaveBeenCalledWith(
+      'https://api.spotify.com/v1/me/player/play?device_id=browser-device-id',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({ context_uri: `spotify:playlist:${PLAYLIST_ID}` }),
       }),
     );
   });
