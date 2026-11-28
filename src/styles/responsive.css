@@ -289,8 +289,8 @@ input[type='range'] {
 }
 
 
-/* iPad and small tablet portrait: keep the full-week calendar and the same
-   side-by-side household panel used on the large display. */
+/* Shorter compact-tablet viewports outside the tall Qudoo portrait layout keep
+   the full-week calendar and side-by-side household panel. */
 @media (min-width: 601px) and (max-width: 900px) {
   .abbai-flow-header {
     height: var(--header-height);
