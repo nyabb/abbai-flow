@@ -1133,19 +1133,16 @@
 }
 
 .spotify-playlist-play {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  display: grid;
+  width: 40px;
+  height: 40px;
   min-height: 40px;
-  padding: 0 13px;
+  padding: 0;
+  place-items: center;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--accent);
   color: white;
-  font: inherit;
-  font-size: 0.76rem;
-  font-weight: 650;
   cursor: pointer;
 }
 
@@ -1250,10 +1247,14 @@
 }
 
 .spotify-playlist-track-play {
+  display: grid;
+  width: 36px;
+  min-width: 36px;
   min-height: 36px;
+  padding: 0;
+  place-items: center;
   color: var(--text-secondary);
-  border-radius: var(--radius-pill);
-  font-size: 0.7rem;
+  border-radius: var(--skin-icon-radius, 10px);
 }
 
 .spotify-playlist-track-play:hover {
@@ -1876,10 +1877,6 @@
     justify-content: center;
     padding: 0;
     font-size: 0;
-  }
-
-  .spotify-playlist-play span {
-    display: none;
   }
 
   .spotify-playlist-track-heading,

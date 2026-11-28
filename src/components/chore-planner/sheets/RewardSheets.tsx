@@ -29,6 +29,8 @@ export interface GoalsSheetProps {
   given?: Redemption[];
   /** Reward spends from ChoresMan's retained point ledger. */
   ledgerHistory?: ChoresManRewardHistoryEntry[];
+  /** Show only historical rewards, without repeating the current goal list. */
+  historyOnly?: boolean;
   /** Parent-only action, gated by the PIN in the caller. */
   onGive?: (id: string) => void;
   formatDate?: (value: number) => string;
@@ -44,6 +46,7 @@ export function GoalsSheet({
   awaiting = [],
   given = [],
   ledgerHistory = [],
+  historyOnly = false,
   onGive,
   formatDate,
 }: GoalsSheetProps) {
@@ -97,19 +100,19 @@ export function GoalsSheet({
   return (
     <>
       <h2>
-        {c.goals}
+        {historyOnly ? c.rewardHistory : c.goals}
         {' \u00b7 '}
         {member.name}
       </h2>
-      {rewards.length === 0 && awaiting.length === 0 && history.length === 0 && (
+      {!historyOnly && rewards.length === 0 && awaiting.length === 0 && history.length === 0 && (
         <p>{c.noRewards}</p>
       )}
-      {open.map((reward) => renderRewardRow(reward))}
-      {done.length > 0 && <h3 className="planner-reward-group">{c.done}</h3>}
-      {done.map((reward) => renderRewardRow(reward))}
+      {!historyOnly && open.map((reward) => renderRewardRow(reward))}
+      {!historyOnly && done.length > 0 && <h3 className="planner-reward-group">{c.done}</h3>}
+      {!historyOnly && done.map((reward) => renderRewardRow(reward))}
       {/* Goal achieved is not the same as handed over: this is the parent's
           queue, and the only place a reward can be marked as given. */}
-      {awaiting.length > 0 && (
+      {!historyOnly && awaiting.length > 0 && (
         <>
           <h3 className="planner-reward-group">{c.rewardsToGive}</h3>
           {awaiting.map((redemption) => (
@@ -171,10 +174,15 @@ export function GoalsSheet({
           ))}
         </>
       )}
-      <button className="planner-ghost planner-reward-new" onClick={() => onNewGoal(member.id)}>
-        <Plus />
-        {c.setGoal}
-      </button>
+      {historyOnly && history.length === 0 && (
+        <p className="planner-history-empty">{c.historyEmpty}</p>
+      )}
+      {!historyOnly && (
+        <button className="planner-ghost planner-reward-new" onClick={() => onNewGoal(member.id)}>
+          <Plus />
+          {c.setGoal}
+        </button>
+      )}
     </>
   );
 }

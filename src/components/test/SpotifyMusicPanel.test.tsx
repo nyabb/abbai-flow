@@ -178,7 +178,7 @@ describe('SpotifyMusicPanel browser playback', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Play track: Sample Song' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Play: Sample Song' }));
     await waitFor(() =>
       expect(onControl).toHaveBeenCalledWith('playTrack', 'spotify:track:abc123'),
     );
@@ -239,7 +239,7 @@ describe('SpotifyMusicPanel browser playback', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 
-    expect(await screen.findByRole('button', { name: 'Play track: Sample Song' })).toBeDisabled();
+    expect(await screen.findByRole('button', { name: 'Play: Sample Song' })).toBeDisabled();
   });
 
   it('asks the user to reconnect Spotify when browser playback scopes are missing', async () => {

@@ -705,6 +705,7 @@ export const ja: Record<TranslationKey, string> = {
   'planner.waitingForReward': 'ごほうび待ち',
   'planner.rewardsToGive': '渡すごほうび',
   'planner.givenRewards': '渡したごほうび',
+  'planner.rewardHistory': 'ごほうびの履歴',
   'planner.historyRange': '期間',
   'planner.historyLastTwoDays': '過去2日間',
   'planner.historyLastWeek': '過去7日間',

@@ -3616,6 +3616,7 @@
 }
 
 .planner-detail-goal-add,
+.planner-detail-goal-history,
 .planner-detail-add {
   display: grid;
   flex: 0 0 44px;
@@ -3631,7 +3632,18 @@
   cursor: pointer;
 }
 
+.planner-detail-goal-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.planner-detail-goal-history {
+  color: var(--planner-blue);
+}
+
 .planner-detail-goal-add svg,
+.planner-detail-goal-history svg,
 .planner-detail-add svg {
   width: 21px;
   height: 21px;
@@ -3639,6 +3651,7 @@
 }
 
 .planner-detail-goal-add:hover,
+.planner-detail-goal-history:hover,
 .planner-detail-add:hover {
   color: var(--planner-ink);
   background: var(--planner-surface);
@@ -3863,19 +3876,67 @@
 
 .planner-board-goals-summary {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 8px;
   min-height: 36px;
   color: var(--planner-muted);
   font-size: 0.75rem;
 }
 
-.planner-board-goals-summary > span {
+.planner-board-goals-summary > .planner-goals-empty {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.planner-goal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  min-height: 27px;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--planner-line) 80%, transparent);
+  border-radius: 999px;
+  color: var(--planner-muted);
+  background: color-mix(in srgb, var(--planner-surface) 86%, var(--planner-soft));
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.planner-goal-pill > svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  stroke-width: 2.5;
+}
+
+.planner-goal-pill > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-goal-pill--saving > svg {
+  color: var(--planner-blue);
+}
+
+.planner-goal-pill--approval-pending,
+.planner-goal-pill--pending {
+  color: var(--planner-amber-ink);
+  border-color: color-mix(in srgb, var(--planner-amber) 30%, var(--planner-line));
+  background: var(--planner-amber-soft);
+}
+
+.planner-goal-pill--waiting-for-reward {
+  color: var(--planner-green);
+  border-color: color-mix(in srgb, var(--planner-green) 30%, var(--planner-line));
+  background: var(--planner-green-soft);
 }
 
 @media (max-width: 900px) {

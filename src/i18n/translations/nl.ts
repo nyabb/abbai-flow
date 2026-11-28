@@ -841,6 +841,7 @@ export const nl: Record<TranslationKey, string> = {
   'planner.waitingForReward': 'Wacht op beloning',
   'planner.rewardsToGive': 'Beloningen om te geven',
   'planner.givenRewards': 'Gegeven beloningen',
+  'planner.rewardHistory': 'Beloningsgeschiedenis',
   'planner.historyRange': 'Periode',
   'planner.historyLastTwoDays': 'Afgelopen 2 dagen',
   'planner.historyLastWeek': 'Afgelopen 7 dagen',

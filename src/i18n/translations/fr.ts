@@ -715,6 +715,7 @@ export const fr: Record<TranslationKey, string> = {
   'planner.waitingForReward': 'En attente de la récompense',
   'planner.rewardsToGive': 'Récompenses à donner',
   'planner.givenRewards': 'Récompenses données',
+  'planner.rewardHistory': 'Historique des récompenses',
   'planner.historyRange': 'Période',
   'planner.historyLastTwoDays': '2 derniers jours',
   'planner.historyLastWeek': '7 derniers jours',

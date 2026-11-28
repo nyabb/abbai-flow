@@ -210,56 +210,9 @@ export function ChoreBoard({
             ))}
           {activeTab === 'routines' && (
             <>
-              {member && (
-                <div
-                  className={`planner-overview-section-head${
-                    parentMode ? ' planner-section-head--parent' : ''
-                  }`}
-                >
-                  <h2>
-                    <RefreshCw aria-hidden="true" />
-                    {c.routines}
-                    <span>{routines.length}</span>
-                  </h2>
-                  {parentMode ? (
-                    onNewRoutine && (
-                      <button
-                        type="button"
-                        className="planner-overview-add"
-                        aria-label={`${c.add}: ${c.routines}`}
-                        title={`${c.add}: ${c.routines}`}
-                        onClick={() => onNewRoutine(member.id)}
-                      >
-                        <Plus aria-hidden="true" />
-                      </button>
-                    )
-                  ) : (
-                    <div className="planner-overview-section-actions">
-                      <button
-                        type="button"
-                        className="planner-overview-icon-action"
-                        disabled={!canRunMissions(member.id)}
-                        onClick={() => onOpenMissions(member.id)}
-                        aria-label={`${c.missions}: ${member.name}`}
-                        title={c.missions}
-                      >
-                        {'\u25B6'}
-                      </button>
-                      {onNewRoutine && (
-                        <button
-                          type="button"
-                          className="planner-overview-add"
-                          onClick={() => onNewRoutine(member.id)}
-                          aria-label={`${c.add}: ${c.routines} ${member.name}`}
-                          title={`${c.add}: ${c.routines}`}
-                        >
-                          <Plus aria-hidden="true" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Mission and add controls live in the toolbar above the phone
+                  panel; repeating the section title and plus here wastes the
+                  narrow card width. */}
               {routines.length === 0 ? (
                 <p className="planner-col-empty">{c.noRoutines}</p>
               ) : (
