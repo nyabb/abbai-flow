@@ -6,7 +6,7 @@
  * and row renderers), so the board has no ChoresMan knowledge of its own.
  */
 import { useEffect } from 'react';
-import { ListChecks, Plus, RefreshCw, Target } from 'lucide-react';
+import { Hand, ListChecks, Plus, RefreshCw, Target } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -120,15 +120,22 @@ export function ChoreBoard({
               ? { label: `${c.add}: ${c.free}`, run: () => onNewChore() }
               : null
       : null;
-    const visibleTabs: Array<['chores' | 'routines' | 'goals' | 'free', string, number | null]> =
+    const goalCount = member ? (goalCountFor?.(member.id) ?? 0) : 0;
+    const visibleTabs: Array<['chores' | 'routines' | 'goals' | 'free', string, number]> =
       parentMode
         ? [['routines', c.routines, routines.length]]
         : [
             ['chores', c.choresColumn, chores.length],
             ['routines', c.routines, routines.length],
-            ['goals', c.goals, null],
+            ['goals', c.goals, goalCount],
             ['free', c.free, freeTasks.length],
           ];
+    const tabIcons = {
+      chores: ListChecks,
+      routines: RefreshCw,
+      goals: Target,
+      free: Hand,
+    };
 
     return (
       <main className="planner-board planner-board--overview planner-board--compact">
@@ -150,19 +157,26 @@ export function ChoreBoard({
         </div>
 
         <div className="planner-mobile-tabs" role="tablist" aria-label={c.title}>
-          {visibleTabs.map(([id, label, count]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === id}
-              className={`planner-mobile-tab${activeTab === id ? ' is-active' : ''}`}
-              onClick={() => setTab(id)}
-            >
-              {label}
-              {count !== null && <span>{count}</span>}
-            </button>
-          ))}
+          {visibleTabs.map(([id, label, count]) => {
+            const Icon = tabIcons[id];
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-label={`${label}: ${count}`}
+                aria-selected={activeTab === id}
+                className={`planner-mobile-tab${activeTab === id ? ' is-active' : ''}`}
+                onClick={() => setTab(id)}
+              >
+                <span className="planner-mobile-tab-icon" aria-hidden="true">
+                  <Icon />
+                  <span className="planner-mobile-tab-count">{count}</span>
+                </span>
+                <span className="planner-mobile-tab-label">{label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {member && (

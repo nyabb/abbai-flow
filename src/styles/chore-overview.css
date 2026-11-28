@@ -429,10 +429,16 @@
 }
 
 .planner-board--overview .planner-mobile-tab {
-  min-height: 42px;
+  min-height: 68px;
+  padding: 8px 6px;
   border: 0;
   border-radius: 12px;
   background: color-mix(in srgb, var(--planner-ink) 5%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-mobile-tab-label {
+  font-size: 0.76rem;
+  overflow-wrap: anywhere;
 }
 
 .planner-board--overview .planner-mobile-tab.is-active {
