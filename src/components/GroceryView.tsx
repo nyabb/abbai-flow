@@ -205,6 +205,7 @@ export function GroceryView({
   const [newItemSectionID, setNewItemSectionID] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingItem, setEditingItem] = useState<TodoItem | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
@@ -217,6 +218,7 @@ export function GroceryView({
     (value): value is boolean => typeof value === 'boolean',
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const [sectionDragActive, setSectionDragActive] = useState(false);
   const dragSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
@@ -230,6 +232,12 @@ export function GroceryView({
     toggleTask,
     removeTask,
   } = useLocalTasks();
+
+  useEffect(() => {
+    if (!confirmingDelete) return;
+    const timer = setTimeout(() => setConfirmingDelete(null), 3000);
+    return () => clearTimeout(timer);
+  }, [confirmingDelete]);
 
   const groceryKey = groceryListIds.join('|');
   const taskKey = taskListIds.join('|');
@@ -530,6 +538,12 @@ export function GroceryView({
   };
 
   const handleDelete = async (item: TodoItem) => {
+    const deleteKey = `${selectedListId}:${item.uid}`;
+    if (confirmingDelete !== deleteKey) {
+      setConfirmingDelete(deleteKey);
+      return;
+    }
+    setConfirmingDelete(null);
     if (item.source === 'local') {
       removeTask(item.uid);
       setLocalItems((current) => current.filter((candidate) => candidate.uid !== item.uid));
@@ -584,12 +598,12 @@ export function GroceryView({
         )}
         <button
           type="button"
-          className="grocery-view-delete"
+          className={`grocery-view-delete${confirmingDelete === `${selectedListId}:${item.uid}` ? ' is-confirming' : ''}`}
           onClick={() => void handleDelete(item)}
-          aria-label={t('grocery.deleteItem')}
-          title={t('grocery.deleteItem')}
+          aria-label={confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : t('grocery.deleteItem')}
+          title={confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : t('grocery.deleteItem')}
         >
-          <Trash2 size={14} />
+          {confirmingDelete === `${selectedListId}:${item.uid}` ? t('planner.sure') : <Trash2 size={14} />}
         </button>
       </>
     );
@@ -726,8 +740,16 @@ export function GroceryView({
         </div>
       )}
 
-      <DndContext sensors={dragSensors} onDragEnd={handleSectionDrop}>
-      <div className="grocery-view-list">
+      <DndContext
+        sensors={dragSensors}
+        onDragStart={() => setSectionDragActive(true)}
+        onDragCancel={() => setSectionDragActive(false)}
+        onDragEnd={(event) => {
+          setSectionDragActive(false);
+          handleSectionDrop(event);
+        }}
+      >
+      <div className={`grocery-view-list${sectionDragActive ? ' is-drag-active' : ''}`}>
         {loading && items.length === 0 ? (
           <LoadingPlaceholder label={t('grocery.loadingItems')} lines={4} className="loading-placeholder--list grocery-view-loading" />
         ) : items.length === 0 && !loading ? (

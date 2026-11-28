@@ -287,3 +287,104 @@ input[type='range'] {
     animation-delay: 0s !important;
   }
 }
+
+
+/* Shorter compact-tablet viewports outside the tall Qudoo portrait layout keep
+   the full-week calendar and side-by-side household panel. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .abbai-flow-header {
+    height: var(--header-height);
+    padding: 0 18px;
+  }
+
+  .header-separator {
+    display: block;
+  }
+
+  .header-date {
+    display: block;
+    font-size: 0.76rem;
+    white-space: nowrap;
+  }
+
+  .clock-mini {
+    display: block;
+    min-width: 56px;
+    font-size: 0.76rem;
+  }
+
+  .header-family-name {
+    font-size: 1.1rem;
+  }
+
+  .abbai-flow-body {
+    padding: 12px 10px 0;
+  }
+
+  .filter-bar {
+    padding: 8px 10px 0;
+  }
+
+  .abbai-flow-body--two-col {
+    flex-direction: row;
+  }
+
+  .abbai-flow-body--two-col .abbai-flow-body-calendar {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .calendar-sidebar {
+    width: clamp(188px, 25vw, 225px);
+    flex: 0 0 clamp(188px, 25vw, 225px);
+    max-height: none;
+    padding: 12px 10px;
+    border-top: 0;
+    border-left: 1px solid var(--border-subtle);
+    gap: 16px;
+    overflow-y: auto;
+  }
+
+  .week-mobile-nav {
+    display: none;
+  }
+
+  .week-header-day-name {
+    font-size: 0.58rem;
+  }
+
+  .week-header-day-number {
+    width: 29px;
+    height: 29px;
+    font-size: 1rem;
+  }
+
+  .week-header-day {
+    padding: 6px 1px;
+  }
+
+  .week-header-weather-temps {
+    display: none;
+  }
+
+  .event-block {
+    min-height: 30px;
+  }
+
+  .event-block-time {
+    display: block;
+    font-size: 0.54rem;
+  }
+
+  .event-block-location {
+    display: none;
+  }
+
+  .event-block-title {
+    font-size: 0.62rem;
+  }
+
+  .event-block-content {
+    padding: 4px;
+  }
+}

@@ -36,7 +36,7 @@ const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR
 
 /** Number of days to show in mobile 3-day view */
 const MOBILE_DAYS = 3;
-const MOBILE_BREAKPOINT = 768;
+const MOBILE_BREAKPOINT = 600;
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(

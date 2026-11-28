@@ -24,6 +24,8 @@ import './styles/surface.css';
 import './styles/responsive.css';
 // Full-screen portrait display: a wall/tablet layout, distinct from phone UI.
 import './styles/portrait-display.css';
+// Qudoo-inspired family board cards, layered after responsive screen skins.
+import './styles/chore-overview.css';
 import { applyStoredTheme } from './hooks/useTheme';
 import { installDebugFetchCapture } from './api/debug-log';
 

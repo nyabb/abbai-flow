@@ -908,7 +908,7 @@ function createApp(options) {
   };
   if (hasObsoleteIntegrationSettings(options.dataDir)) {
     void writeIntegrationSettings(options.dataDir, config).catch(() => {
-      console.warn('Could not remove obsolete integration settings.');
+      console.warn('[Integrations] ' + JSON.stringify({ event: 'settings_migration_failed', ok: false }));
     });
   }
 
@@ -1052,11 +1052,23 @@ function createApp(options) {
     const spotifyCredentialsChanged =
       next.spotifyClientId !== config.spotifyClientId ||
       next.spotifyClientSecret !== config.spotifyClientSecret;
+    const calendarSettingsChanged =
+      JSON.stringify(next.calendarSources) !== JSON.stringify(config.calendarSources);
+    const weatherSettingsChanged =
+      next.openMeteoUrl !== config.openMeteoUrl ||
+      next.weatherApiUrl !== config.weatherApiUrl ||
+      next.weatherApiKey !== config.weatherApiKey ||
+      next.weatherApiKeyMode !== config.weatherApiKeyMode ||
+      next.weatherApiKeyParameter !== config.weatherApiKeyParameter ||
+      JSON.stringify(next.weatherDataMapping) !== JSON.stringify(config.weatherDataMapping);
+    const remindersSettingsChanged =
+      icloudCredentialsChanged ||
+      next.icloudRemindersListKey !== config.icloudRemindersListKey;
     if (spotifyCredentialsChanged) {
       try {
         await spotifyTokenStore.clear();
       } catch {
-        console.warn('Could not clear the old Spotify authorization after credentials changed.');
+        console.warn('[Spotify] ' + JSON.stringify({ event: 'authorization_reset_failed', ok: false }));
       }
     }
 
@@ -1072,6 +1084,33 @@ function createApp(options) {
           .rm(path.join(config.dataDir, 'icloud-reminders'), { recursive: true, force: true })
           .catch(() => undefined);
       }
+    }
+    if (spotifySettingsChanged) {
+      console.info('[Spotify] ' + JSON.stringify({
+        event: 'settings_updated',
+        credentials_configured: Boolean(config.spotifyClientId && config.spotifyClientSecret),
+        redirect_configured: Boolean(config.spotifyRedirectUri),
+      }));
+    }
+    if (calendarSettingsChanged) {
+      console.info('[Calendar] ' + JSON.stringify({
+        event: 'settings_updated',
+        source_count: config.calendarSources.length,
+      }));
+    }
+    if (weatherSettingsChanged) {
+      console.info('[Weather] ' + JSON.stringify({
+        event: 'settings_updated',
+        custom_api_configured: Boolean(config.weatherApiUrl),
+        api_key_configured: Boolean(config.weatherApiKey),
+      }));
+    }
+    if (remindersSettingsChanged) {
+      console.info('[iCloud Reminders] ' + JSON.stringify({
+        event: 'settings_updated',
+        credentials_configured: Boolean(config.icloudAppleId && config.icloudPassword),
+        list_selected: Boolean(config.icloudRemindersListKey),
+      }));
     }
     return { settings: publicIntegrationSettings(config, services.icloudReminders.status?.()) };
   }
@@ -1090,7 +1129,95 @@ function createApp(options) {
   };
 }
 
+function describeIntegrationRequest(pathname, method) {
+  if (pathname.startsWith('/abbai-flow/music/')) {
+    if (pathname === '/abbai-flow/music/search') return { label: 'Spotify', action: 'search_catalog' };
+    if (pathname === '/abbai-flow/music/oauth/callback') return { label: 'Spotify', action: 'oauth_callback' };
+    if (pathname === '/abbai-flow/music/library/status') return { label: 'Spotify', action: 'connection_status' };
+    if (pathname === '/abbai-flow/music/library/connect') return { label: 'Spotify', action: 'connect_account' };
+    if (pathname === '/abbai-flow/music/library/playback-token') return { label: 'Spotify', action: 'playback_token' };
+    if (pathname === '/abbai-flow/music/library/playback-control') return { label: 'Spotify', action: 'playback_control' };
+    if (pathname === '/abbai-flow/music/library/playlists') {
+      return { label: 'Spotify', action: method === 'POST' ? 'create_playlist' : 'list_playlists' };
+    }
+    if (/^\/abbai-flow\/music\/library\/playlists\/[^/]+\/items$/.test(pathname)) {
+      return { label: 'Spotify', action: method === 'POST' ? 'add_playlist_item' : 'list_playlist_items' };
+    }
+    if (/^\/abbai-flow\/music\/library\/playlists\/[^/]+$/.test(pathname)) {
+      return { label: 'Spotify', action: 'delete_playlist' };
+    }
+    return { label: 'Spotify', action: 'unknown_music_action' };
+  }
+
+  if (pathname === '/abbai-flow/calendars') return { label: 'Calendar', action: 'list_calendars' };
+  if (pathname === '/abbai-flow/calendars/events') return { label: 'Calendar', action: 'fetch_events' };
+  if (pathname === '/abbai-flow/calendars/test') return { label: 'Calendar', action: 'test_source' };
+  if (pathname === '/abbai-flow/calendars/event') return { label: 'Calendar', action: 'change_event' };
+  if (pathname === '/abbai-flow/choresman') {
+    return { label: 'ChoresMan', action: method === 'GET' ? 'get_snapshot' : 'call_action' };
+  }
+  if (pathname === '/abbai-flow/weather/forecast') return { label: 'Weather', action: 'get_forecast' };
+  if (pathname === '/abbai-flow/weather/test') return { label: 'Weather', action: 'test_settings' };
+  if (pathname === '/abbai-flow/settings/integrations') {
+    return { label: 'Integrations', action: method === 'PUT' ? 'update_settings' : 'get_settings' };
+  }
+  return null;
+}
+
+function createIntegrationRequestLogger(req, res) {
+  const pathname = (req.url || '/').split('?')[0];
+  const descriptor = describeIntegrationRequest(pathname, req.method || 'GET');
+  if (!descriptor) return { setField() {} };
+
+  const startedAt = Date.now();
+  const entry = {
+    event: 'request_finished',
+    request_id: randomBytes(6).toString('hex'),
+    action: descriptor.action,
+  };
+  const fields = {};
+  res.once('finish', () => {
+    const status = Number(res.statusCode) || 0;
+    const ok = fields.authorization_result
+      ? fields.authorization_result === 'connected'
+      : status >= 200 && status < 400;
+    const safeEntry = {
+      ...entry,
+      ok,
+      http_status: status,
+      duration_ms: Math.max(0, Date.now() - startedAt),
+      ...fields,
+    };
+    (ok ? console.info : console.warn)('[' + descriptor.label + '] ' + JSON.stringify(safeEntry));
+  });
+
+  return {
+    setField(name, value) {
+      if ((name === 'calendar_count' || name === 'event_count') && Number.isInteger(value) && value >= 0) {
+        fields[name] = value;
+      }
+      if (name === 'authorization_result' && ['connected', 'failed', 'error'].includes(value)) {
+        fields[name] = value;
+      }
+      if (name === 'calendar_operation' && ['create', 'update', 'delete'].includes(value)) {
+        fields[name] = value;
+      }
+      if (name === 'calendar_provider' && ['ics', 'caldav', 'unknown'].includes(value)) {
+        fields[name] = value;
+      }
+      if (
+        name === 'service_action' &&
+        typeof value === 'string' &&
+        /^choresman\.[A-Za-z0-9_.-]{1,56}$/.test(value)
+      ) {
+        fields[name] = value;
+      }
+    },
+  };
+}
+
 async function route(req, res, config, services, bluetooth) {
+  const integrationLog = createIntegrationRequestLogger(req, res);
   const url = req.url || '/';
   const pathname = url.split('?')[0];
   const { spotifyCatalog, spotifyPlaylists } = services;
@@ -1205,9 +1332,9 @@ async function route(req, res, config, services, bluetooth) {
         sendJson(res, 405, { error: 'Method not allowed' }, { Allow: 'GET' });
         return;
       }
-      sendJson(res, 200, { calendars: await services.caldavCalendars.listCalendars() }, {
-        'Cache-Control': 'no-store',
-      });
+      const calendars = await services.caldavCalendars.listCalendars();
+      integrationLog.setField('calendar_count', calendars.length);
+      sendJson(res, 200, { calendars }, { 'Cache-Control': 'no-store' });
       return;
     }
     if (pathname === '/abbai-flow/calendars/events') {
@@ -1217,6 +1344,12 @@ async function route(req, res, config, services, bluetooth) {
       }
       const parameters = new URL(url, 'http://abbai-flow.local').searchParams;
       const calendarId = parameters.get('calendarId') || '';
+      const calendarProvider = calendarId.startsWith('ics/')
+        ? 'ics'
+        : calendarId.startsWith('caldav/')
+          ? 'caldav'
+          : 'unknown';
+      integrationLog.setField('calendar_provider', calendarProvider);
       const start = parameters.get('start') || '';
       const end = parameters.get('end') || '';
       if (!calendarId || !Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end)) || Date.parse(start) >= Date.parse(end)) {
@@ -1225,6 +1358,7 @@ async function route(req, res, config, services, bluetooth) {
       }
       try {
         const events = await services.caldavCalendars.fetchEvents(calendarId, start, end);
+        integrationLog.setField('event_count', events.length);
         sendJson(res, 200, { events }, { 'Cache-Control': 'no-store' });
       } catch {
         sendJson(res, 502, { error: 'Could not retrieve events from the selected calendar.' }, {
@@ -1248,6 +1382,7 @@ async function route(req, res, config, services, bluetooth) {
         sendJson(res, 400, { error: 'Choose a calendar source.' });
         return;
       }
+      integrationLog.setField('calendar_provider', submitted.provider);
       if (submitted.provider === 'ics') {
         if (!submitted.url) {
           sendJson(res, 400, { error: 'Enter an ICS feed URL.' });
@@ -1302,14 +1437,17 @@ async function route(req, res, config, services, bluetooth) {
       try {
         let result;
         if (value.operation === 'create') {
+          integrationLog.setField('calendar_operation', 'create');
           result = await services.caldavCalendars.createEvent(value.calendarId, value.event);
         } else if (value.operation === 'update') {
+          integrationLog.setField('calendar_operation', 'update');
           result = await services.caldavCalendars.updateEvent(
             value.calendarId,
             value.eventId,
             value.event,
           );
         } else if (value.operation === 'delete') {
+          integrationLog.setField('calendar_operation', 'delete');
           result = await services.caldavCalendars.deleteEvent(value.calendarId, value.eventId);
         } else {
           sendJson(res, 400, { error: 'Choose a supported calendar event operation.' });
@@ -1345,6 +1483,7 @@ async function route(req, res, config, services, bluetooth) {
         sendJson(res, 400, { error: 'action is required' });
         return;
       }
+      integrationLog.setField('service_action', value.action);
       try {
         const result = await services.choresman.call(value.action, value.data || {});
         sendJson(
@@ -1540,6 +1679,7 @@ async function route(req, res, config, services, bluetooth) {
         } catch {
           outcome = 'failed';
         }
+        integrationLog.setField('authorization_result', outcome);
         const callbackSuffix = '/abbai-flow/music/oauth/callback';
         const basePath = pathname.endsWith(callbackSuffix)
           ? pathname.slice(0, -callbackSuffix.length)
@@ -1585,8 +1725,8 @@ async function route(req, res, config, services, bluetooth) {
       return;
     }
     await serveStatic(req, res, config.distDir);
-  } catch (err) {
-    console.error('Unhandled request error:', err.message);
+  } catch {
+    console.error('[Server] ' + JSON.stringify({ event: 'request_failed', ok: false }));
     sendJson(res, 500, { error: 'Internal server error' });
   }
 }

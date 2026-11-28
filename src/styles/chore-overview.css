@@ -1,0 +1,513 @@
+/* Family overview cards inspired by the Qudoo chores reference. */
+.chore-planner {
+  --planner-bg: var(--bg-primary);
+  --planner-surface: var(--bg-surface);
+  --planner-ink: var(--text-primary);
+  --planner-muted: var(--text-secondary);
+  --planner-line: var(--border, var(--grid-lines));
+  --planner-accent: var(--accent);
+  --planner-accent-soft: color-mix(in srgb, var(--accent) 14%, var(--bg-surface));
+  --planner-green: var(--color-success);
+  --planner-green-soft: color-mix(in srgb, var(--color-success) 16%, var(--bg-surface));
+  --planner-amber: var(--color-brand);
+  --planner-amber-soft: color-mix(in srgb, var(--color-brand) 20%, var(--bg-surface));
+  --planner-blue: var(--color-accent);
+  --planner-blue-soft: color-mix(in srgb, var(--color-accent) 14%, var(--bg-surface));
+  --planner-soft: color-mix(in srgb, var(--text-primary) 7%, var(--bg-surface));
+  --planner-amber-ink: color-mix(in srgb, var(--color-brand) 55%, var(--text-primary));
+  --planner-band-1: color-mix(in srgb, var(--accent) 12%, var(--bg-surface));
+  --planner-band-2: color-mix(in srgb, var(--accent) 26%, var(--bg-surface));
+  --planner-band-ink: var(--text-primary);
+  color: var(--planner-ink);
+  background: var(--planner-bg);
+}
+
+.chore-planner .planner-header {
+  color: var(--planner-band-ink);
+  background: linear-gradient(125deg, var(--planner-band-1), var(--planner-band-2));
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.chore-planner .planner-header .page-header-title,
+.chore-planner .planner-header .page-header-weekday,
+.chore-planner .planner-header .page-header-month,
+.chore-planner .planner-header .page-header-day,
+.chore-planner .planner-header .clock-mini {
+  color: var(--planner-band-ink);
+}
+
+.chore-planner[data-screen='board'] {
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-primary));
+}
+
+.chore-planner[data-screen='board'] .planner-board {
+  background: transparent;
+}
+
+.chore-planner[data-screen='board'] .planner-board--overview:not(.planner-board--compact) {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-auto-rows: max-content;
+  align-content: start;
+  align-items: stretch;
+  gap: clamp(14px, 1.5vw, 22px);
+  padding: clamp(14px, 2vw, 28px) clamp(14px, 2.5vw, 38px) 30px;
+}
+
+.planner-board--overview:not(.planner-board--compact) .planner-col {
+  height: max-content;
+  min-height: 360px;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--planner-line);
+  border-radius: 24px;
+  background: var(--planner-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--planner-ink) 8%, transparent);
+}
+
+.planner-board--overview:not(.planner-board--compact) .planner-col-head {
+  min-height: 76px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--planner-line);
+  background: color-mix(in srgb, var(--planner-accent) 5%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-col-open {
+  gap: 12px;
+}
+
+.planner-board--overview .planner-col-avatar {
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--planner-surface);
+  border-radius: 15px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--planner-ink) 10%, transparent);
+}
+
+.planner-board--overview .planner-col-head strong {
+  color: var(--planner-ink);
+  font-size: 1.125rem;
+}
+
+.planner-board--overview .planner-col-points {
+  min-height: 38px;
+  padding-inline: 11px;
+  border: 1px solid color-mix(in srgb, var(--planner-amber) 20%, transparent);
+  border-radius: 12px;
+  background: var(--planner-amber-soft);
+  font-size: 0.875rem;
+}
+
+.planner-board--overview .planner-col-play,
+.planner-board--overview .planner-overview-icon-action {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.planner-board--overview:not(.planner-board--compact) .planner-col-body {
+  flex: 0 0 auto;
+  min-height: 0;
+  gap: 0;
+  padding: 14px 16px 16px;
+}
+
+.planner-board--overview .planner-overview-section {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+
+.planner-board--overview .planner-overview-section--routines {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--planner-line);
+}
+
+.planner-board--overview .planner-overview-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 0 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--planner-column-tone, var(--planner-accent)) 28%, transparent);
+}
+
+.planner-board--overview .planner-overview-section--chores .planner-overview-section-head {
+  --planner-column-tone: var(--planner-amber);
+}
+
+.planner-board--overview .planner-overview-section--routines .planner-overview-section-head,
+.planner-board--overview .planner-overview-section-head.planner-section-head--parent {
+  --planner-column-tone: var(--planner-blue);
+}
+
+.planner-board--overview .planner-overview-section-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  color: var(--planner-ink);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.planner-board--overview .planner-overview-section-head h2 svg {
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+  color: var(--planner-column-tone, var(--planner-accent));
+  stroke-width: 2.5;
+}
+
+.planner-board--overview .planner-overview-section-head h2 > span {
+  padding: 2px 7px;
+  border-radius: 8px;
+  color: var(--planner-muted);
+  background: color-mix(in srgb, var(--planner-column-tone, var(--planner-accent)) 13%, var(--planner-surface));
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.planner-board--overview .planner-overview-section-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.planner-board--overview .planner-overview-add,
+.planner-board--overview .planner-overview-icon-action {
+  display: grid;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--planner-line);
+  border-radius: 12px;
+  color: var(--planner-accent);
+  background: var(--planner-surface);
+  cursor: pointer;
+}
+
+.planner-board--overview .planner-overview-add svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.5;
+}
+
+.planner-board--overview .planner-overview-add:hover,
+.planner-board--overview .planner-overview-icon-action:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--planner-accent) 8%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-overview-icon-action:disabled {
+  color: var(--planner-muted);
+  background: var(--planner-soft);
+  cursor: default;
+}
+
+.planner-board--overview .planner-overview-section--chores .planner-overview-add {
+  color: var(--planner-amber-ink);
+}
+
+.planner-board--overview .planner-overview-section--routines .planner-overview-add,
+.planner-board--overview .planner-overview-section-head.planner-section-head--parent .planner-overview-add {
+  color: var(--planner-blue);
+}
+
+.planner-board--overview .planner-row {
+  min-height: 48px;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--planner-green) 15%, var(--planner-line));
+  border-radius: 14px;
+}
+
+.planner-board--overview .planner-row-check {
+  width: 24px;
+  height: 24px;
+  border-color: color-mix(in srgb, var(--planner-ink) 24%, transparent);
+  border-radius: 7px;
+}
+
+.planner-board--overview .planner-row-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--planner-green) 12%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-row--late .planner-row-icon,
+.planner-board--overview .planner-row--retry .planner-row-icon {
+  background: color-mix(in srgb, var(--planner-amber) 17%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-row--anyone .planner-row-icon {
+  background: color-mix(in srgb, var(--planner-accent) 14%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-col--free .planner-row {
+  border-color: color-mix(in srgb, var(--planner-accent) 16%, var(--planner-line));
+  background: color-mix(in srgb, var(--planner-accent) 9%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-row--routine {
+  padding: 11px;
+  border: 1px solid color-mix(in srgb, var(--planner-blue) 22%, var(--planner-line));
+  border-radius: 16px;
+}
+
+.planner-board--overview .planner-routine-head {
+  gap: 9px;
+}
+
+.planner-routine-head--family {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'icon title title'
+    'meta meta actions';
+  align-items: center;
+  gap: 8px 9px;
+  min-height: 0;
+}
+
+.planner-routine-head--family > .planner-row-icon {
+  grid-area: icon;
+}
+
+.planner-routine-head--family > .planner-row-name {
+  grid-area: title;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.planner-routine-head--family .planner-routine-title {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-routine-head--family .planner-row-name small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-routine-meta {
+  display: flex;
+  grid-area: meta;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planner-routine-meta .planner-row-points {
+  white-space: nowrap;
+}
+
+.planner-routine-actions {
+  display: flex;
+  grid-area: actions;
+  align-items: center;
+  justify-self: end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.planner-board--overview .planner-col-empty {
+  margin: 0;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 0.875rem;
+}
+
+.planner-board--overview .planner-desktop-goals {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--planner-line);
+  box-sizing: border-box;
+}
+
+.planner-board--overview .planner-board-goals-summary {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 8px;
+  min-height: 38px;
+  font-size: 0.8125rem;
+}
+
+.planner-board--overview .planner-board-goals-summary > span {
+  flex: 1 1 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.planner-board--overview .planner-section-action {
+  flex: 0 1 auto;
+  max-width: 100%;
+  min-height: 38px;
+  border-radius: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.chore-planner[data-screen='child'] .planner-detail-nav .planner-icon-button,
+.chore-planner[data-screen='child'] .planner-detail-goal-add {
+  color: var(--planner-accent);
+}
+
+.planner-board--overview .planner-col--free {
+  grid-column: auto;
+  display: flex;
+  align-items: stretch;
+  border-color: color-mix(in srgb, var(--planner-accent) 24%, var(--planner-line));
+  background: color-mix(in srgb, var(--planner-accent) 4%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-col--free .planner-col-head {
+  width: 100%;
+  grid-column: auto;
+}
+
+.planner-board--overview .planner-col--free .planner-col-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+  grid-column: auto;
+}
+
+.planner-board--overview .planner-col--free .planner-overview-section-head {
+  --planner-column-tone: var(--planner-accent);
+}
+
+.chore-planner[data-screen='board'] .planner-board--overview.planner-board--compact {
+  background: color-mix(in srgb, var(--planner-accent) 3%, var(--planner-bg));
+}
+
+.planner-board--overview .planner-mobile-members {
+  flex: 0 0 auto;
+  padding: 2px 0 6px;
+}
+
+.planner-board--overview .planner-mobile-member {
+  border-radius: 14px;
+}
+
+.planner-board--overview .planner-mobile-tabs {
+  gap: 6px;
+  border: 0;
+}
+
+.planner-board--overview .planner-mobile-tab {
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--planner-ink) 5%, var(--planner-surface));
+}
+
+.planner-board--overview .planner-mobile-tab.is-active {
+  color: var(--planner-accent);
+  background: var(--planner-surface);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--planner-ink) 8%, transparent);
+}
+
+.planner-board--overview .planner-mobile-panel {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--planner-line);
+  border-radius: 20px;
+  background: var(--planner-surface);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--planner-ink) 6%, transparent);
+}
+
+.planner-board--overview .planner-mobile-actions {
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.planner-board--overview .planner-mobile-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planner-board--overview .planner-mobile-action-buttons .planner-col-play {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+
+@media (max-width: 900px) {
+  .chore-planner[data-screen='child'] .planner-detail-columns {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    padding-inline: 14px;
+  }
+
+  .chore-planner[data-screen='child'] .planner-detail-section {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    justify-self: stretch;
+    box-sizing: border-box;
+  }
+
+  .chore-planner[data-screen='child'] .planner-header .planner-icon-button,
+  .chore-planner[data-screen='child'] .planner-header .page-header-sound-toggle,
+  .chore-planner[data-screen='child'] .planner-detail-nav .planner-icon-button,
+  .chore-planner[data-screen='child'] .planner-detail-add,
+  .chore-planner[data-screen='child'] .planner-detail-goal-add,
+  .chore-planner[data-screen='child'] .planner-detail-profile .planner-col-play {
+    border-radius: 14px;
+  }
+
+  .chore-planner[data-screen='child'] .planner-detail-section .planner-row-check {
+    border-color: color-mix(in srgb, var(--planner-ink) 24%, transparent);
+    border-radius: 7px;
+  }
+
+}
+
+@media (max-width: 600px) {
+  .chore-planner[data-screen='board'] .planner-board--overview:not(.planner-board--compact) {
+    padding: 8px 12px 20px;
+  }
+
+  .planner-board--overview .planner-mobile-panel {
+    gap: 10px;
+  }
+
+  .planner-board--overview .planner-mobile-panel .planner-row {
+    min-height: 50px;
+  }
+}

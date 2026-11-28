@@ -1,3 +1,59 @@
+## [4.6.1](https://github.com/nyabb/abbai-flow/compare/v4.6.0...v4.6.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* prevent routine and goal overflow ([6f72a6b](https://github.com/nyabb/abbai-flow/commit/6f72a6bcaacc22edc9013b2e1806747781d3d7d9))
+
+# [4.6.0](https://github.com/nyabb/abbai-flow/compare/v4.5.0...v4.6.0) (2026-11-28)
+
+
+### Features
+
+* polish chores overview and mobile details ([98e8209](https://github.com/nyabb/abbai-flow/commit/98e820942b7472c484b00d8ad8825586bed91fa6))
+
+# [4.5.0](https://github.com/nyabb/abbai-flow/compare/v4.4.0...v4.5.0) (2026-11-28)
+
+
+### Features
+
+* restore Qudoo-style child chore columns ([1b8e1dc](https://github.com/nyabb/abbai-flow/commit/1b8e1dc13e3689d7babee35c2e6fab0c200e544f))
+
+# [4.4.0](https://github.com/nyabb/abbai-flow/compare/v4.3.1...v4.4.0) (2026-11-28)
+
+
+### Features
+
+* extend Qudoo layout to iPad ([800d780](https://github.com/nyabb/abbai-flow/commit/800d780b326c17559f6fe43b85695943082a01be))
+
+## [4.3.1](https://github.com/nyabb/abbai-flow/compare/v4.3.0...v4.3.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* pause scrolling during reminder section drag ([ea394d4](https://github.com/nyabb/abbai-flow/commit/ea394d43b7761971bf611caf2cc8cd836b8147d6))
+
+# [4.3.0](https://github.com/nyabb/abbai-flow/compare/v4.2.1...v4.3.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* remove swipe navigation and decode section assets ([d18e8ff](https://github.com/nyabb/abbai-flow/commit/d18e8ff99ecd684a46092c4a283ebd1bad27d08a))
+* resolve integration logging lint errors ([828cdb5](https://github.com/nyabb/abbai-flow/commit/828cdb5352969ce2fd4c760ba14f9c1003eb2296))
+* restore safe Spotify catalog failure log ([8843072](https://github.com/nyabb/abbai-flow/commit/884307297eaa232b249578f3c0737edc94c626c7))
+
+
+### Features
+
+* add Docker integration logs and tablet layout ([36d9b20](https://github.com/nyabb/abbai-flow/commit/36d9b20ab815448b0b9b8a5f8b251564fbc9a606))
+
+## [4.2.1](https://github.com/nyabb/abbai-flow/compare/v4.2.0...v4.2.1) (2026-11-27)
+
+
+### Bug Fixes
+
+* expose safe iCloud section move diagnostics ([1bf4fe7](https://github.com/nyabb/abbai-flow/commit/1bf4fe7eca50944bb689af0c9f22e2d0acc19dad))
+
 # [4.2.0](https://github.com/nyabb/abbai-flow/compare/v4.1.0...v4.2.0) (2026-11-27)
 
 # [4.1.0](https://github.com/nyabb/abbai-flow/compare/v4.0.0...v4.1.0) (2026-11-27)

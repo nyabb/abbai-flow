@@ -56,9 +56,14 @@ export function useChoreFormActions({
   t,
   createRequest,
 }: UseChoreFormActionsOptions) {
-  const openNewForm = (memberId?: string) => {
+  const openNewForm = (memberId?: string, freeTask = false) => {
     const nextForm = emptyForm(now);
-    if (memberId) nextForm.memberIds = [memberId];
+    if (freeTask) {
+      nextForm.free = true;
+      nextForm.memberIds = [];
+    } else if (memberId) {
+      nextForm.memberIds = [memberId];
+    }
     setForm(nextForm);
     dispatchOverlay({ type: 'open-form' });
   };

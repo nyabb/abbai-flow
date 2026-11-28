@@ -1734,16 +1734,35 @@
   padding: 6px 0 0;
 }
 
-.planner-mobile-open-child {
-  flex: 1 1 auto;
+.planner-ghost.planner-mobile-open-child {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: flex-start;
-  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--planner-accent);
+  background: transparent;
+  box-shadow: none;
   font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
 }
 
-.planner-mobile-open-child svg {
-  width: 16px;
-  height: 16px;
+.planner-ghost.planner-mobile-open-child:hover {
+  color: var(--planner-ink);
+  background: transparent;
+}
+
+.planner-ghost.planner-mobile-open-child:focus-visible {
+  outline: 2px solid var(--planner-accent);
+  outline-offset: 3px;
 }
 
 .planner-mobile-tab {
@@ -3497,5 +3516,454 @@
 @media (max-width: 640px) {
   .planner-board {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Qudoo-style child detail: profile/goals band, then three task columns.
+   Keep the existing task cards and app sheets; only restore their reference
+   layout and group cards under native disclosure headings.
+   --------------------------------------------------------------------------- */
+.planner-detail {
+  gap: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0 0 30px;
+}
+
+.planner-detail-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px clamp(16px, 3vw, 42px) 20px;
+  border-radius: 0 0 22px 22px;
+  background: var(--planner-band-2);
+  box-shadow: none;
+}
+
+.planner-detail-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.planner-detail-nav {
+  gap: 8px;
+}
+
+.planner-detail-nav .planner-icon-button {
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  color: var(--planner-amber-ink);
+  background: var(--planner-surface);
+}
+
+.planner-detail-nav .planner-icon-button:hover {
+  background: var(--planner-surface);
+}
+
+.planner-detail-overview {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.68fr) minmax(0, 1.32fr);
+  align-items: center;
+  gap: clamp(16px, 3vw, 38px);
+  min-width: 0;
+}
+
+.planner-detail-profile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.planner-detail-avatar {
+  width: clamp(72px, 8vw, 98px);
+  height: clamp(72px, 8vw, 98px);
+  border: 4px solid var(--planner-surface);
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+}
+
+.planner-detail-copy h2 {
+  font-size: clamp(1.375rem, 2.1vw, 1.875rem);
+}
+
+.planner-detail-points {
+  color: var(--planner-amber-ink);
+  background: var(--planner-surface);
+  font-size: 1rem;
+}
+
+.planner-detail-goals {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.planner-detail-goals-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.planner-detail-goals-head h3 {
+  margin: 0;
+  color: var(--planner-band-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.planner-detail-goal-add,
+.planner-detail-add {
+  display: grid;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--planner-ink) 8%, transparent);
+  border-radius: 50%;
+  color: var(--planner-amber-ink);
+  background: var(--planner-surface);
+  cursor: pointer;
+}
+
+.planner-detail-goal-add svg,
+.planner-detail-add svg {
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.5;
+}
+
+.planner-detail-goal-add:hover,
+.planner-detail-add:hover {
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+}
+
+.planner-detail-goal-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planner-detail-goals-empty {
+  margin: 0;
+  color: var(--planner-band-ink);
+  font-size: 0.875rem;
+  opacity: 0.82;
+}
+
+.planner-detail-columns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: clamp(10px, 1.5vw, 24px);
+  width: 100%;
+  padding: 14px clamp(12px, 2.5vw, 36px) 30px;
+}
+
+.planner-detail-columns--parent {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.planner-detail-section {
+  min-width: 0;
+  gap: 12px;
+  padding: 4px 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.planner-detail-section-head {
+  min-height: 48px;
+  padding: 0 2px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--planner-column-tone) 28%, transparent);
+}
+
+.planner-detail-section--chores {
+  --planner-column-tone: var(--planner-amber);
+}
+
+.planner-detail-section--routines {
+  --planner-column-tone: var(--planner-blue);
+}
+
+.planner-detail-section--free {
+  --planner-column-tone: var(--planner-accent);
+}
+
+.planner-detail-section-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--planner-ink);
+  font-size: clamp(0.9375rem, 1.3vw, 1.125rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.planner-detail-section-head h3 svg {
+  flex: 0 0 auto;
+  width: 23px;
+  height: 23px;
+  color: var(--planner-column-tone);
+  stroke-width: 2.5;
+}
+
+.planner-detail-section--chores .planner-detail-add {
+  color: var(--planner-amber-ink);
+}
+
+.planner-detail-section--routines .planner-detail-add {
+  color: var(--planner-blue);
+}
+
+.planner-detail-section--free .planner-detail-add {
+  color: var(--planner-accent);
+}
+
+.planner-detail-section--routines .planner-row--routine {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--planner-blue) 28%, var(--planner-line));
+  border-radius: 22px;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--planner-ink) 5%, transparent);
+}
+
+.planner-detail-section--routines .planner-routine-head {
+  gap: 10px;
+  min-height: 44px;
+}
+
+.planner-detail-section--routines .planner-routine-head .planner-row-name {
+  font-size: 0.9375rem;
+}
+
+.planner-detail-section--routines .planner-steps {
+  gap: 5px;
+  margin-top: 10px;
+  padding-left: 4px;
+}
+
+.planner-detail-section--routines .planner-step {
+  min-height: 38px;
+  font-size: 0.875rem;
+}
+
+.planner-detail-status-list,
+.planner-detail-status-items {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.planner-detail-status {
+  --planner-status-tone: var(--planner-column-tone, var(--planner-muted));
+  min-width: 0;
+}
+
+.planner-detail-status--planned {
+  --planner-status-tone: var(--planner-blue);
+}
+
+.planner-detail-status--late {
+  --planner-status-tone: var(--planner-amber);
+}
+
+.planner-detail-status--done {
+  --planner-status-tone: var(--planner-muted);
+}
+
+.planner-detail-status > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  color: color-mix(in srgb, var(--planner-status-tone) 72%, var(--planner-ink));
+  font-size: 0.8125rem;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.planner-detail-status > summary::-webkit-details-marker {
+  display: none;
+}
+
+.planner-detail-status > summary::before,
+.planner-detail-status > summary::after {
+  height: 1px;
+  flex: 1 1 auto;
+  content: '';
+  background: color-mix(in srgb, var(--planner-status-tone) 38%, transparent);
+}
+
+.planner-detail-status > summary span {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.planner-detail-status > summary svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  transition: transform 160ms ease-out;
+}
+
+.planner-detail-status[open] > summary svg {
+  transform: rotate(180deg);
+}
+
+.planner-detail-status-items {
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.planner-detail-history-filter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  color: var(--planner-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.planner-detail-history-filter select {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1px solid var(--planner-line);
+  border-radius: 12px;
+  color: var(--planner-ink);
+  background: var(--planner-surface);
+  font: inherit;
+}
+
+.planner-detail-history-card {
+  cursor: default;
+}
+
+.planner-check--static {
+  cursor: default;
+  animation: none;
+}
+
+.planner-detail-history-card .planner-task-icon svg {
+  width: 26px;
+  height: 26px;
+  color: var(--planner-green);
+  stroke-width: 3;
+}
+
+.planner-board-goals-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  color: var(--planner-muted);
+  font-size: 0.75rem;
+}
+
+.planner-board-goals-summary > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .planner-detail-columns {
+    gap: 8px;
+    padding-inline: 14px;
+  }
+
+  .planner-detail-section-head {
+    gap: 5px;
+  }
+
+  .planner-detail-section-head h3 {
+    gap: 6px;
+  }
+
+  .planner-detail-add {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .planner-detail-goals .planner-reward {
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 9px 10px;
+  }
+
+  .planner-detail-goals .planner-reward-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .planner-detail {
+    padding-bottom: 100px;
+  }
+
+  .planner-detail-hero {
+    gap: 10px;
+    padding: 12px 14px 16px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .planner-detail-overview {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .planner-detail-profile {
+    gap: 10px;
+  }
+
+  .planner-detail-avatar {
+    width: 68px;
+    height: 68px;
+    font-size: 2.125rem;
+  }
+
+  .planner-detail-goal-list {
+    gap: 7px;
+  }
+
+  .planner-detail-goals .planner-reward-actions {
+    grid-column: 1 / -1;
+  }
+
+  .planner-detail-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 14px 14px 24px;
+  }
+
+  .planner-detail-section {
+    gap: 10px;
+  }
+
+  .planner-detail-section + .planner-detail-section {
+    padding-top: 16px;
+    border-top: 1px solid var(--planner-line);
+  }
+
+  .planner-detail-section-head h3 {
+    font-size: 1rem;
+  }
+
+  .planner-detail-status-list,
+  .planner-detail-status-items {
+    gap: 9px;
   }
 }
