@@ -853,6 +853,31 @@ describe('ChorePlanner board', () => {
     expect(container.querySelectorAll('.planner-col')).toHaveLength(4);
   });
 
+  it("uses the child's saved family color as the detail view accent", () => {
+    const childColor = '#a855f7';
+    const { container } = renderPlanner([PARENT, { ...ZARA, color: childColor }]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+
+    const childView = container.querySelector<HTMLElement>('.chore-planner[data-screen="child"]')!;
+    expect(childView.style.getPropertyValue('--member-color')).toBe(childColor);
+    expect(childView.style.getPropertyValue('--accent')).toBe(childColor);
+  });
+
+  it('labels an open child chore with its action instead of Completed', () => {
+    const { container } = renderPlanner([PARENT, ZARA]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+
+    expect(
+      container.querySelector('.planner-detail-section--chores .planner-check-label')?.textContent,
+    ).toBe(NL.t('planner.iDidIt'));
+  });
+
   it('shows completed chore history with the same date ranges', async () => {
     const now = Date.now();
     const base = choresManState();

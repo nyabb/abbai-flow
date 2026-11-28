@@ -322,7 +322,7 @@ export function ChorePlanner({
     // Waiting for a parent is not an action the child can take.
     if (task.awaitingReview) return c.awaitingApproval;
     if (task.audience === 'anyone') return c.claim;
-    return c.done;
+    return c.iDidIt;
   };
 
   const openActions = (taskId: string, fromRoutine = false) => {
@@ -1212,7 +1212,18 @@ export function ChorePlanner({
           : c.title;
 
   return (
-    <div className="chore-planner" data-screen={screen}>
+    <div
+      className="chore-planner"
+      data-screen={screen}
+      style={
+        screen === 'child' && childMember
+          ? ({
+              '--member-color': childMember.color,
+              '--accent': childMember.color,
+            } as React.CSSProperties)
+          : undefined
+      }
+    >
       <PageHeader
         className="planner-header"
         actionsClassName="page-header-actions planner-header-actions"

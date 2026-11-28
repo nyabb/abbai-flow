@@ -46,6 +46,7 @@
 
 .chore-planner[data-screen='board'] .planner-board--overview:not(.planner-board--compact) {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-auto-rows: max-content;
   align-content: start;
   align-items: stretch;
   gap: clamp(14px, 1.5vw, 22px);
@@ -53,6 +54,7 @@
 }
 
 .planner-board--overview:not(.planner-board--compact) .planner-col {
+  height: max-content;
   min-height: 360px;
   gap: 0;
   padding: 0;
@@ -106,6 +108,8 @@
 }
 
 .planner-board--overview:not(.planner-board--compact) .planner-col-body {
+  flex: 0 0 auto;
+  min-height: 0;
   gap: 0;
   padding: 14px 16px 16px;
 }
@@ -270,6 +274,66 @@
   gap: 9px;
 }
 
+.planner-routine-head--family {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  grid-template-areas:
+    'icon title title'
+    'meta meta actions';
+  align-items: center;
+  gap: 8px 9px;
+  min-height: 0;
+}
+
+.planner-routine-head--family > .planner-row-icon {
+  grid-area: icon;
+}
+
+.planner-routine-head--family > .planner-row-name {
+  grid-area: title;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+.planner-routine-head--family .planner-routine-title {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-routine-head--family .planner-row-name small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.planner-routine-meta {
+  display: flex;
+  grid-area: meta;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.planner-routine-meta .planner-row-points {
+  white-space: nowrap;
+}
+
+.planner-routine-actions {
+  display: flex;
+  grid-area: actions;
+  align-items: center;
+  justify-self: end;
+  gap: 4px;
+  min-width: 0;
+}
+
 .planner-board--overview .planner-col-empty {
   margin: 0;
   padding: 14px;
@@ -278,19 +342,42 @@
 }
 
 .planner-board--overview .planner-desktop-goals {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--planner-line);
+  box-sizing: border-box;
 }
 
 .planner-board--overview .planner-board-goals-summary {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px 8px;
   min-height: 38px;
   font-size: 0.8125rem;
 }
 
+.planner-board--overview .planner-board-goals-summary > span {
+  flex: 1 1 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .planner-board--overview .planner-section-action {
+  flex: 0 1 auto;
+  max-width: 100%;
   min-height: 38px;
   border-radius: 12px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.chore-planner[data-screen='child'] .planner-detail-nav .planner-icon-button,
+.chore-planner[data-screen='child'] .planner-detail-goal-add {
+  color: var(--planner-accent);
 }
 
 .planner-board--overview .planner-col--free {
@@ -408,6 +495,7 @@
     border-color: color-mix(in srgb, var(--planner-ink) 24%, transparent);
     border-radius: 7px;
   }
+
 }
 
 @media (max-width: 600px) {

@@ -282,49 +282,55 @@ export function FamilyRoutineRow({
 }: FamilyRoutineRowProps) {
   const doneCount = steps.filter((step) => step.done).length;
   const progress = steps.length > 0 ? (doneCount / steps.length) * 100 : 0;
+  const showScheduleLabel =
+    routine.name.trim().toLocaleLowerCase() !== label.trim().toLocaleLowerCase();
 
   return (
     <div className="planner-row planner-row--routine">
-      <div className="planner-routine-head">
+      <div className="planner-routine-head planner-routine-head--family">
         <span className="planner-row-icon" aria-hidden="true">
           {'\u23f0'}
         </span>
         <span className="planner-row-name">
-          {routine.name}
-          <small>{label}</small>
+          <span className="planner-routine-title">{routine.name}</span>
+          {showScheduleLabel && <small>{label}</small>}
         </span>
-        {steps.length > 0 && (
-          <span className="planner-routine-count" aria-label={`${doneCount}/${steps.length}`}>
-            {doneCount}/{steps.length}
+        <div className="planner-routine-meta">
+          {steps.length > 0 && (
+            <span className="planner-routine-count" aria-label={`${doneCount}/${steps.length}`}>
+              {doneCount}/{steps.length}
+            </span>
+          )}
+          {bonusPoints > 0 && (
+            <span
+              className="planner-row-points"
+              aria-label={`${copy.missions}: ${bonusPoints} ${copy.pointsUnit}`}
+              title={copy.missions}
+            >
+              <span aria-hidden="true">{'\u{1F3C6}'}</span>
+              <small>{copy.missions}</small> +{bonusPoints}
+            </span>
+          )}
+          <span className="planner-row-progress" aria-hidden="true">
+            <i style={{ width: `${progress}%` }} />
           </span>
-        )}
-        {bonusPoints > 0 && (
-          <span
-            className="planner-row-points"
-            aria-label={`${copy.missions}: ${bonusPoints} ${copy.pointsUnit}`}
-            title={copy.missions}
-          >
-            <span aria-hidden="true">{'\u{1F3C6}'}</span>
-            <small>{copy.missions}</small> +{bonusPoints}
-          </span>
-        )}
-        <span className="planner-row-progress" aria-hidden="true">
-          <i style={{ width: `${progress}%` }} />
-        </span>
-        {onStart && (
-          <button
-            type="button"
-            className="planner-row-more planner-row-start"
-            disabled={!canStart}
-            aria-label={`${copy.startRoutine}: ${routine.name}`}
-            onClick={onStart}
-          >
-            {'\u25b6'}
-          </button>
-        )}
-        {onEdit && onDelete && (
-          <RoutineActionsMenu routineName={routine.name} onEdit={onEdit} onDelete={onDelete} />
-        )}
+        </div>
+        <div className="planner-routine-actions">
+          {onStart && (
+            <button
+              type="button"
+              className="planner-row-more planner-row-start"
+              disabled={!canStart}
+              aria-label={`${copy.startRoutine}: ${routine.name}`}
+              onClick={onStart}
+            >
+              {'\u25b6'}
+            </button>
+          )}
+          {onEdit && onDelete && (
+            <RoutineActionsMenu routineName={routine.name} onEdit={onEdit} onDelete={onDelete} />
+          )}
+        </div>
       </div>
       {steps.length > 0 && (
         <ul className="planner-steps">
