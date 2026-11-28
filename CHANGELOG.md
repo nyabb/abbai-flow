@@ -1,3 +1,10 @@
+## [4.7.1](https://github.com/nyabb/abbai-flow/compare/v4.7.0...v4.7.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* improve goal rows and settings slider layout ([0ca47b9](https://github.com/nyabb/abbai-flow/commit/0ca47b9ab0a586201a84fa54d262c74f4b5414b7))
+
 # [4.7.0](https://github.com/nyabb/abbai-flow/compare/v4.6.3...v4.7.0) (2026-11-28)
 
 
