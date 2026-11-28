@@ -1,3 +1,10 @@
+# [4.6.0](https://github.com/nyabb/abbai-flow/compare/v4.5.0...v4.6.0) (2026-11-28)
+
+
+### Features
+
+* polish chores overview and mobile details ([98e8209](https://github.com/nyabb/abbai-flow/commit/98e820942b7472c484b00d8ad8825586bed91fa6))
+
 # [4.5.0](https://github.com/nyabb/abbai-flow/compare/v4.4.0...v4.5.0) (2026-11-28)
 
 
