@@ -1,3 +1,10 @@
+# [4.4.0](https://github.com/nyabb/abbai-flow/compare/v4.3.1...v4.4.0) (2026-11-28)
+
+
+### Features
+
+* extend Qudoo layout to iPad ([800d780](https://github.com/nyabb/abbai-flow/commit/800d780b326c17559f6fe43b85695943082a01be))
+
 ## [4.3.1](https://github.com/nyabb/abbai-flow/compare/v4.3.0...v4.3.1) (2026-11-27)
 
 
