@@ -1,3 +1,10 @@
+# [4.8.0](https://github.com/nyabb/abbai-flow/compare/v4.7.1...v4.8.0) (2026-11-28)
+
+
+### Features
+
+* add count badges to mobile chore tabs ([301138d](https://github.com/nyabb/abbai-flow/commit/301138d79816c91b8715885511b639e12320f90b))
+
 ## [4.7.1](https://github.com/nyabb/abbai-flow/compare/v4.7.0...v4.7.1) (2026-11-28)
 
 
