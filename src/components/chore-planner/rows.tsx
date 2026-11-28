@@ -62,6 +62,9 @@ export function TaskRow({
           <span aria-hidden="true">{'\u270B'}</span>
         ) : null}
       </button>
+      <span className="planner-row-icon" aria-hidden="true">
+        {task.icon || '\u{1F9F9}'}
+      </span>
       <span className="planner-row-name">
         {task.name}
         {hint && <small>{hint}</small>}
