@@ -204,7 +204,7 @@
 .grocery-view-add-btn {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--accent, var(--color-blue-full));
   color: white;
   border: none;

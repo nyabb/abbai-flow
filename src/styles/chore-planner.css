@@ -2757,7 +2757,7 @@
   height: 26px;
   place-items: center;
   border: 0;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   color: var(--planner-accent);
   background: color-mix(in srgb, var(--planner-accent) 14%, var(--planner-surface));
   font-size: 0.625rem;
@@ -3625,7 +3625,7 @@
   padding: 0;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--planner-ink) 8%, transparent);
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   color: var(--planner-amber-ink);
   background: var(--planner-surface);
   cursor: pointer;

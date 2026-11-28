@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ExternalLink, ListMusic, Music2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ListMusic, Music2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 import type { SpotifyPlaylist, SpotifyPlaylistTrack } from '../api/spotify-playlists';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
@@ -114,13 +114,7 @@ export function SpotifyPlaylistLibrary({
       <span className="spotify-playlist-track-index">{index + 1}</span>
       <SpotifyArtwork src={track.artworkUrl} alt="" className="spotify-playlist-track-art" />
       <span className="spotify-playlist-track-copy">
-        {track.spotifyUrl ? (
-          <a href={track.spotifyUrl} target="_blank" rel="noreferrer">
-            {track.title}
-          </a>
-        ) : (
-          <strong>{track.title}</strong>
-        )}
+        <strong>{track.title}</strong>
         <span>{track.artists.join(', ') || '—'}</span>
       </span>
       <span className="spotify-playlist-track-album">{track.album || '—'}</span>
@@ -291,19 +285,6 @@ export function SpotifyPlaylistLibrary({
                 <Play size={17} fill="currentColor" />
                 <span>{t('music.play')}</span>
               </button>
-              {library.selectedPlaylist.spotifyUrl && (
-                <a
-                  className="spotify-open-playlist"
-                  href={library.selectedPlaylist.spotifyUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={t('music.spotifyOpenInSpotify')}
-                  title={t('music.spotifyOpenInSpotify')}
-                >
-                  <ExternalLink size={18} />
-                  <span>Spotify</span>
-                </a>
-              )}
               <button
                 type="button"
                 className="spotify-remove-playlist"

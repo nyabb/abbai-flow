@@ -6,7 +6,7 @@
  * and row renderers), so the board has no ChoresMan knowledge of its own.
  */
 import { useEffect } from 'react';
-import { ListChecks, Plus, RefreshCw } from 'lucide-react';
+import { ListChecks, Plus, RefreshCw, Target } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -33,6 +33,7 @@ export interface ChoreBoardProps {
   routineRow: (routine: Routine, memberId: string) => React.ReactNode;
   /** Compact goal summary; full goal actions open the member's goals sheet. */
   renderGoals: (memberId: string) => React.ReactNode;
+  goalCountFor?: (memberId: string) => number;
   copy: PlannerCopy;
   onOpenChild: (memberId: string) => void;
   onOpenGoals: (memberId: string) => void;
@@ -55,6 +56,7 @@ export function ChoreBoard({
   renderRow,
   routineRow,
   renderGoals,
+  goalCountFor,
   copy: c,
   onOpenChild,
   onOpenGoals,
@@ -415,9 +417,25 @@ export function ChoreBoard({
                     )}
                   </section>
 
-                  <div className="planner-desktop-goals">
+                  <section className="planner-desktop-goals planner-overview-section planner-overview-section--goals">
+                    <div className="planner-overview-section-head">
+                      <h2>
+                        <Target aria-hidden="true" />
+                        {c.goals}
+                        <span>{goalCountFor?.(member.id) ?? 0}</span>
+                      </h2>
+                      <button
+                        type="button"
+                        className="planner-overview-add"
+                        onClick={() => onNewGoal(member.id)}
+                        aria-label={`${c.add}: ${c.goals} ${member.name}`}
+                        title={`${c.add}: ${c.goals}`}
+                      >
+                        <Plus aria-hidden="true" />
+                      </button>
+                    </div>
                     {renderGoals(member.id)}
-                  </div>
+                  </section>
                 </>
               )}
             </div>

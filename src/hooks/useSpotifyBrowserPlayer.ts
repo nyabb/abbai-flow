@@ -471,7 +471,14 @@ export function useSpotifyBrowserPlayer(authorized: boolean, playbackAuthorized:
             if (typeof value !== 'number' || !Number.isInteger(value) || value < 0 || value > 100) {
               return { ok: false, error: 'Volume must be an integer from 0 to 100' };
             }
-            await player.setVolume(value / 100);
+            // The Web Playback SDK cannot set local volume on iOS. Set it on
+            // Spotify's active device so the same control works on iPad and
+            // iPhone, then also update the local SDK gain where it is supported.
+            {
+              const result = await sendSpotifyControl(action, value);
+              if (!result.ok) return result;
+              await player.setVolume(value / 100).catch(() => undefined);
+            }
             setSnapshot((current) => ({
               ...current,
               playback: { ...current.playback, volume: value },

@@ -8,8 +8,7 @@
        with a small uppercase eyebrow and a large light title
      - warm off-white page, white cards with generous corners and a soft
        shadow
-     - pill-shaped actions, rounded-square checkboxes, circular translucent
-       icon buttons inside the band
+     - pill-shaped labels and rounded-square icon actions
      - everything fluid: the band, cards and type scale down on phones and
        widen on wall displays
 
@@ -23,6 +22,7 @@
 .abbai-flow {
   --skin-card-radius: 22px;
   --skin-control-radius: 14px;
+  --skin-icon-radius: 14px;
   --skin-band-radius: 26px;
   --skin-card-shadow: 0 8px 24px rgba(63, 58, 68, 0.08);
   --skin-card-shadow-hover: 0 12px 30px rgba(63, 58, 68, 0.13);
@@ -94,7 +94,12 @@ body {
   color: inherit;
   background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
   border: 0;
-  border-radius: var(--skin-pill, 999px);
+  border-radius: var(--skin-icon-radius, 14px);
+}
+
+.abbai-flow .icon-btn,
+.chore-planner .planner-icon-button {
+  border-radius: var(--skin-icon-radius, 14px);
 }
 
 .abbai-flow-header .icon-btn:hover,
@@ -102,7 +107,7 @@ body {
   background: color-mix(in srgb, var(--skin-band-ink) 22%, transparent);
 }
 
-/* The list selector keeps its white card look on the coral band. */
+/* The list selector keeps its card look on the themed band. */
 .grocery-view-select {
   background: var(--bg-surface);
   color: var(--text-primary);
@@ -110,7 +115,7 @@ body {
   box-shadow: 0 6px 16px rgba(63, 58, 68, 0.12);
 }
 
-/* Segmented tabs on the band: translucent ink, the active one a white pill. */
+/* Segmented tabs use the selected theme's band ink and surface. */
 .grocery-view-tabs {
   background: color-mix(in srgb, var(--skin-band-ink) 14%, transparent);
 }
@@ -172,7 +177,7 @@ body {
   height: 44px;
   place-items: center;
   border: 0;
-  border-radius: var(--skin-pill, 999px);
+  border-radius: var(--skin-icon-radius, 14px);
   color: inherit;
   background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
   cursor: pointer;

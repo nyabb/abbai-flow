@@ -866,6 +866,44 @@ describe('ChorePlanner board', () => {
     expect(childView.style.getPropertyValue('--accent')).toBe(childColor);
   });
 
+  it('claims a free chore from the selected child detail with that child action', async () => {
+    const base = twoChildren();
+    const sharedChore = (assignee: string, actionId: string) => ({
+      ...base.chores[0],
+      id: `shared:${assignee.toLowerCase()}:table-setting`,
+      plannerRowId: `shared-row:${assignee.toLowerCase()}:table-setting`,
+      name: 'Tafel dekken',
+      assignee,
+      assignedUserNames: ['Maya', 'Zara'],
+      completionCriteria: 'shared_first',
+      actions: { take: actionId },
+    });
+    mocks.state.current = {
+      ...base,
+      chores: [
+        sharedChore('Maya', 'choresman-action:take-table-maya'),
+        sharedChore('Zara', 'choresman-action:take-table-zara'),
+      ],
+      rewards: [],
+    };
+    mocks.runActionId.mockClear();
+    const { container } = renderPlanner([PARENT, ZARA, MAYA]);
+
+    fireEvent.click(
+      column(container, 'Zara').querySelector<HTMLButtonElement>('.planner-col-open')!,
+    );
+    fireEvent.click(
+      container
+        .querySelector<HTMLElement>('.planner-detail-section--free .planner-task')!
+        .querySelector<HTMLButtonElement>('.planner-check')!,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Bevestigen' }));
+
+    await waitFor(() =>
+      expect(mocks.runActionId).toHaveBeenCalledWith('choresman-action:take-table-zara'),
+    );
+  });
+
   it('labels an open child chore with its action instead of Completed', () => {
     const { container } = renderPlanner([PARENT, ZARA]);
 

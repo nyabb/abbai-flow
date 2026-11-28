@@ -1406,7 +1406,7 @@ button.task-checklist-row:hover {
   right: 24px;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--color-blue-full);
   color: white;
   font-size: 1.8rem;
@@ -1538,7 +1538,7 @@ button.task-checklist-row:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   font-size: 1.1rem;
   color: var(--text-muted);
   transition: all var(--transition);

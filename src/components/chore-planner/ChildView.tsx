@@ -71,7 +71,7 @@ export interface ChildViewProps {
   completedHistory: ChoresManChoreHistoryEntry[] | null;
   formatHistoryDate: (value: number) => string;
   rewardsForMember: (memberId: string) => ChoresManReward[];
-  renderTask: (task: PlannerTask) => React.ReactNode;
+  renderTask: (task: PlannerTask, claimMemberId?: string) => React.ReactNode;
   routineRow: (routine: Routine, memberId: string) => React.ReactNode;
   renderRewardRow: (reward: ChoresManReward) => React.ReactNode;
   copy: PlannerCopy;
@@ -396,16 +396,16 @@ export function ChildView({
                 tone="free"
                 initiallyOpen
               >
-                {freeTodo.map((task) => renderTask(task))}
+                {freeTodo.map((task) => renderTask(task, childMember.id))}
               </StatusGroup>
               <StatusGroup label={c.upcoming} count={freePlanned.length} tone="planned">
-                {freePlanned.map((task) => renderTask(task))}
+                {freePlanned.map((task) => renderTask(task, childMember.id))}
               </StatusGroup>
               <StatusGroup label={c.late} count={freeLate.length} tone="late">
-                {freeLate.map((task) => renderTask(task))}
+                {freeLate.map((task) => renderTask(task, childMember.id))}
               </StatusGroup>
               <StatusGroup label={c.expired} count={freeExpired.length} tone="expired">
-                {freeExpired.map((task) => renderTask(task))}
+                {freeExpired.map((task) => renderTask(task, childMember.id))}
               </StatusGroup>
             </div>
             {freeTasks.length === 0 && <p className="planner-col-empty">{c.nothing}</p>}

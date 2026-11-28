@@ -291,13 +291,7 @@ export function SpotifyMusicPanel({
                     </span>
                   )}
                   <span className="spotify-search-copy">
-                    {track.spotifyUrl ? (
-                      <a href={track.spotifyUrl} target="_blank" rel="noreferrer">
-                        {track.title}
-                      </a>
-                    ) : (
-                      <strong>{track.title}</strong>
-                    )}
+                    <strong>{track.title}</strong>
                     <span>
                       {track.artists.join(', ') || '—'}
                       {track.album ? ` · ${track.album}` : ''}

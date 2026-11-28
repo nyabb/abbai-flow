@@ -85,7 +85,7 @@
   position: relative;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--bg-surface);
   color: var(--accent, var(--color-blue-full));
   display: flex;
@@ -124,7 +124,7 @@
   right: 0;
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--accent, #3b82f6);
   color: white;
   border: none;
@@ -182,7 +182,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border-subtle, var(--border));
-  border-radius: 50%;
+  border-radius: var(--skin-icon-radius, 14px);
   background: var(--bg-surface);
   color: var(--text-muted);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
