@@ -1,3 +1,10 @@
+# [4.5.0](https://github.com/nyabb/abbai-flow/compare/v4.4.0...v4.5.0) (2026-11-28)
+
+
+### Features
+
+* restore Qudoo-style child chore columns ([1b8e1dc](https://github.com/nyabb/abbai-flow/commit/1b8e1dc13e3689d7babee35c2e6fab0c200e544f))
+
 # [4.4.0](https://github.com/nyabb/abbai-flow/compare/v4.3.1...v4.4.0) (2026-11-28)
 
 
