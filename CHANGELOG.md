@@ -1,3 +1,10 @@
+## [4.6.3](https://github.com/nyabb/abbai-flow/compare/v4.6.2...v4.6.3) (2026-11-28)
+
+
+### Bug Fixes
+
+* polish chores and Spotify controls ([8ea0baf](https://github.com/nyabb/abbai-flow/commit/8ea0bafb0a3028cf1f57526184c63c7ccae91c30))
+
 ## [4.6.2](https://github.com/nyabb/abbai-flow/compare/v4.6.1...v4.6.2) (2026-11-28)
 
 ## [4.6.1](https://github.com/nyabb/abbai-flow/compare/v4.6.0...v4.6.1) (2026-11-28)
