@@ -3,6 +3,10 @@
   "version": "4.6.2",
   "private": true,
   "type": "module",
+  "volta": {
+    "node": "22.20.0",
+    "npm": "10.9.3"
+  },
   "description": "A self-hosted family organizer for calendars, routines, chores, rewards, and everyday family life.",
   "scripts": {
     "dev": "vite",

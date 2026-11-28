@@ -812,7 +812,7 @@ export function ChorePlanner({
     }
   };
 
-  const completeTask = async (task: PlannerTask) => {
+  const completeTask = async (task: PlannerTask, claimMemberId?: string) => {
     if (task.familyRoutineTask) {
       void completeFamilyRoutineTask(task, true);
       return;
@@ -833,22 +833,29 @@ export function ChorePlanner({
       return;
     }
 
-    // Otherwise this is the child's own action: mark an assigned or taken
-    // chore as done so it enters the approval queue.
-    const actionId = task.actions?.claim ?? task.actions?.approve;
+    // Shared chores in child detail use this child's own take action; on the
+    // overview board the member picker remains the claim confirmation.
+    const claiming = task.audience === 'anyone';
+    if (claiming && !claimMemberId) {
+      openClaim(task);
+      return;
+    }
+    const claimOption = claiming
+      ? claimOptionsFor(task).find((option) => option.memberId === claimMemberId)
+      : null;
+    const actionId = claiming
+      ? claimOption?.actions?.take
+      : task.actions?.claim ?? task.actions?.approve;
     if (!actionId) {
       showToast(c.assignToClaim);
       return;
     }
 
-    // Ask first: a mis-tap would claim the chore and hand out points.
-    // An unowned chore is taken from the selection sheet. A chore already
-    // assigned to this child is being marked done, so confirm that action.
-    const claiming = task.audience === 'anyone';
+    // Ask first: a mis-tap would claim the chore or finish assigned work.
     setConfirmAction({
       taskId: task.id,
       actionId,
-      label: task.name,
+      label: claimOption?.name ?? task.name,
       kind: claiming ? 'claim' : 'done',
       action: claiming ? c.claimedToast : task.awaitingReview ? c.approved : c.done,
     });
@@ -1031,7 +1038,12 @@ export function ChorePlanner({
     setScreen('missions');
   };
 
-  const renderTask = (task: PlannerTask, readOnly = false, childDetail = false) => {
+  const renderTask = (
+    task: PlannerTask,
+    readOnly = false,
+    childDetail = false,
+    claimMemberId?: string,
+  ) => {
     const status = taskStatus(task);
     const assigned = memberFor(task.memberId);
     const deadline = status === 'upcoming' ? task.startsAt : (task.deadlineAt ?? task.expiresAt);
@@ -1104,7 +1116,7 @@ export function ChorePlanner({
              the accessible name carries the chore too. */
           aria-label={`${pillLabel(task, status)}: ${task.name}`}
           aria-busy={pendingTaskId === task.id}
-          onClick={() => void completeTask(task)}
+          onClick={() => void completeTask(task, childDetail ? claimMemberId : undefined)}
         >
           {/* Pill action with the points in its own coloured segment — the
               family-planner "Afvinken maar! | 🏆 25" pattern. The label names
@@ -1194,7 +1206,8 @@ export function ChorePlanner({
     );
   };
 
-  const renderChildTask = (task: PlannerTask) => renderTask(task, false, true);
+  const renderChildTask = (task: PlannerTask, claimMemberId?: string) =>
+    renderTask(task, false, true, claimMemberId);
 
   const completedTodayPoints = (id: string) =>
     data.tasks
@@ -1303,19 +1316,21 @@ export function ChorePlanner({
             const memberRewards = rewardsForMember(memberId);
             return (
               <div className="planner-board-goals-summary">
-                <span>
-                  {memberRewards.length > 0 ? `${memberRewards.length} · ${c.goals}` : c.noRewards}
-                </span>
-                <button
-                  type="button"
-                  className="planner-section-action"
-                  onClick={() => openGoals(memberId)}
-                >
-                  {memberRewards.length > 0 ? c.manageExisting : c.setGoal}
-                </button>
+                {memberRewards.length > 0 ? (
+                  <button
+                    type="button"
+                    className="planner-section-action"
+                    onClick={() => openGoals(memberId)}
+                  >
+                    {c.manageExisting}
+                  </button>
+                ) : (
+                  <span>{c.noRewards}</span>
+                )}
               </div>
             );
           }}
+          goalCountFor={(memberId) => rewardsForMember(memberId).length}
           copy={c}
           onOpenChild={(memberId) => {
             setChildMemberId(memberId);

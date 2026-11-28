@@ -1,6 +1,5 @@
-/* Qudoo reference treatment for iPad-sized screens and tall wall displays.
-   The phone layout stays separate. These rules refine existing components;
-   interactions stay in their current React views. */
+/* Portrait tablet composition. Colors continue to follow the selected Abbai
+   Flow theme; interactions stay in their current React views. */
 
 .portrait-agenda {
   display: none;
@@ -29,7 +28,7 @@
   border-radius: var(--skin-pill, 999px);
 }
 
-/* Full-height iPads and portrait wall displays use the Qudoo composition. */
+/* Full-height iPads and portrait wall displays use the tall-screen layout. */
 @media (min-width: 700px) and (min-height: 900px) and (orientation: portrait) {
   :root {
     --mobile-tab-bar-content-height: 86px;
@@ -101,11 +100,11 @@
 
   .abbai-flow-header,
   .grocery-view-header {
-    color: #fff;
+    color: var(--skin-band-ink);
     border: 0;
     border-radius: 0 0 30px 30px;
-    background: linear-gradient(145deg, #e98270 0%, #f1a04a 100%);
-    box-shadow: 0 10px 26px rgba(172, 107, 73, 0.18);
+    background: linear-gradient(140deg, var(--skin-band-a), var(--skin-band-b));
+    box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 22%, transparent);
   }
 
   .abbai-flow-header {
@@ -122,25 +121,25 @@
   .page-header-month,
   .page-header-date,
   .page-header-subtitle {
-    color: rgba(255, 255, 255, 0.86);
+    color: color-mix(in srgb, var(--skin-band-ink) 78%, transparent);
   }
 
   .page-header--hero .page-header-title {
     font-size: clamp(1.7rem, 2.6vw, 2.35rem);
-    color: #fff;
+    color: var(--skin-band-ink);
   }
 
   .page-header--hero .clock-mini,
   .page-header--hero .page-header-actions,
   .page-header-sound-toggle,
   .language-switcher-select {
-    color: #fff;
+    color: var(--skin-band-ink);
   }
 
   .page-header-sound-toggle,
   .abbai-flow-header .icon-btn,
   .abbai-flow-header .header-action {
-    background: rgba(255, 255, 255, 0.18);
+    background: color-mix(in srgb, var(--skin-band-ink) 12%, transparent);
   }
 
   .filter-bar {
@@ -455,13 +454,13 @@
   .grocery-view-tabs {
     margin-bottom: 12px;
     padding: 4px;
-    background: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--skin-band-ink) 14%, transparent);
   }
 
   .grocery-view-tab {
     min-height: 42px;
     padding-inline: 16px;
-    color: rgba(255, 255, 255, 0.82);
+    color: color-mix(in srgb, var(--skin-band-ink) 76%, transparent);
   }
 
   .grocery-view-tab.is-active {
@@ -798,13 +797,13 @@
   }
 
   .grocery-view-tabs {
-    background: rgba(255, 255, 255, 0.22);
+    background: color-mix(in srgb, var(--skin-band-ink) 14%, transparent);
   }
 
   .grocery-view-tab {
     min-height: 44px;
     padding-inline: 20px;
-    color: rgba(255, 255, 255, 0.84);
+    color: color-mix(in srgb, var(--skin-band-ink) 76%, transparent);
   }
 
   .grocery-view-tab.is-active {
@@ -998,9 +997,12 @@
     border-color: color-mix(in srgb, var(--planner-ink) 24%, transparent);
   }
 
-  .planner-section-action,
-  .planner-col-play {
+  .planner-section-action {
     border-radius: 999px;
+  }
+
+  .planner-col-play {
+    border-radius: var(--skin-icon-radius, 14px);
   }
 
   .planner-col--free {
@@ -1981,6 +1983,7 @@
 @media (min-width: 700px) and (min-height: 700px) {
   .abbai-flow {
     --skin-pill: 16px;
+    --skin-icon-radius: 16px;
   }
 
   .abbai-flow-header .icon-btn,

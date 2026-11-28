@@ -1,4 +1,4 @@
-/* Family overview cards inspired by the Qudoo chores reference. */
+/* Family overview cards use the selected Abbai Flow theme. */
 .chore-planner {
   --planner-bg: var(--bg-primary);
   --planner-surface: var(--bg-surface);
@@ -144,6 +144,10 @@
 .planner-board--overview .planner-overview-section--routines .planner-overview-section-head,
 .planner-board--overview .planner-overview-section-head.planner-section-head--parent {
   --planner-column-tone: var(--planner-blue);
+}
+
+.planner-board--overview .planner-overview-section--goals .planner-overview-section-head {
+  --planner-column-tone: var(--planner-accent);
 }
 
 .planner-board--overview .planner-overview-section-head h2 {

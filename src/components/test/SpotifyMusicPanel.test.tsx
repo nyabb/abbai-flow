@@ -317,11 +317,13 @@ describe('SpotifyMusicPanel browser playback', () => {
     renderPanel(snapshot(), false, onSearch, library);
     expect(screen.getByRole('heading', { name: 'Your Library' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Summer mix' })).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Search Spotify' }), {
       target: { value: 'Sample Song' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     await screen.findByRole('button', { name: 'Add to playlist: Sample Song' });
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Add to playlist: Sample Song' }));
     const menu = screen.getByRole('group', { name: 'Add to playlist' });
     expect(menu).toBeVisible();
