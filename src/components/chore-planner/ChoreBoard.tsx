@@ -31,7 +31,7 @@ export interface ChoreBoardProps {
   spendableFor: (member: PlannerMember) => number;
   renderRow: (task: PlannerTask) => React.ReactNode;
   routineRow: (routine: Routine, memberId: string) => React.ReactNode;
-  /** A member's goals, rendered inline in the board and phone Doelen tab. */
+  /** Compact goal summary; full goal actions open the member's goals sheet. */
   renderGoals: (memberId: string) => React.ReactNode;
   copy: PlannerCopy;
   onOpenChild: (memberId: string) => void;

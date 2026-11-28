@@ -16,7 +16,11 @@ import type { PlannerMember } from '../../api/chore-planner-model';
 import { buildChorePlannerView } from '../../api/chore-planner-view';
 import { FamilyStore } from '../../api/family';
 import { localDayKey } from '../../api/date-keys';
-import { routineAvailableAt, routineOccursOnDate } from '../../api/routine-schedule';
+import {
+  getTimeOfDay,
+  routineAvailableAt,
+  routineOccursOnDate,
+} from '../../api/routine-schedule';
 import {
   activeRedemptions,
   fulfilledRedemptions,
@@ -425,6 +429,18 @@ export function ChorePlanner({
         }}
       />
     );
+  };
+
+  /** Group today's routine cards by the same upcoming / late / done states as chores. */
+  const routineStatusFor = (routine: FamilyRoutine, memberId: string) => {
+    const steps = routineStepsFor(routine, memberId);
+    if (steps.length > 0 && steps.every((step) => step.done)) return 'done' as const;
+    if (routineAvailableAt(routine, now)) return 'active' as const;
+
+    const order = { morning: 0, afternoon: 1, evening: 2 };
+    return order[routine.time_of_day] > order[getTimeOfDay(now)]
+      ? ('planned' as const)
+      : ('late' as const);
   };
   /**
    * A reward row: progress towards the goal plus its actions. Shared by the
@@ -1015,7 +1031,7 @@ export function ChorePlanner({
     setScreen('missions');
   };
 
-  const renderTask = (task: PlannerTask, readOnly = false) => {
+  const renderTask = (task: PlannerTask, readOnly = false, childDetail = false) => {
     const status = taskStatus(task);
     const assigned = memberFor(task.memberId);
     const deadline = status === 'upcoming' ? task.startsAt : (task.deadlineAt ?? task.expiresAt);
@@ -1131,24 +1147,25 @@ export function ChorePlanner({
           {/* "Anyone" and "Everyone" chores are still grouped per child, so the
               chip has to say who the chore is really for instead of naming the
               child the group happens to be for. */}
-          {task.audience === 'anyone' ? (
-            <span className="planner-member-chip planner-member-chip--anyone">
-              <span aria-hidden="true">{'\u{1F3C1}'}</span>
-              {c.anyone}
-            </span>
-          ) : task.audience === 'everyone' ? (
-            <span className="planner-member-chip planner-member-chip--everyone">
-              <span aria-hidden="true">{'\u{1F465}'}</span>
-              {c.everyone}
-            </span>
-          ) : assigned ? (
-            <span className="planner-member-chip">
-              <span>
-                <MemberAvatar member={assigned} />
+          {!childDetail &&
+            (task.audience === 'anyone' ? (
+              <span className="planner-member-chip planner-member-chip--anyone">
+                <span aria-hidden="true">{'\u{1F3C1}'}</span>
+                {c.anyone}
               </span>
-              {assigned.name}
-            </span>
-          ) : null}
+            ) : task.audience === 'everyone' ? (
+              <span className="planner-member-chip planner-member-chip--everyone">
+                <span aria-hidden="true">{'\u{1F465}'}</span>
+                {c.everyone}
+              </span>
+            ) : assigned ? (
+              <span className="planner-member-chip">
+                <span>
+                  <MemberAvatar member={assigned} />
+                </span>
+                {assigned.name}
+              </span>
+            ) : null)}
           {timeLabel && (
             <span className="planner-time">
               <Clock3 size={18} />
@@ -1162,7 +1179,7 @@ export function ChorePlanner({
               {c.approveCompletion}
             </button>
           )}
-          {!readOnly && (
+          {!readOnly && !childDetail && (
             <button
               type="button"
               className="planner-task-more"
@@ -1176,6 +1193,8 @@ export function ChorePlanner({
       </article>
     );
   };
+
+  const renderChildTask = (task: PlannerTask) => renderTask(task, false, true);
 
   const completedTodayPoints = (id: string) =>
     data.tasks
@@ -1269,14 +1288,23 @@ export function ChorePlanner({
           spendableFor={spendableFor}
           renderRow={renderRow}
           routineRow={routineRow}
-          renderGoals={(memberId) => (
-            <>
-              {rewardsForMember(memberId).length === 0 && (
-                <p className="planner-col-empty">{c.noRewards}</p>
-              )}
-              {rewardsForMember(memberId).map((reward) => renderRewardRow(reward))}
-            </>
-          )}
+          renderGoals={(memberId) => {
+            const memberRewards = rewardsForMember(memberId);
+            return (
+              <div className="planner-board-goals-summary">
+                <span>
+                  {memberRewards.length > 0 ? `${memberRewards.length} · ${c.goals}` : c.noRewards}
+                </span>
+                <button
+                  type="button"
+                  className="planner-section-action"
+                  onClick={() => openGoals(memberId)}
+                >
+                  {memberRewards.length > 0 ? c.manageExisting : c.setGoal}
+                </button>
+              </div>
+            );
+          }}
           copy={c}
           onOpenChild={(memberId) => {
             setChildMemberId(memberId);
@@ -1300,6 +1328,8 @@ export function ChorePlanner({
           freeTasks={freeTasks}
           columnRoutines={columnRoutines}
           completedTasksFor={completedTasksFor}
+          taskStatus={taskStatus}
+          routineStatus={routineStatusFor}
           completedHistory={childChoreHistory}
           formatHistoryDate={(value) =>
             new Date(value).toLocaleString(timeLocale, {
@@ -1310,14 +1340,15 @@ export function ChorePlanner({
             })
           }
           rewardsForMember={rewardsForMember}
-          renderRow={renderRow}
+          renderTask={renderChildTask}
           routineRow={routineRow}
           renderRewardRow={renderRewardRow}
           copy={c}
           onStepChild={stepChild}
           onStartMissions={openMissions}
-          onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
+          onNewChore={(memberId) => openNewForm(memberId)}
+          onNewFreeTask={() => openNewForm(undefined, true)}
           onNewGoal={startRewardForm}
           onNewRoutine={(memberId) => openRoutineEditor(undefined, memberId)}
         />
