@@ -148,6 +148,9 @@ describe('Family routines in the chore planner', () => {
     await waitFor(() => expect(zara.querySelector('.planner-row--routine')).not.toBeNull());
     const routine = zara.querySelector<HTMLElement>('.planner-row--routine')!;
     expect(routine.textContent).toContain('Morning routine');
+    expect(routine.querySelector('.planner-routine-title')?.textContent).toBe('Morning routine');
+    expect(routine.querySelector('.planner-routine-meta')).not.toBeNull();
+    expect(routine.querySelector('.planner-routine-actions')).not.toBeNull();
     expect(routine.querySelector('.planner-steps')?.textContent).toContain('Brush teeth');
     expect(zara.textContent).toContain('Legacy task');
     expect(zara.querySelectorAll('.planner-row--routine')).toHaveLength(1);

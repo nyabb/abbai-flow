@@ -4,6 +4,7 @@ import { ALL_WEEKDAYS } from '../../api/routine-schedule';
 import { useRoutines } from '../../hooks/useRoutines';
 import { useTranslation } from '../../i18n';
 import { useSheetDrag } from '../../hooks/useSheetDrag';
+import { ActivitySpinner } from '../LoadingPlaceholder';
 import {
   DEFAULT_ROUTINE_MISSION_POINTS,
   type FamilyMember,
@@ -381,7 +382,9 @@ export function RoutineEditorDialog({
             className="settings-btn settings-btn--primary"
             onClick={() => void save()}
             disabled={saving || !member || !hasName || !hasTask}
+            aria-busy={saving}
           >
+            {saving && <ActivitySpinner className="activity-spinner--small" />}
             {t('settings.family.saveRoutine')}
           </button>
         </footer>

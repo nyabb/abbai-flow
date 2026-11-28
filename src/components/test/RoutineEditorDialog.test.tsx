@@ -64,6 +64,31 @@ beforeEach(() => {
 });
 
 describe('RoutineEditorDialog', () => {
+  it('shows loading feedback on the save button while a routine is being added', async () => {
+    let finishAdding: (() => void) | undefined;
+    mocks.addRoutine.mockImplementationOnce(
+      () => new Promise<void>((resolve) => { finishAdding = resolve; }),
+    );
+    const { onClose } = renderEditor();
+    const dialog = screen.getByRole('dialog');
+    const saveButton = within(dialog).getByRole('button', { name: 'Save Routine' });
+
+    fireEvent.change(within(dialog).getByLabelText('Name'), {
+      target: { value: 'Morning' },
+    });
+    fireEvent.change(within(dialog).getByPlaceholderText('Task 1 (e.g. Brush teeth)'), {
+      target: { value: 'Brush teeth' },
+    });
+    fireEvent.click(saveButton);
+
+    expect(saveButton).toBeDisabled();
+    expect(saveButton).toHaveAttribute('aria-busy', 'true');
+    expect(saveButton.querySelector('.activity-spinner')).not.toBeNull();
+
+    finishAdding?.();
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  });
+
   it('creates a routine for the selected parent without a points field', async () => {
     const { onClose, onSaved } = renderEditor();
     const dialog = screen.getByRole('dialog');
