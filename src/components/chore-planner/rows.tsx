@@ -5,7 +5,7 @@
  * need the data they display and the callbacks for their buttons, so they live
  * separately: the board decides *what* to show, these decide *how* it looks.
  */
-import { Check, CirclePlus } from 'lucide-react';
+import { Check, CirclePlus, Target } from 'lucide-react';
 import { ActivitySpinner } from '../LoadingPlaceholder';
 import type { PlannerRoutine, PlannerTask } from '../../api/chore-planner-model';
 import type { ChoresManReward } from '../../types/choresman';
@@ -411,7 +411,9 @@ export function RewardRow({
 
   return (
     <div className={`planner-reward${done ? ' planner-reward--done' : ''}`}>
-      <span aria-hidden="true">{'\u{1F381}'}</span>
+      <span className="planner-reward-icon" aria-hidden="true">
+        <Target />
+      </span>
       <div className="planner-reward-copy">
         <strong>{reward.name}</strong>
         <small>

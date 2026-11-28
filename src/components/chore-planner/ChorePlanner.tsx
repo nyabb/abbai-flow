@@ -2,8 +2,6 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   Check,
   Clock3,
-  Circle,
-  Gift,
   ListPlus,
   RotateCcw,
   SlidersHorizontal,
@@ -1322,52 +1320,9 @@ export function ChorePlanner({
             return (
               <div className="planner-board-goals-summary">
                 {memberRewards.length > 0 ? (
-                  memberRewards.map((reward) => {
-                    const state = rewardState(reward);
-                    const status = reward.approvalPending
-                      ? 'approval-pending'
-                      : state.pending
-                        ? 'pending'
-                        : state.done
-                          ? 'waiting-for-reward'
-                          : 'saving';
-                    const statusLabel = reward.approvalPending
-                      ? c.awaitingApproval
-                      : state.pending
-                        ? c.claimed
-                        : state.done
-                          ? c.waitingForReward
-                          : c.stillNeeded.replace('{points}', String(state.remaining));
-                    const StatusIcon =
-                      status === 'approval-pending' || status === 'pending'
-                        ? Clock3
-                        : status === 'waiting-for-reward'
-                          ? Gift
-                          : Circle;
-                    return (
-                      <span
-                        key={reward.id}
-                        className={`planner-goal-pill planner-goal-pill--${status}`}
-                        title={`${reward.name}: ${statusLabel}`}
-                        aria-label={`${reward.name}: ${statusLabel}`}
-                        role="status"
-                      >
-                        <StatusIcon aria-hidden="true" />
-                        <span>{reward.name}</span>
-                      </span>
-                    );
-                  })
+                  memberRewards.map(renderRewardRow)
                 ) : (
                   <span className="planner-goals-empty">{c.noRewards}</span>
-                )}
-                {memberRewards.length > 0 && (
-                  <button
-                    type="button"
-                    className="planner-section-action"
-                    onClick={() => openGoals(memberId)}
-                  >
-                    {c.manageExisting}
-                  </button>
                 )}
               </div>
             );

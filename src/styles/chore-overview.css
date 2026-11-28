@@ -370,10 +370,6 @@
   overflow-wrap: anywhere;
 }
 
-.planner-board--overview .planner-board-goals-summary > .planner-goal-pill {
-  flex: 0 1 auto;
-}
-
 .planner-board--overview .planner-section-action {
   flex: 0 1 auto;
   max-width: 100%;
