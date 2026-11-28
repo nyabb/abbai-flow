@@ -349,12 +349,18 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 0 1 212px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .settings-slider {
   -webkit-appearance: none;
   appearance: none;
+  flex: 1 1 0;
   width: 160px;
+  min-width: 0;
+  max-width: 100%;
   height: 6px;
   background: var(--border);
   border-radius: 3px;
@@ -384,11 +390,13 @@
 }
 
 .settings-slider-value {
+  flex: 0 0 auto;
   font-size: 0.85rem;
   color: var(--text-secondary);
   min-width: 40px;
   text-align: center;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 /* --- Segmented control --- */
@@ -877,6 +885,7 @@
   }
 
   .settings-integrations .settings-integration-field > .settings-slider-wrapper {
+    flex: 1 1 100%;
     width: 100%;
   }
 
@@ -1334,6 +1343,10 @@
 
   .settings-slider {
     width: 120px;
+  }
+
+  .settings-slider-wrapper {
+    flex-basis: 172px;
   }
 }
 

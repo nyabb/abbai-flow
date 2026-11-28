@@ -412,15 +412,18 @@ describe('ChorePlanner rewards from ChoresMan', () => {
     localStorage.clear();
   });
 
-  it("shows goal status pills and keeps the full reward list accessible", () => {
+  it("shows chore-style goal rows with edit and delete actions", () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const zara = column(container, 'Zara');
 
     expect(zara.textContent).toContain('Afwassen');
     expect(zara.textContent).toContain('Schermtijd');
-    expect(zara.querySelector('.planner-goal-pill--saving')).not.toBeNull();
-    fireEvent.click(within(zara).getByRole('button', { name: 'Bestaande bekijken en bewerken' }));
-    expect(container.querySelector('.planner-sheet')?.textContent).toContain('Schermtijd');
+    expect(
+      zara.querySelector('.planner-board-goals-summary .planner-reward-icon .lucide-target'),
+    ).not.toBeNull();
+    fireEvent.click(within(zara).getByRole('button', { name: 'Acties: Schermtijd' }));
+    expect(container.querySelector('.planner-sheet')?.textContent).toContain('Bewerken');
+    expect(container.querySelector('.planner-sheet')?.textContent).toContain('Verwijderen');
   });
 
   it('lists rewards and lets Zara allocate points already in her savings pot', async () => {
