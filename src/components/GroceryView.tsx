@@ -80,21 +80,24 @@ function GroceryDraggableItemRow({
 
   return (
     <div
-      ref={(node) => {
-        setNodeRef(node);
-        setActivatorNodeRef(node);
-      }}
+      ref={setNodeRef}
       className={`grocery-view-item-row${isDragging ? ' is-dragging' : ''}`}
       style={{ transform: CSS.Translate.toString(transform) }}
-      {...attributes}
-      {...listeners}
       role="group"
       aria-label={`${item.summary}: ${label}`}
     >
       {children}
-      <span className="grocery-view-drag-indicator" aria-hidden="true">
+      <button
+        ref={setActivatorNodeRef}
+        type="button"
+        className="grocery-view-drag-indicator"
+        aria-label={label}
+        title={label}
+        {...attributes}
+        {...listeners}
+      >
         <GripVertical size={17} />
-      </span>
+      </button>
     </div>
   );
 }

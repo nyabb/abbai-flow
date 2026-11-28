@@ -39,6 +39,7 @@ const SERVICE_NAMES = [
   'reset_overdue_chores',
   'reset_chores_to_pending_state',
   'reset_transactional_data',
+  'reset_all_data',
   'remove_awarded_badges',
   'repair_badge_streak',
   'manage_ui_control',
@@ -2618,6 +2619,27 @@ class ChoresManStore {
     return { reset: true, scope, user_name: member?.name || null, item_type: type, removed: before };
   }
 
+  _resetAllData(document, data) {
+    if (data.confirm_destructive !== true) {
+      throw new ChoresManStoreError('confirmation_required', 'confirm_destructive must be true');
+    }
+
+    const removed = {};
+    const defaults = emptyDocument();
+    for (const [key, emptyValue] of Object.entries(defaults)) {
+      if (key === 'schema_version' || key === 'updated_at' || key === 'members') continue;
+      if (!Array.isArray(emptyValue)) continue;
+      removed[key] = document[key].length;
+      document[key] = [];
+    }
+
+    return {
+      reset: true,
+      removed,
+      preserved_family_profiles: document.members.length,
+    };
+  }
+
   _removeAwardedBadges(document, data) {
     const member = data.user_name || data.user_id ? this._findMember(document, data, { active: false }) : null;
     const badge = data.badge_name || data.badge_id ? this._findGoal(document, 'badge', data) : null;
@@ -2898,6 +2920,7 @@ class ChoresManStore {
       reset_overdue_chores: (document) => this._resetOverdueChores(document, data),
       reset_chores_to_pending_state: (document) => this._resetChoresToPending(document),
       reset_transactional_data: (document) => this._resetTransactionalData(document, data),
+      reset_all_data: (document) => this._resetAllData(document, data),
       remove_awarded_badges: (document) => this._removeAwardedBadges(document, data),
       repair_badge_streak: (document) => this._repairBadgeStreak(document, data),
       manage_ui_control: (document) => this._manageUiControl(document, data),

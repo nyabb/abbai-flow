@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsView } from '../SettingsView';
 import { I18nContext, createI18n } from '../../i18n';
 import type { AbbaiSettings } from '../../hooks/useSettings';
+import type { FamilyMember } from '../../types/family';
 
 /**
  * Smoke coverage for the settings screen.
@@ -54,6 +55,7 @@ function makeSettings(overrides: Partial<AbbaiSettings> = {}): AbbaiSettings {
 function renderSettings(
   overrides: Partial<AbbaiSettings> = {},
   calendars: Array<{ id: string; name: string; color?: string; readOnly?: boolean }> = [],
+  members: FamilyMember[] = [],
 ) {
   const onUpdateSettings = vi.fn();
   const nl = createI18n('nl');
@@ -69,7 +71,7 @@ function renderSettings(
         onExportSettings={() => '{}'}
         onImportSettings={vi.fn()}
         onClearLocalStorage={vi.fn()}
-        members={[]}
+        members={members}
         onAddMember={vi.fn()}
         onUpdateMember={vi.fn()}
         onRemoveMember={vi.fn()}
@@ -92,6 +94,8 @@ function renderSettings(
 }
 
 describe('SettingsView', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
   it('opens on General and lists every section in the navigation', () => {
     renderSettings();
 
@@ -159,5 +163,47 @@ describe('SettingsView', () => {
 
     fireEvent.change(defaultCalendar!, { target: { value: 'caldav/apple/family' } });
     expect(onUpdateSettings).toHaveBeenCalledWith({ defaultCalendar: 'caldav/apple/family' });
+  });
+
+  it('requires a parent PIN before resetting ChoresMan data', async () => {
+    const snapshot = {
+      members: [],
+      chores: [],
+      chore_claims: [],
+      rewards: [],
+      reward_claims: [],
+      ledger: [],
+      pending_approvals: { chores: 0, rewards: 0 },
+      updated_at: null,
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ result: { reset: true }, snapshot }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    renderSettings({}, [], [{
+      id: 'parent-1',
+      name: 'Jamie',
+      role: 'parent',
+      avatar: '👩',
+      color: '#336699',
+      pin: '1234',
+    }]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Klusjes' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Alle gegevens resetten' }));
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument();
+
+    const pinInput = screen.getByLabelText('Ouder-pincode');
+    expect(pinInput).toHaveAttribute('inputmode', 'numeric');
+    fireEvent.change(pinInput, { target: { value: '12x34' } });
+    expect(pinInput).toHaveValue('1234');
+    fireEvent.click(screen.getByRole('button', { name: 'Reset bevestigen' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('De ChoresMan-gegevens zijn gereset.');
+    expect(fetchMock).toHaveBeenCalledWith('/abbai-flow/choresman', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ action: 'reset_all_data', data: { confirm_destructive: true } }),
+    }));
   });
 });

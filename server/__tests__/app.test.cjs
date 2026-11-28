@@ -489,12 +489,16 @@ test('iCloud worker retains safe authentication status between requests', () => 
 test('iCloud worker logs setup and mutation actions without private content', () => {
   const worker = new ICloudRemindersWorker({ dataDir: tmpDir('icloud-logs') });
   const logged = [];
+  const errors = [];
   const originalInfo = console.info;
+  const originalError = console.error;
   console.info = (line) => logged.push(line);
+  console.error = (line) => errors.push(line);
   try {
     worker.onWorkerLog(JSON.stringify({
       service: 'pyicloud-reminders',
       event: 'worker_started',
+      worker_build: 'icloud-section-diagnostics-v2',
       pyicloud_available: true,
     }));
     worker.onWorkerLog(JSON.stringify({
@@ -525,18 +529,47 @@ test('iCloud worker logs setup and mutation actions without private content', ()
       response_body: 'must-not-be-logged',
       duration_ms: 120,
     }));
+    worker.onWorkerLog(JSON.stringify({
+      service: 'pyicloud-reminders',
+      event: 'section_asset_decode_failed',
+      request_id: 'req-456',
+      action: 'create_reminder',
+      failure_stage: 'membership_asset_decode',
+      failure_detail: 'membership_schema_mismatch',
+      attempt: 2,
+      asset_bytes: 314,
+      asset_sha256: 'c'.repeat(64),
+      asset_signature: 'binary_plist',
+      asset_declared_bytes: 320,
+      asset_file_checksum_present: true,
+      asset_reference_checksum_present: true,
+      asset_cache_source: 'downloaded',
+      asset_download_method: 'cloudkit_stream',
+      decode_diagnostic: '{"assetBytes":314,"assetSignature":"binary_plist","candidates":[{"index":0,"plistResult":"parsed","plistShape":{"rootType":"dict","rootKeys":["memberships"]}}]}',
+      asset_payload: 'private reminder text',
+    }));
   } finally {
     console.info = originalInfo;
+    console.error = originalError;
   }
 
-  assert.equal(logged.length, 2);
-  assert.match(logged[0], /"action":"fetch_task_lists"/);
-  assert.match(logged[0], /"list_count":8/);
-  assert.match(logged[1], /"action":"move_reminder_section"/);
-  assert.match(logged[1], /"failure_stage":"list_record_update"/);
-  assert.match(logged[1], /"apple_error_code":"CONFLICT"/);
-  assert.match(logged[1], /"partial":true/);
-  assert.doesNotMatch(logged.join('\n'), /private reminder text|must-not-be-logged/);
+  assert.equal(logged.length, 3);
+  assert.match(logged[0], /"event":"worker_started"/);
+  assert.match(logged[0], /"worker_build":"icloud-section-diagnostics-v2"/);
+  assert.match(logged[1], /"action":"fetch_task_lists"/);
+  assert.match(logged[1], /"list_count":8/);
+  assert.match(logged[2], /"action":"move_reminder_section"/);
+  assert.match(logged[2], /"failure_stage":"list_record_update"/);
+  assert.match(logged[2], /"apple_error_code":"CONFLICT"/);
+  assert.match(logged[2], /"partial":true/);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /"event":"section_asset_decode_failed"/);
+  assert.match(errors[0], /"failure_detail":"membership_schema_mismatch"/);
+  assert.match(errors[0], /"attempt":2/);
+  assert.match(errors[0], /"asset_signature":"binary_plist"/);
+  assert.match(errors[0], /"asset_download_method":"cloudkit_stream"/);
+  assert.match(errors[0], /"decode_diagnostic"/);
+  assert.doesNotMatch([...logged, ...errors].join('\n'), /private reminder text|must-not-be-logged/);
 });
 
 test('calendar catalog returns calendars discovered by the CalDAV service', async (t) => {

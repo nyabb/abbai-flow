@@ -111,42 +111,65 @@ class ICloudRemindersWorker {
     } catch {
       return;
     }
-    if (
-      !entry ||
-      entry.service !== 'pyicloud-reminders' ||
-      entry.event !== 'request_finished' ||
-      !LOGGED_ACTIONS.has(entry.action)
-    ) {
+    if (!entry || entry.service !== 'pyicloud-reminders') {
       return;
     }
+    const workerStarted = entry.event === 'worker_started';
+    const sectionDecodeFailure = entry.event === 'section_asset_decode_failed';
+    const requestFinished = entry.event === 'request_finished' && LOGGED_ACTIONS.has(entry.action);
+    if (!workerStarted && !sectionDecodeFailure && !requestFinished) return;
+
     const safeEntry = { service: entry.service, event: entry.event };
-    for (const key of [
-      'request_id',
-      'action',
-      'ok',
-      'state',
-      'error_code',
-      'failure_stage',
-      'failure_detail',
-      'error_detail',
-      'apple_error_code',
-      'http_status',
-      'duration_ms',
-      'list_count',
-      'partial',
-    ]) {
+    const fields = workerStarted
+      ? ['worker_build', 'pyicloud_available', 'pyicloud_version']
+      : sectionDecodeFailure
+        ? [
+            'request_id',
+            'action',
+            'failure_stage',
+            'failure_detail',
+            'attempt',
+            'asset_bytes',
+            'asset_sha256',
+            'asset_signature',
+            'asset_declared_bytes',
+            'asset_file_checksum_present',
+            'asset_reference_checksum_present',
+            'asset_cache_source',
+            'asset_download_method',
+            'decode_diagnostic',
+          ]
+        : [
+            'request_id',
+            'action',
+            'ok',
+            'state',
+            'error_code',
+            'failure_stage',
+            'failure_detail',
+            'error_detail',
+            'apple_error_code',
+            'http_status',
+            'duration_ms',
+            'list_count',
+            'partial',
+          ];
+    for (const key of fields) {
       const value = entry[key];
       if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-        safeEntry[key] = typeof value === 'string' ? value.slice(0, 200) : value;
+        const maxLength = key === 'decode_diagnostic' ? 2_600 : 200;
+        safeEntry[key] = typeof value === 'string' ? value.slice(0, maxLength) : value;
       }
     }
-    if (
+    if (requestFinished &&
       Array.isArray(entry.reminder_counts) &&
       entry.reminder_counts.every((value) => Number.isInteger(value))
     ) {
       safeEntry.reminder_counts = entry.reminder_counts;
     }
-    console.info(`[iCloud Reminders] ${JSON.stringify(safeEntry)}`);
+    const formattedLine = `[iCloud Reminders] ${JSON.stringify(safeEntry)}`;
+    if (sectionDecodeFailure) console.error(formattedLine);
+    else console.info(formattedLine);
   }
 
   setAuthState(state, response = {}) {

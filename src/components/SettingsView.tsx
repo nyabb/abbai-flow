@@ -229,7 +229,7 @@ export function SettingsView({
   // ==== CHORES ====
   // Chores and rewards are stored in the local ChoresMan service.
   const renderChores = () => (
-    <ChoresSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} />
+    <ChoresSection settings={settings} onUpdateSettings={onUpdateSettings} t={t} members={members} />
   );
   // ==== ABOUT ====
   const renderAbout = () => (

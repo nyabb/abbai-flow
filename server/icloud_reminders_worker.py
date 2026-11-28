@@ -76,6 +76,7 @@ _SECTION_SENSITIVE_KEY_PARTS = (
     "secret",
 )
 _MAX_SECTION_ASSET_BYTES = 1_000_000
+_WORKER_BUILD_ID = "icloud-section-diagnostics-v2"
 
 
 def respond(value: dict[str, Any]) -> None:
@@ -402,6 +403,137 @@ def _decode_section_memberships(payload: bytes) -> dict[str, Any]:
         schema_error = SectionAssetDecodeError("unsupported_membership_schema")
 
     raise schema_error
+
+
+def _section_asset_signature(payload: bytes) -> str:
+    """Classify the payload header without exposing any stored content."""
+    stripped = payload.lstrip()[:32]
+    if payload.startswith(b"bplist00"):
+        return "binary_plist"
+    if payload.startswith(b"\x1f\x8b"):
+        return "gzip"
+    if stripped.startswith(b"<?xml") or stripped.startswith(b"<plist"):
+        return "xml_plist"
+    if stripped[:1] in {b"{", b"["}:
+        return "json_text"
+    if len(payload) >= 2 and payload[0] & 0x0F == 8:
+        return "zlib_or_binary"
+    return "binary_or_unknown"
+
+
+def _section_document_shape(document: Any) -> dict[str, Any]:
+    """Describe only the structure of a decoded membership document."""
+    summary: dict[str, Any] = {"rootType": type(document).__name__}
+    if not isinstance(document, dict):
+        return summary
+
+    def safe_keys(value: dict[Any, Any]) -> list[str]:
+        keys = []
+        for key in sorted((str(key) for key in value.keys()))[:16]:
+            safe_key = "".join(character for character in key if character.isalnum() or character in "_.-")
+            if any(part in safe_key.lower() for part in _SECTION_SENSITIVE_KEY_PARTS):
+                continue
+            if safe_key:
+                keys.append(safe_key[:48])
+        return keys
+
+    summary["rootKeys"] = safe_keys(document)
+    memberships = document.get("memberships")
+    summary["membershipsType"] = type(memberships).__name__ if memberships is not None else "missing"
+    if isinstance(memberships, list):
+        summary["membershipCount"] = len(memberships)
+        if memberships:
+            first = memberships[0]
+            summary["firstEntryType"] = type(first).__name__
+            if isinstance(first, dict):
+                summary["firstEntryKeys"] = safe_keys(first)
+    return summary
+
+
+def _section_asset_decode_diagnostic(payload: bytes) -> str:
+    """Return bounded format/schema diagnostics, never membership values."""
+    summary: dict[str, Any] = {
+        "assetBytes": len(payload),
+        "assetSha256": hashlib.sha256(payload).hexdigest(),
+        "assetSignature": _section_asset_signature(payload),
+        "validUtf8": True,
+        "candidates": [],
+    }
+    try:
+        candidates = _section_asset_payload_candidates(payload)
+    except SectionAssetDecodeError as exc:
+        summary["candidateExpansionError"] = exc.diagnostic_code
+        candidates = [payload]
+
+    for index, candidate in enumerate(candidates[:4]):
+        item: dict[str, Any] = {
+            "index": index,
+            "bytes": len(candidate),
+            "signature": _section_asset_signature(candidate),
+        }
+        try:
+            text = candidate.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            item["jsonResult"] = "invalid_utf8"
+            summary["validUtf8"] = False
+        else:
+            try:
+                json_document = json.loads(text)
+            except json.JSONDecodeError:
+                item["jsonResult"] = "invalid_json"
+            else:
+                item["jsonResult"] = "parsed"
+                item["jsonShape"] = _section_document_shape(json_document)
+        try:
+            plist_document = plistlib.loads(candidate)
+        except Exception as exc:
+            item["plistResult"] = type(exc).__name__
+        else:
+            item["plistResult"] = "parsed"
+            item["plistShape"] = _section_document_shape(plist_document)
+        summary["candidates"].append(item)
+
+    return json.dumps(summary, ensure_ascii=True, separators=(",", ":"))[:2_600]
+
+
+def _section_asset_download_method(raw_client: Any) -> str:
+    cloudkit_client = getattr(raw_client, "_client", None)
+    if callable(getattr(cloudkit_client, "download_asset_stream", None)):
+        return "cloudkit_stream"
+    if callable(getattr(raw_client, "download_asset_bytes", None)):
+        return "raw_client_bytes"
+    return "unavailable"
+
+
+def _log_section_asset_decode_failure(
+    selected_list_ref: dict[str, Any],
+    asset: Any,
+    raw_client: Any,
+    payload: bytes,
+    exc: SectionAssetDecodeError,
+    *,
+    attempt: int,
+    cache_reused: bool,
+) -> None:
+    asset_metadata = asset if isinstance(asset, dict) else {}
+    diagnostic = _section_asset_decode_diagnostic(payload)
+    log_event(
+        "section_asset_decode_failed",
+        request_id=selected_list_ref.get("request_id"),
+        action=selected_list_ref.get("section_mutation_action", "section_mutation"),
+        failure_stage="membership_asset_decode",
+        failure_detail=exc.diagnostic_code,
+        attempt=attempt,
+        asset_bytes=len(payload),
+        asset_sha256=hashlib.sha256(payload).hexdigest(),
+        asset_signature=_section_asset_signature(payload),
+        asset_declared_bytes=(asset_metadata.get("size") if isinstance(asset_metadata.get("size"), int) else None),
+        asset_file_checksum_present=bool(asset_metadata.get("fileChecksum")),
+        asset_reference_checksum_present=bool(asset_metadata.get("referenceChecksum")),
+        asset_cache_source="reused" if cache_reused else "downloaded",
+        asset_download_method=_section_asset_download_method(raw_client),
+        decode_diagnostic=diagnostic,
+    )
 
 
 def _json_compatible_section_value(value: Any) -> Any:
@@ -779,7 +911,16 @@ def _move_reminder_section_impl(
     selected_list_ref["section_mutation_stage"] = "membership_asset_decode"
     try:
         document = _decode_section_memberships(payload)
-    except SectionAssetDecodeError:
+    except SectionAssetDecodeError as decode_error:
+        _log_section_asset_decode_failure(
+            selected_list_ref,
+            asset,
+            raw_client,
+            payload,
+            decode_error,
+            attempt=1,
+            cache_reused=reused_payload,
+        )
         if not reused_payload or payload_cache is None or cache_key is None:
             raise
         # Avoid retrying a stale/colliding local asset cache entry once. CloudKit
@@ -787,7 +928,19 @@ def _move_reminder_section_impl(
         # the safest recovery before refusing the mutation.
         payload_cache.pop(cache_key, None)
         payload = _download_section_asset_bytes(raw_client, asset, payload_cache)
-        document = _decode_section_memberships(payload)
+        try:
+            document = _decode_section_memberships(payload)
+        except SectionAssetDecodeError as retry_error:
+            _log_section_asset_decode_failure(
+                selected_list_ref,
+                asset,
+                raw_client,
+                payload,
+                retry_error,
+                attempt=2,
+                cache_reused=False,
+            )
+            raise
 
     memberships = [
         membership
@@ -1455,7 +1608,7 @@ def _load_list_section_context(
     list_key: str,
     request_id: str,
 ) -> tuple[list[Any], Any, dict[str, Any]]:
-    selected_list_ref: dict[str, Any] = {}
+    selected_list_ref: dict[str, Any] = {"request_id": request_id}
     with inspect_cloudkit_responses(reminders_service, list_key, request_id, selected_list_ref):
         lists, reminder_list = _selected_reminders_list(reminders_service, list_key, refresh=True)
         selected_list_ref["id"] = str(getattr(reminder_list, "id", ""))
@@ -2009,6 +2162,7 @@ def create_reminder(request: dict[str, Any]) -> dict[str, Any]:
         )
         created_reminder_id = str(getattr(created, "id", "")) or None
         if section_id is not None:
+            selected_ref["section_mutation_action"] = "create_reminder"
             _move_reminder_section(
                 reminders_service,
                 reminder_list,
@@ -2155,6 +2309,7 @@ def move_reminder_section(request: dict[str, Any]) -> dict[str, Any]:
         if str(getattr(reminder, "list_id", "")) != str(getattr(reminder_list, "id", "")):
             raise ValueError("That reminder does not belong to the selected list.")
         failure_stage = "section_mutation"
+        selected_ref["section_mutation_action"] = "move_reminder_section"
         _move_reminder_section(
             reminders_service,
             reminder_list,
@@ -2255,6 +2410,7 @@ def handle(request: dict[str, Any]) -> dict[str, Any]:
 protocol_output = sys.stdout
 log_event(
     "worker_started",
+    worker_build=_WORKER_BUILD_ID,
     pyicloud_available=PYICLOUD_AVAILABLE,
     pyicloud_version=importlib.metadata.version("pyicloud") if PYICLOUD_AVAILABLE else None,
 )

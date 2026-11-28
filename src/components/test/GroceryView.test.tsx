@@ -96,7 +96,7 @@ describe('GroceryView task refresh', () => {
     await waitFor(() => expect(mocks.fetchList).toHaveBeenLastCalledWith('task-list', 12));
   }, 10_000);
 
-  it('shows only task-backed sections and makes the full reminder row draggable', async () => {
+  it('shows only task-backed sections and starts section dragging from the handle only', async () => {
     localStorage.setItem('abbai-flow-filter-grocery-tab', JSON.stringify('tasks'));
     localStorage.setItem('abbai-flow-filter-grocery-lists', JSON.stringify({
       grocery: 'grocery-list',
@@ -160,9 +160,12 @@ describe('GroceryView task refresh', () => {
     const milkRow = list.querySelector<HTMLElement>(
       '.grocery-view-item-row[aria-label^="Milk:"]',
     )!;
-    expect(milkRow).toHaveAttribute('tabindex', '0');
-    expect(milkRow).toHaveAttribute('aria-roledescription', 'draggable');
-    expect(milkRow.querySelector('.grocery-view-drag-indicator')).not.toBeNull();
+    expect(milkRow).not.toHaveAttribute('aria-roledescription', 'draggable');
+    const dragHandle = milkRow.querySelector<HTMLButtonElement>('.grocery-view-drag-indicator');
+    expect(dragHandle).not.toBeNull();
+    expect(dragHandle).toHaveAttribute('type', 'button');
+    expect(dragHandle).toHaveAttribute('tabindex', '0');
+    expect(dragHandle).toHaveAttribute('aria-roledescription', 'draggable');
   });
 
 });

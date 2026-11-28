@@ -40,6 +40,7 @@ test('exports ChoresMan-compatible action names under the ChoresMan domain prefi
   assert.ok(SERVICE_NAMES.includes('take_chore'));
   assert.ok(SERVICE_NAMES.includes('claim_chore'));
   assert.ok(SERVICE_NAMES.includes('manual_adjust_points'));
+  assert.ok(SERVICE_NAMES.includes('reset_all_data'));
   assert.ok(FAMILY_SERVICE_NAMES.includes('create_member'));
   assert.equal((await store.call('family.create_member', { name: 'Riley' })).name, 'Riley');
   await assert.rejects(
@@ -687,6 +688,45 @@ test('rescheduling, due notifications, reports, UI controls, and explicit resets
   assert.equal((await store.getSnapshot()).members.find((member) => member.name === 'Riley').points, 0);
   await store.call('manage_ui_control', { user_name: 'Riley', ui_control_action: 'remove', key: 'gamification/rewards/collapsed' });
   assert.deepEqual((await store.getSnapshot()).ui_controls[0].values, { gamification: { rewards: {} } });
+});
+
+test('reset_all_data requires confirmation, clears all ChoresMan collections, and keeps family profiles', async (t) => {
+  const { store } = await fixture(t);
+  const { parent, child } = await addHousehold(store);
+  await store._mutate((document) => {
+    for (const key of [
+      'chores', 'chore_claims', 'chore_events', 'rewards', 'reward_claims', 'ledger',
+      'bonuses', 'penalties', 'badges', 'badge_awards', 'badge_progress', 'achievements',
+      'challenges', 'goal_progress', 'notifications', 'ui_controls',
+    ]) {
+      document[key] = [{ id: key, member_id: child.id, amount: 25 }];
+    }
+    return { seeded: true };
+  });
+
+  await assert.rejects(
+    store.call('reset_all_data', {}),
+    (error) => error.code === 'confirmation_required',
+  );
+  const result = await store.call('reset_all_data', { confirm_destructive: true });
+  const document = await store.getDocument();
+  const snapshot = await store.getSnapshot();
+
+  assert.equal(result.reset, true);
+  assert.equal(result.preserved_family_profiles, 2);
+  assert.equal(result.removed.chores, 1);
+  for (const key of [
+    'chores', 'chore_claims', 'chore_events', 'rewards', 'reward_claims', 'ledger',
+    'bonuses', 'penalties', 'badges', 'badge_awards', 'badge_progress', 'achievements',
+    'challenges', 'goal_progress', 'notifications', 'ui_controls',
+  ]) {
+    assert.deepEqual(document[key], [], `${key} should be empty after reset`);
+  }
+  assert.deepEqual(snapshot.members.map(({ id, name, role }) => ({ id, name, role })), [
+    { id: parent.id, name: 'Jamie', role: 'parent' },
+    { id: child.id, name: 'Riley', role: 'child' },
+  ]);
+  assert.equal(snapshot.members.find((member) => member.id === child.id).points, 0);
 });
 
 test('overdue reset, pending reset, notification delivery acknowledgement, and schema migration work', async (t) => {

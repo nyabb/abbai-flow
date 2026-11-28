@@ -207,6 +207,11 @@ function applySnapshot(source: ChoresManSnapshot): void {
   emit({ data: mapSnapshot(source), error: null, loading: false });
 }
 
+export async function resetAllChoresManData(): Promise<void> {
+  const response = await callChoresMan('reset_all_data', { confirm_destructive: true });
+  applySnapshot(response.snapshot);
+}
+
 function profilesFor(members: readonly FamilyMember[]) {
   return members.map(({ id, name, role, avatar, color }) => ({ id, name, role, avatar, color }));
 }
