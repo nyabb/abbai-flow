@@ -1,3 +1,10 @@
+# [4.7.0](https://github.com/nyabb/abbai-flow/compare/v4.6.3...v4.7.0) (2026-11-28)
+
+
+### Features
+
+* polish chores and media controls ([a294ae2](https://github.com/nyabb/abbai-flow/commit/a294ae292e8635003dd225d4a8ba0fdff80870d4))
+
 ## [4.6.3](https://github.com/nyabb/abbai-flow/compare/v4.6.2...v4.6.3) (2026-11-28)
 
 
