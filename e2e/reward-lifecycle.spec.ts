@@ -177,6 +177,9 @@ async function approvePayout(page: Page, name: string) {
 }
 
 test('child splits points, parent approves payout, then reuse or delete', async ({ page }) => {
+  // This full local-server workflow spans several chore and reward API calls.
+  test.setTimeout(90_000);
+
   await page.addInitScript((members) => {
     localStorage.setItem('abbai_flow_family_members', JSON.stringify(members));
   }, FAMILY);

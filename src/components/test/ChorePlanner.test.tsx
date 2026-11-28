@@ -412,12 +412,14 @@ describe('ChorePlanner rewards from ChoresMan', () => {
     localStorage.clear();
   });
 
-  it("shows a child's rewards on the chores board without opening their profile", () => {
+  it("opens a child's full reward list from the compact chores board summary", () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const zara = column(container, 'Zara');
 
     expect(zara.textContent).toContain('Afwassen');
-    expect(zara.textContent).toContain('Schermtijd');
+    expect(zara.textContent).not.toContain('Schermtijd');
+    fireEvent.click(within(zara).getByRole('button', { name: 'Bestaande bekijken en bewerken' }));
+    expect(container.querySelector('.planner-sheet')?.textContent).toContain('Schermtijd');
   });
 
   it('lists rewards and lets Zara allocate points already in her savings pot', async () => {
@@ -890,15 +892,12 @@ describe('ChorePlanner board', () => {
     expect(mocks.fetchChoreHistory).toHaveBeenCalledWith('Zara');
 
     const changeHistoryRange = (value: 'twoDays' | 'week') => {
-      const history = container.querySelector<HTMLElement>('.planner-detail')!;
+      const history = container.querySelector<HTMLElement>('.planner-detail-status--done')!;
       fireEvent.change(within(history).getByLabelText('Periode'), { target: { value } });
     };
     const historyNames = () => {
-      const history = container.querySelector<HTMLElement>('.planner-detail');
-      const completedSection = [
-        ...(history?.querySelectorAll<HTMLElement>('.planner-detail-section') ?? []),
-      ].find((section) => section.querySelector('h3')?.textContent?.includes('Voltooide taakjes'));
-      return [...(completedSection?.querySelectorAll('.planner-reward-copy strong') ?? [])].map(
+      const completedGroup = container.querySelector<HTMLElement>('.planner-detail-status--done');
+      return [...(completedGroup?.querySelectorAll('.planner-detail-history-card h3') ?? [])].map(
         (item) => item.textContent,
       );
     };
