@@ -1314,7 +1314,7 @@ export function ChorePlanner({
           onStartMissions={openMissions}
           onOpenMissions={openMissions}
           canRunMissions={canRunMissions}
-          onNewChore={() => openNewForm()}
+          onNewChore={(memberId) => openNewForm(memberId)}
           onNewRoutine={(memberId) => openRoutineEditor(undefined, memberId)}
           onNewGoal={startRewardForm}
         />

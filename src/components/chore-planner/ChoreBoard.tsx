@@ -6,7 +6,7 @@
  * and row renderers), so the board has no ChoresMan knowledge of its own.
  */
 import { useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { ListChecks, Plus, RefreshCw } from 'lucide-react';
 import type { PlannerMember, PlannerTask } from '../../api/chore-planner-model';
 import type { Routine } from '../../types/family';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
@@ -39,7 +39,7 @@ export interface ChoreBoardProps {
   onStartMissions: (memberId: string) => void;
   /** Open the missions overview (the mission screen's back destination). */
   onOpenMissions: (memberId: string) => void;
-  onNewChore: () => void;
+  onNewChore: (memberId?: string) => void;
   onNewRoutine?: (memberId: string) => void;
   onNewGoal: (memberId: string) => void;
 }
@@ -107,6 +107,17 @@ export function ChoreBoard({
     const routines = member ? columnRoutines(member.id) : [];
     const parentMode = member?.role === 'parent';
     const activeTab = parentMode ? 'routines' : tab;
+    const mobileAddAction = member
+      ? activeTab === 'chores'
+        ? { label: `${c.add}: ${c.choresColumn}`, run: () => onNewChore(member.id) }
+        : activeTab === 'routines' && onNewRoutine
+          ? { label: `${c.add}: ${c.routines}`, run: () => onNewRoutine(member.id) }
+          : activeTab === 'goals'
+            ? { label: `${c.add}: ${c.goals}`, run: () => onNewGoal(member.id) }
+            : activeTab === 'free'
+              ? { label: `${c.add}: ${c.free}`, run: () => onNewChore() }
+              : null
+      : null;
     const visibleTabs: Array<['chores' | 'routines' | 'goals' | 'free', string, number | null]> =
       parentMode
         ? [['routines', c.routines, routines.length]]
@@ -118,7 +129,7 @@ export function ChoreBoard({
           ];
 
     return (
-      <main className="planner-board planner-board--compact">
+      <main className="planner-board planner-board--overview planner-board--compact">
         <div className="planner-mobile-members">
           {boardMembers.map((item) => (
             <button
@@ -161,17 +172,30 @@ export function ChoreBoard({
             >
               {c.openChild}
             </button>
-            {!parentMode && (
-              <button
-                type="button"
-                className="planner-col-play"
-                disabled={!canRunMissions(member.id)}
-                onClick={() => onStartMissions(member.id)}
-                aria-label={`${c.startMissions}: ${member.name}`}
-              >
-                {'\u25B6'}
-              </button>
-            )}
+            <div className="planner-mobile-action-buttons">
+              {!parentMode && (
+                <button
+                  type="button"
+                  className="planner-col-play"
+                  disabled={!canRunMissions(member.id)}
+                  onClick={() => onStartMissions(member.id)}
+                  aria-label={`${c.startMissions}: ${member.name}`}
+                >
+                  {'\u25B6'}
+                </button>
+              )}
+              {mobileAddAction && (
+                <button
+                  type="button"
+                  className="planner-overview-add"
+                  onClick={mobileAddAction.run}
+                  aria-label={mobileAddAction.label}
+                  title={mobileAddAction.label}
+                >
+                  <Plus aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -185,8 +209,13 @@ export function ChoreBoard({
           {activeTab === 'routines' && (
             <>
               {member && (
-                <div className={`planner-section-head${parentMode ? ' planner-section-head--parent' : ''}`}>
+                <div
+                  className={`planner-overview-section-head${
+                    parentMode ? ' planner-section-head--parent' : ''
+                  }`}
+                >
                   <h2>
+                    <RefreshCw aria-hidden="true" />
                     {c.routines}
                     <span>{routines.length}</span>
                   </h2>
@@ -194,21 +223,38 @@ export function ChoreBoard({
                     onNewRoutine && (
                       <button
                         type="button"
-                        className="planner-section-action"
+                        className="planner-overview-add"
+                        aria-label={`${c.add}: ${c.routines}`}
+                        title={`${c.add}: ${c.routines}`}
                         onClick={() => onNewRoutine(member.id)}
                       >
-                        <Plus aria-hidden="true" /> {c.addRoutine}
+                        <Plus aria-hidden="true" />
                       </button>
                     )
                   ) : (
-                    <button
-                      type="button"
-                      className="planner-section-action"
-                      disabled={!canRunMissions(member.id)}
-                      onClick={() => onOpenMissions(member.id)}
-                    >
-                      {'\u25B6'} {c.missions}
-                    </button>
+                    <div className="planner-overview-section-actions">
+                      <button
+                        type="button"
+                        className="planner-overview-icon-action"
+                        disabled={!canRunMissions(member.id)}
+                        onClick={() => onOpenMissions(member.id)}
+                        aria-label={`${c.missions}: ${member.name}`}
+                        title={c.missions}
+                      >
+                        {'\u25B6'}
+                      </button>
+                      {onNewRoutine && (
+                        <button
+                          type="button"
+                          className="planner-overview-add"
+                          onClick={() => onNewRoutine(member.id)}
+                          aria-label={`${c.add}: ${c.routines} ${member.name}`}
+                          title={`${c.add}: ${c.routines}`}
+                        >
+                          <Plus aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
@@ -232,7 +278,7 @@ export function ChoreBoard({
   }
 
   return (
-    <main className="planner-board">
+    <main className="planner-board planner-board--overview">
       {boardMembers.map((member) => {
         const chores = columnTasks(member.id);
         const routines = columnRoutines(member.id);
@@ -280,19 +326,22 @@ export function ChoreBoard({
 
             <div className="planner-col-body">
               {member.role === 'parent' ? (
-                <>
-                  <div className="planner-section-head planner-section-head--parent">
+                <section className="planner-overview-section planner-overview-section--routines">
+                  <div className="planner-overview-section-head planner-section-head--parent">
                     <h2>
+                      <RefreshCw aria-hidden="true" />
                       {c.routines}
                       <span>{routines.length}</span>
                     </h2>
                     {onNewRoutine && (
                       <button
                         type="button"
-                        className="planner-section-action"
+                        className="planner-overview-add"
                         onClick={() => onNewRoutine(member.id)}
+                        aria-label={`${c.add}: ${c.routines} ${member.name}`}
+                        title={`${c.add}: ${c.routines}`}
                       >
-                        <Plus aria-hidden="true" /> {c.addRoutine}
+                        <Plus aria-hidden="true" />
                       </button>
                     )}
                   </div>
@@ -301,50 +350,72 @@ export function ChoreBoard({
                   ) : (
                     routines.map((routine) => routineRow(routine, member.id))
                   )}
-                </>
+                </section>
               ) : (
                 <>
-                  <h2>
-                    {c.choresColumn}
-                    <span>{chores.length}</span>
-                  </h2>
-                  {chores.length === 0 ? (
-                    <p className="planner-col-empty">{c.nothing}</p>
-                  ) : (
-                    chores.map((task) => renderRow(task))
-                  )}
-
-                  <div className="planner-section-head planner-section-head--routines">
-                    <h2>
-                      {c.routines}
-                      <span>{routines.length}</span>
-                    </h2>
-                    <button
-                      type="button"
-                      className="planner-section-action"
-                      disabled={!canRunMissions(member.id)}
-                      onClick={() => onOpenMissions(member.id)}
-                    >
-                      {'\u25B6'} {c.missions}
-                    </button>
-                  </div>
-                  {routines.length === 0 ? (
-                    <p className="planner-col-empty">{c.noRoutines}</p>
-                  ) : (
-                    routines.map((routine) => routineRow(routine, member.id))
-                  )}
-
-                  <div className="planner-desktop-goals">
-                    <div className="planner-section-head">
-                      <h2>{c.goals}</h2>
+                  <section className="planner-overview-section planner-overview-section--chores">
+                    <div className="planner-overview-section-head">
+                      <h2>
+                        <ListChecks aria-hidden="true" />
+                        {c.choresColumn}
+                        <span>{chores.length}</span>
+                      </h2>
                       <button
                         type="button"
-                        className="planner-section-action"
-                        onClick={() => onNewGoal(member.id)}
+                        className="planner-overview-add"
+                        onClick={() => onNewChore(member.id)}
+                        aria-label={`${c.add}: ${c.choresColumn} ${member.name}`}
+                        title={`${c.add}: ${c.choresColumn}`}
                       >
-                        <Plus aria-hidden="true" /> {c.setGoal}
+                        <Plus aria-hidden="true" />
                       </button>
                     </div>
+                    {chores.length === 0 ? (
+                      <p className="planner-col-empty">{c.nothing}</p>
+                    ) : (
+                      chores.map((task) => renderRow(task))
+                    )}
+                  </section>
+
+                  <section className="planner-overview-section planner-overview-section--routines">
+                    <div className="planner-overview-section-head">
+                      <h2>
+                        <RefreshCw aria-hidden="true" />
+                        {c.routines}
+                        <span>{routines.length}</span>
+                      </h2>
+                      <div className="planner-overview-section-actions">
+                        <button
+                          type="button"
+                          className="planner-overview-icon-action"
+                          disabled={!canRunMissions(member.id)}
+                          onClick={() => onOpenMissions(member.id)}
+                          aria-label={`${c.missions}: ${member.name}`}
+                          title={c.missions}
+                        >
+                          {'\u25B6'}
+                        </button>
+                        {onNewRoutine && (
+                          <button
+                            type="button"
+                            className="planner-overview-add"
+                            onClick={() => onNewRoutine(member.id)}
+                            aria-label={`${c.add}: ${c.routines} ${member.name}`}
+                            title={`${c.add}: ${c.routines}`}
+                          >
+                            <Plus aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {routines.length === 0 ? (
+                      <p className="planner-col-empty">{c.noRoutines}</p>
+                    ) : (
+                      routines.map((routine) => routineRow(routine, member.id))
+                    )}
+                  </section>
+
+                  <div className="planner-desktop-goals">
                     {renderGoals(member.id)}
                   </div>
                 </>
@@ -364,24 +435,28 @@ export function ChoreBoard({
           <strong>{c.free}</strong>
         </header>
         <div className="planner-col-body">
-          <h2>
-            {c.choresColumn}
-            <span>{freeTasks.length}</span>
-          </h2>
+          <div className="planner-overview-section-head">
+            <h2>
+              <ListChecks aria-hidden="true" />
+              {c.choresColumn}
+              <span>{freeTasks.length}</span>
+            </h2>
+            <button
+              type="button"
+              className="planner-overview-add"
+              onClick={() => onNewChore()}
+              aria-label={`${c.add}: ${c.free}`}
+              title={`${c.add}: ${c.free}`}
+            >
+              <Plus aria-hidden="true" />
+            </button>
+          </div>
           {freeTasks.length === 0 ? (
             <p className="planner-col-empty">{c.nothing}</p>
           ) : (
             freeTasks.map((task) => renderRow(task))
           )}
         </div>
-        <button
-          type="button"
-          className="planner-col-start planner-col-start--ghost"
-          onClick={onNewChore}
-        >
-          <Plus />
-          {c.add}
-        </button>
       </section>
     </main>
   );
