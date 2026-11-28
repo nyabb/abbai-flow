@@ -1,3 +1,10 @@
+## [4.6.1](https://github.com/nyabb/abbai-flow/compare/v4.6.0...v4.6.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* prevent routine and goal overflow ([6f72a6b](https://github.com/nyabb/abbai-flow/commit/6f72a6bcaacc22edc9013b2e1806747781d3d7d9))
+
 # [4.6.0](https://github.com/nyabb/abbai-flow/compare/v4.5.0...v4.6.0) (2026-11-28)
 
 
