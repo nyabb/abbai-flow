@@ -129,7 +129,15 @@ test('creates Abbai Flow routines for kids and parents through shared entry poin
   await expect(detail.locator('.planner-row--routine')).toContainText('School mornings');
 
   // The child detail page uses the same edit menu and editor as Settings.
-  await detail.getByRole('button', { name: 'Actions: School mornings' }).click();
+  const schoolRoutine = detail.locator('.planner-row--routine').filter({ hasText: 'School mornings' });
+  const schoolRoutineGroup = detail
+    .locator('.planner-detail-status')
+    .filter({ hasText: 'School mornings' });
+  if (!(await schoolRoutineGroup.evaluate((element) => (element as HTMLDetailsElement).open))) {
+    await schoolRoutineGroup.locator('summary').click();
+  }
+  await expect(schoolRoutine).toBeVisible();
+  await schoolRoutine.getByRole('button', { name: 'Actions: School mornings' }).click();
   await page.getByRole('menuitem', { name: 'Edit School mornings' }).click();
   const editDialog = page.getByRole('dialog');
   await editDialog.getByLabel('Name').fill('School day');
