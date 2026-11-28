@@ -99,6 +99,11 @@
     box-shadow 150ms ease;
 }
 
+.omni-add-action--active .omni-add-action-icon {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+}
+
 .omni-add-action:hover .omni-add-action-icon {
   transform: scale(1.1);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
@@ -172,48 +177,6 @@
   transform: scale(0.95);
 }
 
-.omni-add-settings {
-  position: absolute;
-  right: 4px;
-  bottom: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border-subtle, var(--border));
-  border-radius: var(--skin-icon-radius, 14px);
-  background: var(--bg-surface);
-  color: var(--text-muted);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
-  cursor: pointer;
-  pointer-events: auto;
-  transition: color 160ms ease, background-color 160ms ease, transform 160ms ease;
-  z-index: 1;
-}
-
-.omni-add-settings:hover {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
-}
-
-.omni-add-settings:active {
-  transform: scale(0.94);
-}
-
-.omni-add-settings--active {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
-}
-
-@media (min-width: 1400px) {
-  .omni-add-settings {
-    right: 8px;
-    width: 56px;
-    height: 56px;
-  }
-}
-
 /* ---- Plus icon with rotate ---- */
 .omni-add-fab-icon {
   font-size: 1.8rem;
@@ -243,12 +206,6 @@
     height: 52px;
   }
 
-  .omni-add-settings {
-    right: 4px;
-    width: 44px;
-    height: 44px;
-  }
-
   .omni-add {
     width: 52px;
     height: 104px;
@@ -274,12 +231,6 @@
   .omni-add-fab {
     width: 48px;
     height: 48px;
-  }
-
-  .omni-add-settings {
-    right: 2px;
-    width: 44px;
-    height: 44px;
   }
 
   .omni-add {

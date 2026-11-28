@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ListMusic, Music2, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ListMusic, Music2, Pause, Play, Plus, Sparkles, Trash2 } from 'lucide-react';
 import type { SpotifyPlaylist, SpotifyPlaylistTrack } from '../api/spotify-playlists';
 import type { UseSpotifyPlaylistsResult } from '../hooks/useSpotifyPlaylists';
 import { useTranslation } from '../i18n';
@@ -8,7 +8,11 @@ import { LoadingPlaceholder } from './LoadingPlaceholder';
 interface SpotifyPlaylistLibraryProps {
   library: UseSpotifyPlaylistsResult;
   canPlay: boolean;
+  currentTrackUri: string | null;
+  currentTrackPlaying: boolean;
+  currentContextUri: string | null;
   onPlayTrack: (uri: string) => void;
+  onToggleCurrentTrack: () => void;
   onPlayPlaylist: (uri: string) => void;
 }
 
@@ -33,7 +37,11 @@ function SpotifyArtwork({
 export function SpotifyPlaylistLibrary({
   library,
   canPlay,
+  currentTrackUri,
+  currentTrackPlaying,
+  currentContextUri,
   onPlayTrack,
+  onToggleCurrentTrack,
   onPlayPlaylist,
 }: SpotifyPlaylistLibraryProps) {
   const { t } = useTranslation();
@@ -43,6 +51,11 @@ export function SpotifyPlaylistLibrary({
   const [connecting, setConnecting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const selectedPlaylistIsPlaying =
+    library.selectedPlaylist?.uri === currentContextUri && currentTrackPlaying;
+  const selectedPlaylistActionLabel = selectedPlaylistIsPlaying
+    ? t('music.pause')
+    : t('music.play');
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -109,6 +122,7 @@ export function SpotifyPlaylistLibrary({
     </button>
   );
 
+  const isTrackPlaying = (uri: string) => uri === currentTrackUri && currentTrackPlaying;
   const trackRow = (track: SpotifyPlaylistTrack, index: number) => (
     <li key={`${track.uri}-${index}`} className="spotify-playlist-track">
       <span className="spotify-playlist-track-index">{index + 1}</span>
@@ -128,11 +142,19 @@ export function SpotifyPlaylistLibrary({
       <button
         type="button"
         className="spotify-playlist-track-play"
-        aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
+        aria-label={`${isTrackPlaying(track.uri) ? t('music.pause') : t('music.play')}: ${track.title}`}
+        title={`${isTrackPlaying(track.uri) ? t('music.pause') : t('music.play')}: ${track.title}`}
         disabled={!canPlay}
-        onClick={() => onPlayTrack(track.uri)}
+        onClick={() => {
+          if (track.uri === currentTrackUri) onToggleCurrentTrack();
+          else onPlayTrack(track.uri);
+        }}
       >
-        {t('music.play')}
+        {isTrackPlaying(track.uri) ? (
+          <Pause size={16} aria-hidden="true" />
+        ) : (
+          <Play size={16} aria-hidden="true" />
+        )}
       </button>
     </li>
   );
@@ -278,12 +300,19 @@ export function SpotifyPlaylistLibrary({
               <button
                 type="button"
                 className="spotify-playlist-play"
-                aria-label={`${t('music.play')}: ${library.selectedPlaylist.name}`}
+                aria-label={`${selectedPlaylistActionLabel}: ${library.selectedPlaylist.name}`}
+                title={`${selectedPlaylistActionLabel}: ${library.selectedPlaylist.name}`}
                 disabled={!canPlay || library.selectedPlaylist.trackCount === 0}
-                onClick={() => onPlayPlaylist(library.selectedPlaylist!.uri)}
+                onClick={() => {
+                  if (library.selectedPlaylist!.uri === currentContextUri) onToggleCurrentTrack();
+                  else onPlayPlaylist(library.selectedPlaylist!.uri);
+                }}
               >
-                <Play size={17} fill="currentColor" />
-                <span>{t('music.play')}</span>
+                {selectedPlaylistIsPlaying ? (
+                  <Pause size={17} aria-hidden="true" />
+                ) : (
+                  <Play size={17} fill="currentColor" aria-hidden="true" />
+                )}
               </button>
               <button
                 type="button"

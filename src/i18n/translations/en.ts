@@ -995,6 +995,7 @@ export const en = {
   'planner.waitingForReward': 'Waiting for reward',
   'planner.rewardsToGive': 'Rewards to give',
   'planner.givenRewards': 'Given rewards',
+  'planner.rewardHistory': 'Reward history',
   'planner.historyRange': 'Date range',
   'planner.historyLastTwoDays': 'Last 2 days',
   'planner.historyLastWeek': 'Last 7 days',

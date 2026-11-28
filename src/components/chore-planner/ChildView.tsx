@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Hand,
+  History,
   ListChecks,
   Plus,
   RefreshCw,
@@ -82,6 +83,7 @@ export interface ChildViewProps {
   onNewChore: (memberId: string) => void;
   onNewFreeTask: () => void;
   onNewGoal: (memberId: string) => void;
+  onOpenRewardHistory: (memberId: string) => void;
   onNewRoutine?: (memberId: string) => void;
 }
 
@@ -108,6 +110,7 @@ export function ChildView({
   onNewChore,
   onNewFreeTask,
   onNewGoal,
+  onOpenRewardHistory,
   onNewRoutine,
 }: ChildViewProps) {
   const openChores = columnTasks(childMember.id);
@@ -226,15 +229,26 @@ export function ChildView({
             <section className="planner-detail-goals">
               <div className="planner-detail-goals-head">
                 <h3>{c.goals}</h3>
-                <button
-                  type="button"
-                  className="planner-detail-goal-add"
-                  onClick={() => onNewGoal(childMember.id)}
-                  aria-label={c.setGoal}
-                  title={c.setGoal}
-                >
-                  <Plus aria-hidden="true" />
-                </button>
+                <div className="planner-detail-goal-actions">
+                  <button
+                    type="button"
+                    className="planner-detail-goal-history"
+                    onClick={() => onOpenRewardHistory(childMember.id)}
+                    aria-label={c.rewardHistory}
+                    title={c.rewardHistory}
+                  >
+                    <History aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="planner-detail-goal-add"
+                    onClick={() => onNewGoal(childMember.id)}
+                    aria-label={c.setGoal}
+                    title={c.setGoal}
+                  >
+                    <Plus aria-hidden="true" />
+                  </button>
+                </div>
               </div>
               {rewards.length === 0 ? (
                 <p className="planner-detail-goals-empty">{c.noRewards}</p>

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import {
   Check,
   Clock3,
+  Circle,
+  Gift,
   ListPlus,
   RotateCcw,
   SlidersHorizontal,
@@ -687,6 +689,9 @@ export function ChorePlanner({
   const openGoals = (memberId: string) => {
     dispatchOverlay({ type: 'open-goals', memberId });
   };
+  const openRewardHistory = (memberId: string) => {
+    dispatchOverlay({ type: 'open-goals', memberId, historyOnly: true });
+  };
   const goalsUserName = goalsMember ? (userNameByMemberId.get(goalsMember.id) ?? null) : null;
   const childMember = memberFor(childMemberId);
   const childUserName = childMember ? (userNameByMemberId.get(childMember.id) ?? null) : null;
@@ -1317,6 +1322,45 @@ export function ChorePlanner({
             return (
               <div className="planner-board-goals-summary">
                 {memberRewards.length > 0 ? (
+                  memberRewards.map((reward) => {
+                    const state = rewardState(reward);
+                    const status = reward.approvalPending
+                      ? 'approval-pending'
+                      : state.pending
+                        ? 'pending'
+                        : state.done
+                          ? 'waiting-for-reward'
+                          : 'saving';
+                    const statusLabel = reward.approvalPending
+                      ? c.awaitingApproval
+                      : state.pending
+                        ? c.claimed
+                        : state.done
+                          ? c.waitingForReward
+                          : c.stillNeeded.replace('{points}', String(state.remaining));
+                    const StatusIcon =
+                      status === 'approval-pending' || status === 'pending'
+                        ? Clock3
+                        : status === 'waiting-for-reward'
+                          ? Gift
+                          : Circle;
+                    return (
+                      <span
+                        key={reward.id}
+                        className={`planner-goal-pill planner-goal-pill--${status}`}
+                        title={`${reward.name}: ${statusLabel}`}
+                        aria-label={`${reward.name}: ${statusLabel}`}
+                        role="status"
+                      >
+                        <StatusIcon aria-hidden="true" />
+                        <span>{reward.name}</span>
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="planner-goals-empty">{c.noRewards}</span>
+                )}
+                {memberRewards.length > 0 && (
                   <button
                     type="button"
                     className="planner-section-action"
@@ -1324,8 +1368,6 @@ export function ChorePlanner({
                   >
                     {c.manageExisting}
                   </button>
-                ) : (
-                  <span>{c.noRewards}</span>
                 )}
               </div>
             );
@@ -1376,6 +1418,7 @@ export function ChorePlanner({
           onNewChore={(memberId) => openNewForm(memberId)}
           onNewFreeTask={() => openNewForm(undefined, true)}
           onNewGoal={startRewardForm}
+          onOpenRewardHistory={openRewardHistory}
           onNewRoutine={(memberId) => openRoutineEditor(undefined, memberId)}
         />
       )}{' '}
@@ -1542,6 +1585,7 @@ export function ChorePlanner({
                 copy={c}
                 renderRewardRow={renderRewardRow}
                 onNewGoal={startRewardForm}
+                historyOnly={overlay.type === 'goals' && overlay.historyOnly}
                 isDone={(reward) => rewardState(reward).done}
                 awaiting={activeRedemptions(
                   redemptions,

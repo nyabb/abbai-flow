@@ -145,6 +145,7 @@ export function usePlannerCopy() {
       rewardReset: t('planner.rewardReset'),
       rewardsToGive: t('planner.rewardsToGive'),
       givenRewards: t('planner.givenRewards'),
+      rewardHistory: t('planner.rewardHistory'),
       historyRange: t('planner.historyRange'),
       historyLastTwoDays: t('planner.historyLastTwoDays'),
       historyLastWeek: t('planner.historyLastWeek'),

@@ -412,12 +412,13 @@ describe('ChorePlanner rewards from ChoresMan', () => {
     localStorage.clear();
   });
 
-  it("opens a child's full reward list from the compact chores board summary", () => {
+  it("shows goal status pills and keeps the full reward list accessible", () => {
     const { container } = renderPlanner([PARENT, ZARA]);
     const zara = column(container, 'Zara');
 
     expect(zara.textContent).toContain('Afwassen');
-    expect(zara.textContent).not.toContain('Schermtijd');
+    expect(zara.textContent).toContain('Schermtijd');
+    expect(zara.querySelector('.planner-goal-pill--saving')).not.toBeNull();
     fireEvent.click(within(zara).getByRole('button', { name: 'Bestaande bekijken en bewerken' }));
     expect(container.querySelector('.planner-sheet')?.textContent).toContain('Schermtijd');
   });

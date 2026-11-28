@@ -32,7 +32,8 @@ test.afterAll(async () => {
 });
 
 async function openFamilySettings(page: Page) {
-  await page.locator('.omni-add-settings').click();
+  await page.locator('.omni-add-fab').click();
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await page.getByRole('button', { name: 'Family Members', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Family Members', exact: true })).toBeVisible();
 }

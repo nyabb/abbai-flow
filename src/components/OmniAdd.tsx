@@ -83,6 +83,12 @@ export function OmniAdd({
       icon: <CalendarPlus size={22} />,
       handler: onAddEvent,
     },
+    {
+      id: 'settings',
+      label: t('nav.settings'),
+      icon: <Settings size={22} strokeWidth={1.8} />,
+      handler: onNavigateSettings,
+    },
   ];
 
   const toggle = useCallback(() => {
@@ -143,7 +149,9 @@ export function OmniAdd({
           <button
             key={action.id}
             type="button"
-            className="omni-add-action"
+            className={`omni-add-action${
+              action.id === 'settings' && settingsActive ? ' omni-add-action--active' : ''
+            }`}
             style={{
               '--omni-origin-y': `${(actions.length - 1 - i) * 76 + 68}px`,
               '--omni-open-delay': `${(actions.length - 1 - i) * 55}ms`,
@@ -152,9 +160,16 @@ export function OmniAdd({
             onClick={() => handleAction(action)}
             tabIndex={expanded ? 0 : -1}
             aria-label={action.label}
+            aria-current={action.id === 'settings' && settingsActive ? 'page' : undefined}
           >
             <span className="omni-add-action-icon">
               {action.icon}
+              {action.id === 'settings' && hasSettingsAttention && (
+                <SettingsErrorBadge
+                  label={t('settings.integrations.needsAttention')}
+                  className="settings-error-badge--floating"
+                />
+              )}
             </span>
             <span className="omni-add-action-label">{action.label}</span>
           </button>
@@ -173,26 +188,6 @@ export function OmniAdd({
           <span className={`omni-add-fab-icon ${expanded ? 'omni-add-fab-icon--open' : ''}`}>
             +
           </span>
-        </button>
-      )}
-      {showTrigger && (
-        <button
-          type="button"
-          className={`omni-add-settings${settingsActive ? ' omni-add-settings--active' : ''}`}
-          onClick={() => {
-            setExpanded(false);
-            onNavigateSettings();
-          }}
-          aria-label={t('nav.settings')}
-          aria-current={settingsActive ? 'page' : undefined}
-        >
-          <Settings size={22} strokeWidth={1.8} />
-          {hasSettingsAttention && (
-            <SettingsErrorBadge
-              label={t('settings.integrations.needsAttention')}
-              className="settings-error-badge--floating"
-            />
-          )}
         </button>
       )}
     </div>

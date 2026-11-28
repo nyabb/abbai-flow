@@ -11,7 +11,7 @@ export type PlannerOverlayState =
   | { type: 'claim'; taskId: string }
   | { type: 'award'; taskId: string }
   | { type: 'filter' }
-  | { type: 'goals'; memberId: string }
+  | { type: 'goals'; memberId: string; historyOnly: boolean }
   | { type: 'reward-form'; editingReward: string | null }
   | { type: 'reward-actions'; reward: ChoresManReward }
   | { type: 'assign'; reward: ChoresManReward }
@@ -26,7 +26,7 @@ export type PlannerOverlayEvent =
   | { type: 'open-claim'; taskId: string }
   | { type: 'open-award'; taskId: string }
   | { type: 'open-filter' }
-  | { type: 'open-goals'; memberId: string }
+  | { type: 'open-goals'; memberId: string; historyOnly?: boolean }
   | { type: 'open-reward-form'; editingReward?: string | null }
   | { type: 'open-reward-actions'; reward: ChoresManReward }
   | { type: 'open-assign'; reward: ChoresManReward }
@@ -61,7 +61,7 @@ export function plannerOverlayReducer(
     case 'open-filter':
       return { type: 'filter' };
     case 'open-goals':
-      return { type: 'goals', memberId: event.memberId };
+      return { type: 'goals', memberId: event.memberId, historyOnly: event.historyOnly ?? false };
     case 'open-reward-form':
       return { type: 'reward-form', editingReward: event.editingReward ?? null };
     case 'open-reward-actions':

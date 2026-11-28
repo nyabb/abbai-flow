@@ -34,7 +34,7 @@ describe('OmniAdd action fan', () => {
 
     expect(actions.hasAttribute('inert')).toBe(true);
     expect(actions.getAttribute('aria-hidden')).toBe('true');
-    expect(actions.querySelectorAll('.omni-add-action')).toHaveLength(5);
+    expect(actions.querySelectorAll('.omni-add-action')).toHaveLength(6);
   });
 
   it('becomes interactive when opened', () => {

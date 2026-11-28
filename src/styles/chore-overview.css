@@ -363,11 +363,15 @@
   font-size: 0.8125rem;
 }
 
-.planner-board--overview .planner-board-goals-summary > span {
+.planner-board--overview .planner-board-goals-summary > .planner-goals-empty {
   flex: 1 1 100%;
   overflow: visible;
   white-space: normal;
   overflow-wrap: anywhere;
+}
+
+.planner-board--overview .planner-board-goals-summary > .planner-goal-pill {
+  flex: 0 1 auto;
 }
 
 .planner-board--overview .planner-section-action {

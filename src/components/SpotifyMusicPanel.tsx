@@ -280,94 +280,114 @@ export function SpotifyMusicPanel({
         )}
         {searchResults.length > 0 && (
           <ul className="spotify-search-results" aria-label={t('music.spotifySearchResults')}>
-            {searchResults.map((track) => (
-              <li key={track.uri}>
-                <div className="spotify-search-result-main">
-                  {track.artworkUrl ? (
-                    <img src={track.artworkUrl} alt="" />
-                  ) : (
-                    <span className="spotify-search-art">
-                      <Music2 size={18} />
-                    </span>
-                  )}
-                  <span className="spotify-search-copy">
-                    <strong>{track.title}</strong>
-                    <span>
-                      {track.artists.join(', ') || '—'}
-                      {track.album ? ` · ${track.album}` : ''}
-                    </span>
-                  </span>
-                  <span className="spotify-search-actions">
-                    <button
-                      type="button"
-                      className="spotify-search-play"
-                      aria-label={`${t('music.spotifyPlayTrack')}: ${track.title}`}
-                      title={t('music.spotifyPlayTrack')}
-                      disabled={!canStartPlayback}
-                      onClick={() => void runControl('playTrack', track.uri)}
-                    >
-                      <Play size={19} fill="currentColor" />
-                    </button>
-                    <button
-                      type="button"
-                      className="spotify-search-add"
-                      aria-label={`${t('music.spotifyAddToPlaylist')}: ${track.title}`}
-                      title={t('music.spotifyAddToPlaylist')}
-                      disabled={!library.status.authorized}
-                      aria-expanded={addingTrackUri === track.uri}
-                      onClick={() =>
-                        setAddingTrackUri((current) => (current === track.uri ? null : track.uri))
-                      }
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </span>
-                </div>
-                {addingTrackUri === track.uri && (
-                  <div
-                    className="spotify-search-add-menu"
-                    role="group"
-                    aria-label={t('music.spotifyAddToPlaylist')}
-                  >
-                    {library.playlists.length === 0 ? (
-                      <p>{t('music.spotifyNoPlaylists')}</p>
+            {searchResults.map((track) => {
+              const isPlaying = playback.status === 'playing' && playback.item?.uri === track.uri;
+              const actionLabel = isPlaying ? t('music.pause') : t('music.play');
+              return (
+                <li key={track.uri}>
+                  <div className="spotify-search-result-main">
+                    {track.artworkUrl ? (
+                      <img src={track.artworkUrl} alt="" />
                     ) : (
-                      library.playlists.map((playlist) => (
-                        <button
-                          type="button"
-                          key={playlist.id}
-                          disabled={library.working}
-                          aria-busy={library.working}
-                          onClick={async () => {
-                            const result = await library.addTrack(playlist.id, track.uri);
-                            if (result.ok) setAddingTrackUri(null);
-                          }}
-                        >
-                          <Plus size={15} /> {playlist.name}
-                        </button>
-                      ))
+                      <span className="spotify-search-art">
+                        <Music2 size={18} />
+                      </span>
                     )}
-                    {library.playlists.length < library.playlistsTotal && (
+                    <span className="spotify-search-copy">
+                      <strong>{track.title}</strong>
+                      <span>
+                        {track.artists.join(', ') || '—'}
+                        {track.album ? ` · ${track.album}` : ''}
+                      </span>
+                    </span>
+                    <span className="spotify-search-actions">
                       <button
                         type="button"
-                        disabled={library.working}
-                        aria-busy={library.working}
-                        onClick={() => void library.fetchPlaylists()}
+                        className="spotify-search-play"
+                        aria-label={`${actionLabel}: ${track.title}`}
+                        title={`${actionLabel}: ${track.title}`}
+                        disabled={!canStartPlayback}
+                        onClick={() => {
+                          if (playback.item?.uri === track.uri) {
+                            void runControl(playback.status === 'playing' ? 'pause' : 'play');
+                          } else {
+                            void runControl('playTrack', track.uri);
+                          }
+                        }}
                       >
-                        {t('music.spotifyLoadMore')}
+                        {isPlaying ? (
+                          <Pause size={19} />
+                        ) : (
+                          <Play size={19} fill="currentColor" />
+                        )}
                       </button>
-                    )}
+                      <button
+                        type="button"
+                        className="spotify-search-add"
+                        aria-label={`${t('music.spotifyAddToPlaylist')}: ${track.title}`}
+                        title={t('music.spotifyAddToPlaylist')}
+                        disabled={!library.status.authorized}
+                        aria-expanded={addingTrackUri === track.uri}
+                        onClick={() =>
+                          setAddingTrackUri((current) => (current === track.uri ? null : track.uri))
+                        }
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </span>
                   </div>
-                )}
-              </li>
-            ))}
+                  {addingTrackUri === track.uri && (
+                    <div
+                      className="spotify-search-add-menu"
+                      role="group"
+                      aria-label={t('music.spotifyAddToPlaylist')}
+                    >
+                      {library.playlists.length === 0 ? (
+                        <p>{t('music.spotifyNoPlaylists')}</p>
+                      ) : (
+                        library.playlists.map((playlist) => (
+                          <button
+                            type="button"
+                            key={playlist.id}
+                            disabled={library.working}
+                            aria-busy={library.working}
+                            onClick={async () => {
+                              const result = await library.addTrack(playlist.id, track.uri);
+                              if (result.ok) setAddingTrackUri(null);
+                            }}
+                          >
+                            <Plus size={15} /> {playlist.name}
+                          </button>
+                        ))
+                      )}
+                      {library.playlists.length < library.playlistsTotal && (
+                        <button
+                          type="button"
+                          disabled={library.working}
+                          aria-busy={library.working}
+                          onClick={() => void library.fetchPlaylists()}
+                        >
+                          {t('music.spotifyLoadMore')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
 
       <SpotifyPlaylistLibrary
         library={library}
+        currentTrackUri={playback.item?.uri ?? null}
+        currentTrackPlaying={playback.status === 'playing'}
+        currentContextUri={playback.context?.uri ?? null}
         onPlayTrack={(uri) => void runControl('playTrack', uri)}
+        onToggleCurrentTrack={() =>
+          void runControl(playback.status === 'playing' ? 'pause' : 'play')
+        }
         onPlayPlaylist={(uri) => void runControl('playPlaylist', uri)}
         canPlay={canStartPlayback}
       />
